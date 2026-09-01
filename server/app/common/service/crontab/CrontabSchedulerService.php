@@ -7,7 +7,6 @@ use app\common\enum\CrontabEnum;
 use app\Modules\Official\Task\Model\Crontab;
 use app\common\contract\audit\AuditResource;
 use app\common\service\audit\AuditContractHost;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\tenancy\PlatformTenantDataGateway;
@@ -62,7 +61,7 @@ final class CrontabSchedulerService
             $scope->contextIdentity(),
         );
         return app(ExecutionContextStore::class)->run(
-            ExecutionContext::system($system),
+            new \app\common\execution\SystemExecutionContext($system),
             static function () use ($scope, $jobId, $lastTime, $now, $item, $trigger): bool {
                 if (!CrontabTenantLock::acquire($scope, $jobId)) {
                     return false;
@@ -155,7 +154,7 @@ final class CrontabSchedulerService
             $scope->tenantId(),
             $eventType,
             $operation,
-            $current->requestId,
+            $current->requestId(),
             ['job_id' => $jobId] + $metadata,
             $outcome,
             $reasonCode,

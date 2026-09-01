@@ -21,14 +21,29 @@ final class ExecutionContextAccess
         return app(CurrentExecutionContext::class)->tenantAdmin();
     }
 
+    public static function admin(): AdminExecutionContext
+    {
+        return app(CurrentExecutionContext::class)->admin();
+    }
+
     public static function member(): AuthenticatedMemberContext
     {
         return app(CurrentExecutionContext::class)->member();
     }
 
+    public static function consumer(): ConsumerExecutionContext
+    {
+        return app(CurrentExecutionContext::class)->consumer();
+    }
+
     public static function system(): TenantSystemContext
     {
         return app(CurrentExecutionContext::class)->system();
+    }
+
+    public static function systemExecution(): SystemExecutionContext
+    {
+        return app(CurrentExecutionContext::class)->systemExecution();
     }
 
     public static function platform(): PlatformOperatorContext
@@ -41,16 +56,6 @@ final class ExecutionContextAccess
         return app(CurrentExecutionContext::class)->instance();
     }
 
-    /** @return TenantContext|AuthenticatedMemberContext|TenantSystemContext|PlatformOperatorContext|InstanceExecutionScope */
-    public static function scope(): object
-    {
-        $current = self::current();
-        if (!$current) {
-            throw new \DomainException('EXECUTION_CONTEXT_REQUIRED');
-        }
-        return $current->scope;
-    }
-
     /** @return array<string,mixed> */
     public static function principal(): array
     {
@@ -60,6 +65,11 @@ final class ExecutionContextAccess
     public static function tenantEntryBound(): bool
     {
         return app(CurrentExecutionContext::class)->tenantEntryBound();
+    }
+
+    public static function tenantId(): int
+    {
+        return app(CurrentExecutionContext::class)->tenantId();
     }
 
     private function __construct()

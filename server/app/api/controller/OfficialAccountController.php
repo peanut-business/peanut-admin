@@ -7,7 +7,6 @@ use think\App;
 
 use app\api\application\OfficialAccountApplicationService;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -33,7 +32,7 @@ class OfficialAccountController extends BaseApiController
                 static fn(array $config): bool => $this->officialAccount->verify($params, $config),
             );
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 static fn() => app(ModuleExecutionBoundary::class)
                     ->assertExternalCallback('official.oauth'),
             );
@@ -58,7 +57,7 @@ class OfficialAccountController extends BaseApiController
                 },
             );
             $result = app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution): string {
                     app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
                     return $this->officialAccount->handlePlain(

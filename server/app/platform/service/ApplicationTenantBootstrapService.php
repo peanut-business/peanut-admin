@@ -5,7 +5,6 @@ namespace app\platform\service;
 
 use PDO;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\config\BrandDefaults;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
@@ -118,16 +117,15 @@ SQL);
 
     private function seedNoticeScenes(int $tenantId, string $tenantCode): void
     {
-        $operationId = $this->executionContexts->current()?->requestId
+        $operationId = $this->executionContexts->current()?->requestId()
             ?? 'tenant-bootstrap:' . $tenantCode;
-        $this->executionContexts->run(
-            ExecutionContext::system(new TenantSystemContext(
+        $this->notifications->provisionTenantDefaults(
+            new \app\common\execution\SystemExecutionContext(new TenantSystemContext(
                 $tenantId,
                 'platform.tenant-bootstrap',
                 'notification.provision-tenant-defaults',
                 $operationId,
             )),
-            fn() => $this->notifications->provisionTenantDefaults(),
         );
     }
 

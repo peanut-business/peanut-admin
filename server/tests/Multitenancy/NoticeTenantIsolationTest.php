@@ -4,7 +4,6 @@ declare(strict_types=1);
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
 use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
 use app\Modules\Official\Notification\Model\NoticeLog;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
@@ -43,7 +42,7 @@ function noticeTenantContext(int $tenantId, int $accountId, int $memberId, strin
 function runNoticeTenant(TenantContext $context, string $operation, callable $callback): mixed
 {
     return app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($context, $operation),
+        new \app\common\execution\AdminExecutionContext($context, $operation),
         $callback,
     );
 }

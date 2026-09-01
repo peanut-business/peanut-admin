@@ -5,8 +5,9 @@ namespace app\Modules\Official\Task\Application;
 
 use app\common\enum\CrontabEnum;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\SystemExecutionContext;
+use app\common\execution\SystemExecutionMetadata;
 use app\common\service\CrontabCommandService;
 use app\common\service\crontab\CrontabTenantRepository;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -134,12 +135,11 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
             $scope->contextIdentity(),
         );
 
-        $task = $this->currentExecution->get()->attributes;
-        $this->executionContexts->run(ExecutionContext::system($system, [
-            'job_key' => $task['job_key'] ?? null,
-            'attempt_number' => $task['attempt_number'] ?? null,
-            'handler_key' => $task['handler_key'] ?? null,
-        ]), function () use ($scope, $moduleKey, $command, $params): void {
+        $task = $this->currentExecution->systemExecution()->metadata;
+        $this->executionContexts->run(new SystemExecutionContext(
+            $system,
+            new SystemExecutionMetadata($task->jobKey, $task->attemptNumber, $task->handlerKey),
+        ), function () use ($scope, $moduleKey, $command, $params): void {
             $modules = new ModuleExecutionBoundary($this->pdo, $this->currentExecution);
             $modules->assertScheduled('official.task');
             $modules->assertScheduled($moduleKey);

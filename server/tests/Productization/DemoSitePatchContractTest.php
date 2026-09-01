@@ -47,7 +47,7 @@ $notificationCommands = $read($root . '/server/app/Modules/Official/Notification
 $notificationApplication = $read($root . '/server/app/Modules/Official/Notification/Application/NotificationApplicationService.php');
 $expect(
     str_contains($bootstrap, 'NotificationCommands')
-        && str_contains($bootstrap, '->provisionTenantDefaults()')
+        && str_contains($bootstrap, '->provisionTenantDefaults(')
         && !str_contains($bootstrap, 'INSERT INTO pa_notice_scene')
         && str_contains($notificationCommands, 'provisionTenantDefaults')
         && str_contains($notificationApplication, 'INSERT INTO pa_notice_scene'),

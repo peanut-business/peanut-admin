@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblemMapper;
 use app\common\http\PageResult;
@@ -200,7 +199,7 @@ $connection = $database->connect();
 expectTpq51($connection instanceof Tpq51RecordingMysql, 'TPQ51 recording connector was not selected');
 
 $tenantContext = tpq51TenantContext(101);
-$execution = ExecutionContext::tenantAdmin($tenantContext, 'tpq51.behavior');
+$execution = new \app\common\execution\AdminExecutionContext($tenantContext, 'tpq51.behavior');
 $container->instance(DataScopePolicy::class, new MultiTenantDataScopePolicy($current));
 
 $connection->resetStatements();
@@ -281,7 +280,7 @@ foreach ($connection->statements as $statement) {
 $differentTenantRejected = false;
 try {
     $store->run($execution, static fn() => $store->run(
-        ExecutionContext::tenantAdmin(tpq51TenantContext(202), 'tpq51.different-tenant'),
+        new \app\common\execution\AdminExecutionContext(tpq51TenantContext(202), 'tpq51.different-tenant'),
         static fn() => null,
     ));
 } catch (DomainException $exception) {

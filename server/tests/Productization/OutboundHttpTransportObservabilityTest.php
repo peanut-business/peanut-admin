@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\http\GuzzleOutboundHttpTransport;
 use app\common\service\http\OutboundHttpException;
@@ -91,7 +90,7 @@ $beta = outboundHttpContext(202, 'outbound-beta-request');
 $url = 'https://provider.example.test/callback?access_token=must-not-log';
 $request = new OutboundHttpRequest('GET', $url, ['Authorization' => 'Bearer must-not-log'], 'token=must-not-log', retrySafe: true);
 
-$contexts->run(ExecutionContext::tenantAdmin($alpha, 'outbound.alpha.success'), static function () use ($request): void {
+$contexts->run(new \app\common\execution\AdminExecutionContext($alpha, 'outbound.alpha.success'), static function () use ($request): void {
     $response = outboundHttpTransport([new Response(200, [], 'response-secret')])->send($request);
     expectOutboundHttp($response->status === 200 && $response->body === 'response-secret', 'first success response changed');
 });
@@ -104,7 +103,7 @@ expectOutboundHttp(
     'first success outcome changed',
 );
 
-$contexts->run(ExecutionContext::tenantAdmin($beta, 'outbound.beta.retry'), static function () use ($request): void {
+$contexts->run(new \app\common\execution\AdminExecutionContext($beta, 'outbound.beta.retry'), static function () use ($request): void {
     $response = outboundHttpTransport([new Response(503), new Response(200)])->send($request);
     expectOutboundHttp($response->status === 200, 'retry recovery response changed');
 });
@@ -116,7 +115,7 @@ expectOutboundHttp(
 );
 
 $connectionFailure = new ConnectException('connection refused', new Request('GET', $url));
-$contexts->run(ExecutionContext::tenantAdmin($alpha, 'outbound.alpha.failure'), static function () use ($request, $connectionFailure): void {
+$contexts->run(new \app\common\execution\AdminExecutionContext($alpha, 'outbound.alpha.failure'), static function () use ($request, $connectionFailure): void {
     try {
         outboundHttpTransport([$connectionFailure, $connectionFailure])->send($request);
         throw new RuntimeException('all failures unexpectedly succeeded');
@@ -132,7 +131,7 @@ expectOutboundHttp(
 );
 
 $timeout = new ConnectException('operation timed out', new Request('GET', $url), null, ['errno' => 28]);
-$contexts->run(ExecutionContext::tenantAdmin($beta, 'outbound.beta.timeout'), static function () use ($request, $timeout): void {
+$contexts->run(new \app\common\execution\AdminExecutionContext($beta, 'outbound.beta.timeout'), static function () use ($request, $timeout): void {
     $response = outboundHttpTransport([$timeout, new Response(204)])->send($request);
     expectOutboundHttp($response->status === 204, 'timeout retry response changed');
 });
@@ -148,7 +147,7 @@ $qcloud = (new QcloudStorageClientFactory())->make([
 $qcloudHandler = $qcloud->httpClient->getConfig('handler');
 expectOutboundHttp($qcloudHandler instanceof HandlerStack, 'Qcloud retry handler is unavailable for attempt observation');
 $qcloudHandler->setHandler(new MockHandler([new Response(503), new Response(200)]));
-$contexts->run(ExecutionContext::tenantAdmin($alpha, 'outbound.alpha.qcloud'), static function () use ($qcloud, $url): void {
+$contexts->run(new \app\common\execution\AdminExecutionContext($alpha, 'outbound.alpha.qcloud'), static function () use ($qcloud, $url): void {
     $response = $qcloud->httpClient->request('GET', $url);
     expectOutboundHttp($response->getStatusCode() === 200, 'Qcloud retry response changed');
 });

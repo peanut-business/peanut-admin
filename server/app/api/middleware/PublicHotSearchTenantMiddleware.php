@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\api\middleware;
 
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\hot_search\HotSearchTenantContext;
 use app\common\service\JsonService;
@@ -32,7 +31,7 @@ final class PublicHotSearchTenantMiddleware
         }
 
         return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::system($context),
+            \app\common\execution\ConsumerExecutionContext::publicTenant($context),
             static fn() => $next($request),
         );
     }

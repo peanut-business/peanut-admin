@@ -5,7 +5,7 @@ namespace app\adminapi\controller;
 
 use app\common\controller\BaseLikeAdminController;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
+use app\common\execution\AdminExecutionContext;
 
 class BaseAdminController extends BaseLikeAdminController
 {
@@ -15,7 +15,7 @@ class BaseAdminController extends BaseLikeAdminController
     public function initialize(): void
     {
         $current = app(CurrentExecutionContext::class);
-        if ($current->current()?->actorType === ExecutionContext::TENANT_ADMIN) {
+        if ($current->current() instanceof AdminExecutionContext) {
             $this->adminInfo = $current->tenantAdminPrincipal();
             $this->adminId = (int)$this->adminInfo['id'];
         }

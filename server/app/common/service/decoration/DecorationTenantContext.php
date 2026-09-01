@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\decoration;
 
 use PeanutAdmin\Kernel\Auth\AuthException;
-use app\common\execution\ExecutionContext;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -29,7 +30,7 @@ final class DecorationTenantContext
     public static function member(): TenantContext
     {
         $current = ExecutionContextAccess::current();
-        $context = $current?->scope;
+        $context = $current instanceof AdminExecutionContext ? $current->tenant : null;
         if (!$context instanceof TenantContext || !self::trustedMember($context)) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
@@ -39,7 +40,11 @@ final class DecorationTenantContext
     public static function read(string $operation): TenantContext|TenantSystemContext
     {
         $current = ExecutionContextAccess::current();
-        $context = $current?->scope;
+        $context = match (true) {
+            $current instanceof AdminExecutionContext => $current->tenant,
+            $current instanceof ConsumerExecutionContext => $current->publicTenant,
+            default => null,
+        };
         self::tenantId($context, $operation);
         return $context;
     }

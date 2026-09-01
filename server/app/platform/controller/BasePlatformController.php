@@ -5,6 +5,7 @@ namespace app\platform\controller;
 
 use app\common\controller\BaseLikeAdminController;
 use app\common\execution\CurrentExecutionContext;
+use app\common\execution\PlatformExecutionContext;
 use app\platform\context\PlatformOperatorContext;
 
 abstract class BasePlatformController extends BaseLikeAdminController
@@ -14,8 +15,8 @@ abstract class BasePlatformController extends BaseLikeAdminController
     protected function initialize(): void
     {
         $context = app(CurrentExecutionContext::class)->current();
-        $this->platformContext = $context?->scope instanceof PlatformOperatorContext
-            ? $context->scope
+        $this->platformContext = $context instanceof PlatformExecutionContext
+            ? $context->platform
             : null;
     }
 }

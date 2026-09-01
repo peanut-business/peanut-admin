@@ -18,7 +18,7 @@ abstract class ContextualCommand extends Command
         }
 
         return $contexts->run(
-            ExecutionContext::instance(
+            new InstanceExecutionContext(
                 'console.' . $this->getName(),
                 'cli-' . getmypid() . '-' . bin2hex(random_bytes(8)),
             ),

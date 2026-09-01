@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use app\adminapi\application\dict\DictDataApplicationService;
 use app\adminapi\application\dict\DictTypeApplicationService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\dict\DictTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -175,56 +174,56 @@ try {
 
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.list.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.list.alpha'),
             fn() => app(DictTypeApplicationService::class)->lists([]),
         )->total() === 1,
         'Alpha type list crossed Tenant boundary',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.dict.type.list.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.dict.type.list.beta'),
             fn() => app(DictTypeApplicationService::class)->lists([]),
         )->total() === 1,
         'Beta type list crossed Tenant boundary',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.list.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.list.alpha'),
             fn() => app(DictDataApplicationService::class)->lists([]),
         )->total() === 1,
         'Alpha data list crossed Tenant boundary',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.dict.data.list.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.dict.data.list.beta'),
             fn() => app(DictDataApplicationService::class)->lists([]),
         )->total() === 1,
         'Beta data list crossed Tenant boundary',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.detail.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.detail.cross-tenant'),
             fn() => app(DictTypeApplicationService::class)->detail(12),
         ) === [],
         'cross-Tenant type detail was visible',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.detail.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.detail.cross-tenant'),
             fn() => app(DictDataApplicationService::class)->detail(22),
         ) === [],
         'cross-Tenant data detail was visible',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.detail.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.detail.missing'),
             fn() => app(DictTypeApplicationService::class)->detail(999999),
         ) === [],
         'missing type detail shape changed',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.detail.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.detail.missing'),
             fn() => app(DictDataApplicationService::class)->detail(999999),
         ) === [],
         'missing data detail shape changed',
@@ -232,7 +231,7 @@ try {
 
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.add'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.add'),
             fn() => app(DictTypeApplicationService::class)->add([
                 'tenant_id' => 202,
                 'name' => 'Alpha status',
@@ -249,7 +248,7 @@ try {
     );
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.add.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.add.cross-tenant'),
             fn() => app(DictDataApplicationService::class)->add([
                 'tenant_id' => 202,
                 'type_id' => 12,
@@ -262,7 +261,7 @@ try {
 
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.add'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.add'),
             fn() => app(DictDataApplicationService::class)->add([
                 'tenant_id' => 202,
                 'type_id' => $alphaTypeId,
@@ -277,14 +276,14 @@ try {
     expectDictTenant($alphaDataId > 0, 'Alpha dictionary data was not created');
     expectDictTenant(
         array_column(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.by-type.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.by-type.alpha'),
             fn() => app(DictDataApplicationService::class)->byType('status'),
         ), 'value') === ['1'],
         'Alpha byType lost owned data',
     );
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.dict.data.by-type.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.dict.data.by-type.beta'),
             fn() => app(DictDataApplicationService::class)->byType('status'),
         ) === [],
         'Beta byType leaked Alpha data',
@@ -294,7 +293,7 @@ try {
     $betaDataBefore = $pdo->query('SELECT name, value, type_value, is_disable FROM pa_dict_data WHERE id = 22')->fetch(PDO::FETCH_ASSOC);
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.edit.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.edit.cross-tenant'),
             fn() => app(DictTypeApplicationService::class)->edit([
                 'id' => 12, 'name' => 'Cross Tenant', 'type' => 'cross_tenant',
             ]),
@@ -304,7 +303,7 @@ try {
     $typeDenied = app(DictTypeApplicationService::class)->getError();
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.edit.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.edit.missing'),
             fn() => app(DictTypeApplicationService::class)->edit([
                 'id' => 999999, 'name' => 'Missing', 'type' => 'missing',
             ]),
@@ -315,7 +314,7 @@ try {
 
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.edit.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.edit.cross-tenant'),
             fn() => app(DictDataApplicationService::class)->edit([
                 'id' => 22, 'name' => 'Cross Tenant', 'value' => 'forbidden',
             ]),
@@ -325,7 +324,7 @@ try {
     $dataDenied = app(DictDataApplicationService::class)->getError();
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.edit.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.edit.missing'),
             fn() => app(DictDataApplicationService::class)->edit([
                 'id' => 999999, 'name' => 'Missing', 'value' => 'missing',
             ]),
@@ -336,7 +335,7 @@ try {
 
     expectDictTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.edit'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.edit'),
             fn() => app(DictTypeApplicationService::class)->edit([
                 'id' => $alphaTypeId, 'name' => 'Alpha state', 'type' => 'state',
             ]),
@@ -353,7 +352,7 @@ try {
     );
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.delete.occupied'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.delete.occupied'),
             fn() => app(DictTypeApplicationService::class)->delete($alphaTypeId),
         ),
         'occupied Alpha type deletion unexpectedly succeeded',
@@ -361,7 +360,7 @@ try {
     expectDictTenant(app(DictTypeApplicationService::class)->getError() === '字典类型已被数据项使用，请先删除数据项', 'occupied delete lost its failure shape');
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.status.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.status.cross-tenant'),
             fn() => app(DictTypeApplicationService::class)->updateStatus(12, 1),
         ),
         'cross-Tenant type status unexpectedly changed',
@@ -369,7 +368,7 @@ try {
     $typeStatusDenied = app(DictTypeApplicationService::class)->getError();
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.status.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.status.missing'),
             fn() => app(DictTypeApplicationService::class)->updateStatus(999999, 1),
         ),
         'missing type status unexpectedly changed',
@@ -377,7 +376,7 @@ try {
     expectDictTenant(app(DictTypeApplicationService::class)->getError() === $typeStatusDenied, 'type status enumerated Tenant ownership');
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.status.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.status.cross-tenant'),
             fn() => app(DictDataApplicationService::class)->updateStatus(22, 1),
         ),
         'cross-Tenant data status unexpectedly changed',
@@ -385,7 +384,7 @@ try {
     $dataStatusDenied = app(DictDataApplicationService::class)->getError();
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.status.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.status.missing'),
             fn() => app(DictDataApplicationService::class)->updateStatus(999999, 1),
         ),
         'missing data status unexpectedly changed',
@@ -393,14 +392,14 @@ try {
     expectDictTenant(app(DictDataApplicationService::class)->getError() === $dataStatusDenied, 'data status enumerated Tenant ownership');
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.type.delete.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.type.delete.cross-tenant'),
             fn() => app(DictTypeApplicationService::class)->delete(12),
         ),
         'cross-Tenant type delete unexpectedly succeeded',
     );
     expectDictTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.dict.data.delete.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.dict.data.delete.cross-tenant'),
             fn() => app(DictDataApplicationService::class)->delete(22),
         ),
         'cross-Tenant data delete unexpectedly succeeded',

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\api\middleware;
 
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\article\ArticleTenantContext;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -36,7 +35,7 @@ final class PublicArticleTenantMiddleware
 
         $modules = $this->modules ?? app(ModuleExecutionBoundary::class);
         return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::system($context),
+            \app\common\execution\ConsumerExecutionContext::publicTenant($context),
             static function () use ($modules, $next, $request) {
                 try {
                     $modules->assertHttp('official.article');

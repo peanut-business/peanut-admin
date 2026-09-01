@@ -5,7 +5,6 @@ namespace app\adminapi\http\middleware;
 
 use app\adminapi\http\AdminRequest;
 use app\adminapi\service\AdminTokenService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
@@ -59,7 +58,7 @@ final class LoginMiddleware
             trim((string)$request->pathinfo(), '/'),
         );
         return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::tenantAdmin($context, $operation, $principal, $entryBound),
+            new \app\common\execution\AdminExecutionContext($context, $operation, $principal, $entryBound),
             static fn() => $next($request),
         );
     }

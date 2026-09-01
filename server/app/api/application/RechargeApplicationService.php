@@ -443,7 +443,7 @@ class RechargeApplicationService extends ApplicationService
         $tenantId = FinanceTenantContext::tenantId($context);
         $current = ExecutionContextAccess::current();
         $requestId = $current !== null && $current->tenantId() === $tenantId
-            ? $current->requestId
+            ? $current->requestId()
             : trim((string)($context->requestId ?? $context->operationId ?? ''));
         if ($requestId === '') {
             throw new \DomainException('RECHARGE_AUDIT_REQUEST_ID_REQUIRED');

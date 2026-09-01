@@ -11,7 +11,7 @@ final class DictTenantContext
 {
     public static function member(): TenantContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $context = ExecutionContextAccess::tenantAdmin();
         self::tenantId($context);
         return $context;
     }

@@ -5,7 +5,6 @@ use app\Modules\Official\Article\Contracts\ArticleAdministration;
 use app\Modules\Official\Article\Model\Article;
 use app\Modules\Official\Article\Model\ArticleCate;
 use app\api\application\ArticleApplicationService as ApiArticleLogic;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\article\ArticleTenantContext;
 use app\common\service\capability\ArticleCapabilityAuthorization;
@@ -319,13 +318,13 @@ SQL);
     $payload = ['tenant_id' => 202, 'name' => 'Alpha category', 'sort' => 20, 'is_show' => 1];
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.category.add'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.category.add'),
             fn() => $articles->addCategory($payload),
         ),
         'Alpha category was not created',
     );
     $alphaCategoryId = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.article.category.query'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.article.category.query'),
         fn() => ArticleCate::where([])->where('name', 'Alpha category')->value('id'),
     );
     expectArticleTenant($alphaCategoryId > 0, 'Alpha category was not created');
@@ -335,7 +334,7 @@ SQL);
     );
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.add'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.add'),
             fn() => $articles->add([
                 'tenant_id' => 202, 'cid' => $alphaCategoryId, 'title' => 'Alpha visible',
                 'is_show' => 1, 'desc' => '', 'abstract' => '', 'content' => '',
@@ -344,7 +343,7 @@ SQL);
         'Alpha article was not created',
     );
     $alphaArticleId = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.article.query'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.article.query'),
         fn() => Article::where([])->where('title', 'Alpha visible')->value('id'),
     );
     expectArticleTenant($alphaArticleId > 0, 'Alpha article was not created');
@@ -353,14 +352,14 @@ SQL);
     $beforeCollects = (int)$pdo->query('SELECT COUNT(*) FROM pa_article_collect WHERE tenant_id = 202')->fetchColumn();
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.public-detail.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.public-detail.cross-tenant'),
             fn() => ApiArticleLogic::detail(22, 501),
         ) === [],
         'cross-tenant detail enumerated Beta Article',
     );
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.public-detail.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.public-detail.missing'),
             fn() => ApiArticleLogic::detail(999999, 501),
         ) === [],
         'missing detail denial shape changed',
@@ -369,7 +368,7 @@ SQL);
     foreach ([22, 999999] as $target) {
         try {
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.article.edit.denied'),
+                new \app\common\execution\AdminExecutionContext($alpha, 'test.article.edit.denied'),
                 fn() => $articles->edit([
                     'id' => $target,
                     'cid' => $alphaCategoryId,
@@ -385,7 +384,7 @@ SQL);
 
     expectArticleTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::member($alphaMember, 'test.article.collect.cross-tenant'),
+            \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.cross-tenant'),
             fn() => ApiArticleLogic::addCollect(22, 501),
         ),
         'cross-tenant collection unexpectedly succeeded',
@@ -393,7 +392,7 @@ SQL);
     $crossCollectError = ApiArticleLogic::getError();
     expectArticleTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::member($alphaMember, 'test.article.collect.missing'),
+            \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.missing'),
             fn() => ApiArticleLogic::addCollect(999999, 501),
         ),
         'missing collection target unexpectedly succeeded',
@@ -404,7 +403,7 @@ SQL);
     foreach ([22, 999999] as $target) {
         try {
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.article.decoration-link.denied'),
+                new \app\common\execution\AdminExecutionContext($alpha, 'test.article.decoration-link.denied'),
                 fn() => DecorationSchemaService::validateLink($alpha, $link($target)),
             );
             throw new RuntimeException('invalid decoration Article unexpectedly succeeded');
@@ -421,45 +420,45 @@ SQL);
 
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::member($alphaMember, 'test.article.collect.add'),
+            \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.add'),
             fn() => ApiArticleLogic::addCollect($alphaArticleId, 501),
         ),
         ApiArticleLogic::getError(),
     );
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.public-detail.owned'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.public-detail.owned'),
             fn() => ApiArticleLogic::detail($alphaArticleId, 501),
         )['collect'] === true,
         'Alpha Article detail/collection failed',
     );
     expectArticleTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.public-list'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.public-list'),
             fn() => ApiArticleLogic::lists(['page_size' => 20], 501),
         )) >= 1,
         'Alpha list lost visible Article',
     );
     expectArticleTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.info-center'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.info-center'),
             fn() => ApiArticleLogic::infoCenter(),
         )) >= 1,
         'Alpha info center lost categories',
     );
     expectArticleTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.article.aggregate'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.article.aggregate'),
             fn() => ApiArticleLogic::limitArticles('new', 20),
         )) >= 1,
         'Alpha aggregate lost Article',
     );
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.article.decoration-link.owned'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.article.decoration-link.owned'),
         fn() => DecorationSchemaService::validateLink($alpha, $link($alphaArticleId)),
     );
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::member($alphaMember, 'test.article.collect.cancel'),
+        \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.cancel'),
         fn() => ApiArticleLogic::cancelCollect($alphaArticleId, 501),
     );
 

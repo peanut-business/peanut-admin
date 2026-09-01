@@ -6,6 +6,8 @@ namespace app\common\service\hot_search;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\execution\ExecutionContextAccess;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 final class HotSearchTenantContext
@@ -15,7 +17,8 @@ final class HotSearchTenantContext
 
     public static function member(): TenantContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $current = ExecutionContextAccess::current();
+        $context = $current instanceof AdminExecutionContext ? $current->tenant : null;
         if (!$context instanceof TenantContext || !self::trustedMember($context)) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
@@ -24,7 +27,12 @@ final class HotSearchTenantContext
 
     public static function read(): TenantContext|TenantSystemContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $current = ExecutionContextAccess::current();
+        $context = match (true) {
+            $current instanceof AdminExecutionContext => $current->tenant,
+            $current instanceof ConsumerExecutionContext => $current->publicTenant,
+            default => null,
+        };
         self::tenantId($context);
         return $context;
     }

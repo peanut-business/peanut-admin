@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\platform\http\middleware;
 
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\JsonService;
 use app\common\service\tenant\ApplicationHostPolicy;
@@ -44,7 +43,7 @@ final class PlatformLoginMiddleware
             trim((string)$request->pathinfo(), '/'),
         );
         return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::platform($context, $operation),
+            new \app\common\execution\PlatformExecutionContext($context, $operation),
             static fn() => $next($request),
         );
     }

@@ -4,6 +4,12 @@ declare(strict_types=1);
 namespace app\common\service\runtime;
 
 use app\common\execution\CurrentExecutionContext;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
+use app\common\execution\InstallationExecutionContext;
+use app\common\execution\InstanceExecutionContext;
+use app\common\execution\PlatformExecutionContext;
+use app\common\execution\SystemExecutionContext;
 use app\common\service\audit\RedactionPolicy;
 use think\facade\Log;
 
@@ -56,14 +62,18 @@ final class OperationalLog
             $context = null;
         }
         $trace = $context === null ? [] : [
-            'request_id' => $context->requestId,
-            'operation' => $context->operation,
-            'actor_type' => $context->actorType,
+            'request_id' => $context->requestId(),
+            'operation' => $context->operation(),
+            'audience' => match (true) {
+                $context instanceof AdminExecutionContext => 'adminapi',
+                $context instanceof ConsumerExecutionContext => 'api',
+                $context instanceof PlatformExecutionContext => 'platform',
+                $context instanceof InstallationExecutionContext => 'installation',
+                $context instanceof SystemExecutionContext => 'system',
+                $context instanceof InstanceExecutionContext => 'instance',
+            },
             'tenant_id' => $context->tenantId(),
-        ] + array_filter(
-            array_intersect_key($context->attributes, array_flip(['job_key', 'attempt_number', 'handler_key'])),
-            static fn(mixed $value): bool => $value !== null,
-        );
+        ] + ($context instanceof SystemExecutionContext ? $context->metadata->toArray() : []);
         $trace['runtime_id'] = RuntimeNamespace::fromEnvironment()->fingerprint();
 
         $sanitized = RedactionPolicy::sanitize($trace + $attributes);

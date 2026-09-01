@@ -11,7 +11,7 @@ final class OrgTenantContext
 {
     public static function member(): TenantContext
     {
-        $context = ExecutionContextAccess::current()?->scope;
+        $context = ExecutionContextAccess::tenantAdmin();
         TenantContextRequirement::tenantId($context);
         return $context;
     }

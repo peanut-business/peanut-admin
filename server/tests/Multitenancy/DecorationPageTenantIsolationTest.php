@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use app\adminapi\application\decoration\DecorationPageApplicationService;
 use app\common\enum\decoration\DecorationEnum;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationTenantContext;
@@ -169,21 +168,21 @@ SQL);
 
     expectDecorationTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.list.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.list.alpha'),
             fn() => app(DecorationPageApplicationService::class)->lists([DecorationEnum::PC_HOME]),
         )) === 1,
         'Alpha page list crossed Tenant boundary',
     );
     expectDecorationTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.decoration.page.list.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.decoration.page.list.beta'),
             fn() => app(DecorationPageApplicationService::class)->lists([DecorationEnum::PC_HOME]),
         )) === 1,
         'Beta page list crossed Tenant boundary',
     );
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.detail.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.detail.cross-tenant'),
             fn() => app(DecorationPageApplicationService::class)->detail($betaPageId, [DecorationEnum::PC_HOME]),
         ) === false,
         'cross-Tenant page detail was visible',
@@ -191,7 +190,7 @@ SQL);
     $detailDenied = app(DecorationPageApplicationService::class)->getError();
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.detail.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.detail.missing'),
             fn() => app(DecorationPageApplicationService::class)->detail(999999, [DecorationEnum::PC_HOME]),
         ) === false,
         'missing page detail unexpectedly succeeded',
@@ -199,14 +198,14 @@ SQL);
     expectDecorationTenant(app(DecorationPageApplicationService::class)->getError() === $detailDenied, 'page detail enumerated Tenant ownership');
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.type.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.type.alpha'),
             fn() => app(DecorationPageApplicationService::class)->detailByType(DecorationEnum::PC_HOME),
         )['name'] === 'Alpha PC',
         'Alpha type read selected the wrong Tenant page',
     );
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.decoration.page.type.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.decoration.page.type.beta'),
             fn() => app(DecorationPageApplicationService::class)->detailByType(DecorationEnum::PC_HOME),
         )['name'] === 'Beta PC',
         'Beta type read selected the wrong Tenant page',
@@ -215,7 +214,7 @@ SQL);
     $betaBefore = $pdo->query("SELECT name, data, meta FROM pa_decorate_page WHERE id = {$betaPageId}")->fetch(PDO::FETCH_ASSOC);
     expectDecorationTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.save.cross-tenant'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.save.cross-tenant'),
             fn() => app(DecorationPageApplicationService::class)->save([
                 'id' => $betaPageId,
                 'tenant_id' => 101,
@@ -229,7 +228,7 @@ SQL);
     $saveDenied = app(DecorationPageApplicationService::class)->getError();
     expectDecorationTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.save.missing'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.save.missing'),
             fn() => app(DecorationPageApplicationService::class)->save([
                 'id' => 999999,
                 'tenant_id' => 101,
@@ -244,7 +243,7 @@ SQL);
 
     expectDecorationTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.save.cross-tenant-link'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.save.cross-tenant-link'),
             fn() => app(DecorationPageApplicationService::class)->save([
                 'id' => $alphaPageId,
                 'tenant_id' => 202,
@@ -258,7 +257,7 @@ SQL);
     $articleDenied = app(DecorationPageApplicationService::class)->getError();
     expectDecorationTenant(
         !app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.save.missing-link'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.save.missing-link'),
             fn() => app(DecorationPageApplicationService::class)->save([
                 'id' => $alphaPageId,
                 'tenant_id' => 202,
@@ -273,7 +272,7 @@ SQL);
 
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.page.save.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.page.save.alpha'),
             fn() => app(DecorationPageApplicationService::class)->save([
                 'id' => $alphaPageId,
                 'tenant_id' => 202,
@@ -307,14 +306,14 @@ SQL);
     );
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::system($publicAlpha),
+            \app\common\execution\ConsumerExecutionContext::publicTenant($publicAlpha),
             fn() => DecorationReadService::pageByType($publicAlpha, DecorationEnum::PC_HOME, DecorationTenantContext::PC_PAGE_OPERATION),
         )['name'] === 'Alpha PC',
         'public Alpha read selected another Tenant page'
     );
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::system($publicBeta),
+            \app\common\execution\ConsumerExecutionContext::publicTenant($publicBeta),
             fn() => DecorationReadService::pageByType($publicBeta, DecorationEnum::PC_HOME, DecorationTenantContext::PC_PAGE_OPERATION),
         )['name'] === 'Beta PC',
         'public Beta read selected another Tenant page'

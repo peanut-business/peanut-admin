@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use app\adminapi\application\setting\HotSearchApplicationService as AdminHotSearchLogic;
 use app\api\application\SearchApplicationService as ApiSearchLogic;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\hot_search\HotSearchTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -137,7 +136,7 @@ try {
 
     expectHotSearchTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.hot-search.set.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.hot-search.set.alpha'),
             fn() => AdminHotSearchLogic::setConfig([
                 'status' => 0,
                 'data' => [
@@ -165,11 +164,11 @@ try {
     );
 
     $adminAlpha = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.hot-search.get.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.hot-search.get.alpha'),
         fn() => AdminHotSearchLogic::getConfig(),
     );
     $adminBeta = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.hot-search.get.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.hot-search.get.beta'),
         fn() => AdminHotSearchLogic::getConfig(),
     );
     expectHotSearchTenant(array_column($adminAlpha['data'], 'name') === ['Same term', 'Alpha only'], 'admin Alpha list leaked or lost terms');
@@ -179,11 +178,11 @@ try {
     $publicAlpha = new TenantSystemContext(101, HotSearchTenantContext::PUBLIC_ACTOR, HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'public-alpha-' . $runId);
     $publicBeta = new TenantSystemContext(202, HotSearchTenantContext::PUBLIC_ACTOR, HotSearchTenantContext::PUBLIC_LIST_OPERATION, 'public-beta-' . $runId);
     $publicAlphaResult = app(ExecutionContextStore::class)->run(
-        ExecutionContext::system($publicAlpha),
+        \app\common\execution\ConsumerExecutionContext::publicTenant($publicAlpha),
         fn() => ApiSearchLogic::hotLists($publicAlpha),
     );
     $publicBetaResult = app(ExecutionContextStore::class)->run(
-        ExecutionContext::system($publicBeta),
+        \app\common\execution\ConsumerExecutionContext::publicTenant($publicBeta),
         fn() => ApiSearchLogic::hotLists($publicBeta),
     );
     expectHotSearchTenant(array_column($publicAlphaResult['data'], 'name') === ['Same term', 'Alpha only'], 'public Alpha read crossed Tenant');

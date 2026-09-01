@@ -5,7 +5,6 @@ use app\Modules\Official\Oauth\Model\OAuthIdentity;
 use app\Modules\Official\Member\Application\MemberIdentityContractService;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\api\application\OAuthApplicationService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
@@ -120,13 +119,13 @@ function oauthBinding(int $id, int $tenantId): ExternalTenantBinding
 
 function oauthRunSystem(TenantSystemContext $context, callable $operation): mixed
 {
-    return app(ExecutionContextStore::class)->run(ExecutionContext::system($context), $operation);
+    return app(ExecutionContextStore::class)->run(new \app\common\execution\SystemExecutionContext($context), $operation);
 }
 
 function oauthRunTenant(TenantContext $context, string $operationId, callable $operation): mixed
 {
     return app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($context, 'test.oauth.' . $operationId),
+        new \app\common\execution\AdminExecutionContext($context, 'test.oauth.' . $operationId),
         $operation,
     );
 }
