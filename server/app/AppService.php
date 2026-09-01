@@ -4,31 +4,12 @@ declare (strict_types = 1);
 namespace app;
 
 use app\Modules\Fixture\DeliveryRecord\ModuleProvider as DeliveryRecordModuleProvider;
-use app\Modules\Official\Article\Application\ArticleAdministrationService;
-use app\Modules\Official\Article\Contracts\ArticleAdministration;
-use app\Modules\Official\File\Application\FileAdministrationService;
-use app\Modules\Official\File\Contracts\FileAdministration;
-use app\Modules\Official\ImportExport\Application\OperationLogExportApplicationService;
-use app\Modules\Official\ImportExport\Application\TenantConfigurationTransferService;
-use app\Modules\Official\Member\Application\MemberAdministrationService;
-use app\Modules\Official\Member\Application\MemberBalanceContractService;
-use app\Modules\Official\Member\Application\MemberProfileContractService;
-use app\Modules\Official\Member\Application\MemberQueryService;
-use app\Modules\Official\Member\Application\MemberTagContractService;
-use app\Modules\Official\Member\Contracts\MemberAdministration;
-use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
-use app\Modules\Official\Member\Contracts\MemberProfileCommands;
-use app\Modules\Official\Member\Contracts\MemberQueries;
-use app\Modules\Official\Member\Contracts\MemberTagCommands;
-use app\Modules\Official\Notification\Application\NotificationApplicationService;
-use app\Modules\Official\Notification\Contracts\NotificationCommands;
-use app\Modules\Official\Notification\Contracts\NotificationQueries;
-use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
-use app\Modules\Official\Oauth\Application\OAuthCommandService;
-use app\Modules\Official\Oauth\Application\OAuthQueryService;
-use app\Modules\Official\Oauth\Contracts\OAuthCommands;
-use app\Modules\Official\Oauth\Contracts\OAuthQueries;
-use app\api\application\OAuthApplicationService;
+use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
+use app\Modules\Official\File\ModuleProvider as FileModuleProvider;
+use app\Modules\Official\ImportExport\ModuleProvider as ImportExportModuleProvider;
+use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Notification\ModuleProvider as NotificationModuleProvider;
+use app\Modules\Official\Oauth\ModuleProvider as OauthModuleProvider;
 use app\adminapi\service\generator\GeneratorImportPersistence;
 use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
@@ -67,6 +48,7 @@ class AppService extends Service
         $contexts = new ExecutionContextStore();
         $this->app->instance(ExecutionContextStore::class, $contexts);
         $this->app->instance(CurrentExecutionContext::class, new CurrentExecutionContext($contexts));
+        $this->app->bind(PDO::class, fn(): PDO => $this->database());
         $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => AuditContractHost::fromPdo(
             $this->database(),
         ));
@@ -80,39 +62,9 @@ class AppService extends Service
         $this->app->bind(AdminAuthorizationQuery::class, fn(): AdminAuthorizationQuery => new AdminAuthorizationService(
             $this->database(),
         ));
-        $this->app->bind(ArticleAdministration::class, fn(): ArticleAdministration => new ArticleAdministrationService(
-            $this->app->make(CurrentExecutionContext::class),
-        ));
-        $this->app->bind(FileAdministration::class, FileAdministrationService::class);
-        $this->app->bind(OAuthCommands::class, fn(): OAuthCommands => new OAuthCommandService(
-            $this->app->make(OAuthApplicationService::class),
-        ));
-        $this->app->bind(OAuthQueries::class, fn(): OAuthQueries => new OAuthQueryService());
-        $this->app->bind(MemberQueries::class, fn(): MemberQueries => new MemberQueryService(
-            $this->app->make(CurrentExecutionContext::class),
-        ));
-        $this->app->bind(MemberProfileCommands::class, fn(): MemberProfileCommands => new MemberProfileContractService());
-        $this->app->bind(MemberTagCommands::class, fn(): MemberTagCommands => new MemberTagContractService());
-        $this->app->bind(MemberBalanceCommands::class, fn(): MemberBalanceCommands => new MemberBalanceContractService());
         $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
             $this->database(),
         ));
-        $this->app->bind(MemberAdministration::class, fn(): MemberAdministration => new MemberAdministrationService(
-            $this->app->make(CurrentExecutionContext::class),
-            $this->app->make(\app\common\service\XlsxExportService::class),
-            $this->app->make(MemberQueries::class),
-            $this->app->make(MemberProfileCommands::class),
-            $this->app->make(MemberTagCommands::class),
-            $this->app->make(MemberBalanceCommands::class),
-            $this->app->make(IdempotentCommandExecutor::class),
-        ));
-        $this->app->bind(NotificationApplicationService::class, fn(): NotificationApplicationService => new NotificationApplicationService(
-            $this->database(),
-            $this->app->make(CurrentExecutionContext::class),
-        ));
-        $this->app->bind(NotificationCommands::class, fn(): NotificationCommands => $this->app->make(NotificationApplicationService::class));
-        $this->app->bind(NotificationQueries::class, fn(): NotificationQueries => $this->app->make(NotificationApplicationService::class));
-        $this->app->bind(VerificationCodeCommands::class, fn(): VerificationCodeCommands => $this->app->make(NotificationApplicationService::class));
         $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport());
         $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
             return new ModuleExecutionBoundary(
@@ -140,12 +92,6 @@ class AppService extends Service
         $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
             $this->database(),
         ));
-        $this->app->bind(TenantConfigurationTransferService::class, fn(): TenantConfigurationTransferService => new TenantConfigurationTransferService(
-            $this->database(),
-        ));
-        $this->app->bind(OperationLogExportApplicationService::class, fn(): OperationLogExportApplicationService => new OperationLogExportApplicationService(
-            $this->database(),
-        ));
         $this->app->bind(PlatformOpsApplicationService::class, fn(): PlatformOpsApplicationService => new PlatformOpsApplicationService(
             $this->database(),
         ));
@@ -160,6 +106,16 @@ class AppService extends Service
             };
         });
 
+        foreach ([
+            new ArticleModuleProvider(),
+            new FileModuleProvider(),
+            new ImportExportModuleProvider(),
+            new MemberModuleProvider(),
+            new NotificationModuleProvider(),
+            new OauthModuleProvider(),
+        ] as $provider) {
+            $provider->register($this->app);
+        }
         if (class_exists(DeliveryRecordModuleProvider::class)) {
             (new DeliveryRecordModuleProvider())->register($this->app);
         }

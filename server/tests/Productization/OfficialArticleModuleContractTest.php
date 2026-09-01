@@ -82,6 +82,10 @@ officialArticleExpect(
 
 $routes = (string)file_get_contents($moduleRoot . '/Http/routes.php');
 $hostRoutes = peanut_route_registry_source($serverRoot);
+$legacyHostRoutes = implode('', array_map(
+    static fn(string $file): string => (string)file_get_contents($serverRoot . '/route/' . $file),
+    ['app.php', 'platform.php', 'tenant.php', 'admin.php', 'public_api.php'],
+));
 $repository = (string)file_get_contents($serverRoot . '/app/common/service/article/ArticleTenantRepository.php');
 $capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
@@ -114,8 +118,8 @@ officialArticleExpect(
     !is_file($moduleRoot . '/Http/ArticleModuleMiddleware.php'),
     'Article-specific Module middleware was reintroduced',
 );
-officialArticleExpect(!str_contains($hostRoutes, "Route::get('official.article."), 'Article Admin routes remain Host-owned');
-officialArticleExpect(!str_contains($hostRoutes, "Route::post('official.article."), 'Article Admin writes remain Host-owned');
+officialArticleExpect(!str_contains($legacyHostRoutes, "Route::get('official.article."), 'Article Admin routes remain Host-owned');
+officialArticleExpect(!str_contains($legacyHostRoutes, "Route::post('official.article."), 'Article Admin writes remain Host-owned');
 officialArticleExpect(
     str_contains($menuLogic, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths')
         && str_contains($permissionService, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths'),
@@ -125,13 +129,13 @@ officialArticleExpect(
 // Every public Article/PC entry must fail closed when the Tenant Module is disabled.
 $publicRoutes = $hostRoutes;
 foreach ([
-    "Route::get('api/index/index'",
-    "Route::get('api/article/cate'",
-    "Route::get('api/article/lists'",
-    "Route::get('api/article/detail'",
-    "Route::get('api/pc/index'",
-    "Route::get('api/pc/infoCenter'",
-    "Route::get('api/pc/articleDetail'",
+    "Route::get('index/index'",
+    "Route::get('article/cate'",
+    "Route::get('article/lists'",
+    "Route::get('article/detail'",
+    "Route::get('pc/index'",
+    "Route::get('pc/infoCenter'",
+    "Route::get('pc/articleDetail'",
 ] as $entry) {
     officialArticleExpect(substr_count($publicRoutes, $entry) === 1, 'missing public Article entry: ' . $entry);
 }

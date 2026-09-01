@@ -9,9 +9,12 @@ use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
 use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferCommands;
 use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
 use app\Modules\Official\ImportExport\Application\ConfigurationTransferApplicationService;
+use app\Modules\Official\ImportExport\Application\OperationLogExportApplicationService;
+use app\Modules\Official\ImportExport\Application\TenantConfigurationTransferService;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PDO;
+use think\App;
 
 final class ModuleProvider implements ModuleProviderContract
 {
@@ -38,6 +41,16 @@ final class ModuleProvider implements ModuleProviderContract
     public function configurationQueries(PDO $pdo): ConfigurationTransferQueries
     {
         return new ConfigurationTransferApplicationService($pdo);
+    }
+
+    public function register(App $app): void
+    {
+        $app->bind(TenantConfigurationTransferService::class, fn(): TenantConfigurationTransferService => new TenantConfigurationTransferService(
+            $app->make(PDO::class),
+        ));
+        $app->bind(OperationLogExportApplicationService::class, fn(): OperationLogExportApplicationService => new OperationLogExportApplicationService(
+            $app->make(PDO::class),
+        ));
     }
 
     private function application(PDO $pdo, TaskJobRuntime $tasks): ImportExportApplicationService
