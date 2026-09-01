@@ -2,11 +2,8 @@
 namespace app;
 
 use app\common\http\ApiProblem;
-use app\common\http\ApiProblemMapper;
-use app\common\http\RequestTrace;
+use app\common\http\HostApiProblemRenderer;
 use app\common\application\BusinessException;
-use app\common\service\JsonService;
-use app\common\service\runtime\OperationalLog;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
 use think\exception\Handle;
@@ -58,30 +55,12 @@ class ExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
-        $problem = (new ApiProblemMapper())->map($e);
-        if ($problem instanceof ApiProblem) {
-            $requestId = RequestTrace::id($request);
-            $this->reportProblem($request, $problem, $requestId);
-            return JsonService::response(
-                $problem->apiCode(),
-                $problem->getMessage(),
-                $problem->data(),
-                $problem->httpStatus,
-            )->header(['X-Request-Id' => $requestId] + $problem->headers);
+        $response = (new HostApiProblemRenderer($this->app))->render($request, $e);
+        if ($response instanceof Response) {
+            return $response;
         }
 
-        // 其他错误交给系统处理
+        // 非 Application HTTP 错误交给框架处理。
         return parent::render($request, $e);
-    }
-
-    private function reportProblem($request, ApiProblem $problem, string $requestId): void
-    {
-        OperationalLog::warning('api_problem', [
-            'method' => $request->method(),
-            'path' => '/' . ltrim($request->pathinfo(), '/'),
-            'error_code' => $problem->errorCode,
-            'api_code' => $problem->apiCode(),
-            'request_id' => $requestId,
-        ]);
     }
 }
