@@ -7,7 +7,7 @@ use app\common\http\PageResult;
 use app\common\enum\channel\OfficialAccountEnum;
 use app\common\application\ApplicationService;
 use app\Modules\Official\Oauth\Model\OfficialAccountReply;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use app\common\service\external\ExternalTenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -16,6 +16,10 @@ use app\common\support\PaginationInput;
 
 class OfficialAccountReplyApplicationService extends ApplicationService
 {
+    public function __construct(private readonly TransactionManager $transactions)
+    {
+    }
+
     public function lists(TenantContext $context, array $params): PageResult
     {
         $pagination = PaginationInput::from($params);
@@ -44,7 +48,7 @@ class OfficialAccountReplyApplicationService extends ApplicationService
     public function add(TenantContext $context, array $params): bool
     {
         try {
-            Db::transaction(function () use ($context, $params): void {
+            $this->transactions->run(function () use ($context, $params): void {
                 $data = self::normalize($params);
                 MemberTenantContext::tenantId($context);
                 self::disableOtherSingletons($data['reply_type'], $data['status']);
@@ -60,7 +64,7 @@ class OfficialAccountReplyApplicationService extends ApplicationService
     public function edit(TenantContext $context, array $params): bool
     {
         try {
-            Db::transaction(function () use ($context, $params): void {
+            $this->transactions->run(function () use ($context, $params): void {
                 MemberTenantContext::tenantId($context);
                 $reply = OfficialAccountReply::where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
@@ -80,7 +84,7 @@ class OfficialAccountReplyApplicationService extends ApplicationService
     public function delete(TenantContext $context, int $id): bool
     {
         try {
-            Db::transaction(function () use ($context, $id): void {
+            $this->transactions->run(function () use ($context, $id): void {
                 MemberTenantContext::tenantId($context);
                 $reply = OfficialAccountReply::where('id', $id)->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {
@@ -98,7 +102,7 @@ class OfficialAccountReplyApplicationService extends ApplicationService
     public function updateStatus(TenantContext $context, int $id, int $status): bool
     {
         try {
-            Db::transaction(function () use ($context, $id, $status): void {
+            $this->transactions->run(function () use ($context, $id, $status): void {
                 MemberTenantContext::tenantId($context);
                 $reply = OfficialAccountReply::where('id', $id)->lock(true)->findOrEmpty();
                 if ($reply->isEmpty()) {

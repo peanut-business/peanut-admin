@@ -11,11 +11,15 @@ use app\common\service\file\FileTenantRepository;
 use app\common\service\storage\StorageService;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /** Application use cases for File media and categories. */
 final class FileAdministrationService implements FileAdministration
 {
+    public function __construct(private readonly TransactionManager $transactions)
+    {
+    }
+
     /** 分页列表：按 type / 分类子树 / source / name 组合过滤，追加 url。 */
     public function lists(array $params): PageResult
     {
@@ -222,7 +226,7 @@ final class FileAdministrationService implements FileAdministration
             ? ['files_deleted' => 0, 'storage_deleted' => 0]
             : $this->delete($fileIds);
 
-        Db::transaction(function () use ($categoryIds): void {
+        $this->transactions->run(function () use ($categoryIds): void {
             $query = FileTenantRepository::categories()->whereIn('id', $categoryIds);
             if ($query->count() !== count($categoryIds)) {
                 throw new \RuntimeException('分类记录删除不完整');

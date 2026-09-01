@@ -9,4 +9,9 @@ use app\common\model\TenantOwnedModel;
 class OAuthAttempt extends TenantOwnedModel
 {
     protected $name = 'oauth_attempt';
+
+    public static function callbackCandidates()
+    {
+        return (new self())->db(['tenantOwnership']);
+    }
 }

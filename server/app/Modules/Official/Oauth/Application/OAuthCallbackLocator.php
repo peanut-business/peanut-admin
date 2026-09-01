@@ -5,7 +5,8 @@ namespace app\Modules\Official\Oauth\Application;
 
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
-use think\facade\Db;
+use app\Modules\Official\Oauth\Model\OAuthAttempt;
+use app\Modules\Official\Oauth\Model\OAuthCompletionTicket;
 
 /** OAuth owns state/ticket lookup; other Modules consume only this narrow result. */
 final class OAuthCallbackLocator
@@ -23,7 +24,7 @@ final class OAuthCallbackLocator
         }
 
         return self::bindings(
-            Db::name('oauth_attempt')->alias('o')
+            OAuthAttempt::callbackCandidates()->alias('o')
                 ->field(self::bindingFields())
                 ->join('external_channel_binding b', 'b.tenant_id = o.tenant_id')
                 ->join('tenant t', 't.id = b.tenant_id')
@@ -40,7 +41,7 @@ final class OAuthCallbackLocator
     public static function byTicket(string $ticketHash): array
     {
         return self::bindings(
-            Db::name('oauth_completion_ticket')->alias('o')
+            OAuthCompletionTicket::callbackCandidates()->alias('o')
                 ->field(self::bindingFields())
                 ->join('external_channel_binding b', 'b.id = o.binding_id AND b.tenant_id = o.tenant_id')
                 ->join('tenant t', 't.id = b.tenant_id')

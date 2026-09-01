@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Application;
 
-use PDO;
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\SystemExecutionContext;
@@ -14,6 +13,7 @@ use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Model\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\service\notice\NoticeChannelService;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\NoticeTenantRepository;
@@ -26,38 +26,18 @@ use app\common\support\PaginationInput;
 final class NotificationApplicationService implements NotificationCommands, NotificationQueries, VerificationCodeCommands
 {
     public function __construct(
-        private readonly PDO $pdo,
         private readonly CurrentExecutionContext $executionContext,
     ) {
     }
 
     public function provisionTenantDefaults(SystemExecutionContext $context): void
     {
-        $tenantId = $context->tenantId();
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_notice_scene
-  (code,name,description,recipient,variables,sms_template_id,sms_content,sms_status,create_time,update_time,tenant_id)
-SELECT :code,:name,:description,'用户',JSON_ARRAY('code'),'',:content,0,0,0,:tenant_id
-WHERE NOT EXISTS (
-  SELECT 1 FROM pa_notice_scene WHERE tenant_id = :tenant_scope AND code = :code_scope
-)
-SQL);
-        foreach ([
+        NoticeScene::provisionDefaults($context->system, [
             ['login_code', '登录验证码', '用户使用手机号验证码登录', '您的登录验证码是${code}，五分钟内有效。'],
             ['bind_mobile', '绑定手机验证码', '用户首次绑定手机号', '您的绑定手机验证码是${code}，五分钟内有效。'],
             ['change_mobile', '变更手机验证码', '用户更换已绑定手机号', '您的变更手机验证码是${code}，五分钟内有效。'],
             ['reset_password', '找回密码验证码', '用户通过手机号重置密码', '您的找回密码验证码是${code}，五分钟内有效。'],
-        ] as [$code, $name, $description, $content]) {
-            $statement->execute([
-                'code' => $code,
-                'name' => $name,
-                'description' => $description,
-                'content' => $content,
-                'tenant_id' => $tenantId,
-                'tenant_scope' => $tenantId,
-                'code_scope' => $code,
-            ]);
-        }
+        ]);
     }
 
     public function saveChannel(string $section, array $input): void

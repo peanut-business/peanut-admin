@@ -25,7 +25,7 @@ use app\common\service\member\MemberTenantRepository;
 use app\common\service\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 final class MemberAdministrationService implements MemberAdministration
 {
@@ -41,6 +41,7 @@ final class MemberAdministrationService implements MemberAdministration
         private readonly MemberTagCommands $tags,
         private readonly MemberBalanceCommands $balances,
         private readonly IdempotentCommandExecutor $idempotency,
+        private readonly TransactionManager $transactions,
     ) {}
 
     /**
@@ -338,13 +339,13 @@ final class MemberAdministrationService implements MemberAdministration
     public function deleteTag(int $id): void
     {
         $context = $this->executionContext->tenantAdmin();
-        Db::transaction(fn() => $this->tags->delete($context, $id));
+        $this->transactions->run(fn() => $this->tags->delete($context, $id));
     }
 
     public function createMember(array $params): void
     {
         $context = $this->executionContext->tenantAdmin();
-        Db::transaction(function () use ($context, $params): void {
+        $this->transactions->run(function () use ($context, $params): void {
                 $this->profiles->createAdminMember($context, [
                     'nickname' => $params['nickname'],
                     'avatar'   => FileService::setTenantFileUrl($context, (string)($params['avatar'] ?? '')),
@@ -360,7 +361,7 @@ final class MemberAdministrationService implements MemberAdministration
     public function updateMember(array $params): void
     {
         $context = $this->executionContext->tenantAdmin();
-        Db::transaction(function () use ($context, $params): void {
+        $this->transactions->run(function () use ($context, $params): void {
                 $data = [];
                 foreach (['nickname', 'avatar', 'mobile', 'email', 'birthday'] as $f) {
                     if (isset($params[$f])) {
@@ -405,7 +406,7 @@ final class MemberAdministrationService implements MemberAdministration
     ): void
     {
         $context = $this->executionContext->tenantAdmin();
-        Db::transaction(function () use ($context, $params, $adminId, $idempotencyKey): void {
+        $this->transactions->run(function () use ($context, $params, $adminId, $idempotencyKey): void {
                 $action = (int)$params['action'];
                 $memberId = (int)$params['user_id'];
                 $amountCents = MemberBalanceService::moneyToCents(abs((float)$params['num']));

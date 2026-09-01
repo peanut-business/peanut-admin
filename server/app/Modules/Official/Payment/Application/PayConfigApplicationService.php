@@ -8,7 +8,7 @@ use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\payment\PaymentChannelGrantService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /**
  * 支付配置 Logic
@@ -19,6 +19,10 @@ use think\facade\Db;
 class PayConfigApplicationService extends ApplicationService
 {
     protected const CONFIG_TYPE = 'pay';
+
+    public function __construct(private readonly TransactionManager $transactions)
+    {
+    }
 
     /** @var array<string,mixed> 字段白名单 => 默认值 */
     protected const FIELDS = [
@@ -85,7 +89,7 @@ class PayConfigApplicationService extends ApplicationService
                 }
             }
             self::assertUsable($data);
-            Db::transaction(function () use ($context, $data): void {
+            $this->transactions->run(function () use ($context, $data): void {
                 ExternalChannelBindingService::update(
                     $context,
                     ExternalTenantResolver::WECHAT_PAYMENT,

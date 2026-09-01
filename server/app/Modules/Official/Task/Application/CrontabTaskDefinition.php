@@ -12,6 +12,7 @@ use app\common\service\CrontabCommandService;
 use app\common\service\crontab\CrontabTenantRepository;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
+use app\Modules\Official\Task\Model\Crontab;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -172,37 +173,13 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
         if ($tenantId < 1 || trim($traceId) === '') {
             throw new \RuntimeException('CRONTAB_TASK_AUTHORIZATION_INVALID');
         }
-        $sql = <<<'SQL'
-SELECT member.id, member.account_id, member.authorization_revision
-FROM pa_tenant_member member
-JOIN pa_account account
-  ON account.id = member.account_id
- AND account.status = 'active'
-JOIN pa_member_role membership
-  ON membership.tenant_id = member.tenant_id
- AND membership.tenant_member_id = member.id
-JOIN pa_role role
-  ON role.tenant_id = membership.tenant_id
- AND role.id = membership.role_id
- AND role.`key` = 'core.tenant-owner'
- AND role.is_builtin = 1
- AND role.status = 'active'
-WHERE member.tenant_id = :tenant_id
-  AND member.status = 'active'
-SQL;
-        $bindings = ['tenant_id' => $tenantId];
         if ($memberId !== null || $accountId !== null) {
             if (($memberId ?? 0) < 1 || ($accountId ?? 0) < 1) {
                 throw new \RuntimeException('CRONTAB_TASK_AUTHORIZATION_INVALID');
             }
-            $sql .= "  AND member.id = :member_id\n  AND member.account_id = :account_id\n";
-            $bindings['member_id'] = $memberId;
-            $bindings['account_id'] = $accountId;
         }
-        $statement = $this->pdo->prepare($sql . "\nORDER BY member.id ASC LIMIT 1");
-        $statement->execute($bindings);
-        $owner = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($owner)) {
+        $owner = Crontab::activeTenantOwner($tenantId, $memberId, $accountId);
+        if ($owner === null) {
             throw new \RuntimeException('CRONTAB_TENANT_OWNER_UNAVAILABLE');
         }
         $tenant = TenantContext::fromValidatedSession(new ValidatedTenantSession(

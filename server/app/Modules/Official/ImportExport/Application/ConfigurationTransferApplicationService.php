@@ -18,6 +18,7 @@ use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Settings\Secret\SecretProtector;
 use PeanutAdmin\Settings\Secret\SodiumSecretProtector;
 use PDO;
@@ -50,7 +51,8 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
      * @param list<ConfigurationTransferAdapter>|null $adapters
      */
     public function __construct(
-        private readonly PDO $pdo,
+        PDO $pdo,
+        private readonly TransactionManager $transactions,
         ?array $adapters = null,
         ?ConfigurationPackageCodec $codec = null,
         ?AuditRepository $audit = null,
@@ -132,9 +134,9 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
         }
 
         // The package is a single logical change. Keep every adapter write and
-        // the success audit in one PDO unit of work so a later adapter or the
+        // the success audit in one unit of work so a later adapter or the
         // audit projection cannot leave a partially-applied package behind.
-        return $this->transaction(function () use (
+        return $this->transactions->run(function () use (
             $context,
             $scope,
             $secretBindings,
@@ -482,53 +484,6 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
             AuditOutcome::Success,
             null,
         );
-    }
-
-    /**
-     * Run a package mutation in an atomic PDO unit of work.
-     *
-     * A caller may already own a transaction (for example, an HTTP command
-     * that composes several application services). PDO has no nested
-     * transaction API, so use a savepoint in that case and leave ownership of
-     * the outer transaction untouched.
-     *
-     * @template T
-     * @param callable(): T $operation
-     * @return T
-     */
-    private function transaction(callable $operation): mixed
-    {
-        $ownsTransaction = !$this->pdo->inTransaction();
-        $savepoint = null;
-
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        } else {
-            $savepoint = 'configuration_transfer_' . bin2hex(random_bytes(8));
-            $this->pdo->exec('SAVEPOINT ' . $savepoint);
-        }
-
-        try {
-            $result = $operation();
-            if ($ownsTransaction) {
-                $this->pdo->commit();
-            } elseif ($savepoint !== null) {
-                $this->pdo->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction) {
-                if ($this->pdo->inTransaction()) {
-                    $this->pdo->rollBack();
-                }
-            } elseif ($savepoint !== null && $this->pdo->inTransaction()) {
-                // Keep the outer transaction usable after an inner transfer
-                // fails, while discarding every write made by this transfer.
-                $this->pdo->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
-                $this->pdo->exec('RELEASE SAVEPOINT ' . $savepoint);
-            }
-            throw $exception;
-        }
     }
 
     /** @return list<ConfigurationTransferAdapter> */

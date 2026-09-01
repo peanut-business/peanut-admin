@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member;
 
+use app\common\composition\ModuleBindingContributor;
 use app\Modules\Official\Member\Application\MemberBalanceContractService;
 use app\Modules\Official\Member\Application\MemberIdentityContractService;
 use app\Modules\Official\Member\Application\MemberQueryService;
@@ -20,21 +21,11 @@ use app\Modules\Official\Member\Contracts\MemberTagCommands;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract
+final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
 {
     public function moduleKey(): string
     {
         return 'official.member';
-    }
-
-    public function administration(): MemberAdministration
-    {
-        return app(MemberAdministration::class);
-    }
-
-    public function queries(): MemberQueries
-    {
-        return app(MemberQueries::class);
     }
 
     public function balanceCommands(): MemberBalanceCommands
@@ -57,23 +48,26 @@ final class ModuleProvider implements ModuleProviderContract
         return new MemberTagContractService();
     }
 
-    public function register(App $app): void
+    public function bindings(): array
     {
-        $app->bind(MemberQueries::class, fn(): MemberQueries => new MemberQueryService(
-            $app->make(CurrentExecutionContext::class),
-        ));
-        $app->bind(MemberIdentityCommands::class, fn(): MemberIdentityCommands => new MemberIdentityContractService());
-        $app->bind(MemberProfileCommands::class, fn(): MemberProfileCommands => new MemberProfileContractService());
-        $app->bind(MemberTagCommands::class, fn(): MemberTagCommands => new MemberTagContractService());
-        $app->bind(MemberBalanceCommands::class, fn(): MemberBalanceCommands => new MemberBalanceContractService());
-        $app->bind(MemberAdministration::class, fn(): MemberAdministration => new MemberAdministrationService(
-            $app->make(CurrentExecutionContext::class),
-            $app->make(XlsxExportService::class),
-            $app->make(MemberQueries::class),
-            $app->make(MemberProfileCommands::class),
-            $app->make(MemberTagCommands::class),
-            $app->make(MemberBalanceCommands::class),
-            $app->make(IdempotentCommandExecutor::class),
-        ));
+        return [
+            MemberQueries::class => fn(App $app): MemberQueries => new MemberQueryService(
+                $app->make(CurrentExecutionContext::class),
+            ),
+            MemberIdentityCommands::class => fn(): MemberIdentityCommands => $this->identityCommands(),
+            MemberProfileCommands::class => fn(): MemberProfileCommands => $this->profileCommands(),
+            MemberTagCommands::class => fn(): MemberTagCommands => $this->tagCommands(),
+            MemberBalanceCommands::class => fn(): MemberBalanceCommands => $this->balanceCommands(),
+            MemberAdministration::class => fn(App $app): MemberAdministration => new MemberAdministrationService(
+                $app->make(CurrentExecutionContext::class),
+                $app->make(XlsxExportService::class),
+                $app->make(MemberQueries::class),
+                $app->make(MemberProfileCommands::class),
+                $app->make(MemberTagCommands::class),
+                $app->make(MemberBalanceCommands::class),
+                $app->make(IdempotentCommandExecutor::class),
+                $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),
+            ),
+        ];
     }
 }

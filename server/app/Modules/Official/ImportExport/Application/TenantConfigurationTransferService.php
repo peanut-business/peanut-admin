@@ -7,6 +7,7 @@ use app\common\dto\authorization\AdminPrincipal;
 use app\common\service\authorization\AdminAuthorizationService;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /** Tenant Admin application boundary for configuration package operations. */
 final readonly class TenantConfigurationTransferService
@@ -14,10 +15,10 @@ final readonly class TenantConfigurationTransferService
     private AdminAuthorizationService $authorization;
     private ConfigurationTransferApplicationService $transfers;
 
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, TransactionManager $transactions)
     {
         $this->authorization = new AdminAuthorizationService($pdo);
-        $this->transfers = new ConfigurationTransferApplicationService($pdo);
+        $this->transfers = new ConfigurationTransferApplicationService($pdo, $transactions);
     }
 
     /** @return array<string,mixed> */

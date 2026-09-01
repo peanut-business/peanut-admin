@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth;
 
+use app\common\composition\ModuleBindingContributor;
 use app\Modules\Official\Oauth\Application\OAuthQueryService;
 use app\Modules\Official\Oauth\Application\OAuthCommandService;
 use app\Modules\Official\Oauth\Contracts\OAuthCommands;
@@ -11,7 +12,7 @@ use app\api\application\OAuthApplicationService;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract
+final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
 {
     public function moduleKey(): string
     {
@@ -23,16 +24,13 @@ final class ModuleProvider implements ModuleProviderContract
         return new OAuthQueryService();
     }
 
-    public function commands(): OAuthCommands
+    public function bindings(): array
     {
-        return app(OAuthCommands::class);
-    }
-
-    public function register(App $app): void
-    {
-        $app->bind(OAuthCommands::class, fn(): OAuthCommands => new OAuthCommandService(
-            $app->make(OAuthApplicationService::class),
-        ));
-        $app->bind(OAuthQueries::class, fn(): OAuthQueries => new OAuthQueryService());
+        return [
+            OAuthCommands::class => fn(App $app): OAuthCommands => new OAuthCommandService(
+                $app->make(OAuthApplicationService::class),
+            ),
+            OAuthQueries::class => fn(): OAuthQueries => $this->queries(),
+        ];
     }
 }
