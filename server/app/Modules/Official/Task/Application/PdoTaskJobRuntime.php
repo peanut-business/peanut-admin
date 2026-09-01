@@ -10,6 +10,7 @@ use app\common\persistence\CoreTenantRepositoryFactory;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
+use app\common\service\org\AdminDirectoryQuery;
 use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
 use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
 use PeanutAdmin\TaskJob\Application\TaskJobService;
@@ -29,6 +30,8 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         private string $signingKey,
         private ExecutionContextStore $executionContexts,
         private CurrentExecutionContext $currentExecution,
+        private AdminDirectoryQuery $adminDirectory,
+        private ModuleExecutionBoundary $modules,
     ) {
         if (strlen($this->signingKey) < 32) {
             throw new \RuntimeException('ASYNC_SIGNING_KEY_INVALID');
@@ -70,7 +73,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         $handlers = [];
         foreach ($definitions as $definition) {
             $handlers[] = new ModuleAwareTaskHandler(
-                new ModuleExecutionBoundary($this->pdo, $this->currentExecution),
+                $this->modules,
                 $this->executionContexts,
                 $definition->ownerModuleKey(),
                 $definition->handler(),
@@ -104,6 +107,11 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 
     private function crontabs(): CrontabTaskDefinition
     {
-        return new CrontabTaskDefinition($this->pdo, $this->executionContexts, $this->currentExecution);
+        return new CrontabTaskDefinition(
+            $this->adminDirectory,
+            $this->modules,
+            $this->executionContexts,
+            $this->currentExecution,
+        );
     }
 }

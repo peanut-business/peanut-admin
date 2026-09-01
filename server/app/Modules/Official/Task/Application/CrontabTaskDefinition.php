@@ -11,11 +11,10 @@ use app\common\execution\SystemExecutionMetadata;
 use app\common\service\CrontabCommandService;
 use app\common\service\crontab\CrontabTenantRepository;
 use app\common\service\module\ModuleExecutionBoundary;
+use app\common\service\org\AdminDirectoryQuery;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
-use app\Modules\Official\Task\Model\Crontab;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -43,7 +42,8 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
     private static $dispatcher = null;
 
     public function __construct(
-        private readonly PDO $pdo,
+        private readonly AdminDirectoryQuery $adminDirectory,
+        private readonly ModuleExecutionBoundary $modules,
         private readonly ExecutionContextStore $executionContexts,
         private readonly CurrentExecutionContext $currentExecution,
     ) {
@@ -141,9 +141,8 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
             $system,
             new SystemExecutionMetadata($task->jobKey, $task->attemptNumber, $task->handlerKey),
         ), function () use ($scope, $moduleKey, $command, $params): void {
-            $modules = new ModuleExecutionBoundary($this->pdo, $this->currentExecution);
-            $modules->assertScheduled('official.task');
-            $modules->assertScheduled($moduleKey);
+            $this->modules->assertScheduled('official.task');
+            $this->modules->assertScheduled($moduleKey);
             ScheduledTenantContext::run($scope, function () use ($command, $params): void {
                 try {
                     if (self::$dispatcher !== null) {
@@ -178,7 +177,7 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
                 throw new \RuntimeException('CRONTAB_TASK_AUTHORIZATION_INVALID');
             }
         }
-        $owner = Crontab::activeTenantOwner($tenantId, $memberId, $accountId);
+        $owner = $this->adminDirectory->activeTenantOwner($tenantId, $memberId, $accountId);
         if ($owner === null) {
             throw new \RuntimeException('CRONTAB_TENANT_OWNER_UNAVAILABLE');
         }

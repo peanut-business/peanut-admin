@@ -28,7 +28,6 @@ use app\common\service\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
-use think\facade\Db;
 
 /** 充值记录查询、部分退款和失败重试。 */
 class RechargeAdministrationService extends ApplicationService
@@ -40,6 +39,7 @@ class RechargeAdministrationService extends ApplicationService
         private readonly XlsxExportService $xlsxExport,
         private readonly IdempotentCommandExecutor $refundIdempotency,
         private readonly TransactionManager $transactions,
+        private readonly PaymentRetryLock $retryLocks,
     ) {}
 
     /**
@@ -195,8 +195,8 @@ class RechargeAdministrationService extends ApplicationService
     public function refundAgain(object $context, array $params, int $adminId): array
     {
         $recordId = (int)$params['record_id'];
-        $retryLock = self::retryLockName($context, $recordId);
-        if (!self::acquireRetryLock($retryLock)) {
+        $retryLock = $this->retryLocks->name($context, $recordId);
+        if (!$this->retryLocks->acquire($retryLock)) {
             $message = '退款正在处理中，请勿重复操作';
             $this->setError($message);
             return [false, $message];
@@ -244,34 +244,7 @@ class RechargeAdministrationService extends ApplicationService
             // 重试同样先提交 ERROR -> ING 和本次日志，再在事务外请求渠道。
             return $this->requestGatewayRefund($context, $order, $record, $log);
         } finally {
-            self::releaseRetryLock($retryLock);
-        }
-    }
-
-    private static function retryLockName(object $context, int $recordId): string
-    {
-        return PaymentRetryLock::name($context, $recordId);
-    }
-
-    /** MySQL 会话级互斥覆盖完整渠道调用周期，避免快速失败时排队请求再次获准。 */
-    private static function acquireRetryLock(string $lockName): bool
-    {
-        $rows = Db::query(
-            'SELECT GET_LOCK(:lock_name, 0) AS acquired',
-            ['lock_name' => $lockName]
-        );
-        return (int)($rows[0]['acquired'] ?? 0) === 1;
-    }
-
-    private static function releaseRetryLock(string $lockName): void
-    {
-        try {
-            Db::query(
-                'SELECT RELEASE_LOCK(:lock_name)',
-                ['lock_name' => $lockName]
-            );
-        } catch (\Throwable) {
-            // MySQL 连接关闭时命名锁会自动释放，不覆盖本次退款结果。
+            $this->retryLocks->release($retryLock);
         }
     }
 

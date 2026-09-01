@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification;
 
-use PDO;
 use app\common\composition\ModuleBindingContributor;
-use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
@@ -23,9 +21,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
     public function bindings(): array
     {
         return [
-            NotificationApplicationService::class => fn(App $app): NotificationApplicationService => new NotificationApplicationService(
-                $app->make(CurrentExecutionContext::class),
-            ),
+            NotificationApplicationService::class => fn(): NotificationApplicationService => new NotificationApplicationService(),
             NotificationCommands::class => fn(App $app): NotificationCommands => $app->make(NotificationApplicationService::class),
             NotificationQueries::class => fn(App $app): NotificationQueries => $app->make(NotificationApplicationService::class),
             VerificationCodeCommands::class => fn(App $app): VerificationCodeCommands => $app->make(NotificationApplicationService::class),

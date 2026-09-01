@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\Modules\Official\Notification\Application;
 
 use app\common\application\BusinessException;
-use app\common\execution\CurrentExecutionContext;
 use app\common\execution\SystemExecutionContext;
 use app\common\http\PageResult;
 use app\Modules\Official\Notification\Contracts\DeliveryResult;
@@ -25,14 +24,16 @@ use app\common\support\PaginationInput;
 
 final class NotificationApplicationService implements NotificationCommands, NotificationQueries, VerificationCodeCommands
 {
-    public function __construct(
-        private readonly CurrentExecutionContext $executionContext,
-    ) {
-    }
-
     public function provisionTenantDefaults(SystemExecutionContext $context): void
     {
-        NoticeScene::provisionDefaults($context->system, [
+        $system = $context->system;
+        if ($system->tenantId < 1
+            || $system->actorKey !== 'platform.tenant-bootstrap'
+            || $system->operation !== 'notification.provision-tenant-defaults'
+            || $system->operationId === '') {
+            throw new \DomainException('NOTIFICATION_PROVISION_CONTEXT_INVALID');
+        }
+        NoticeScene::provisionDefaults([
             ['login_code', '登录验证码', '用户使用手机号验证码登录', '您的登录验证码是${code}，五分钟内有效。'],
             ['bind_mobile', '绑定手机验证码', '用户首次绑定手机号', '您的绑定手机验证码是${code}，五分钟内有效。'],
             ['change_mobile', '变更手机验证码', '用户更换已绑定手机号', '您的变更手机验证码是${code}，五分钟内有效。'],

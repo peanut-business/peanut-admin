@@ -11,6 +11,8 @@ use app\Modules\Official\Task\Contracts\TaskScheduler;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
+use app\common\service\module\ModuleExecutionBoundary;
+use app\common\service\org\AdminDirectoryQuery;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PDO;
 use think\App;
@@ -32,6 +34,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         string $signingKey,
         ExecutionContextStore $executionContexts,
         CurrentExecutionContext $currentExecution,
+        AdminDirectoryQuery $adminDirectory,
+        ModuleExecutionBoundary $modules,
     ): TaskJobRuntime
     {
         return new PdoTaskJobRuntime(
@@ -39,6 +43,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             $signingKey,
             $executionContexts,
             $currentExecution,
+            $adminDirectory,
+            $modules,
         );
     }
 
@@ -50,6 +56,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 (string)$app->config->get('async.signing_key', ''),
                 $app->make(ExecutionContextStore::class),
                 $app->make(CurrentExecutionContext::class),
+                $app->make(AdminDirectoryQuery::class),
+                $app->make(ModuleExecutionBoundary::class),
             ),
             TaskScheduler::class => fn(App $app): TaskScheduler => $this->scheduler(
                 $app->make(TaskJobRuntime::class),
