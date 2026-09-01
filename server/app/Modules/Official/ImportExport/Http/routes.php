@@ -10,7 +10,11 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) !== 'adminapi') {
+    return;
+}
+
+Route::group(function (): void {
     Route::post('official.import-export.operation-log.export', [OperationLogExportController::class, 'export']);
     Route::get('official.import-export.operation.status', [OperationLogExportController::class, 'exportStatus']);
     Route::get('official.import-export.result.download', [OperationLogExportController::class, 'exportDownload']);

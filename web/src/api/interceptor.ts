@@ -53,8 +53,8 @@ const handleResponse = async (response: AxiosResponse<HttpResponse>) => {
         res.code === 40100 &&
         isTenantAccessToken(accessToken) &&
         !retryConfig.tenantRefreshRetried &&
-        retryConfig.url !== '/api/tenant/session/refresh' &&
-        retryConfig.url !== '/api/tenant/session/logout'
+        retryConfig.url !== '/adminapi/tenant/session/refresh' &&
+        retryConfig.url !== '/adminapi/tenant/session/logout'
       ) {
         retryConfig.tenantRefreshRetried = true;
         try {
@@ -81,7 +81,7 @@ const handleResponse = async (response: AxiosResponse<HttpResponse>) => {
       // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
       if (
         [40100].includes(res.code) &&
-        response.config.url !== '/api/user/info'
+        response.config.url !== '/adminapi/user/info'
       ) {
         ElMessageBox.confirm(
           'You have been logged out, you can cancel to stay on this page, or log in again',

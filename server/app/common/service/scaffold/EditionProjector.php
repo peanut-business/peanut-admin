@@ -11,8 +11,8 @@ final class EditionProjector
         'deploy/docker/nginx-select-admin.sh',
         'deploy/docker/production.Dockerfile',
         'server/.env.example',
+        'server/config/app.php',
         'server/database/init.sql',
-        'server/route/app.php',
     ];
 
     /** @return list<string> */
@@ -33,8 +33,8 @@ final class EditionProjector
         $path = (string)$entry['target'];
         $content = match ($path) {
             'server/.env.example' => $this->serverEnvironment($content, $profile->edition),
+            'server/config/app.php' => $this->applicationConfig($content, $profile),
             'server/database/init.sql' => $this->schemaSource($content, $path, $profile),
-            'server/route/app.php' => $this->routeComposition($content, $profile),
             'deploy/docker/production.Dockerfile' => $this->productionDockerfile($content, $profile),
             'deploy/docker/nginx-select-admin.sh' => $this->adminSelector($content, $profile),
             default => $profile->tableRulesForSource($path) === []
@@ -68,16 +68,16 @@ final class EditionProjector
         ) ?? $content;
     }
 
-    private function routeComposition(string $content, EditionProfile $profile): string
+    private function applicationConfig(string $content, EditionProfile $profile): string
     {
         if ($profile->edition !== 'standalone') {
             return $content;
         }
-        if (preg_match_all("/^require __DIR__ \. '\/platform\.php';$/m", $content) !== 1) {
-            throw new RuntimeException('CREATE_APP_EDITION_ROUTE_SOURCE_INVALID');
+        if (preg_match_all("/^        'platformapi' => 'platform',$/m", $content) !== 1) {
+            throw new RuntimeException('CREATE_APP_EDITION_APP_CONFIG_SOURCE_INVALID');
         }
         return preg_replace(
-            "/^require __DIR__ \. '\/platform\.php';\n/m",
+            "/^        'platformapi' => 'platform',\n/m",
             '',
             $content,
             1,

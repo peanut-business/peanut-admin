@@ -24,15 +24,18 @@ use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use think\facade\Route;
 
+if (($peanutRouteApplication ?? null) !== 'adminapi') {
+    return;
+}
+
 // ─── 管理端会话与菜单路由（仅需登录，不做 RBAC） ───────────────────────────
 Route::group(function () {
-    Route::post('api/user/info', [LoginController::class, 'info']);
-    Route::post('api/user/menu', [MenuController::class, 'route']);
+    Route::post('user/info', [LoginController::class, 'info']);
+    Route::post('user/menu', [MenuController::class, 'route']);
 })->middleware(LoginMiddleware::class);
 
 // ─── 管理后台完整 API（Login → Auth 两层中间件） ─────────────────────────────
-// 前缀统一挂在 api/ 下，前端 vite 代理只转发 /api，生产 nginx 也只需转一条前缀。
-Route::group('api/admin', function () {
+Route::group(function () {
     Route::get('login/info', [LoginController::class, 'info']);
 
     // 工作台

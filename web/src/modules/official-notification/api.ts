@@ -43,12 +43,12 @@ export interface NoticeSceneRecord {
 
 export function getNoticeSceneList() {
   return axios.get<{ list: NoticeSceneRecord[]; total: number }>(
-    '/api/admin/official.notification.scene.list'
+    '/adminapi/official.notification.scene.list'
   );
 }
 
 export function getNoticeSceneDetail(id: number) {
-  return axios.get<NoticeSceneRecord>('/api/admin/official.notification.scene.detail', {
+  return axios.get<NoticeSceneRecord>('/adminapi/official.notification.scene.detail', {
     params: { id },
   });
 }
@@ -59,7 +59,7 @@ export function saveNoticeScene(
     'id' | 'sms_template_id' | 'sms_content' | 'sms_status'
   >
 ) {
-  return axios.post('/api/admin/official.notification.scene.save', data);
+  return axios.post('/adminapi/official.notification.scene.save', data);
 }
 
 export type ChannelSection =
@@ -68,14 +68,14 @@ export type ChannelSection =
   | 'sms_tencent';
 
 export function getNoticeChannelDetail() {
-  return axios.get<NoticeChannelDetail>('/api/admin/official.notification.channel.detail');
+  return axios.get<NoticeChannelDetail>('/adminapi/official.notification.channel.detail');
 }
 
 export function saveNoticeChannel(
   section: ChannelSection,
   data: Record<string, unknown>
 ) {
-  return axios.post('/api/admin/official.notification.channel.save', { section, ...data });
+  return axios.post('/adminapi/official.notification.channel.save', { section, ...data });
 }
 
 // ─── 发送日志 ─────────────────────────────────────────────────────────────────
@@ -112,13 +112,13 @@ export function getNoticeLogList(params?: {
   page_no?: number;
   page_size?: number;
 }) {
-  return axios.get<PageData<NoticeLogRecord>>('/api/admin/official.notification.log.list', {
+  return axios.get<PageData<NoticeLogRecord>>('/adminapi/official.notification.log.list', {
     params,
   });
 }
 
 export function getNoticeLogDetail(id: number) {
-  return axios.get<NoticeLogRecord>('/api/admin/official.notification.log.detail', {
+  return axios.get<NoticeLogRecord>('/adminapi/official.notification.log.detail', {
     params: { id },
   });
 }

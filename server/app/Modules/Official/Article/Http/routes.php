@@ -10,7 +10,11 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) !== 'adminapi') {
+    return;
+}
+
+Route::group(function (): void {
     Route::get('official.article.category.list', [ArticleCateController::class, 'lists']);
     Route::get('official.article.category.all', [ArticleCateController::class, 'all']);
     Route::get('official.article.category.detail', [ArticleCateController::class, 'detail']);

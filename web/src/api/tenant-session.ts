@@ -38,14 +38,14 @@ function tenantData<T>(response: TenantEnvelope<T>): T {
 export async function tenantLogin(email: string, password: string) {
   const response = await tenantClient.post<
     TenantEnvelope<TenantSessionOutcome>
-  >('/api/tenant/session/login', { email, password });
+  >('/adminapi/tenant/session/login', { email, password });
   return tenantData(response.data);
 }
 
 export async function selectTenant(challengeToken: string, tenantId: number) {
   const response = await tenantClient.post<
     TenantEnvelope<TenantAuthentication>
-  >('/api/tenant/session/select', {
+  >('/adminapi/tenant/session/select', {
     challenge_token: challengeToken,
     tenant_id: tenantId,
   });
@@ -54,7 +54,7 @@ export async function selectTenant(challengeToken: string, tenantId: number) {
 
 export async function tenantSwitch(accessToken: string) {
   const response = await tenantClient.post<TenantEnvelope<TenantSelection>>(
-    '/api/tenant/session/switch',
+    '/adminapi/tenant/session/switch',
     {},
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
@@ -64,13 +64,13 @@ export async function tenantSwitch(accessToken: string) {
 export async function refreshTenantSession() {
   const response = await tenantClient.post<
     TenantEnvelope<TenantAuthentication>
-  >('/api/tenant/session/refresh');
+  >('/adminapi/tenant/session/refresh');
   return tenantData(response.data);
 }
 
 export async function tenantLogout(accessToken: string) {
   await tenantClient.post(
-    '/api/tenant/session/logout',
+    '/adminapi/tenant/session/logout',
     {},
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );

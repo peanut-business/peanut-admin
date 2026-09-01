@@ -26,9 +26,9 @@ export interface SystemInfo {
 }
 
 export function getSystemInfo() {
-  return axios.get<SystemInfo>('/api/admin/system/info');
+  return axios.get<SystemInfo>('/adminapi/system/info');
 }
 
 export function clearSystemCache() {
-  return axios.post('/api/admin/system/clearCache');
+  return axios.post('/adminapi/system/clearCache');
 }

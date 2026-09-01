@@ -88,20 +88,20 @@ export interface ConfigurationTransferRequest {
 
 export function exportTenantConfiguration() {
   return axios.get<ConfigurationTransferPackage>(
-    '/api/admin/official.import-export.configuration.export'
+    '/adminapi/official.import-export.configuration.export'
   );
 }
 
 export function dryRunTenantConfiguration(data: ConfigurationTransferRequest) {
   return axios.post<ConfigurationTransferPlan>(
-    '/api/admin/official.import-export.configuration.dry-run',
+    '/adminapi/official.import-export.configuration.dry-run',
     data
   );
 }
 
 export function applyTenantConfiguration(data: ConfigurationTransferRequest) {
   return axios.post<ConfigurationTransferPlan>(
-    '/api/admin/official.import-export.configuration.apply',
+    '/adminapi/official.import-export.configuration.apply',
     data
   );
 }

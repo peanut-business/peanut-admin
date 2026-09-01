@@ -9,7 +9,11 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) !== 'adminapi') {
+    return;
+}
+
+Route::group(function (): void {
     Route::get('official.task.list', [CrontabController::class, 'lists']);
     Route::get('official.task.detail', [CrontabController::class, 'detail']);
     Route::get('official.task.expression', [CrontabController::class, 'expression']);

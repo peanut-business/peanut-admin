@@ -31,13 +31,13 @@ class AuthMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('请先登录', null, 40100);
         }
 
-        $path = strtolower(trim($request->pathinfo(), '/'));
+        $path = 'adminapi/' . strtolower(trim($request->pathinfo(), '/'));
         if (AdminApiAccessRegistry::isAuthenticatedOnly((string)$request->method(), $path)) {
             return $next($request);
         }
 
-        // 权限字符使用 api/admin/ 之后的精确路径，不做 URI alias 展开。
-        $accessUri = preg_replace('#^api/admin/#', '', $path);
+        // 权限字符使用 adminapi/ 之后的精确路径，不做 URI alias 展开。
+        $accessUri = substr($path, strlen('adminapi/'));
 
         $tenantContext = $current?->scope;
         $decision = $tenantContext instanceof \PeanutAdmin\Kernel\Auth\TenantContext

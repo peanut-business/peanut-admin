@@ -263,7 +263,7 @@ SQL)->execute([
 
     $route = peanut_route_registry_source($serverRoot);
     $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformOpsController.php');
-    moduleDeliveryExpect(str_contains($route, "api/platform/v1/ops/tasks/module"), 'opaque Module task route is missing');
+    moduleDeliveryExpect(str_contains($route, "v1/ops/tasks/module"), 'opaque Module task route is missing');
     moduleDeliveryExpect(!str_contains($controller, "archive_sha256'") && !str_contains($controller, "package_key'"), 'production HTTP accepts Module package details');
 
     $completed = true;

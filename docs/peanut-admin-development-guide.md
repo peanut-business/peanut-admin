@@ -61,7 +61,7 @@ URL、命令、host、数据库、凭据、确认计划或目标地址；失败�
 
 ### Provider 生产资格合同
 
-`GET /api/platform/v1/ops/providers` 是 Application 拥有的 Platform-only 只读聚合，复用
+`GET /platformapi/v1/ops/providers` 是 Application 拥有的 Platform-only 只读聚合，复用
 `platform.ops.read`。Payment、Notification、OAuth 与 Storage contributor 只读取各自权威
 配置；GET 和 Platform 页面刷新不得运行外部 probe、发送消息或发生资金动作。
 
@@ -74,7 +74,7 @@ URL、命令、host、数据库、凭据、确认计划或目标地址；失败�
 
 ### 应用升级就绪合同
 
-`GET /api/platform/v1/ops/upgrade-readiness` 是应用拥有的只读投影。它不会下载 Release、执行
+`GET /platformapi/v1/ops/upgrade-readiness` 是应用拥有的只读投影。它不会下载 Release、执行
 命令、创建备份、计划维护、修改数据库、替换文件或触发升级；请求没有参数，不能提供路径、
 URL、Release key、命令、镜像或凭据。Deployment owner 只可以把已在发布流程中验证过的目标
 放入固定目录：

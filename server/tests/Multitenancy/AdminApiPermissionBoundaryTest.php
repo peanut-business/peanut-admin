@@ -45,7 +45,7 @@ $next = static function ($request) use (&$nextCalls): string {
 };
 
 $anonymous = new class {
-    public function pathinfo(): string { return 'api/admin/admin/self'; }
+    public function pathinfo(): string { return 'admin/self'; }
     public function method(): string { return 'GET'; }
 };
 $anonymousDenial = responsePayload($middleware->handle($anonymous, $next));
@@ -55,7 +55,7 @@ $authenticated = new class {
     public array $adminInfo = ['id' => 7, 'tenant_id' => 101, 'root' => 0];
     public object $tenantContext;
     public function __construct() { $this->tenantContext = new stdClass(); }
-    public function pathinfo(): string { return 'api/admin/admin/self'; }
+    public function pathinfo(): string { return 'admin/self'; }
     public function method(): string { return 'GET'; }
 };
 expectAdminApiBoundary($middleware->handle($authenticated, $next) === 'allowed', 'authenticated-only route must pass after login');
@@ -65,16 +65,16 @@ $authenticatedWrongMethod = new class {
     public array $adminInfo = ['id' => 7, 'tenant_id' => 101, 'root' => 0];
     public object $tenantContext;
     public function __construct() { $this->tenantContext = new stdClass(); }
-    public function pathinfo(): string { return 'api/admin/admin/self'; }
+    public function pathinfo(): string { return 'admin/self'; }
     public function method(): string { return 'POST'; }
 };
 $wrongMethodDenial = responsePayload($middleware->handle($authenticatedWrongMethod, $next));
 expectAdminApiBoundary($wrongMethodDenial === ['code' => 40300, 'msg' => '暂无访问权限', 'data' => null], 'wrong-method denial must keep the generic permission shape');
 
 $routeSource = peanut_route_registry_source(dirname(__DIR__, 2));
-expectAdminApiBoundary(str_contains($routeSource, "Route::group('api/admin'"), 'Tenant Admin route group is missing');
+expectAdminApiBoundary(str_contains($routeSource, "\$peanutRouteApplication = 'adminapi'"), 'Tenant Admin route entry is missing');
 expectAdminApiBoundary(str_contains($routeSource, 'LoginMiddleware::class, AuthMiddleware::class'), 'Tenant Admin guard chain is missing');
-expectAdminApiBoundary(!str_contains($routeSource, "Route::group('api/platform'"), 'Platform routes must remain individually guarded');
+expectAdminApiBoundary(!str_contains($routeSource, "Route::group('platformapi'"), 'Platform routes must remain individually guarded');
 
 $loginSource = (string)file_get_contents(dirname(__DIR__, 2) . '/app/adminapi/http/middleware/LoginMiddleware.php');
 expectAdminApiBoundary(str_contains($loginSource, "str_starts_with(\$token, 'pa_tat_')"), 'Tenant Admin token audience gate is missing');

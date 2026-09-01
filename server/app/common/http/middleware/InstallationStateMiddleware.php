@@ -9,8 +9,8 @@ use app\common\service\installation\InstallationExecutionHost;
 final class InstallationStateMiddleware
 {
     private const INSTALLATION_PATHS = [
-        'api/installation/status',
-        'api/installation/execute',
+        'installapi/status',
+        'installapi/execute',
     ];
 
     public function handle($request, \Closure $next)

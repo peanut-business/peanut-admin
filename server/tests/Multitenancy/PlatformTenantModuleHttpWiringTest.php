@@ -84,8 +84,8 @@ pm01ModuleHttpExpect(
     'Core TenantModule menu/member Permission compatibility bridge is missing'
 );
 pm01ModuleHttpExpect(
-    str_contains($routes, "Route::post('api/platform/tenants/modules/enable'")
-        && str_contains($routes, "Route::post('api/platform/tenants/modules/disable'")
+    str_contains($routes, "Route::post('tenants/modules/enable'")
+        && str_contains($routes, "Route::post('tenants/modules/disable'")
         && substr_count($routes, "PlatformPermissionMiddleware::class, 'platform.tenant.module.manage'") >= 2,
     'TenantModule routes lost their dedicated platform permission'
 );

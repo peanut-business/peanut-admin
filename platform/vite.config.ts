@@ -15,6 +15,7 @@ export default defineConfig({
   server: {
     allowedHosts,
     proxy: {
+      '/platformapi': { target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:20180', changeOrigin: false },
       '/api': { target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:20180', changeOrigin: false },
       '/favicon.ico': { target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:20180', changeOrigin: false },
     },

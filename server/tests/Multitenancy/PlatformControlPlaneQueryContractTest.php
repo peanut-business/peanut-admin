@@ -43,7 +43,7 @@ platformQueryExpect(
     'Platform Module catalog no longer consumes the Module Governance qualification contract'
 );
 
-$genericTenantList = strpos($routesSource, "api/platform/tenants',");
+$genericTenantList = strpos($routesSource, "tenants',");
 platformQueryExpect($genericTenantList !== false, 'generic Tenant list route is missing');
 foreach ([
     'operators' => 'platform.operator.read',
@@ -70,10 +70,10 @@ foreach (['pa_member', 'pa_article', 'pa_recharge_order', 'pa_config', 'pa_file'
     );
 }
 foreach ([
-    "api/platform/tenants/detail",
-    "api/platform/tenants/invitations",
-    "api/platform/tenants/owner",
-    "api/platform/tenants/modules",
+    "tenants/detail",
+    "tenants/invitations",
+    "tenants/owner",
+    "tenants/modules",
 ] as $specificRoute) {
     $specificPosition = strpos($routesSource, $specificRoute);
     platformQueryExpect(
