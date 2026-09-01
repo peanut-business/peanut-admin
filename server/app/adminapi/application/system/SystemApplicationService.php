@@ -15,11 +15,11 @@ class SystemApplicationService
     /**
      * 系统环境信息
      */
-    public function getInfo(): array
+    public function getInfo(string $serverSoftware): array
     {
         $server = [
             ['param' => '服务器操作系统', 'value' => PHP_OS],
-            ['param' => 'web服务器环境', 'value' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown'],
+            ['param' => 'web服务器环境', 'value' => $serverSoftware !== '' ? $serverSoftware : 'unknown'],
             ['param' => 'PHP版本', 'value' => PHP_VERSION],
             ['param' => '上传附件限制', 'value' => ini_get('upload_max_filesize')],
         ];

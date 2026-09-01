@@ -10,6 +10,12 @@ use app\common\tenancy\PlatformTenantDataGateway;
 
 final class CrontabTenantRepository
 {
+    /** @param list<array<string,mixed>> $rows */
+    public static function createMany(array $rows): void
+    {
+        (new Crontab())->saveAll($rows);
+    }
+
     use ConvertsModelPage;
 
     public function __construct(private readonly PlatformTenantDataGateway $tenantData)

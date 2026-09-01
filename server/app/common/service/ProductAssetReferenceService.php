@@ -10,7 +10,10 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 /** 内容与装修等产品记录的公开资源引用边界。 */
 final readonly class ProductAssetReferenceService
 {
-    public function __construct(private FileService $files) {}
+    public function __construct(
+        private FileService $files,
+        private string $applicationOrigin,
+    ) {}
 
     /**
      * 同源 local storage URL 保存为相对 URI；云/CDN/外部 URL 保留绝对地址与原始域名。
@@ -30,7 +33,7 @@ final readonly class ProductAssetReferenceService
             return $context === null ? $uri : $this->files->setTenantFileUrl($context, $uri);
         }
 
-        $origin = rtrim($applicationOrigin ?? (string)request()->domain(), '/');
+        $origin = rtrim($applicationOrigin ?? $this->applicationOrigin, '/');
         if (self::isSameOriginStorageUrl($value, $origin)) {
             $uri = ltrim((string)parse_url($value, PHP_URL_PATH), '/');
             return $context === null ? $uri : $this->files->setTenantFileUrl($context, $uri);

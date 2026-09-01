@@ -98,7 +98,6 @@ $pdo = new PDO(
     ],
 );
 
-try {
     createCrontabTenantSchema($pdo, $serverRoot);
     $now = '2030-01-01 00:00:00.000';
     $pdo->exec(<<<SQL
@@ -192,7 +191,7 @@ SQL);
 
     $dispatches = [];
     $taskTraces = [];
-    CrontabTaskDefinition::useDispatcherForTest(static function (string $command, array $params) use (&$dispatches, &$taskTraces): void {
+    $dispatch = static function (string $command, array $params) use (&$dispatches, &$taskTraces): void {
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
         $current = ExecutionContextAccess::current();
@@ -207,7 +206,7 @@ SQL);
         if ($scope->tenantId() === 202) {
             throw new RuntimeException('fixture retry');
         }
-    });
+    };
     $taskProvider = new TaskModuleProvider();
     $tasks = $taskProvider->jobs(
         $pdo,
@@ -216,7 +215,8 @@ SQL);
         app(\app\common\execution\CurrentExecutionContext::class),
         app(\app\common\service\org\AdminDirectoryQuery::class),
         app(\app\common\service\module\ModuleExecutionBoundary::class),
-        app('console'),
+        app(\app\common\service\CrontabCommandService::class),
+        $dispatch,
         25,
     );
     $scheduler = $taskProvider->scheduler(
@@ -347,8 +347,4 @@ SQL)->fetchAll();
             && !str_contains($workerSource, 'getTraceAsString'),
         'Task worker startup failures are not allowlisted operational diagnostics',
     );
-} finally {
-    CrontabTaskDefinition::useDispatcherForTest(null);
-}
-
 echo "MT03-CRONTAB-TENANT-ISOLATION-001 passed\n";

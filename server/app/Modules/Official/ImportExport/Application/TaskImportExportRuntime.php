@@ -5,6 +5,7 @@ namespace app\Modules\Official\ImportExport\Application;
 
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
 use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
+use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
 use app\Modules\Official\ImportExport\Contracts\Dto\AsyncExportOperation;
 use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
@@ -13,7 +14,7 @@ use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 
-final readonly class TaskImportExportRuntime
+final readonly class TaskImportExportRuntime implements ImportExportWorkerRuntime
 {
     public function __construct(
         private ImportExportCommands $commands,

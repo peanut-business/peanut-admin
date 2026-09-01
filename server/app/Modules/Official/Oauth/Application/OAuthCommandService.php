@@ -23,19 +23,19 @@ final class OAuthCommandService implements OAuthCommands
         return $this->oauth->begin($context, $scene, $returnPath, $redirectUri, $binding, $transport);
     }
 
-    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array
+    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, string $ip, ?OAuthTransportInterface $transport = null): array
     {
-        return $this->oauth->callback($context, $scene, $code, $state, $binding, $transport);
+        return $this->oauth->callback($context, $scene, $code, $state, $binding, $ip, $transport);
     }
 
-    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array
+    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, string $ip, ?OAuthTransportInterface $transport = null): array
     {
-        return $this->oauth->miniProgramLogin($context, $code, $binding, $transport);
+        return $this->oauth->miniProgramLogin($context, $code, $binding, $ip, $transport);
     }
 
-    public function complete(TenantContext|TenantSystemContext $context, array $params): array
+    public function complete(TenantContext|TenantSystemContext $context, array $params, string $ip): array
     {
-        return $this->oauth->complete($context, $params);
+        return $this->oauth->complete($context, $params, $ip);
     }
 
     public function bind(AuthenticatedMemberContext $context, int $memberId, string $scene, string $code, ?OAuthTransportInterface $transport = null): bool

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
-use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
@@ -27,18 +26,15 @@ final class TenantOwnerInvitationPublicService
     private PdoTransactionManager $transactions;
     private PdoIdentityRepository $identity;
     private MembershipRepository $memberships;
-    private AuditContractHost $audit;
-    private PasswordHasher $passwords;
-
     public function __construct(
         private readonly PDO $pdo,
         private readonly ApplicationTenantBootstrapService $applicationBootstrap,
+        private readonly AuditContractHost $audit,
+        private readonly PasswordHasher $passwords,
     ) {
         $this->transactions = new PdoTransactionManager($pdo);
         $this->identity = new PdoIdentityRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
-        $this->audit = AuditContractHost::fromPdo($pdo);
-        $this->passwords = ApplicationPasswordPolicy::hasher();
     }
 
     /** @return array<string,mixed> */

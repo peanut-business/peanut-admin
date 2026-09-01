@@ -3,12 +3,9 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use app\common\service\DemoAccountPolicy;
-use app\common\service\FileService;
-use app\common\service\ProductAssetReferenceService;
 use app\common\service\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\WebsiteConfigService;
@@ -22,20 +19,23 @@ class IndexApplicationService
     public function __construct(
         private readonly TenantIdentityQuery $tenantIdentities,
         private readonly TenantApplicationSettingService $applicationSettings,
-        private readonly TenantEntryBindingResolver $entryBindings,
-        private readonly FileService $files,
-        private readonly ProductAssetReferenceService $assets,
+        private readonly PublicArticleQueries $articles,
         private readonly RichTextResourceService $richText,
         private readonly DecorationReadService $decoration,
         private readonly WebsiteConfigService $website,
         private readonly string $projectVersion,
+        private readonly array $demoLoginConfig,
     ) {
     }
 
     /** 全局配置（uniapp / H5 用） */
-    public function getConfigData(TenantContext|TenantSystemContext $context): array
+    public function getConfigData(
+        TenantContext|TenantSystemContext $context,
+        string $domain,
+        string $host,
+        ?int $entryTenantId,
+    ): array
     {
-        $domain    = request()->domain();
         $website = $this->website->get($context);
         $login = $this->applicationSettings->login($context);
         $statistics = $this->applicationSettings->statistics($context);
@@ -50,8 +50,8 @@ class IndexApplicationService
         return [
             'domain'   => $domain,
             'website'  => $website,
-            'tenantName' => $this->entryTenantName(),
-            'demo'     => self::demoLogin(),
+            'tenantName' => $this->entryTenantName($entryTenantId),
+            'demo'     => $this->demoLogin($host),
             'login'    => [
                 'login_way' => $login['login_way'],
                 'coerce_mobile' => (int)$login['coerce_mobile'],
@@ -79,47 +79,43 @@ class IndexApplicationService
     }
 
     /** @return array{enabled:bool,email:string,password:string} */
-    private static function demoLogin(): array
+    private function demoLogin(string $host): array
     {
-        if (!DemoAccountPolicy::enabled()) {
+        if (!($this->demoLoginConfig['enabled'] ?? false)) {
             return ['enabled' => false, 'email' => '', 'password' => ''];
         }
         try {
-            $host = TenantEntryBindingResolver::normalizeHost((string)request()->host());
+            $host = TenantEntryBindingResolver::normalizeHost($host);
             $tenantAHost = TenantEntryBindingResolver::normalizeHost(
-                (string)(getenv('PEANUT_DEMO_TENANT_A_HOST') ?: '')
+                (string)($this->demoLoginConfig['tenant_a_host'] ?? '')
             );
             $tenantBHost = TenantEntryBindingResolver::normalizeHost(
-                (string)(getenv('PEANUT_DEMO_TENANT_B_HOST') ?: '')
+                (string)($this->demoLoginConfig['tenant_b_host'] ?? '')
             );
             $sharedHosts = array_filter(array_map(
                 static fn(string $value): string => TenantEntryBindingResolver::normalizeHost($value),
-                explode(',', (string)(getenv('TENANT_ADMIN_HOSTS') ?: ''))
+                (array)($this->demoLoginConfig['shared_hosts'] ?? [])
             ));
         } catch (\Throwable) {
             return ['enabled' => false, 'email' => '', 'password' => ''];
         }
         if (hash_equals($tenantBHost, $host)) {
-            $emailKey = 'PEANUT_DEMO_TENANT_B_EMAIL';
+            $email = (string)($this->demoLoginConfig['tenant_b_email'] ?? '');
         } elseif (hash_equals($tenantAHost, $host) || in_array($host, $sharedHosts, true)) {
-            $emailKey = 'PEANUT_DEMO_TENANT_A_EMAIL';
+            $email = (string)($this->demoLoginConfig['tenant_a_email'] ?? '');
         } else {
             return ['enabled' => false, 'email' => '', 'password' => ''];
         }
         return [
             'enabled' => true,
-            'email' => trim((string)(getenv($emailKey) ?: '')),
-            'password' => (string)(getenv('PEANUT_DEMO_SHARED_PASSWORD') ?: ''),
+            'email' => trim($email),
+            'password' => (string)($this->demoLoginConfig['password'] ?? ''),
         ];
     }
 
-    private function entryTenantName(): string
+    private function entryTenantName(?int $tenantId): string
     {
         try {
-            $tenantId = $this->entryBindings->boundTenantId(
-                request(),
-                TenantEntryBindingResolver::ADMIN_CLIENT
-            );
             if ($tenantId === null) {
                 return '';
             }
@@ -154,26 +150,8 @@ class IndexApplicationService
     /** 首页数据 */
     public function getIndexData(TenantContext|TenantSystemContext $context): array
     {
-        $field = [
-            'id', 'title', 'desc', 'abstract', 'image', 'author',
-            'click_actual', 'click_virtual', 'create_time',
-        ];
-        $articles = ArticleTenantRepository::articles()->field($field)
-            ->where('is_show', 1)
-            ->order('id', 'desc')
-            ->limit(20)
-            ->select()
-            ->toArray();
-
-        foreach ($articles as &$row) {
-            $row['click'] = (int) $row['click_actual'] + (int) $row['click_virtual'];
-            $row['image'] = $this->assets->forRead((string)($row['image'] ?? ''));
-            unset($row['click_actual'], $row['click_virtual']);
-        }
-        unset($row);
-
         return [
-            'article' => $articles,
+            'article' => $this->articles->homeArticles(20),
             'decorate' => $this->decoration->pageByType(
                 $context,
                 DecorationEnum::MOBILE_HOME,

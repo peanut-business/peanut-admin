@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
-use app\Modules\Official\Notification\Contracts\NotificationCommands;
+use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
+use app\Modules\Official\Task\Contracts\TaskBootstrapCommands;
 use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\ApplicationPasswordPolicy;
@@ -50,9 +51,11 @@ final class PlatformRuntimeFactory
     /** @param array<string,mixed> $moduleConfig @param array<string,mixed> $trustedModuleKeyConfig */
     public function __construct(
         private readonly PDO $pdo,
-        private readonly NotificationCommands $notifications,
+        private readonly NotificationBootstrapCommands $notifications,
+        private readonly TaskBootstrapCommands $tasks,
         private readonly ExecutionContextStore $executionContexts,
         private readonly TenantSettingsBootstrapCommands $tenantSettings,
+        private readonly TenantApplicationBootstrapPersistence $bootstrapPersistence,
         private readonly string $identifierHmacKey,
         private readonly array $moduleConfig,
         private readonly array $trustedModuleKeyConfig,
@@ -108,7 +111,8 @@ final class PlatformRuntimeFactory
     {
         return $this->tenantEntryBindings ??= new TenantEntryBindingAdminService(
             $this->pdo,
-            $this->sessions()
+            $this->sessions(),
+            AuditContractHost::fromPdo($this->pdo),
         );
     }
 
@@ -218,8 +222,10 @@ final class PlatformRuntimeFactory
             new ApplicationTenantBootstrapService(
                 $this->pdo,
                 $this->notifications,
+                $this->tasks,
                 $this->executionContexts,
                 $this->tenantSettings,
+                $this->bootstrapPersistence,
             ),
         );
     }

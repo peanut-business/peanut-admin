@@ -13,6 +13,7 @@ final class ApplicationNoticeSmsSender implements NoticeSmsSender
     public function __construct(
         private readonly ExecutionContextAccess $contexts,
         private readonly NoticeChannelService $channels,
+        private readonly bool $developmentMode,
     ) {}
 
     public function send(
@@ -22,7 +23,7 @@ final class ApplicationNoticeSmsSender implements NoticeSmsSender
         array $variables,
         ?callable $beforeSend = null
     ): array {
-        if ((string) (getenv('APP_ENV') ?: '') === 'development') {
+        if ($this->developmentMode) {
             if ($beforeSend !== null) {
                 $beforeSend('development');
             }

@@ -292,6 +292,7 @@ final class InstallationExecutionHost
             $pdo,
             $this->serverRoot,
             $config,
+            \app\common\service\audit\AuditContractHost::fromPdo($pdo),
         ))->applyInstallationSelection($moduleKeys);
         return ['operations' => $operations, 'profile' => $profile];
     }

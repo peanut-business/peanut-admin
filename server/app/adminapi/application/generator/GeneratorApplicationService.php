@@ -8,9 +8,6 @@ use app\adminapi\service\generator\GeneratorImportPersistence;
 use app\adminapi\infrastructure\generator\ThinkPhpGeneratorMetadata;
 use app\adminapi\service\generator\GeneratorRenderService;
 use app\common\http\PageResult;
-use app\common\model\generator\GeneratorColumn;
-use app\common\model\generator\GeneratorDownload;
-use app\common\model\generator\GeneratorTable;
 use app\common\persistence\TransactionalExecution;
 use app\common\support\PaginationInput;
 
@@ -36,7 +33,7 @@ class GeneratorApplicationService
     public function lists(int $adminId, array $params): PageResult
     {
         $pagination = PaginationInput::from($params);
-        $query = GeneratorTable::where('admin_id', $adminId);
+        $query = $this->imports->tables($adminId);
         if (!empty($params['keyword'])) {
             $keyword = trim((string) $params['keyword']);
             $query->where(function ($sub) use ($keyword): void {
@@ -53,7 +50,7 @@ class GeneratorApplicationService
 
     public function detail(int $adminId, int $id): array
     {
-        return self::ownedTable($adminId, $id, true);
+        return $this->ownedTable($adminId, $id, true);
     }
 
     public function importTables(int $adminId, array $tableNames): bool
@@ -78,10 +75,10 @@ class GeneratorApplicationService
     public function sync(int $adminId, int $id): bool
     {
         $this->transactions->run(function () use ($adminId, $id): void {
-                $table = self::ownedTableModel($adminId, $id, true);
+                $table = $this->ownedTableModel($adminId, $id, true);
                 $metadata = $this->metadata->columns((string) $table->table_name);
                 $existing = [];
-                foreach (GeneratorColumn::where('table_id', $id)->select() as $row) {
+                foreach ($this->imports->columns($id)->select() as $row) {
                     $existing[(string) $row->column_name] = $row;
                 }
                 $seen = [];
@@ -104,9 +101,9 @@ class GeneratorApplicationService
                     }
                 }
                 if ($persist !== []) {
-                    (new GeneratorColumn())->saveAll($persist);
+                    $this->imports->saveColumns($persist);
                 }
-                $delete = GeneratorColumn::where('table_id', $id);
+                $delete = $this->imports->columns($id);
                 if ($seen !== []) $delete->whereNotIn('column_name', $seen);
                 $delete->delete();
                 $table->save(['table_comment' => (string)$this->metadata->table((string)$table->table_name)['table_comment']]);
@@ -118,14 +115,14 @@ class GeneratorApplicationService
     {
         $this->transactions->run(function () use ($adminId, $params): void {
                 $id = (int) $params['id'];
-                $table = self::ownedTableModel($adminId, $id, true);
+                $table = $this->ownedTableModel($adminId, $id, true);
                 $module = trim((string) $params['module_name']);
                 $entity = trim((string) $params['entity_name']);
                 self::assertModule($module);
                 self::assertEntity($entity);
 
                 $columns = [];
-                foreach (GeneratorColumn::where('table_id', $id)->select() as $column) {
+                foreach ($this->imports->columns($id)->select() as $column) {
                     $columns[(int) $column->id] = $column;
                 }
                 $columnNames = array_map('strval', array_column(array_map(
@@ -162,7 +159,7 @@ class GeneratorApplicationService
                     throw new \RuntimeException('必须提交当前数据表的全部字段配置');
                 }
                 if ($persist !== []) {
-                    (new GeneratorColumn())->saveAll($persist);
+                    $this->imports->saveColumns($persist);
                 }
 
                 $table->save([
@@ -184,17 +181,17 @@ class GeneratorApplicationService
     {
         $ids = array_values(array_unique(array_map('intval', $ids)));
         $this->transactions->run(function () use ($adminId, $ids): void {
-                foreach (GeneratorTable::where('admin_id', $adminId)->whereNotIn('id', $ids)->select() as $table) {
+                foreach ($this->imports->tables($adminId)->whereNotIn('id', $ids)->select() as $table) {
                     foreach ((array)$table->relations as $relation) {
                         if (in_array((int)($relation['target_table_id'] ?? 0), $ids, true)) {
                             throw new \RuntimeException('生成配置仍被其他关系引用，不能删除');
                         }
                     }
                 }
-                $owned = GeneratorTable::where('admin_id', $adminId)->whereIn('id', $ids)->column('id');
+                $owned = $this->imports->tables($adminId)->whereIn('id', $ids)->column('id');
                 if (count($owned) !== count($ids)) throw new \RuntimeException('生成配置不存在或无权访问');
-                GeneratorColumn::whereIn('table_id', $ids)->delete();
-                GeneratorTable::where('admin_id', $adminId)->whereIn('id', $ids)->delete();
+                $this->imports->deleteColumns($ids);
+                $this->imports->tables($adminId)->whereIn('id', $ids)->delete();
         });
         return true;
     }
@@ -225,7 +222,7 @@ class GeneratorApplicationService
         );
         $token = bin2hex(random_bytes(32));
         try {
-            GeneratorDownload::create([
+            $this->imports->createDownload([
                 'admin_id' => $adminId,
                 'token_hash' => hash('sha256', $token),
                 'archive_path' => $archive['archive_path'],
@@ -243,8 +240,7 @@ class GeneratorApplicationService
     public function consumeDownload(int $adminId, string $token): array
     {
         return $this->transactions->run(function () use ($adminId, $token): array {
-            $row = GeneratorDownload::where([
-                'admin_id' => $adminId,
+            $row = $this->imports->downloads($adminId)->where([
                 'token_hash' => hash('sha256', $token),
                 'used_time' => 0,
             ])->where('expire_time', '>', time())->lock(true)->findOrEmpty();
@@ -261,23 +257,23 @@ class GeneratorApplicationService
 
     public function models(int $adminId): array
     {
-        return GeneratorTable::where('admin_id', $adminId)
+        return $this->imports->tables($adminId)
             ->field('id,module_name,entity_name,table_name,data_owner,target_edition')
             ->order('entity_name', 'asc')->select()->toArray();
     }
 
-    private static function ownedTable(int $adminId, int $id, bool $withColumns): array
+    private function ownedTable(int $adminId, int $id, bool $withColumns): array
     {
-        $query = GeneratorTable::where(['id' => $id, 'admin_id' => $adminId]);
+        $query = $this->imports->tables($adminId)->where('id', $id);
         if ($withColumns) $query->with('columns');
         $table = $query->findOrEmpty();
         if ($table->isEmpty()) throw new \RuntimeException('生成配置不存在或无权访问');
-        return self::hydrateRelations($adminId, $table->toArray());
+        return $this->hydrateRelations($adminId, $table->toArray());
     }
 
-    private static function ownedTableModel(int $adminId, int $id, bool $lock = false): GeneratorTable
+    private function ownedTableModel(int $adminId, int $id, bool $lock = false): object
     {
-        $query = GeneratorTable::where(['id' => $id, 'admin_id' => $adminId]);
+        $query = $this->imports->tables($adminId)->where('id', $id);
         if ($lock) $query->lock(true);
         $table = $query->findOrEmpty();
         if ($table->isEmpty()) throw new \RuntimeException('生成配置不存在或无权访问');
@@ -337,13 +333,13 @@ class GeneratorApplicationService
 
         $targetIds = array_values(array_unique(array_column($normalized, 'target_table_id')));
         sort($targetIds);
-        $targets = GeneratorTable::where('admin_id', $adminId)->whereIn('id', $targetIds)
+        $targets = $this->imports->tables($adminId)->whereIn('id', $targetIds)
             ->order('id', 'asc')->lock(true)->column('id');
         if (count($targets) !== count($targetIds)) {
             throw new \RuntimeException('关系目标配置不存在或无权访问');
         }
         $targetColumns = [];
-        foreach (GeneratorColumn::whereIn('table_id', $targetIds)
+        foreach ($this->imports->columnsForTables($targetIds)
             ->order(['table_id' => 'asc', 'sort' => 'asc'])->select()->toArray() as $column) {
             $targetColumns[(int)$column['table_id']][] = (string)$column['column_name'];
         }
@@ -364,13 +360,13 @@ class GeneratorApplicationService
     {
         sort($ids);
         return $this->transactions->run(function () use ($adminId, $ids): array {
-            $models = GeneratorTable::where('admin_id', $adminId)
+            $models = $this->imports->tables($adminId)
                 ->whereIn('id', $ids)->order('id', 'asc')->lock(true)->select();
             if ($models->count() !== count($ids)) {
                 throw new \RuntimeException('生成配置不存在或无权访问');
             }
             $columnsByTable = [];
-            foreach (GeneratorColumn::whereIn('table_id', $ids)
+            foreach ($this->imports->columnsForTables($ids)
                 ->order(['table_id' => 'asc', 'sort' => 'asc'])->lock(true)->select()->toArray() as $column) {
                 $columnsByTable[(int)$column['table_id']][] = $column;
             }
@@ -380,7 +376,7 @@ class GeneratorApplicationService
                 $table['columns'] = $columnsByTable[(int)$model->id] ?? [];
                 $tables[] = $table;
             }
-            $targets = self::relationTargets($adminId, $tables, true);
+            $targets = $this->relationTargets($adminId, $tables, true);
             foreach ($tables as &$table) {
                 $table = self::hydrateRelationsFromTargets($table, $targets);
             }
@@ -389,17 +385,17 @@ class GeneratorApplicationService
         });
     }
 
-    private static function hydrateRelations(int $adminId, array $table, bool $lock = false): array
+    private function hydrateRelations(int $adminId, array $table, bool $lock = false): array
     {
-        $targets = self::relationTargets($adminId, [$table], $lock);
+        $targets = $this->relationTargets($adminId, [$table], $lock);
         return self::hydrateRelationsFromTargets($table, $targets);
     }
 
     /**
      * @param array<int,array<string,mixed>> $tables
-     * @return array<int,GeneratorTable>
+     * @return array<int,object>
      */
-    private static function relationTargets(int $adminId, array $tables, bool $lock): array
+    private function relationTargets(int $adminId, array $tables, bool $lock): array
     {
         $targetIds = [];
         foreach ($tables as $table) {
@@ -413,7 +409,7 @@ class GeneratorApplicationService
             return [];
         }
 
-        $query = GeneratorTable::where('admin_id', $adminId)
+        $query = $this->imports->tables($adminId)
             ->whereIn('id', $targetIds)
             ->order('id', 'asc');
         if ($lock) {
@@ -429,7 +425,7 @@ class GeneratorApplicationService
         return $targets;
     }
 
-    /** @param array<int,GeneratorTable> $targets */
+    /** @param array<int,object> $targets */
     private static function hydrateRelationsFromTargets(array $table, array $targets): array
     {
         $relations = array_values((array)($table['relations'] ?? []));
@@ -439,7 +435,7 @@ class GeneratorApplicationService
         }
         foreach ($relations as &$relation) {
             $target = $targets[(int)$relation['target_table_id']] ?? null;
-            if (!$target instanceof GeneratorTable) {
+            if (!is_object($target)) {
                 throw new \RuntimeException('关系目标配置不存在或无权访问');
             }
             $relation['module'] = (string)$target->module_name;

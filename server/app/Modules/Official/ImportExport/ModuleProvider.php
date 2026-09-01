@@ -20,6 +20,7 @@ use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferCommands;
 use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
 use app\Modules\Official\ImportExport\Contracts\ImportExportQueries;
+use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
 use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationPackageCodec;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\CoreSettingsConfigurationAdapter;
@@ -113,6 +114,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(AppFileMediaGateway::class),
                 $app->make(ImportExportTaskWorkerDefinition::class),
             ),
+            ImportExportWorkerRuntime::class => fn(App $app): ImportExportWorkerRuntime => $app->make(TaskImportExportRuntime::class),
             OperationLogExportApplicationService::class => fn(App $app): OperationLogExportApplicationService => new OperationLogExportApplicationService(
                 $app->make(AdminAuthorizationService::class),
                 $app->make(TaskImportExportRuntime::class),

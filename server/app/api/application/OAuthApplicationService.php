@@ -93,6 +93,7 @@ class OAuthApplicationService
         string $code,
         string $state,
         ExternalTenantBinding $binding,
+        string $ip,
         ?OAuthTransportInterface $transport = null
     ): array {
             if (!in_array($scene, ['oa', 'open_pc'], true)) {
@@ -101,7 +102,7 @@ class OAuthApplicationService
             $returnPath = $this->consumeAttempt($context, $scene, $state);
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange($scene, $binding->config, $code);
-            $result = $this->loginWithProfile($context, $scene, $profile, $binding);
+            $result = $this->loginWithProfile($context, $scene, $profile, $binding, $ip);
             $result['return_path'] = $returnPath;
             return $result;
     }
@@ -110,11 +111,12 @@ class OAuthApplicationService
         TenantSystemContext $context,
         string $code,
         ExternalTenantBinding $binding,
+        string $ip,
         ?OAuthTransportInterface $transport = null
     ): array {
             $transport ??= new WechatOAuthTransport();
             $profile = $transport->exchange('mnp', $binding->config, $code);
-            return $this->loginWithProfile($context, 'mnp', $profile, $binding);
+            return $this->loginWithProfile($context, 'mnp', $profile, $binding, $ip);
     }
 
     public function bind(
@@ -144,14 +146,18 @@ class OAuthApplicationService
             return true;
     }
 
-    public function complete(TenantContext|TenantSystemContext $context, array $params): array
+    public function complete(
+        TenantContext|TenantSystemContext $context,
+        array $params,
+        string $ip,
+    ): array
     {
         $rawTicket = trim((string)($params['ticket'] ?? ''));
         if ($rawTicket === '') {
             throw BusinessException::invalid('OAUTH_COMPLETION_TICKET_REQUIRED', '登录补全票据缺失');
         }
 
-        return $this->transactions->run(function () use ($context, $params, $rawTicket): array {
+        return $this->transactions->run(function () use ($context, $params, $rawTicket, $ip): array {
                 $ticket = OAuthTenantRepository::completionTickets($context)
                     ->where('token_hash', hash('sha256', $rawTicket))
                     ->lock(true)->findOrEmpty();
@@ -211,7 +217,7 @@ class OAuthApplicationService
                     $nickname,
                     $avatar,
                     time(),
-                    request()->ip(),
+                    $ip,
                 );
                 $member = $this->members->identity($context, $member->id);
                 if ($member === null) {
@@ -228,6 +234,7 @@ class OAuthApplicationService
         string $scene,
         OAuthProfile $profile,
         ExternalTenantBinding $binding,
+        string $ip,
     ): array
     {
         [$member, $created] = $this->resolveIdentity($context, $scene, $profile, null, $binding);
@@ -240,7 +247,7 @@ class OAuthApplicationService
         if ($needProfile || $needMobile) {
             return self::completionResult($context, $member, $needProfile, $needMobile, $binding);
         }
-        $this->memberIdentities->recordLogin($context, $member->id, request()->ip());
+        $this->memberIdentities->recordLogin($context, $member->id, $ip);
         return $this->fullLoginResult($member);
     }
 

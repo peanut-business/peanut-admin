@@ -130,7 +130,7 @@ foreach ([$wechatPrepay, $wechatRefund] as $source) {
     );
 }
 
-$settlement = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
+$settlement = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 foreach (["where('sn', \$orderSn)->lock(true)", "\$currency !== 'CNY'",
     '$callbackCents !== $orderCents', '支付渠道不一致', '支付交易流水冲突'] as $marker) {
     expectPaymentHost(str_contains($settlement, $marker), 'settlement invariant missing: ' . $marker);
@@ -144,7 +144,7 @@ expectPaymentHost(
 $adminRefund = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Payment/Application/RechargeAdministrationService.php'
 );
-$reconcile = (string)file_get_contents($serverRoot . '/app/command/RefundReconcile.php');
+$reconcile = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Infrastructure/ThinkPhpRefundReconciliationCommands.php');
 foreach ([$adminRefund, $reconcile] as $source) {
     expectPaymentHost(
         str_contains($source, 'PaymentServiceFactory'),
@@ -161,7 +161,7 @@ expectPaymentHost(
 );
 $resultTransaction = strpos($adminRefund, '// 渠道请求完成后使用新的短事务');
 $receiptFinalize = strpos($adminRefund, 'self::finishRefundIdempotency', $resultTransaction ?: 0);
-$resultCommit = strpos($adminRefund, "\n            });", $receiptFinalize ?: 0);
+$resultCommit = strpos($adminRefund, "\n        });", $receiptFinalize ?: 0);
 expectPaymentHost(
     $resultTransaction !== false && $receiptFinalize !== false && $resultCommit !== false
         && $resultTransaction < $receiptFinalize && $receiptFinalize < $resultCommit,
@@ -171,7 +171,7 @@ expectPaymentHost(
 $payConfig = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Payment/Application/PayConfigApplicationService.php'
 );
-foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'Db::transaction'] as $marker) {
+foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'transactions->run'] as $marker) {
     expectPaymentHost(str_contains($payConfig, $marker), 'payment config boundary missing: ' . $marker);
 }
 $legacyWebApi = (string)file_get_contents($repositoryRoot . '/web/src/api/app.ts');

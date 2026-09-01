@@ -47,14 +47,14 @@ class LoginApplicationService
      * 账号/手机号 + 密码登录
      * params: account(账号或手机号), password, terminal
      */
-    public function login(TenantSystemContext $context, array $params): array
+    public function login(TenantSystemContext $context, array $params, string $ip): array
     {
         $this->assertLoginWayEnabled($context, 1);
         $member = $this->memberIdentities->login(
             $context,
             (string)$params['account'],
             (string)$params['password'],
-            request()->ip(),
+            $ip,
         );
 
         $token  = $this->tokens->createToken($member->id);
@@ -70,7 +70,7 @@ class LoginApplicationService
         ];
     }
 
-    public function mobileLogin(TenantContext|TenantSystemContext $context, array $params): array
+    public function mobileLogin(TenantContext|TenantSystemContext $context, array $params, string $ip): array
     {
         $this->assertLoginWayEnabled($context, 2);
         $mobile = (string) $params['mobile'];
@@ -88,7 +88,7 @@ class LoginApplicationService
             $context,
             $mobile,
             $this->defaultAvatar($context),
-            request()->ip(),
+            $ip,
         );
         return $this->loginResult($member, false);
     }

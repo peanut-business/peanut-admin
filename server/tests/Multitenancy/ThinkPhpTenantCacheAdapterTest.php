@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\TenantCache;
-use app\common\service\tenant\TenantCacheStore;
+use PeanutAdmin\Kernel\Tenancy\TenantCache;
+use PeanutAdmin\Kernel\Tenancy\TenantCacheStore;
 use PeanutAdmin\Kernel\Tenancy\TenantNamespace;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use app\common\service\tenant\ThinkPhpTenantCacheStore;
@@ -37,8 +37,8 @@ $tenantA = TenantScope::fromTrustedContext(3101, 'fixture:' . $runId . ':a');
 $tenantB = TenantScope::fromTrustedContext(3202, 'fixture:' . $runId . ':b');
 $physicalA = TenantNamespace::cacheKey($tenantA, $logicalKey);
 $physicalB = TenantNamespace::cacheKey($tenantB, $logicalKey);
-$cacheA = TenantCache::thinkPhp($tenantA);
-$cacheB = TenantCache::thinkPhp($tenantB);
+$cacheA = new TenantCache($tenantA, new ThinkPhpTenantCacheStore());
+$cacheB = new TenantCache($tenantB, new ThinkPhpTenantCacheStore());
 
 try {
     expectThinkPhpTenantCache($physicalA !== $physicalB, 'physical keys must differ across tenants');
@@ -51,11 +51,11 @@ try {
     expectThinkPhpTenantCache($cacheB->get($logicalKey) === 'tenant-b', 'tenant A cleanup deleted tenant B key');
 
     expectThinkPhpTenantCacheRejected(
-        static fn() => TenantCache::thinkPhp(null),
+        static fn() => new TenantCache(null, new ThinkPhpTenantCacheStore()),
         'missing trusted scope was accepted'
     );
     expectThinkPhpTenantCacheRejected(
-        static fn() => TenantCache::thinkPhp(['tenant_id' => 3101]),
+        static fn() => new TenantCache(['tenant_id' => 3101], new ThinkPhpTenantCacheStore()),
         'payload-shaped tenant data was accepted as trusted scope'
     );
 

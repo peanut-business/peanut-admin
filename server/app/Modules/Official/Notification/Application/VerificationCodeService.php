@@ -28,6 +28,7 @@ class VerificationCodeService
         private readonly NoticeSmsSender $sender,
         private readonly TransactionManager $transactions,
         private readonly ExecutionContextAccess $contexts,
+        private readonly bool $developmentMode,
     ) {
     }
 
@@ -62,7 +63,7 @@ class VerificationCodeService
             return new DeliveryResult(false, '', '短信模板未配置');
         }
 
-        $code = (string) (getenv('APP_ENV') ?: '') === 'development'
+        $code = $this->developmentMode
             ? '1234'
             : (string) random_int(
                 10 ** (NoticeSceneEnum::CODE_LENGTH - 1),

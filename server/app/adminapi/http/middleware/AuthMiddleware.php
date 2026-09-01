@@ -25,6 +25,7 @@ class AuthMiddleware
         private readonly ExecutionContextAccess $contextAccess,
         private readonly AdminAuthorizationService $authorization,
         private readonly AdminApiAccessRegistry $accessRegistry,
+        private readonly DemoAccountPolicy $demoAccounts,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -58,7 +59,7 @@ class AuthMiddleware
         }
 
         if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)
-            && DemoAccountPolicy::mutationLocked($adminInfo, $accessUri)) {
+            && $this->demoAccounts->mutationLocked($adminInfo, $accessUri)) {
             throw \app\common\http\ApiProblem::fromEnvelope('演示账号已锁定关键配置和权限操作', null, 40300);
         }
 

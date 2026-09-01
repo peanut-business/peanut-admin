@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\ProductTenantModuleProfileService;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use app\common\execution\DatabaseContextualCommand;
@@ -31,7 +32,8 @@ final class TenantModuleProfile extends DatabaseContextualCommand
             $result = (new ProductTenantModuleProfileService(
                 $pdo,
                 dirname(__DIR__, 2),
-                $config
+                $config,
+                AuditContractHost::fromPdo($pdo),
             ))->apply(trim((string)$input->getArgument('profile')));
             $output->writeln((string)json_encode(
                 $result,

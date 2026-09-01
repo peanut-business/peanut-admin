@@ -94,9 +94,10 @@ class OAuthController extends BaseApiController
                 (string)$params['state'],
                 $this->operationId(),
             );
+        $ip = $this->request->ip();
         $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
-                function () use ($resolution, $params) {
+                function () use ($resolution, $params, $ip) {
                     $this->modules->assertExternalCallback('official.oauth');
                     return $this->commands->callback(
                         $resolution->context,
@@ -104,6 +105,7 @@ class OAuthController extends BaseApiController
                         (string)$params['code'],
                         (string)$params['state'],
                         $resolution->binding,
+                        $ip,
                     );
                 },
         );
@@ -128,14 +130,16 @@ class OAuthController extends BaseApiController
                     'oauth.mini-program',
                     $this->operationId(),
                 );
+        $ip = $this->request->ip();
         $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
-                function () use ($resolution, $params) {
+                function () use ($resolution, $params, $ip) {
                     $this->modules->assertExternalCallback('official.oauth');
                     return $this->commands->miniProgramLogin(
                         $resolution->context,
                         (string)$params['code'],
                         $resolution->binding,
+                        $ip,
                     );
                 },
         );
@@ -151,11 +155,12 @@ class OAuthController extends BaseApiController
                 (string)$params['ticket'],
                 $this->operationId(),
             );
+        $ip = $this->request->ip();
         $result = $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
-                function () use ($resolution, $params) {
+                function () use ($resolution, $params, $ip) {
                     $this->modules->assertExternalCallback('official.oauth');
-                    return $this->commands->complete($resolution->context, $params);
+                    return $this->commands->complete($resolution->context, $params, $ip);
                 },
         );
         return $this->data($result);

@@ -21,12 +21,12 @@ class OfficialAccountApplicationService
     ) {
     }
 
-    public function getConfig(TenantContext $context): array
+    public function getConfig(TenantContext $context, string $domain): array
     {
         $stored = $this->bindings->config($context, ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK);
         $qrCode = (string)($stored['qr_code'] ?? '');
         $secret = (string)($stored['app_secret'] ?? '');
-        $domain = rtrim((string)request()->domain(), '/');
+        $domain = rtrim($domain, '/');
         $authority = self::authority($domain);
 
         return [

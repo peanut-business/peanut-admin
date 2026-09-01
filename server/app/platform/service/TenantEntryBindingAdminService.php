@@ -15,7 +15,8 @@ final readonly class TenantEntryBindingAdminService
 {
     public function __construct(
         private PDO $pdo,
-        private PlatformOperatorSessionService $sessions
+        private PlatformOperatorSessionService $sessions,
+        private AuditContractHost $audit,
     ) {
     }
 
@@ -194,7 +195,7 @@ SQL);
         string $reason,
         array $metadata
     ): void {
-        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             'platform.tenant.update',
             $context->core->requestId,

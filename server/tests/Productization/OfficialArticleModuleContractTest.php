@@ -90,6 +90,7 @@ $repository = (string)file_get_contents($moduleRoot . '/Infrastructure/Persisten
 $capability = (string)file_get_contents($moduleRoot . '/Application/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicTenantModuleMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
+$publicArticles = (string)file_get_contents($moduleRoot . '/Application/PublicArticleService.php');
 $provider = (string)file_get_contents($moduleRoot . '/ModuleProvider.php');
 $categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/application/auth/MenuApplicationService.php');
@@ -146,8 +147,9 @@ officialArticleExpect(
 );
 
 $pcController = (string)file_get_contents($serverRoot . '/app/api/controller/PcController.php');
+$articleController = (string)file_get_contents($serverRoot . '/app/api/controller/ArticleController.php');
 $pcApplication = (string)file_get_contents($serverRoot . '/app/api/application/PcApplicationService.php');
-$articleApplication = (string)file_get_contents($serverRoot . '/app/api/application/ArticleApplicationService.php');
+$indexApplication = (string)file_get_contents($serverRoot . '/app/api/application/IndexApplicationService.php');
 $userApplication = (string)file_get_contents($serverRoot . '/app/api/application/UserApplicationService.php');
 officialArticleExpect(
     str_contains($pcController, "publicTenantContext('article.pc-index')")
@@ -156,15 +158,25 @@ officialArticleExpect(
     'PC article/detail aggregation lost the injected public Tenant context'
 );
 officialArticleExpect(
-    str_contains($pcApplication, 'private readonly ArticleApplicationService $articles')
+    str_contains($pcApplication, 'private readonly PublicArticleQueries $articles')
         && substr_count($pcApplication, '$this->articles->limitArticles(') === 3
-        && !str_contains($pcApplication, 'app(ArticleApplicationService::class)')
         && str_contains($pcApplication, 'pageByType('),
     'PC aggregation no longer routes Article and decoration reads through guarded services'
 );
 officialArticleExpect(
-    substr_count($articleApplication, 'ArticleTenantRepository::collections(') >= 4,
-    'member collection path lost Article-owned storage boundary'
+    !is_file($serverRoot . '/app/api/application/ArticleApplicationService.php')
+        && substr_count($publicArticles, 'ArticleTenantRepository::collections(') >= 4
+        && str_contains($publicArticles, 'implements PublicArticleQueries, ArticleCollectionCommands')
+        && str_contains($provider, 'PublicArticleQueries::class =>')
+        && str_contains($provider, 'ArticleCollectionCommands::class =>')
+        && str_contains($articleController, 'private readonly PublicArticleQueries $articles')
+        && str_contains($articleController, 'private readonly ArticleCollectionCommands $collections')
+        && str_contains($pcController, 'private readonly PublicArticleQueries $articles')
+        && str_contains($indexApplication, 'private readonly PublicArticleQueries $articles')
+        && str_contains($indexApplication, '$this->articles->homeArticles(20)')
+        && !str_contains($articleController . $pcController . $pcApplication . $indexApplication, 'ArticleTenantRepository')
+        && !str_contains($articleController . $pcController . $pcApplication . $indexApplication, 'Modules\\Official\\Article\\Application'),
+    'public Article Host bypasses Module contracts or lost Article-owned storage'
 );
 officialArticleExpect(
     str_contains($provider, 'ArticleCollectionSummary::class =>')
@@ -214,7 +226,10 @@ $moduleFiles = [
     'Http/Controller/ArticleCateController.php',
     'Http/Controller/ArticleController.php',
     'Application/ArticleAdministrationService.php',
+    'Application/PublicArticleService.php',
     'Contracts/ArticleAdministration.php',
+    'Contracts/PublicArticleQueries.php',
+    'Contracts/ArticleCollectionCommands.php',
     'Validation/ArticleCateValidate.php',
     'Validation/ArticleValidate.php',
     'Model/Article.php',

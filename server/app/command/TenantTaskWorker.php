@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
+use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
 use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\runtime\OperationalLog;
@@ -19,7 +19,7 @@ final class TenantTaskWorker extends DatabaseContextualCommand
         ExecutionContextStore $contexts,
         ExecutionContextAccess $contextAccess,
         PDO $pdo,
-        private readonly TaskImportExportRuntime $runtime,
+        private readonly ImportExportWorkerRuntime $runtime,
     ) {
         parent::__construct($contexts, $contextAccess, $pdo);
     }

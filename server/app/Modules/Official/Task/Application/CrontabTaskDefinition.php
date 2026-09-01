@@ -15,6 +15,7 @@ use app\common\service\org\AdminDirectoryQuery;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
 use DateTimeImmutable;
 use DateTimeZone;
+use Closure;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -28,7 +29,6 @@ use PeanutAdmin\TaskJob\Execution\RetryableTaskException;
 use PeanutAdmin\TaskJob\Execution\TaskHandler;
 use PeanutAdmin\TaskJob\Submission\TaskSubmission;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionProvider;
-use think\Console;
 
 /** The built-in Task definition for one claimed Crontab schedule window. */
 final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerDefinition, TaskHandler
@@ -38,16 +38,13 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
     private const OPERATION = 'execute';
     private const HANDLER_KEY = 'official.task.crontab.execute';
 
-    /** @var null|callable(string,array):void */
-    private static $dispatcher = null;
-
     public function __construct(
         private readonly AdminDirectoryQuery $adminDirectory,
         private readonly ModuleExecutionBoundary $modules,
         private readonly ExecutionContextStore $executionContexts,
         private readonly CurrentExecutionContext $currentExecution,
-        private readonly Console $console,
         private readonly CrontabCommandService $commands,
+        private readonly Closure $dispatch,
     ) {
     }
 
@@ -147,22 +144,12 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
             $this->modules->assertScheduled($moduleKey);
             ScheduledTenantContext::run($scope, function () use ($command, $params): void {
                 try {
-                    if (self::$dispatcher !== null) {
-                        (self::$dispatcher)($command, $params);
-                        return;
-                    }
-                    $this->console->call($command, $params);
+                    ($this->dispatch)($command, $params);
                 } catch (\Throwable) {
                     throw new RetryableTaskException('CRONTAB_EXECUTION_FAILED');
                 }
             });
         });
-    }
-
-    /** @param null|callable(string,array):void $dispatcher */
-    public static function useDispatcherForTest(?callable $dispatcher): void
-    {
-        self::$dispatcher = $dispatcher;
     }
 
     private function authorizedContext(

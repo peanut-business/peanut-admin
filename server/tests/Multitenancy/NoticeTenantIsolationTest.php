@@ -212,7 +212,7 @@ SQL);
 
     $beforeUntrusted = (int)$pdo->query('SELECT COUNT(*) FROM pa_notice_log')->fetchColumn();
     $sender = new SuccessfulNoticeSender();
-    $service = new VerificationCodeService($sender, new PdoTransactionManager($pdo), $contexts);
+    $service = new VerificationCodeService($sender, new PdoTransactionManager($pdo), $contexts, false);
     foreach (['send', 'verify'] as $operation) {
         try {
             $operation === 'send'

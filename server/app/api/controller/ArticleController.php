@@ -6,14 +6,19 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\ArticleApplicationService;
 use app\common\validate\ListsValidate;
 use app\common\application\BusinessException;
+use app\Modules\Official\Article\Contracts\ArticleCollectionCommands;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 
 class ArticleController extends BaseApiController
 {
-    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly ArticleApplicationService $articles)
-    {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly PublicArticleQueries $articles,
+        private readonly ArticleCollectionCommands $collections,
+    ) {
         parent::__construct($app, $executionContext);
     }
 
@@ -40,7 +45,7 @@ class ArticleController extends BaseApiController
     public function cate()
     {
         $this->publicTenantContext('article.cate');
-        $result = $this->articles->cate();
+        $result = $this->articles->categories();
         return $this->data($result);
     }
 
@@ -63,7 +68,7 @@ class ArticleController extends BaseApiController
     {
         $id = $this->request->post('id/d', 0);
         $this->memberContext();
-        $this->articles->addCollect($id, $this->memberId);
+        $this->collections->add($id, $this->memberId);
         return $this->success('操作成功');
     }
 
@@ -72,7 +77,7 @@ class ArticleController extends BaseApiController
     {
         $id = $this->request->post('id/d', 0);
         $this->memberContext();
-        $this->articles->cancelCollect($id, $this->memberId);
+        $this->collections->cancel($id, $this->memberId);
         return $this->success('操作成功');
     }
 
@@ -86,7 +91,7 @@ class ArticleController extends BaseApiController
         ];
 
         $this->memberContext();
-        $result = $this->articles->collectLists($this->memberId, $params);
+        $result = $this->articles->collectionLists($this->memberId, $params);
         return $this->data($result);
     }
 }

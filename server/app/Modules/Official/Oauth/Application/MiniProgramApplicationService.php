@@ -20,12 +20,12 @@ class MiniProgramApplicationService
     ) {
     }
 
-    public function getConfig(TenantContext $context): array
+    public function getConfig(TenantContext $context, string $domain): array
     {
         $stored = $this->bindings->config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
         $qrCode = (string)($stored['qr_code'] ?? '');
         $secret = (string)($stored['app_secret'] ?? '');
-        $domains = self::domainConfig();
+        $domains = self::domainConfig($domain);
 
         return [
             'name'                 => (string)($stored['name'] ?? ''),
@@ -69,9 +69,9 @@ class MiniProgramApplicationService
     }
 
     /** @return array{https:string,wss:string,udp:string,authority:string} */
-    private static function domainConfig(): array
+    private static function domainConfig(string $domain): array
     {
-        $domain = rtrim((string) request()->domain(), '/');
+        $domain = rtrim($domain, '/');
         $parts = parse_url($domain);
         $host = is_array($parts) ? (string) ($parts['host'] ?? '') : '';
 

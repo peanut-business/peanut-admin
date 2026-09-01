@@ -50,6 +50,7 @@ RULE_OWNERS = {
     "model_owner_bypass": ("WP1", "Sol"),
     "eager_cli_database_dependency": ("WP1", "Sol"),
     "common_module_reverse_dependency": ("WP1", "Sol"),
+    "host_module_internal_dependency": ("WP1", "Sol"),
     "application_framework_model": ("WP1", "Sol"),
     "framework_upload_contract": ("WP1", "Sol"),
     "application_composition_root": ("WP1", "Sol"),
@@ -146,11 +147,31 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
     hits: list[tuple[str, int, str]] = []
     rel = relative(path)
     application_path = "/Application/" in f"/{rel}" or "/application/" in f"/{rel}"
-    service_path = "/service/" in f"/{rel}"
+    service_path = "/service/" in f"/{rel}" or path.name.endswith("Service.php")
+    host_path = (
+        rel.startswith((
+            "server/app/api/",
+            "server/app/adminapi/",
+            "server/app/platform/",
+            "server/app/common/",
+            "server/app/command/",
+        ))
+        and not rel.endswith("ModuleProvider.php")
+    )
+    http_boundary = (
+        "/http/" in f"/{rel.lower()}"
+        or rel.endswith("Controller.php")
+        or rel.endswith("Middleware.php")
+    )
     composition_path = (
         rel == "server/app/AppService.php"
         or rel.endswith("ModuleProvider.php")
+        or path.name.endswith("RuntimeFactory.php")
+        or "/composition/" in f"/{rel.lower()}"
         or path.name.startswith(("ThinkPhp", "Pdo"))
+        or rel.startswith("server/app/common/service/installation/")
+        or rel.startswith("server/app/common/service/runtime/")
+        or path.name in {"StorageCredentialCipher.php", "ModuleScaffoldGenerator.php"}
     )
     method = ""
     method_depth = 0
@@ -167,13 +188,20 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
         if declaration:
             method = declaration.group(1)
             method_depth = depth + line.count("{")
-        if not composition_path and (application_path or service_path):
-            if re.search(r"\bConfig::get\s*\(|(?<!->)(?<!::)(?<!function )\bconfig\s*\(", line):
+        if not composition_path and not http_boundary and (application_path or service_path):
+            if re.search(
+                r"\bConfig::get\s*\(|(?<!->)(?<!::)(?<!function )\bconfig\s*\("
+                r"|\bgetenv\s*\(|\$_(?:ENV|SERVER)\b"
+                r"|(?<!->)(?<!::)(?<!function )\brequest\s*\(",
+                line,
+            ):
                 hits.append(("global_configuration_locator", number, line.strip()))
-            if (re.search(r"\b[A-Z][A-Za-z0-9_\\]*RuntimeFactory::[A-Za-z_][A-Za-z0-9_]*\s*\(", line)
-                or re.search(r"\bPdoModuleGovernanceProvider::forApplication\s*\(", line)
+            if (re.search(
+                r"\b(?:[A-Z][A-Za-z0-9_\\]*Runtime|Runtime)[A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*\s*\(",
+                line,
+            )
                 or re.search(
-                    r"\b[A-Z][A-Za-z0-9_\\]*(?:Service|Factory|Provider)::(?:from|for)[A-Z][A-Za-z0-9_]*\s*\(\s*\)",
+                    r"\b[A-Z][A-Za-z0-9_\\]*(?:Service|Factory|Provider|Host)::(?:from|for)[A-Z][A-Za-z0-9_]*\s*\(",
                     line,
                 )):
                 hits.append(("static_runtime_assembly", number, line.strip()))
@@ -194,8 +222,14 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             and re.search(r"\bapp\\Modules\\", line)
             and "\\Contracts\\" not in line):
             hits.append(("common_module_reverse_dependency", number, line.strip()))
+        if host_path and re.search(
+            r"^\s*use\s+app\\Modules\\[^;]*\\(?:Application|Infrastructure|Model)\\[^;]+;",
+            line,
+            re.IGNORECASE,
+        ):
+            hits.append(("host_module_internal_dependency", number, line.strip()))
         if application_path and (
-            re.search(r"^\s*use\s+(?:think\\Model|app\\[^;]+\\Model\\)", line)
+            re.search(r"^\s*use\s+(?:think\\(?:Model|Console)|app\\[^;]+\\model\\)", line, re.IGNORECASE)
             or "instanceof \\think\\Model" in line
         ):
             hits.append(("application_framework_model", number, line.strip()))

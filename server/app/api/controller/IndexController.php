@@ -7,11 +7,16 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\IndexApplicationService;
+use app\common\service\tenant\TenantEntryBindingResolver;
 
 class IndexController extends BaseApiController
 {
-    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly IndexApplicationService $index)
-    {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly IndexApplicationService $index,
+        private readonly TenantEntryBindingResolver $entryBindings,
+    ) {
         parent::__construct($app, $executionContext);
     }
 
@@ -27,8 +32,19 @@ class IndexController extends BaseApiController
     /** 全局配置 */
     public function config()
     {
+        try {
+            $entryTenantId = $this->entryBindings->boundTenantId(
+                $this->request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+            );
+        } catch (\DomainException) {
+            $entryTenantId = null;
+        }
         $result = $this->index->getConfigData(
-            $this->publicTenantContext('decoration.config')
+            $this->publicTenantContext('decoration.config'),
+            (string)$this->request->domain(),
+            (string)$this->request->host(),
+            $entryTenantId,
         );
         return $this->data($result);
     }

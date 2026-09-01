@@ -27,21 +27,16 @@ final class TenantOwnerInvitationAdminService
     private PdoTransactionManager $transactions;
     private PdoTenantRepository $tenants;
     private MembershipRepository $memberships;
-    private AuditContractHost $audit;
-    private OwnerInvitationRuntimePolicy $runtimePolicy;
-
     public function __construct(
         private readonly PDO $pdo,
         private readonly PlatformOperatorSessionService $sessions,
         private readonly OwnerInvitationDeliveryPort $delivery,
-        ?OwnerInvitationRuntimePolicy $runtimePolicy = null
+        private readonly OwnerInvitationRuntimePolicy $runtimePolicy,
+        private readonly AuditContractHost $audit,
     ) {
-        $this->runtimePolicy = $runtimePolicy
-            ?? OwnerInvitationRuntimePolicy::fromEnvironment((string)(getenv('APP_ENV') ?: ''));
         $this->transactions = new PdoTransactionManager($pdo);
         $this->tenants = new PdoTenantRepository($pdo);
         $this->memberships = new PdoMembershipRepository($pdo);
-        $this->audit = AuditContractHost::fromPdo($pdo);
     }
 
     /** @return array<string,mixed> */

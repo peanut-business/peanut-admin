@@ -5,9 +5,10 @@ namespace app\api\controller;
 
 use think\App;
 use app\common\execution\CurrentExecutionContext;
-use app\api\application\ArticleApplicationService;
 use app\api\application\IndexApplicationService;
 use app\api\application\PcApplicationService;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
+use app\common\service\tenant\TenantEntryBindingResolver;
 
 /**
  * PC 端聚合接口（部分端点返回更丰富的字段或不同格式）
@@ -16,9 +17,10 @@ class PcController extends BaseApiController
 {
     public function __construct(
         App $app, CurrentExecutionContext $executionContext,
-        private readonly ArticleApplicationService $articles,
+        private readonly PublicArticleQueries $articles,
         private readonly IndexApplicationService $indexApplication,
         private readonly PcApplicationService $pcApplication,
+        private readonly TenantEntryBindingResolver $entryBindings,
     ) {
         parent::__construct($app, $executionContext);
     }
@@ -28,8 +30,19 @@ class PcController extends BaseApiController
     /** PC 配置 */
     public function config()
     {
+        try {
+            $entryTenantId = $this->entryBindings->boundTenantId(
+                $this->request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+            );
+        } catch (\DomainException) {
+            $entryTenantId = null;
+        }
         $result = $this->indexApplication->getConfigData(
-            $this->publicTenantContext('decoration.config')
+            $this->publicTenantContext('decoration.config'),
+            (string)$this->request->domain(),
+            (string)$this->request->host(),
+            $entryTenantId,
         );
         return $this->data($result);
     }

@@ -11,7 +11,10 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 /** Business file references enter the physical storage layer only here. */
 final readonly class FileService
 {
-    public function __construct(private StorageService $storage) {}
+    public function __construct(
+        private StorageService $storage,
+        private string $applicationOrigin,
+    ) {}
 
     public function getFileUrl(string $reference = ''): string
     {
@@ -23,7 +26,7 @@ final readonly class FileService
             return $reference;
         }
         $url = $this->storage->publicUrl($reference);
-        return $url !== '' ? $url : rtrim((string)request()->domain(), '/') . '/' . ltrim($reference, '/');
+        return $url !== '' ? $url : rtrim($this->applicationOrigin, '/') . '/' . ltrim($reference, '/');
     }
 
     public function setTenantFileUrl(

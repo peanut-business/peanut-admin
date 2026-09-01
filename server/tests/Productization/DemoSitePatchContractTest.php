@@ -43,14 +43,14 @@ foreach ([
 ] as $table) {
     $expect(str_contains($bootstrap, $table), 'new Tenant bootstrap omits ' . $table);
 }
-$notificationCommands = $read($root . '/server/app/Modules/Official/Notification/Contracts/NotificationCommands.php');
-$notificationApplication = $read($root . '/server/app/Modules/Official/Notification/Application/NotificationApplicationService.php');
+$notificationCommands = $read($root . '/server/app/Modules/Official/Notification/Contracts/NotificationBootstrapCommands.php');
+$notificationApplication = $read($root . '/server/app/Modules/Official/Notification/Application/NotificationBootstrapService.php');
 $expect(
-    str_contains($bootstrap, 'NotificationCommands')
+    str_contains($bootstrap, 'NotificationBootstrapCommands')
         && str_contains($bootstrap, '->provisionTenantDefaults(')
         && !str_contains($bootstrap, 'INSERT INTO pa_notice_scene')
         && str_contains($notificationCommands, 'provisionTenantDefaults')
-        && str_contains($notificationApplication, 'INSERT INTO pa_notice_scene'),
+        && str_contains($notificationApplication, 'NoticeTenantRepository::provisionDefaultScenes'),
     'new Tenant notification defaults bypass the Notification owner command'
 );
 $provisioner = $read($root . '/server/app/platform/service/PdoTenantOwnerAdminProvisioner.php');
@@ -91,7 +91,7 @@ $admin = $read($root . '/server/app/adminapi/application/auth/AdminApplicationSe
 $tenantAdminRuntime = $read($root . '/server/app/common/service/org/TenantAdminRuntime.php');
 $expect(
     str_contains($admin, 'self::runtime()->assertPasswordChangeAllowed')
-        && str_contains($tenantAdminRuntime, 'DemoAccountPolicy::assertPasswordChangeAllowed'),
+        && str_contains($tenantAdminRuntime, '$this->demoAccounts->assertPasswordChangeAllowed'),
     'demo password mutation is not rejected by the Server'
 );
 $workbench = $read($root . '/server/app/adminapi/application/WorkbenchApplicationService.php');

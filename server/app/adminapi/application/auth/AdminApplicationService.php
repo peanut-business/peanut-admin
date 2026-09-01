@@ -229,7 +229,13 @@ final class AdminApplicationService
         }
     }
 
-    public function editSelf(TenantContext $context, int $memberId, array $params): bool
+    public function editSelf(
+        TenantContext $context,
+        int $memberId,
+        array $params,
+        string $ip,
+        string $userAgent,
+    ): bool
     {
         try {
             if ($memberId !== $context->memberId) {
@@ -254,8 +260,8 @@ final class AdminApplicationService
                     $context->sessionKey,
                     (string)($params['password_old'] ?? ''),
                     (string)$params['password'],
-                    request()->ip(),
-                    request()->header('User-Agent'),
+                    $ip,
+                    $userAgent,
                     $context->requestId,
                 );
             }

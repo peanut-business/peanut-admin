@@ -48,7 +48,11 @@ class LoginController extends BaseApiController
             throw BusinessException::invalid('MEMBER_CREDENTIALS_REQUIRED', '账号和密码不能为空');
         }
 
-        return $this->data($this->login->login($this->publicTenantContext('member.login'), $params));
+        return $this->data($this->login->login(
+            $this->publicTenantContext('member.login'),
+            $params,
+            $this->request->ip(),
+        ));
     }
 
     /** 手机号验证码登录 */
@@ -64,7 +68,8 @@ class LoginController extends BaseApiController
 
         return $this->data($this->login->mobileLogin(
             NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
-            $params
+            $params,
+            $this->request->ip(),
         ));
     }
 

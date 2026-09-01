@@ -5,6 +5,7 @@ namespace app\api\application;
 
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -12,7 +13,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 class PcApplicationService
 {
     public function __construct(
-        private readonly ArticleApplicationService $articles,
+        private readonly PublicArticleQueries $articles,
         private readonly DecorationReadService $decoration,
     )
     {

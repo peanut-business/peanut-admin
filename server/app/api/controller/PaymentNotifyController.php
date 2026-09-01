@@ -6,8 +6,8 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\RechargeApplicationService;
-use app\Modules\Official\Payment\Model\PaymentScene;
+use app\Modules\Official\Payment\Contracts\PaymentMethod;
+use app\Modules\Official\Payment\Contracts\RechargeCommands;
 use app\common\service\payment\dto\CallbackRequest;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\execution\ExecutionContextStore;
@@ -20,7 +20,7 @@ class PaymentNotifyController extends BaseApiController
     public function __construct(
         App $app,
         CurrentExecutionContext $executionContext,
-        private readonly RechargeApplicationService $recharges,
+        private readonly RechargeCommands $recharges,
         private readonly ExecutionContextStore $executionContexts,
         private readonly ModuleExecutionBoundary $modules,
         private readonly ExternalTenantResolver $externalTenants,
@@ -51,7 +51,7 @@ class PaymentNotifyController extends BaseApiController
                         $this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
                         $event,
-                        PaymentScene::PAY_WAY_WECHAT,
+                        PaymentMethod::WECHAT,
                         );
                     }
                 },
@@ -78,7 +78,7 @@ class PaymentNotifyController extends BaseApiController
                         $this->recharges->settleVerifiedCallback(
                         $resolution->binding->id,
                         $event,
-                        PaymentScene::PAY_WAY_ALIPAY,
+                        PaymentMethod::ALIPAY,
                         );
                     }
                 },

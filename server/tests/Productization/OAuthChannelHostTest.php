@@ -48,7 +48,7 @@ expectOAuthChannelHost(
 
 $oauthLogic = (string)file_get_contents($serverRoot . '/app/api/application/OAuthApplicationService.php');
 $oauthProvider = (string)file_get_contents($serverRoot . '/app/Modules/Official/Oauth/ModuleProvider.php');
-$rechargeApplication = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
+$rechargeApplication = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 expectOAuthChannelHost(
     str_contains($oauthProvider, 'OAuthQueries::class =>')
         && str_contains($rechargeApplication, 'private readonly OAuthQueries $oauth')

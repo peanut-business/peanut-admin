@@ -17,14 +17,17 @@ class WebPageApplicationService
     ) {
     }
 
-    public function getConfig(AuthenticatedMemberContext|TenantContext $context): array
+    public function getConfig(
+        AuthenticatedMemberContext|TenantContext $context,
+        string $domain,
+    ): array
     {
         $setting = $this->applicationSettings->webPage($context);
         return [
             'status'      => (int)$setting['status'],
             'page_status' => (int)$setting['page_status'],
             'page_url'    => (string)$setting['page_url'],
-            'url'         => rtrim(request()->domain(), '/') . '/mobile',
+            'url'         => rtrim($domain, '/') . '/mobile',
         ];
     }
 

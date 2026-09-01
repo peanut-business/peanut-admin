@@ -364,6 +364,93 @@ expectTpq51(
 );
 expectTpq51($mapper->map(new RuntimeException('unknown')) === null, 'unknown exception was exposed as a public problem');
 
+$applicationRoot = dirname(__DIR__, 2) . '/app/adminapi/application';
+foreach ([
+    $applicationRoot . '/generator/GeneratorApplicationService.php',
+    $applicationRoot . '/dept/JobsApplicationService.php',
+] as $applicationFile) {
+    $applicationSource = (string)file_get_contents($applicationFile);
+    expectTpq51(
+        preg_match('/^\s*use\s+app\\\\[^;]+\\\\model\\\\/mi', $applicationSource) !== 1,
+        basename($applicationFile) . ' imports a persistence Model',
+    );
+}
+$jobsApplicationSource = (string)file_get_contents($applicationRoot . '/dept/JobsApplicationService.php');
+expectTpq51(
+    preg_match('/catch\s*\(\\\\Throwable[^)]*\)\s*\{\s*throw\s+\$[A-Za-z_][A-Za-z0-9_]*\s*;\s*\}/s', $jobsApplicationSource) !== 1,
+    'JobsApplicationService retained a no-op catch/rethrow block',
+);
+
+$scannerProbe = <<<'PY'
+import importlib.machinery
+import importlib.util
+import json
+import pathlib
+import sys
+
+scanner_path = pathlib.Path(sys.argv[1])
+loader = importlib.machinery.SourceFileLoader("tpq_architecture_scanner", str(scanner_path))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+scanner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(scanner)
+cases = {
+    "host_application": (
+        "server/app/adminapi/application/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Application\\CrontabApplicationService;\n",
+    ),
+    "platform_adapter_model": (
+        "server/app/platform/infrastructure/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Model\\Crontab;\n",
+    ),
+    "host_contract": (
+        "server/app/api/application/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Contracts\\TaskJobRuntime;\n",
+    ),
+    "module_internal": (
+        "server/app/Modules/Official/Task/Application/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Infrastructure\\Runtime\\PdoTaskJobRuntime;\n",
+    ),
+    "application_console": (
+        "server/app/adminapi/application/ConsoleProbe.php",
+        "<?php\nuse think\\Console;\n",
+    ),
+}
+print(json.dumps({
+    name: [hit[0] for hit in scanner.hits_for(scanner.ROOT / path, source)]
+    for name, (path, source) in cases.items()
+}))
+PY;
+$scannerPath = dirname(__DIR__, 3) . '/scripts/check-thinkphp-architecture';
+$probeOutput = [];
+$probeStatus = 0;
+exec(
+    'python3 -c ' . escapeshellarg($scannerProbe) . ' ' . escapeshellarg($scannerPath),
+    $probeOutput,
+    $probeStatus,
+);
+$probeHits = json_decode(implode("\n", $probeOutput), true, 32, JSON_THROW_ON_ERROR);
+expectTpq51($probeStatus === 0, 'architecture scanner probe did not execute');
+expectTpq51(
+    in_array('host_module_internal_dependency', $probeHits['host_application'] ?? [], true),
+    'Host Application import of a Module Application implementation was not rejected',
+);
+expectTpq51(
+    in_array('host_module_internal_dependency', $probeHits['platform_adapter_model'] ?? [], true),
+    'Platform infrastructure adapter import of a Module Model was incorrectly exempted',
+);
+expectTpq51(
+    !in_array('host_module_internal_dependency', $probeHits['host_contract'] ?? [], true),
+    'Host import of a Module Contract was rejected',
+);
+expectTpq51(
+    !in_array('host_module_internal_dependency', $probeHits['module_internal'] ?? [], true),
+    'Module-internal implementation import was treated as a Host dependency',
+);
+expectTpq51(
+    in_array('application_framework_model', $probeHits['application_console'] ?? [], true),
+    'Application import of ThinkPHP Console was not rejected',
+);
+
 $contextFailure = false;
 try {
     (new ModuleExecutionBoundary(new Tpq51UnconnectedPdo(), $current))->assertWorker('official.article');

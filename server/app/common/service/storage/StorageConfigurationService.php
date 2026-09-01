@@ -14,7 +14,10 @@ final readonly class StorageConfigurationService
 {
     private const MUTATION_PERMISSION = 'platform.ops.maintenance.manage';
 
-    public function __construct(private StorageRepository $repo) {}
+    public function __construct(
+        private StorageRepository $repo,
+        private AuditContractHost $audit,
+    ) {}
 
     public function snapshot(): array
     {
@@ -213,7 +216,7 @@ final readonly class StorageConfigurationService
         AuditOutcome $outcome,
         ?string $reasonCode,
     ): void {
-        AuditContractHost::fromPdo($this->repo->pdo())->recordPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             self::MUTATION_PERMISSION,
             $context->core->requestId,

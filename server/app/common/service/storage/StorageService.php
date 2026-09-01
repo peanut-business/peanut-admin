@@ -13,6 +13,7 @@ final readonly class StorageService
         private StorageRepository $repository,
         private StorageDriverFactory $drivers,
         private string $signingSecret,
+        private string $applicationOrigin,
     ) {
         if (strlen($this->signingSecret) < 32) {
             throw new \RuntimeException('文件签名配置无效');
@@ -225,7 +226,7 @@ final readonly class StorageService
         $expires = time() + self::DELIVERY_URL_TTL;
         $tenantId = (int)$object['tenant_id'];
         $fileKey = (string)$object['file_key'];
-        return rtrim((string)request()->domain(), '/') . '/api/storage/delivery?' . http_build_query([
+        return rtrim($this->applicationOrigin, '/') . '/api/storage/delivery?' . http_build_query([
             'tenant_id' => $tenantId,
             'file_key' => $fileKey,
             'expires' => $expires,

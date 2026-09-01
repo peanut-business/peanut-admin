@@ -40,7 +40,8 @@ final readonly class ProductTenantModuleProfileService
     public function __construct(
         private PDO $pdo,
         private string $serverRoot,
-        private array $deploymentConfig
+        private array $deploymentConfig,
+        private AuditContractHost $audit,
     ) {
     }
 
@@ -87,7 +88,6 @@ final readonly class ProductTenantModuleProfileService
             $repository,
             new OpisTenantModuleConfigValidator()
         );
-        $audit = AuditContractHost::fromPdo($this->pdo);
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
         return (new PdoTransactionManager($this->pdo))->run(function () use (
@@ -95,7 +95,6 @@ final readonly class ProductTenantModuleProfileService
             $definition,
             $repository,
             $manager,
-            $audit,
             $now,
             $moduleKeys
         ): array {
@@ -111,7 +110,7 @@ final readonly class ProductTenantModuleProfileService
                         'product_profile'
                     );
                     if ($before === null || !$before->isEffective($now)) {
-                        $audit->recordTenantSystem(
+                        $this->audit->recordTenantSystem(
                             (int)$tenant['id'],
                             'tenant-module.profile-enabled',
                             'tenant.module.apply-product-profile',

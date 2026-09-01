@@ -4,15 +4,11 @@ declare(strict_types=1);
 namespace app\platform\service;
 
 use PDO;
-use app\Modules\Official\Notification\Contracts\NotificationCommands;
-use app\Modules\Official\Task\Model\Crontab;
+use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
+use app\Modules\Official\Task\Contracts\TaskBootstrapCommands;
 use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
-use app\common\model\decoration\DecoratePage;
-use app\common\model\decoration\DecorateTabbar;
-use app\common\model\decoration\DecorationTabbarSetting;
-use app\common\model\setting\TransactionSetting;
 use app\common\service\config\BrandDefaults;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -35,9 +31,11 @@ final readonly class ApplicationTenantBootstrapService
 
     public function __construct(
         private PDO $pdo,
-        private NotificationCommands $notifications,
+        private NotificationBootstrapCommands $notifications,
+        private TaskBootstrapCommands $tasks,
         private ExecutionContextStore $executionContexts,
         private TenantSettingsBootstrapCommands $tenantSettings,
+        private TenantApplicationBootstrapPersistence $persistence,
     ) {
     }
 
@@ -147,17 +145,7 @@ SQL);
                 'update_time' => 0,
             ],
         ];
-        $existing = array_fill_keys(array_map(
-            'strval',
-            Crontab::whereIn('command', array_column($defaults, 'command'))->column('command'),
-        ), true);
-        $missing = array_values(array_filter(
-            $defaults,
-            static fn(array $row): bool => !isset($existing[$row['command']]),
-        ));
-        if ($missing !== []) {
-            (new Crontab())->saveAll($missing);
-        }
+        $this->tasks->seedDefaults($defaults);
     }
 
     private function seedNoticeScenes(SystemExecutionContext $execution): void
@@ -174,47 +162,12 @@ SQL);
             [4, 'PC 首页', '[{"title":"首页轮播图","name":"pc-banner","content":{"enabled":1,"data":[{"image":"","name":"","link":{"target_type":"shop","target":"home"}}]},"styles":{"position":"absolute","left":"40px","top":"75px","width":"750px","height":"340px"}}]', '[]'],
             [5, '系统风格', '{"themeColorId":3,"topTextColor":"white","navigationBarColor":"#A74BFD","themeColor1":"#A74BFD","themeColor2":"#CB60FF","buttonColor":"white"}', '[]'],
         ];
-        $existingPageTypes = array_fill_keys(array_map(
-            'intval',
-            DecoratePage::whereIn('type', array_column($pages, 0))->column('type'),
-        ), true);
-        $missingPages = [];
-        foreach ($pages as [$type, $name, $data, $meta]) {
-            if (!isset($existingPageTypes[$type])) {
-                $missingPages[] = compact('type', 'name', 'data', 'meta') + [
-                    'create_time' => 0,
-                    'update_time' => 0,
-                ];
-            }
-        }
-        if ($missingPages !== []) {
-            (new DecoratePage())->saveAll($missingPages);
-        }
-
         $tabbars = [
             [0, '首页', '{"target_type":"shop","target":"home"}'],
             [1, '资讯', '{"target_type":"shop","target":"news"}'],
             [2, '我的', '{"target_type":"shop","target":"profile"}'],
         ];
-        $existingPositions = array_fill_keys(array_map(
-            'intval',
-            DecorateTabbar::whereIn('position', array_column($tabbars, 0))->column('position'),
-        ), true);
-        $missingTabbars = [];
-        foreach ($tabbars as [$position, $name, $link]) {
-            if (!isset($existingPositions[$position])) {
-                $missingTabbars[] = compact('position', 'name', 'link') + [
-                    'selected' => '',
-                    'unselected' => '',
-                    'is_show' => 1,
-                    'create_time' => 0,
-                    'update_time' => 0,
-                ];
-            }
-        }
-        if ($missingTabbars !== []) {
-            (new DecorateTabbar())->saveAll($missingTabbars);
-        }
+        $this->persistence->seedDecoration($pages, $tabbars);
     }
 
     private function seedSettings(int $tenantId): void
@@ -245,23 +198,21 @@ SQL);
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
             [$tenantId]
         );
-        if (DecorationTabbarSetting::where([])->find() === null) {
-            DecorationTabbarSetting::create([
+        $this->persistence->ensureSettings(
+            [
                 'style' => '{"default_color":"#666666","selected_color":"#2F80ED"}',
                 'create_time' => 0,
                 'update_time' => 0,
-            ]);
-        }
-        if (TransactionSetting::where([])->find() === null) {
-            TransactionSetting::create([
+            ],
+            [
                 'cancel_unpaid_orders' => 1,
                 'cancel_unpaid_orders_times' => 30,
                 'verification_orders' => 1,
                 'verification_orders_times' => 24,
                 'create_time' => 0,
                 'update_time' => 0,
-            ]);
-        }
+            ],
+        );
     }
 
     private function seedExternalBindings(int $tenantId, string $tenantCode): void

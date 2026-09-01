@@ -19,7 +19,10 @@ class OfficialAccountController extends BaseAdminController
 
     public function getConfig()
     {
-        return $this->data($this->officialAccounts->getConfig($this->tenantAdminContext()));
+        return $this->data($this->officialAccounts->getConfig(
+            $this->tenantAdminContext(),
+            (string)$this->request->domain(),
+        ));
     }
 
     public function setConfig()

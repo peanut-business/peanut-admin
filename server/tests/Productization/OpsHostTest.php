@@ -73,7 +73,7 @@ expectOpsHost(
     'oversized payload must fail closed to bounded metadata'
 );
 
-$info = app(SystemApplicationService::class)->getInfo();
+$info = app(SystemApplicationService::class)->getInfo('test-server');
 expectOpsHost(array_keys($info) === ['server', 'env', 'auth'], 'maintenance probe shape changed');
 expectOpsHost(($info['env'][0]['require'] ?? null) === '8.3版本以上', 'PHP requirement must match Composer');
 foreach ($info['auth'] as $directory) {

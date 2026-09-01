@@ -5,10 +5,11 @@ namespace app\adminapi\service\generator;
 
 use app\common\model\generator\GeneratorColumn;
 use app\common\model\generator\GeneratorTable;
+use app\common\model\generator\GeneratorDownload;
 use app\common\persistence\TransactionalExecution;
 use app\common\persistence\ConvertsModelPage;
 
-/** Instance-owned batch persistence for imported generator metadata. */
+/** Instance-owned persistence for generator metadata and download tokens. */
 final readonly class GeneratorImportPersistence
 {
     use ConvertsModelPage;
@@ -69,5 +70,46 @@ final readonly class GeneratorImportPersistence
                 (new GeneratorColumn())->saveAll($columnRows);
             }
         });
+    }
+
+    public function tables(int $adminId)
+    {
+        return GeneratorTable::where('admin_id', $adminId);
+    }
+
+    public function columns(int $tableId)
+    {
+        return GeneratorColumn::where('table_id', $tableId);
+    }
+
+    /** @param int[] $tableIds */
+    public function columnsForTables(array $tableIds)
+    {
+        return GeneratorColumn::whereIn('table_id', $tableIds);
+    }
+
+    /** @param list<array<string,mixed>> $rows */
+    public function saveColumns(array $rows): void
+    {
+        if ($rows !== []) {
+            (new GeneratorColumn())->saveAll($rows);
+        }
+    }
+
+    /** @param int[] $tableIds */
+    public function deleteColumns(array $tableIds): void
+    {
+        GeneratorColumn::whereIn('table_id', $tableIds)->delete();
+    }
+
+    /** @param array<string,mixed> $values */
+    public function createDownload(array $values): void
+    {
+        GeneratorDownload::create($values);
+    }
+
+    public function downloads(int $adminId)
+    {
+        return GeneratorDownload::where('admin_id', $adminId);
     }
 }

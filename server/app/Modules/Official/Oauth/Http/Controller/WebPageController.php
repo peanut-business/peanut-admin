@@ -19,7 +19,10 @@ class WebPageController extends BaseAdminController
 
     public function getConfig()
     {
-        return $this->data($this->webPages->getConfig($this->tenantAdminContext()));
+        return $this->data($this->webPages->getConfig(
+            $this->tenantAdminContext(),
+            (string)$this->request->domain(),
+        ));
     }
 
     public function setConfig()

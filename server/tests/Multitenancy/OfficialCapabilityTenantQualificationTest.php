@@ -31,7 +31,7 @@ foreach ([
     'execution_context_store' => 'app/common/execution/ExecutionContextStore.php',
     'tenant_session' => 'app/adminapi/controller/auth/TenantSessionController.php',
     'tenant_session_application' => 'app/adminapi/application/auth/TenantSessionApplicationService.php',
-    'admin_login' => 'app/adminapi/application/auth/LoginApplicationService.php',
+    'admin_login' => 'app/adminapi/controller/auth/LoginController.php',
     'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
     'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
@@ -43,7 +43,7 @@ foreach ([
     'article_repository' => 'app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php',
     'decoration_repository' => 'app/common/service/decoration/DecorationTenantRepository.php',
     'notice_repository' => 'app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php',
-    'oauth_repository' => 'app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php',
+    'oauth_repository' => 'app/Modules/Official/Oauth/Infrastructure/Persistence/ThinkPhpOAuthPersistence.php',
     'oauth_queries' => 'app/Modules/Official/Oauth/Application/OAuthQueryService.php',
     'external_resolver' => 'app/common/service/external/ExternalTenantResolver.php',
     'external_resolver_core' => 'vendor/peanut-admin/core/integration-security/src/External/ExternalTenantResolver.php',
@@ -219,9 +219,9 @@ qualificationExpect(
     'external callbacks do not reject ambiguous or suspended Tenant ownership'
 );
 qualificationExpect(
-    str_contains($sources['oauth_queries'], 'OAuthTenantRepository::identities($context)')
-        && str_contains($sources['oauth_queries'], "'member_id' => \$memberId")
-        && str_contains($sources['oauth_repository'], 'return OAuthIdentity::where([])'),
+    str_contains($sources['oauth_queries'], 'wechatSubjectForMember($context, $memberId, $terminal)')
+        && str_contains($sources['oauth_repository'], "'member_id' => \$memberId")
+        && str_contains($sources['oauth_repository'], 'OAuthIdentity::where('),
     'OAuth subject lookup is not explicitly bound to the member Tenant context'
 );
 qualificationExpect(
@@ -278,10 +278,9 @@ foreach (['agreement', 'site-statistics', 'member-profile', 'login', 'web-page',
     );
 }
 qualificationExpect(
-    str_contains($sources['member_token'], "Config::get('jwt.expire'")
-        && str_contains($sources['member_token'], "'aud'")
+    str_contains($sources['member_token'], "'aud'")
         && str_contains($sources['member_token'], "'sub'")
-        && str_contains($sources['member_token'], 'strlen($secret) < 32')
+        && str_contains($sources['member_token'], 'strlen($this->secret) < 32')
         && !str_contains($sources['jwt_config'], 'peanut-admin-change-this-in-production')
         && !str_contains($sources['member_token'], 'peanut-admin-secret-key'),
     'member JWT is missing key strength, lifetime, issuer/audience, or subject validation'

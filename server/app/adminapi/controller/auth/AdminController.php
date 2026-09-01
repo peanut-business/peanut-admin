@@ -33,7 +33,19 @@ class AdminController extends BaseAdminController
     }
 
     public function self()   { return $this->data($this->admins->detail($this->tenantAdminContext(), $this->adminId)); }
-    public function editSelf() { $this->validate($this->request->post(), EditSelfValidate::class); $this->admins->editSelf($this->tenantAdminContext(), $this->adminId, $this->request->post()); return $this->success('操作成功'); }
+    public function editSelf()
+    {
+        $params = $this->request->post();
+        $this->validate($params, EditSelfValidate::class);
+        $this->admins->editSelf(
+            $this->tenantAdminContext(),
+            $this->adminId,
+            $params,
+            $this->request->ip(),
+            $this->request->header('User-Agent'),
+        );
+        return $this->success('操作成功');
+    }
 
     public function add()
     {

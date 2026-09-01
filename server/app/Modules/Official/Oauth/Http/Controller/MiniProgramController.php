@@ -19,7 +19,10 @@ class MiniProgramController extends BaseAdminController
 
     public function getConfig()
     {
-        return $this->data($this->miniPrograms->getConfig($this->tenantAdminContext()));
+        return $this->data($this->miniPrograms->getConfig(
+            $this->tenantAdminContext(),
+            (string)$this->request->domain(),
+        ));
     }
 
     public function setConfig()

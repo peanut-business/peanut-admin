@@ -12,6 +12,8 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\org\AdminDirectoryQuery;
+use app\common\service\CrontabCommandService;
+use Closure;
 use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
 use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
 use PeanutAdmin\TaskJob\Application\TaskJobService;
@@ -22,7 +24,6 @@ use PeanutAdmin\TaskJob\Submission\TaskSubmissionProvider;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionRegistry;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
-use think\Console;
 
 final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 {
@@ -33,7 +34,8 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
         private CurrentExecutionContext $currentExecution,
         private AdminDirectoryQuery $adminDirectory,
         private ModuleExecutionBoundary $modules,
-        private Console $console,
+        private CrontabCommandService $commands,
+        private Closure $dispatch,
         private int $workerLimit,
     ) {
         if (strlen($this->signingKey) < 32) {
@@ -110,7 +112,8 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
             $this->modules,
             $this->executionContexts,
             $this->currentExecution,
-            $this->console,
+            $this->commands,
+            $this->dispatch,
         );
     }
 }

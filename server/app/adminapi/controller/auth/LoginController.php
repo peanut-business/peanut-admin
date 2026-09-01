@@ -5,11 +5,14 @@ namespace app\adminapi\controller\auth;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\auth\LoginApplicationService;
+use app\adminapi\http\AdminRequest;
 use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\dto\authorization\AdminPrincipal;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
 use app\common\service\DemoAccountPolicy;
+use app\common\service\tenant\ApplicationHostPolicy;
+use app\common\service\tenant\TenantEntryBindingResolver;
 use app\common\execution\ExecutionContextAccess;
 use app\common\application\BusinessException;
 use think\App;
@@ -25,6 +28,9 @@ class LoginController extends BaseAdminController
         private readonly AdminAuthorizationQuery $authorization,
         private readonly LoginApplicationService $loginApplication,
         private readonly ExecutionContextAccess $contextAccess,
+        private readonly ApplicationHostPolicy $hostPolicy,
+        private readonly TenantEntryBindingResolver $entryBindings,
+        private readonly DemoAccountPolicy $demoAccounts,
     ) {
         parent::__construct($app, $executionContext);
     }
@@ -38,7 +44,23 @@ class LoginController extends BaseAdminController
         $params['terminal'] = (int)($params['terminal'] ?? 1);
 
         $this->validate($params, LoginValidate::class);
-        return $this->data($this->loginApplication->login($params));
+        try {
+            $this->hostPolicy->assertTenantAdmin($this->request);
+            $tenantCode = $this->entryBindings->loginTenantCode(
+                $this->request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
+            );
+        } catch (\DomainException|\InvalidArgumentException) {
+            throw new BusinessException('ADMIN_LOGIN_REJECTED', 401, '账号或密码错误');
+        }
+        return $this->data($this->loginApplication->login(
+            $params,
+            $tenantCode,
+            $this->request->ip(),
+            $this->request->header('User-Agent'),
+            AdminRequest::requestId($this->request),
+        ));
     }
 
     public function info()
@@ -67,7 +89,7 @@ class LoginController extends BaseAdminController
             'tenantName' => $admin['tenant_name'],
             'canSwitchTenant' => !$this->contextAccess->tenantEntryBound()
                 && ($admin['switchable_tenant_count'] ?? 0) > 1,
-            'demoMode' => DemoAccountPolicy::isDemoEmail((string)$admin['username']),
+            'demoMode' => $this->demoAccounts->isDemoEmail((string)$admin['username']),
         ]);
     }
 

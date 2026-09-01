@@ -70,7 +70,7 @@ expectMemberFinance(
 );
 
 $callers = [
-    'app/api/application/RechargeApplicationService.php',
+    'app/Modules/Official/Payment/Application/RechargeApplicationService.php',
     'app/Modules/Official/Payment/Application/RechargeAdministrationService.php',
 ];
 expectMemberFinance(
@@ -107,7 +107,7 @@ foreach ($callers as $relativePath) {
     expectMemberFinance(!str_contains($source, 'MemberBalanceLog::create'), 'caller writes the ledger directly: ' . $relativePath);
 }
 
-$settle = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
+$settle = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 $paidGuard = strpos($settle, 'pay_status === FinanceTenantRepository::PAY_STATUS_PAID');
 $credit = strpos($settle, 'memberBalances->applyInTransaction');
 expectMemberFinance($paidGuard !== false && $credit !== false && $paidGuard < $credit, 'paid callback guard must precede credit');

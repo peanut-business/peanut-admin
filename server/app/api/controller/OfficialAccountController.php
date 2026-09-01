@@ -40,7 +40,7 @@ class OfficialAccountController extends BaseApiController
                 (string)$this->request->route('binding'),
                 'wechat.official.verify',
                 $this->operationId(),
-                static fn(array $config): bool => $this->officialAccount->verify($params, $config),
+                fn(array $config): bool => $this->officialAccount->verify($params, $config),
             );
             $this->executionContexts->run(
                 new \app\common\execution\SystemExecutionContext($resolution->context),
@@ -61,7 +61,7 @@ class OfficialAccountController extends BaseApiController
                 (string)$this->request->route('binding'),
                 'wechat.official.callback',
                 $this->operationId(),
-                static function (array $config) use ($params): bool {
+                function (array $config) use ($params): bool {
                     return strtolower((string)($params['encrypt_type'] ?? '')) !== 'aes'
                         && $this->officialAccount->verify($params, $config);
                 },

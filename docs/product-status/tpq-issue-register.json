@@ -196,9 +196,14 @@
       "description": "Common code imports or constructs a concrete application Module"
     },
     {
+      "id": "host_module_internal_dependency",
+      "tpq": "WP1",
+      "description": "Host business code imports a Module Application, Infrastructure or Model implementation instead of its Contracts"
+    },
+    {
       "id": "application_framework_model",
       "tpq": "WP1",
-      "description": "Application orchestration imports or branches on a ThinkORM Model"
+      "description": "Application orchestration imports or branches on a ThinkORM Model or ThinkPHP Console"
     },
     {
       "id": "framework_upload_contract",
@@ -233,7 +238,7 @@
     {
       "id": "global_configuration_locator",
       "tpq": "WP1",
-      "description": "Application or service code locates runtime configuration outside an explicit composition root"
+      "description": "Application or service code locates runtime configuration, environment or HTTP request state outside an explicit boundary"
     },
     {
       "id": "static_runtime_assembly",

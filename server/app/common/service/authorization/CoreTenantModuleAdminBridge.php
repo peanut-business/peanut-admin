@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\authorization;
 
-use app\common\model\auth\SystemMenu;
+use app\common\contract\authorization\AdminMenuPersistence;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -44,6 +44,7 @@ final readonly class CoreTenantModuleAdminBridge
     public function __construct(
         private PDO $pdo,
         private PdoModuleGovernanceProvider $moduleGovernance,
+        private AdminMenuPersistence $menus,
     ) {
     }
 
@@ -169,17 +170,8 @@ final readonly class CoreTenantModuleAdminBridge
                 static fn(string $moduleKey): bool => isset($installed[$moduleKey])
             ),
         ])), true);
-        $rows = SystemMenu::alias('m')
-            ->join('permission p', 'p.`key`=m.perms', 'LEFT')
-            ->where('m.is_disable', 0)
-            ->where('m.perms', '<>', '')
-            ->field(['m.perms', 'p.module_key', 'p.status' => 'permission_status'])
-            ->distinct(true)
-            ->select()
-            ->toArray();
-
         $permissions = [];
-        foreach ($rows as $row) {
+        foreach ($this->menus->systemMenuPermissionRows() as $row) {
             $moduleKey = $row['module_key'] ?? null;
             if ($moduleKey !== null && $moduleKey !== '') {
                 if (($row['permission_status'] ?? null) !== 'active' || !isset($active[$moduleKey])) {

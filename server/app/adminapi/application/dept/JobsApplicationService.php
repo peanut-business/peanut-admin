@@ -5,9 +5,7 @@ namespace app\adminapi\application\dept;
 
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
-use app\common\model\dept\Jobs;
 use app\common\persistence\TransactionalExecution;
-use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 use app\common\service\org\OrgTenantRepository;
@@ -56,32 +54,28 @@ class JobsApplicationService
     public function lists(TenantContext $context, array $params): PageResult|array
     {
         $params = self::normalizeInput($params);
-        try {
-            $count = self::buildListQuery($context, $params)->count();
-            $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
-            $pageSize = max(1, min(100, $pageSize));
+        $count = self::buildListQuery($context, $params)->count();
+        $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
+        $pageSize = max(1, min(100, $pageSize));
 
-            if ((int)($params['export'] ?? 0) === 1) {
-                return self::exportInfo($count, $pageSize);
-            }
-            if ((int)($params['export'] ?? 0) === 2) {
-                return $this->export($context, $params, $count, $pageSize);
-            }
-
-            $pagination = PaginationInput::from($params);
-            $pageResult = PaginationInput::from($params)->result(self::buildListQuery($context, $params));
-            $pageResult = OrgTenantRepository::arrayPage($pageResult);
-            $rows = $pageResult->items;
-
-            return new PageResult(
-                self::formatRows($rows),
-                $pageResult->total,
-                $pageResult->page,
-                $pageResult->pageSize,
-            );
-        } catch (\Throwable $e) {
-            throw $e;
+        if ((int)($params['export'] ?? 0) === 1) {
+            return self::exportInfo($count, $pageSize);
         }
+        if ((int)($params['export'] ?? 0) === 2) {
+            return $this->export($context, $params, $count, $pageSize);
+        }
+
+        $pagination = PaginationInput::from($params);
+        $pageResult = $pagination->result(self::buildListQuery($context, $params));
+        $pageResult = OrgTenantRepository::arrayPage($pageResult);
+        $rows = $pageResult->items;
+
+        return new PageResult(
+            self::formatRows($rows),
+            $pageResult->total,
+            $pageResult->page,
+            $pageResult->pageSize,
+        );
     }
 
     /** 全部正常岗位（供选择器使用）。 */
@@ -106,85 +100,69 @@ class JobsApplicationService
     public function add(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
-        try {
-            return $this->transactions->run(function () use ($context, $params): bool {
-                self::assertUnique($context, (string)$params['name'], (string)$params['code']);
-                $status = (int)$params['status'];
-                OrgTenantRepository::create(Jobs::class, [
-                    'name'       => trim((string)$params['name']),
-                    'code'       => trim((string)$params['code']),
-                    'sort'       => (int)($params['sort'] ?? 0),
-                    'status'     => $status,
-                    'is_disable' => $status === 1 ? 0 : 1,
-                    'remark'     => (string)($params['remark'] ?? ''),
-                ]);
-                return true;
-            });
-        } catch (\Throwable $e) {
-            throw $e;
-        }
+        return $this->transactions->run(function () use ($context, $params): bool {
+            self::assertUnique($context, (string)$params['name'], (string)$params['code']);
+            $status = (int)$params['status'];
+            OrgTenantRepository::createJob([
+                'name'       => trim((string)$params['name']),
+                'code'       => trim((string)$params['code']),
+                'sort'       => (int)($params['sort'] ?? 0),
+                'status'     => $status,
+                'is_disable' => $status === 1 ? 0 : 1,
+                'remark'     => (string)($params['remark'] ?? ''),
+            ]);
+            return true;
+        });
     }
 
     public function edit(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
-        try {
-            return $this->transactions->run(function () use ($context, $params): bool {
-                $id = (int)$params['id'];
-                $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
-                if ($jobs->isEmpty()) {
-                    throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
-                }
-                self::assertUnique($context, (string)$params['name'], (string)$params['code'], $id);
-                $status = (int)$params['status'];
-                $jobs->save([
-                    'name'       => trim((string)$params['name']),
-                    'code'       => trim((string)$params['code']),
-                    'sort'       => (int)($params['sort'] ?? 0),
-                    'status'     => $status,
-                    'is_disable' => $status === 1 ? 0 : 1,
-                    'remark'     => (string)($params['remark'] ?? ''),
-                ]);
-                return true;
-            });
-        } catch (\Throwable $e) {
-            throw $e;
-        }
+        return $this->transactions->run(function () use ($context, $params): bool {
+            $id = (int)$params['id'];
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
+            if ($jobs->isEmpty()) {
+                throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
+            }
+            self::assertUnique($context, (string)$params['name'], (string)$params['code'], $id);
+            $status = (int)$params['status'];
+            $jobs->save([
+                'name'       => trim((string)$params['name']),
+                'code'       => trim((string)$params['code']),
+                'sort'       => (int)($params['sort'] ?? 0),
+                'status'     => $status,
+                'is_disable' => $status === 1 ? 0 : 1,
+                'remark'     => (string)($params['remark'] ?? ''),
+            ]);
+            return true;
+        });
     }
 
     public function delete(TenantContext $context, int $id): bool
     {
-        try {
-            return $this->transactions->run(function () use ($context, $id): bool {
-                $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
-                if ($jobs->isEmpty()) {
-                    throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
-                }
-                $jobs->delete();
-                return true;
-            });
-        } catch (\Throwable $e) {
-            throw $e;
-        }
+        return $this->transactions->run(function () use ($context, $id): bool {
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
+            if ($jobs->isEmpty()) {
+                throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
+            }
+            $jobs->delete();
+            return true;
+        });
     }
 
     public function updateStatus(TenantContext $context, int $id, int $status): bool
     {
-        try {
-            return $this->transactions->run(function () use ($context, $id, $status): bool {
-                $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
-                if ($jobs->isEmpty()) {
-                    throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
-                }
-                $jobs->save([
-                    'status' => $status,
-                    'is_disable' => $status === 1 ? 0 : 1,
-                ]);
-                return true;
-            });
-        } catch (\Throwable $e) {
-            throw $e;
-        }
+        return $this->transactions->run(function () use ($context, $id, $status): bool {
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
+            if ($jobs->isEmpty()) {
+                throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
+            }
+            $jobs->save([
+                'status' => $status,
+                'is_disable' => $status === 1 ? 0 : 1,
+            ]);
+            return true;
+        });
     }
 
     private static function buildListQuery(TenantContext $context, array $params)
@@ -291,7 +269,7 @@ class JobsApplicationService
 
     private static function jobs(TenantContext $context)
     {
-        return OrgTenantRepository::query(Jobs::class);
+        return OrgTenantRepository::jobs();
     }
 
     private static function formatTime($value): string

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\authorization;
 
+use app\common\contract\authorization\AdminMenuPersistence;
 use PDO;
-use app\common\model\auth\SystemMenu;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 
@@ -15,6 +15,7 @@ final readonly class RoleAdministrationRuntime
         private PDO $pdo,
         private RoleAdminService $roles,
         private AdminAuthorizationService $authorization,
+        private AdminMenuPersistence $menus,
     ) {
     }
 
@@ -29,10 +30,7 @@ final readonly class RoleAdministrationRuntime
         if ($permissionKeys === []) {
             return [];
         }
-        $ids = array_map('intval', SystemMenu::where('is_disable', 0)
-            ->whereIn('perms', $permissionKeys)
-            ->order('id')
-            ->column('id'));
+        $ids = $this->menus->enabledMenuIds($permissionKeys);
         foreach ($this->authorization->assignableMenuRecords($context) as $menu) {
             if (in_array((string)$menu['required_permission'], $permissionKeys, true)) {
                 $ids[] = (int)$menu['id'];
@@ -56,14 +54,7 @@ final readonly class RoleAdministrationRuntime
         if ($menuIds === []) {
             return [];
         }
-        $keys = array_values(array_unique(array_map('strval', SystemMenu::alias('m')
-            ->join('permission p', 'p.`key`=m.perms')
-            ->where('m.is_disable', 0)
-            ->whereIn('m.id', $menuIds)
-            ->where('m.perms', '<>', '')
-            ->where('p.status', 'active')
-            ->order('p.`key`')
-            ->column('p.`key`'))));
+        $keys = $this->menus->activePermissionKeys($menuIds);
         $selected = array_fill_keys($menuIds, true);
         foreach ($this->authorization->assignableMenuRecordsForTenant($tenantId) as $menu) {
             if (isset($selected[(int)$menu['id']]) && trim((string)$menu['required_permission']) !== '') {

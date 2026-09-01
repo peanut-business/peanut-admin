@@ -31,7 +31,7 @@ class SystemController extends BaseAdminController
         if ($denial !== null) {
             return $denial;
         }
-        return $this->data($this->system->getInfo());
+        return $this->data($this->system->getInfo((string)$this->request->server('SERVER_SOFTWARE', '')));
     }
 
     /** 清除系统缓存 */

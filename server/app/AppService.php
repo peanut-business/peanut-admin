@@ -15,8 +15,11 @@ use app\api\application\IndexApplicationService;
 use app\api\application\LoginApplicationService as MemberLoginApplicationService;
 use app\api\application\OAuthApplicationService;
 use app\api\service\UserTokenService;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\common\composition\ModuleComposition;
+use app\common\contract\AdminPermissionPolicy;
 use app\common\contract\authorization\AdminAuthorizationQuery;
+use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\service\audit\AuditContractHost;
@@ -36,9 +39,12 @@ use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\CoreServiceOverrides;
 use app\common\service\CrontabCommandService;
+use app\common\service\DemoAccountPolicy;
 use app\common\service\FileService;
+use app\common\service\ProductAssetReferenceService;
 use app\common\service\authorization\MenuPermissionUsageQuery;
 use app\common\service\authorization\RoleAdministrationRuntime;
+use app\common\service\authorization\ThinkPhpAdminMenuPersistence;
 use app\common\service\org\AdminDirectoryQuery;
 use app\common\service\org\DepartmentAdministrationRuntime;
 use app\common\service\org\TenantAdminRuntime;
@@ -60,6 +66,8 @@ use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
 use app\common\validate\InputValidator;
 use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\TenantApplicationBootstrapPersistence;
+use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
 use app\platform\service\ops\PlatformOpsApplicationService;
 use app\platform\service\ops\ApplicationRuntimeStatusProvider;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
@@ -75,6 +83,7 @@ use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
+use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
@@ -94,6 +103,23 @@ class AppService extends Service
         $configuredOverrides = Config::get('peanut.overrides', []);
         CoreServiceOverrides::configure(is_array($configuredOverrides) ? $configuredOverrides : []);
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
+        $this->app->bind(DemoAccountPolicy::class, fn(): DemoAccountPolicy => new DemoAccountPolicy(
+            $this->app->make(PDO::class),
+            (string)(getenv('PEANUT_DEMO_MODE') ?: '') === 'enabled',
+            array_values(array_filter([
+                (string)(getenv('ADMIN_INITIAL_EMAIL') ?: ''),
+                (string)(getenv('PLATFORM_INITIAL_EMAIL') ?: ''),
+                (string)(getenv('PEANUT_DEMO_TENANT_A_EMAIL') ?: ''),
+                (string)(getenv('PEANUT_DEMO_TENANT_B_EMAIL') ?: ''),
+            ], static fn(string $email): bool => trim($email) !== '')),
+        ));
+        $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
+            CoreServiceOverrides::adminPermissionPolicy());
+        $this->app->bind(AdminMenuPersistence::class, ThinkPhpAdminMenuPersistence::class);
+        $this->app->bind(
+            TenantApplicationBootstrapPersistence::class,
+            ThinkPhpTenantApplicationBootstrapPersistence::class,
+        );
         $this->app->bind(TransactionManager::class, fn(): TransactionManager => new PdoTransactionManager(
             $this->app->make(PDO::class),
         ));
@@ -133,6 +159,8 @@ class AppService extends Service
         $this->app->bind(AdminAuthorizationService::class, fn(): AdminAuthorizationService => new AdminAuthorizationService(
             $this->app->make(PDO::class),
             $this->app->make(CoreTenantModuleAdminBridge::class),
+            $this->app->make(AdminMenuPersistence::class),
+            $this->app->make(AdminPermissionPolicy::class),
         ));
         $this->app->bind(AdminAuthorizationQuery::class, fn(): AdminAuthorizationQuery => $this->app->make(AdminAuthorizationService::class));
         $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
@@ -157,12 +185,19 @@ class AppService extends Service
             $this->app->make(StorageRepository::class),
             $this->app->make(StorageDriverFactory::class),
             (string)Config::get('jwt.secret', ''),
+            (string)$this->app->request->domain(),
         ));
         $this->app->bind(FileService::class, fn(): FileService => new FileService(
             $this->app->make(StorageService::class),
+            (string)$this->app->request->domain(),
+        ));
+        $this->app->bind(ProductAssetReferenceService::class, fn(): ProductAssetReferenceService => new ProductAssetReferenceService(
+            $this->app->make(FileService::class),
+            (string)$this->app->request->domain(),
         ));
         $this->app->bind(StorageConfigurationService::class, fn(): StorageConfigurationService => new StorageConfigurationService(
             $this->app->make(StorageRepository::class),
+            $this->app->make(AuditContractHost::class),
         ));
         $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
             return new ModuleExecutionBoundary(
@@ -186,6 +221,9 @@ class AppService extends Service
         ));
         $this->app->bind(RoleAdministrationRuntime::class, fn(): RoleAdministrationRuntime => new RoleAdministrationRuntime(
             $this->app->make(PDO::class),
+            new RoleAdminService($this->app->make(PDO::class)),
+            $this->app->make(AdminAuthorizationService::class),
+            $this->app->make(AdminMenuPersistence::class),
         ));
         $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
             $this->app->make(PDO::class),
@@ -220,9 +258,11 @@ class AppService extends Service
             }
             return new PlatformRuntimeFactory(
                 $this->app->make(PDO::class),
-                $this->app->make(\app\Modules\Official\Notification\Contracts\NotificationCommands::class),
+                $this->app->make(\app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands::class),
+                $this->app->make(\app\Modules\Official\Task\Contracts\TaskBootstrapCommands::class),
                 $this->app->make(ExecutionContextStore::class),
                 $this->app->make(TenantSettingsBootstrapCommands::class),
+                $this->app->make(TenantApplicationBootstrapPersistence::class),
                 (string)Config::get('platform_auth.identifier_hmac_key', ''),
                 $moduleConfig,
                 $trustedModuleKeyConfig,
@@ -254,6 +294,7 @@ class AppService extends Service
         $this->app->bind(CoreTenantModuleAdminBridge::class, fn(): CoreTenantModuleAdminBridge => new CoreTenantModuleAdminBridge(
             $this->app->make(PDO::class),
             $this->app->make(PdoModuleGovernanceProvider::class),
+            $this->app->make(AdminMenuPersistence::class),
         ));
         $this->app->bind(ApplicationRuntimeStatusProvider::class, fn(): ApplicationRuntimeStatusProvider => $this->app
             ->make(PlatformOpsRuntimeFactory::class)
@@ -350,13 +391,20 @@ class AppService extends Service
         $this->app->bind(IndexApplicationService::class, fn(): IndexApplicationService => new IndexApplicationService(
             $this->app->make(TenantIdentityQuery::class),
             $this->app->make(\app\common\service\config\TenantApplicationSettingService::class),
-            $this->app->make(TenantEntryBindingResolver::class),
-            $this->app->make(FileService::class),
-            $this->app->make(\app\common\service\ProductAssetReferenceService::class),
+            $this->app->make(PublicArticleQueries::class),
             $this->app->make(\app\common\service\RichTextResourceService::class),
             $this->app->make(\app\common\service\decoration\DecorationReadService::class),
             $this->app->make(\app\common\service\config\WebsiteConfigService::class),
             (string)Config::get('project.version', ''),
+            [
+                'enabled' => $this->app->make(DemoAccountPolicy::class)->enabled(),
+                'tenant_a_host' => (string)(getenv('PEANUT_DEMO_TENANT_A_HOST') ?: ''),
+                'tenant_b_host' => (string)(getenv('PEANUT_DEMO_TENANT_B_HOST') ?: ''),
+                'shared_hosts' => self::hostList((string)Config::get('deployment.tenant_admin_hosts', '')),
+                'tenant_a_email' => (string)(getenv('PEANUT_DEMO_TENANT_A_EMAIL') ?: ''),
+                'tenant_b_email' => (string)(getenv('PEANUT_DEMO_TENANT_B_EMAIL') ?: ''),
+                'password' => (string)(getenv('PEANUT_DEMO_SHARED_PASSWORD') ?: ''),
+            ],
         ));
         $this->app->bind(MemberLoginApplicationService::class, fn(): MemberLoginApplicationService => new MemberLoginApplicationService(
             $this->app->make(\app\Modules\Official\Member\Contracts\MemberIdentityCommands::class),

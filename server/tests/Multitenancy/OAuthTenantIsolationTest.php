@@ -143,6 +143,7 @@ if (($argv[1] ?? '') === 'oauth-worker') {
             $context,
             'fixture-code',
             oauthBinding($bindingId, $tenantId),
+            '127.0.0.1',
             new OAuthTenantFixtureTransport($subject, $unionId, 'Concurrent member'),
         ),
     );
@@ -253,6 +254,7 @@ SQL);
             $betaLoginContext,
             'fixture-code',
             oauthBinding(302, 202),
+            '127.0.0.1',
             new OAuthTenantFixtureTransport('same-concurrent-subject', 'same-concurrent-union', 'Beta member'),
         ),
     );
@@ -272,6 +274,7 @@ SQL);
             $rollbackContext,
             'fixture-code',
             oauthBinding(302, 202),
+            '127.0.0.1',
             new OAuthTenantFixtureTransport('rollback-subject', 'rollback-union', 'Rollback member'),
         ),
     );

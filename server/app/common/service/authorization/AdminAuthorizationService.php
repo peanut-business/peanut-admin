@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace app\common\service\authorization;
 
 use app\common\contract\authorization\AdminAuthorizationQuery;
+use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\authorization\AuthorizedOperationFactory;
+use app\common\contract\AdminPermissionPolicy;
 use app\common\dto\authorization\AdminAccessData;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
-use app\common\model\auth\SystemMenu;
-use app\common\service\CoreServiceOverrides;
 use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -24,6 +24,8 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
     public function __construct(
         private readonly PDO $pdo,
         private readonly CoreTenantModuleAdminBridge $moduleAdmin,
+        private readonly AdminMenuPersistence $menus,
+        private readonly AdminPermissionPolicy $permissionPolicy,
     ) {
     }
 
@@ -101,7 +103,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             InstanceControlPlanePolicy::tenantAdminPermissions()
         ));
         $owned = $bridge->accessData($tenantContext)['permissions'];
-        $allowed = CoreServiceOverrides::adminPermissionPolicy()->canAccess(
+        $allowed = $this->permissionPolicy->canAccess(
             $admin->root,
             $accessUri,
             $registered,
@@ -190,25 +192,21 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             return [];
         }
 
-        $query = SystemMenu::where('type', 'in', ['M', 'C'])
-            ->where('is_disable', 0)
-            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
-            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths());
-        $query->whereNotIn('paths', [
-            '/article',
-            '/article/cate',
-            '/article/list',
-            ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
-        ]);
         $registered = $this->moduleAdmin->registeredSystemMenuPermissions($tenantContext->tenantId);
         $visiblePermissions = $admin->root
             ? $registered
             : array_values(array_intersect($permissions, $registered));
-        $query->where(static function ($query) use ($visiblePermissions): void {
-            $query->where('perms', '')->whereOr('perms', 'in', $visiblePermissions ?: ['__none__']);
-        });
-
-        return linear_to_tree($query->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray());
+        return linear_to_tree($this->menus->compatibilityRecords(
+            InstanceControlPlanePolicy::tenantAdminPermissions(),
+            [
+                ...InstanceControlPlanePolicy::tenantAdminPaths(),
+                '/article',
+                '/article/cate',
+                '/article/list',
+                ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
+            ],
+            $visiblePermissions,
+        ));
     }
 
     private function validContext(?TenantContext $context, AdminPrincipal $admin): bool

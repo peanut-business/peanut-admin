@@ -14,6 +14,8 @@ use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use app\Modules\Official\Notification\Application\VerificationCodeService;
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
+use app\Modules\Official\Notification\Application\NotificationBootstrapService;
+use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
@@ -39,11 +41,13 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             NoticeSmsSender::class => fn(App $app): NoticeSmsSender => new ApplicationNoticeSmsSender(
                 $app->make(ExecutionContextAccess::class),
                 $app->make(NoticeChannelService::class),
+                (string)env('APP_ENV', '') === 'development',
             ),
             VerificationCodeService::class => fn(App $app): VerificationCodeService => new VerificationCodeService(
                 $app->make(NoticeSmsSender::class),
                 $app->make(TransactionManager::class),
                 $app->make(ExecutionContextAccess::class),
+                (string)env('APP_ENV', '') === 'development',
             ),
             NotificationApplicationService::class => fn(App $app): NotificationApplicationService => new NotificationApplicationService(
                 $app->make(CurrentExecutionContext::class),
@@ -52,6 +56,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(NoticeChannelService::class),
             ),
             NotificationCommands::class => fn(App $app): NotificationCommands => $app->make(NotificationApplicationService::class),
+            NotificationBootstrapCommands::class => NotificationBootstrapService::class,
             NotificationQueries::class => fn(App $app): NotificationQueries => $app->make(NotificationApplicationService::class),
             VerificationCodeCommands::class => fn(App $app): VerificationCodeCommands => $app->make(NotificationApplicationService::class),
         ];

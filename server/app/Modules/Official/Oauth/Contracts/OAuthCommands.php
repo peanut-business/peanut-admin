@@ -6,6 +6,8 @@ namespace app\Modules\Official\Oauth\Contracts;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\member\AuthenticatedMemberContext;
 use app\common\service\oauth\contract\OAuthTransportInterface;
+use app\Modules\Official\Oauth\Contracts\Dto\OAuthAuthorizationResult;
+use app\Modules\Official\Oauth\Contracts\Dto\OAuthLoginResult;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -16,13 +18,13 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
  */
 interface OAuthCommands
 {
-    public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array;
+    public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): OAuthAuthorizationResult;
 
-    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array;
+    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, string $ip, ?OAuthTransportInterface $transport = null): OAuthLoginResult;
 
-    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array;
+    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, string $ip, ?OAuthTransportInterface $transport = null): OAuthLoginResult;
 
-    public function complete(TenantContext|TenantSystemContext $context, array $params): array;
+    public function complete(TenantContext|TenantSystemContext $context, array $params, string $ip): OAuthLoginResult;
 
     public function bind(AuthenticatedMemberContext $context, int $memberId, string $scene, string $code, ?OAuthTransportInterface $transport = null): bool;
 

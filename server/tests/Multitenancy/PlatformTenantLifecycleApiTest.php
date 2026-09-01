@@ -7,12 +7,12 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
-use app\Modules\Official\Notification\Application\NotificationApplicationService;
-use app\Modules\Official\Notification\Application\VerificationCodeService;
+use app\Modules\Official\Notification\Application\NotificationBootstrapService;
+use app\Modules\Official\Task\Application\TaskBootstrapService;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\notice\NoticeSmsSender;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
+use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
@@ -68,30 +68,6 @@ final readonly class LifecycleIdentity implements PlatformOperatorIdentityPort
         }
         return $this->identity;
     }
-}
-
-final class LifecycleNoticeSmsSender implements NoticeSmsSender
-{
-    public function send(
-        TenantContext|TenantSystemContext $context,
-        string $mobile,
-        string $templateId,
-        array $variables,
-        ?callable $beforeSend = null,
-    ): array {
-        throw new LogicException('lifecycle test does not send SMS');
-    }
-}
-
-function lifecycleNotificationService(PDO $pdo, ExecutionContextStore $contexts): NotificationApplicationService
-{
-    $current = new CurrentExecutionContext($contexts);
-    $access = new \app\common\execution\ExecutionContextAccess($current);
-    return new NotificationApplicationService(
-        $current,
-        new VerificationCodeService(new LifecycleNoticeSmsSender(), new PdoTransactionManager($pdo), $access),
-        $access,
-    );
 }
 
 $host = IsolatedBackendEnvironment::required('DB_HOST');
@@ -167,9 +143,11 @@ SQL);
             $pdo,
             new ApplicationTenantBootstrapService(
                 $pdo,
-                lifecycleNotificationService($pdo, $applicationContexts),
+                new NotificationBootstrapService(),
+                new TaskBootstrapService(),
                 $applicationContexts,
                 TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+                new ThinkPhpTenantApplicationBootstrapPersistence(),
             ),
         )
     );
@@ -254,9 +232,11 @@ SQL);
                 $pdo,
                 new ApplicationTenantBootstrapService(
                     $pdo,
-                    lifecycleNotificationService($pdo, $contexts),
+                    new NotificationBootstrapService(),
+                    new TaskBootstrapService(),
                     $contexts,
                     TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+                    new ThinkPhpTenantApplicationBootstrapPersistence(),
                 ),
             );
         }

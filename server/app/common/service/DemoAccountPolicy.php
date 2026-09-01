@@ -8,9 +8,12 @@ use PDO;
 /** Keeps public demo credentials and password locking out of normal deployments. */
 final class DemoAccountPolicy
 {
-    public function __construct(private readonly PDO $pdo)
-    {
-    }
+    /** @param list<string> $demoEmails */
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly bool $enabled,
+        private readonly array $demoEmails,
+    ) {}
 
     /**
      * Disposable demo credential only. Normal account passwords continue to
@@ -18,24 +21,19 @@ final class DemoAccountPolicy
      */
     private const FIXED_PASSWORD = 'peanut1234';
 
-    public static function enabled(): bool
+    public function enabled(): bool
     {
-        return getenv('PEANUT_DEMO_MODE') === 'enabled';
+        return $this->enabled;
     }
 
-    public static function isDemoEmail(string $email): bool
+    public function isDemoEmail(string $email): bool
     {
-        if (!self::enabled()) {
+        if (!$this->enabled) {
             return false;
         }
         $email = strtolower(trim($email));
-        foreach ([
-            'ADMIN_INITIAL_EMAIL',
-            'PLATFORM_INITIAL_EMAIL',
-            'PEANUT_DEMO_TENANT_A_EMAIL',
-            'PEANUT_DEMO_TENANT_B_EMAIL',
-        ] as $key) {
-            $candidate = strtolower(trim((string)(getenv($key) ?: '')));
+        foreach ($this->demoEmails as $candidate) {
+            $candidate = strtolower(trim($candidate));
             if ($candidate !== '' && hash_equals($candidate, $email)) {
                 return true;
             }
@@ -45,7 +43,7 @@ final class DemoAccountPolicy
 
     public function assertPasswordChangeAllowed(int $accountId): void
     {
-        if (!self::enabled()) {
+        if (!$this->enabled) {
             return;
         }
         $statement = $this->pdo->prepare(<<<'SQL'
@@ -60,15 +58,15 @@ LIMIT 2
 SQL);
         $statement->execute(['account_id' => $accountId]);
         foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $email) {
-            if (self::isDemoEmail((string)$email)) {
+            if ($this->isDemoEmail((string)$email)) {
                 throw new \DomainException('演示账号密码已锁定，不能在页面中修改');
             }
         }
     }
 
-    public static function mutationLocked(array $adminInfo, string $path): bool
+    public function mutationLocked(array $adminInfo, string $path): bool
     {
-        if (!self::isDemoEmail((string)($adminInfo['username'] ?? ''))) {
+        if (!$this->isDemoEmail((string)($adminInfo['username'] ?? ''))) {
             return false;
         }
         $path = strtolower(trim($path, '/'));
@@ -84,7 +82,7 @@ SQL);
 
     public function platformMutationLocked(int $accountId): bool
     {
-        if (!self::enabled() || $accountId < 1) {
+        if (!$this->enabled || $accountId < 1) {
             return false;
         }
         $statement = $this->pdo->prepare(<<<'SQL'
@@ -99,16 +97,16 @@ LIMIT 2
 SQL);
         $statement->execute(['account_id' => $accountId]);
         foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $email) {
-            if (self::isDemoEmail((string)$email)) {
+            if ($this->isDemoEmail((string)$email)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static function bootstrapPassword(): string
+    public function bootstrapPassword(): string
     {
-        if (!self::enabled()) {
+        if (!$this->enabled) {
             throw new \LogicException('演示密码策略未启用');
         }
         return bin2hex(random_bytes(24)) . 'A1';
@@ -116,7 +114,7 @@ SQL);
 
     public function replaceCredentialHashes(array $emails): void
     {
-        if (!self::enabled()) {
+        if (!$this->enabled) {
             throw new \LogicException('演示密码策略未启用');
         }
         $hash = password_hash(self::FIXED_PASSWORD, PASSWORD_ARGON2ID, [
