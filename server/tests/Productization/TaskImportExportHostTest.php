@@ -22,10 +22,6 @@ use think\facade\Db;
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
-$asyncSigningKey = hash('sha256', 'PB04-TASK-OPS-HOST-001');
-putenv('ASYNC_SIGNING_KEY=' . $asyncSigningKey);
-$_ENV['ASYNC_SIGNING_KEY'] = $_SERVER['ASYNC_SIGNING_KEY'] = $asyncSigningKey;
-
 function expectTaskHost(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -36,6 +32,7 @@ function expectTaskHost(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $app = new think\App();
 $app->initialize();
+$app->config->set(['signing_key' => hash('sha256', 'PB04-TASK-OPS-HOST-001')], 'async');
 $tenantId = (int)Db::name('tenant')->where('status', 'active')->order('id')->value('id');
 expectTaskHost($tenantId > 0, 'active Tenant fixture is unavailable');
 $context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
