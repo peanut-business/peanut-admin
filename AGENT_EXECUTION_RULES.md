@@ -72,6 +72,29 @@
 - 服务地址和凭据通过环境配置，不把个人绝对路径、真实密码或固定开发主机写成业务默认。
 - 不以不兼容签名覆盖框架或基类方法；横切行为优先使用框架既定扩展点。
 
+### 6.1 ThinkPHP 原生应用层架构锁定
+
+- 本项目应用层的既定人体工学基准是 ThinkPHP 8 原生生态：ActiveRecord Model、全局
+  Scope、标准 `CrudTrait` 的 12 个生命周期 Hooks，以及由组合根完成的构造函数依赖注入。
+  Application Service 直接使用本领域 Model、Query 和 Scope 属于允许且冻结的标准实现，
+  不得登记为架构债务，也不得仅为隔离框架 API 而迁移。
+- 严禁把现有 32 个 Application Service 中的 212 处 Model、Query 或 Scope 调用包装成
+  Java/DDD 式 Interface、Port、Repository Contract 或 Persistence Adapter；严禁为单一
+  ThinkPHP 实现增加洋葱式分层、镜像实现、兼容桥或仅供测试替换的抽象。
+- Service Locator 禁令只针对业务方法内通过 `app()`、容器 `make()`、Facade 或零参数静态
+  工厂动态解析运行时依赖。现行 Application Service 已采用构造函数注入；不得把合法的
+  ActiveRecord/Scope 调用误判为 Service Locator，也不得因此发起新的领域层重构。
+- 当前架构基线以 `./scripts/ci-server-check.sh --full` 的 10 组核心合同、Tenant 隔离、权限
+  与 Module 治理检查全部通过为冻结证据。任何框架生命周期、路由或 Module 边界修改都必须
+  保持这 10 组检查全部通过；未经用户明确改变架构基准，不得降低、绕过或改写这些断言。
+- 本地离线或登记资源不可用时，`TaskImportExportHostTest`、`ModuleDeliveryOperationTest`
+  等真实开发数据库测试停在资源前置条件属于预期资源停止线，不得归因为代码缺陷，也不得
+  修改业务代码、架构或测试语义来适配。只有登记资源可用、租约成功且环境选择明确后才运行
+  对应数据库组；停止线只阻塞直接依赖该资源的验证。
+- 任何代理在建议或实施新的领域层、Port/Adapter、Repository Interface 或洋葱式包装前，
+  必须先取得用户对本节架构锁定的明确变更授权；代码审计、静态扫描命中或通用最佳实践不能
+  单独构成解锁依据。
+
 ## 7. 交付吞吐与防重复
 
 - 以可用交付物而不是分支、合同或检查数量衡量进度。普通可逆切片默认把必要合同、
