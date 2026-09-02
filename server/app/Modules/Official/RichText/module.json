@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "key": "official.rich-text",
+  "name": "Structured Rich Text",
+  "description": "Versioned Tiptap/ProseMirror documents, media references, annotation anchors and realtime collaboration adapters.",
+  "version": "1.0.0",
+  "kernel_constraint": "^1.0",
+  "license": "Apache-2.0",
+  "php_package": "peanut-business/official-rich-text",
+  "web_package": "@peanut-admin/official-rich-text",
+  "dependencies": [],
+  "lifecycle": {
+    "protected": false
+  },
+  "backend": {
+    "provider": "app\\Modules\\Official\\RichText\\ModuleProvider"
+  },
+  "frontend": {
+    "entry": "web/src/modules/official-rich-text/contribution.ts"
+  },
+  "database": {
+    "owned_tables": []
+  },
+  "contracts": {
+    "exports": [],
+    "events": []
+  },
+  "tenant": {
+    "enableable": true,
+    "disable_behavior": "reject_new_operations",
+    "requires": []
+  }
+}
