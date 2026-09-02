@@ -49,6 +49,9 @@ if [[ "$mode" == '--full' ]]; then
   for test_file in "${tests[@]}"; do
     run_php_test "$test_file"
   done
+  php server/tests/Ablation/DataIsolationAblationTest.php
+  php server/tests/Ablation/LazyDiPerformanceAblationTest.php
+  php server/tests/Ablation/ErgonomicsAblationTest.php
   exit 0
 fi
 
