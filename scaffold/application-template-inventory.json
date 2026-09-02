@@ -4458,7 +4458,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7c0d3a26f845a7c1753d357644fe17aa486fd137c99fdc745732b6d813817c39"
+            "source_sha256": "1c67907ecdcb198c4172aa3b174962795ce0a4ca71234ea26e30e8ee8b74168e"
         },
         {
             "path": "resources/service-registry.json",
