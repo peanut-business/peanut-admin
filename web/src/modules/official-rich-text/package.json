@@ -1,11 +1,17 @@
 {
-  "name": "peanut-admin-chinese-rich-text-editor-spike",
-  "version": "0.0.0",
+  "name": "@peanut-admin/official-rich-text",
+  "version": "1.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
+  "exports": {
+    ".": "./contribution.ts",
+    "./document": "./src/document.ts",
+    "./collaboration": "./collaboration.mjs"
+  },
   "scripts": {
     "build": "vite build",
-    "dev": "COLLABORATION_SPIKE_HOST=127.0.0.1 EDITOR_SPIKE_PORT=20181 COLLABORATION_SPIKE_PORT=20282 node server.mjs"
+    "dev": "RICH_TEXT_MODULE_HOST=127.0.0.1 RICH_TEXT_MODULE_PREVIEW_PORT=20181 RICH_TEXT_MODULE_COLLABORATION_PORT=20282 node server.mjs"
   },
   "dependencies": {
     "@hocuspocus/provider": "4.6.0",

@@ -1,11 +1,11 @@
 import { createServer } from 'vite';
 import { createCollaborationRuntime, MemoryCollaborationAdapter } from './collaboration.mjs';
 
-const host = process.env.COLLABORATION_SPIKE_HOST;
-const webPort = Number(process.env.EDITOR_SPIKE_PORT);
-const collaborationPort = Number(process.env.COLLABORATION_SPIKE_PORT);
+const host = process.env.RICH_TEXT_MODULE_HOST;
+const webPort = Number(process.env.RICH_TEXT_MODULE_PREVIEW_PORT);
+const collaborationPort = Number(process.env.RICH_TEXT_MODULE_COLLABORATION_PORT);
 if (host !== '127.0.0.1' || webPort !== 20181 || collaborationPort !== 20282) {
-  throw new Error('USE_REGISTERED_SPIKE_ADDRESSES');
+  throw new Error('USE_REGISTERED_RICH_TEXT_MODULE_ADDRESSES');
 }
 
 const documentName = 'tenant:7/draft:article-42';
@@ -68,9 +68,9 @@ const vite = await createServer({
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const url = new URL(request.url || '/', `http://${host}:${webPort}`);
-        const route = url.pathname.replace('/__spike/', '');
+        const route = url.pathname.replace('/__rich-text/', '');
         const handler = controls[route];
-        if (!url.pathname.startsWith('/__spike/') || !handler) return next();
+        if (!url.pathname.startsWith('/__rich-text/') || !handler) return next();
         const expectedMethod = route === 'session' || route === 'snapshot' ? 'GET' : 'POST';
         if (request.method !== expectedMethod) return sendJson(response, 405, { error: 'METHOD_NOT_ALLOWED' });
         try {
