@@ -7,7 +7,7 @@ use app\Modules\Official\File\Contracts\FileUploads;
 use app\Modules\Official\File\Contracts\Dto\UploadFile;
 use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\enum\FileEnum;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -16,7 +16,7 @@ final class FileUploadService implements FileUploads
 {
     public function __construct(
         private readonly StorageService $storage,
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
     ) {}
 
     public function image(AuthenticatedMemberContext|TenantContext $context, UploadFile $uploaded, int $cid, int $sourceId = 0, int $source = FileEnum::SOURCE_ADMIN): array
@@ -71,7 +71,7 @@ final class FileUploadService implements FileUploads
             FileEnum::VIDEO => 'material.video',
             FileEnum::FILE => 'material.file',
         };
-        $tenantId = $this->contexts->tenantId();
+        $tenantId = $this->executionContext->tenantId();
         if ($context->tenantId !== $tenantId) {
             throw new \DomainException('FILE_UPLOAD_TENANT_CONTEXT_MISMATCH');
         }

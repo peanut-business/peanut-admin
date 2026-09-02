@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 
 /** One stable request ID without mutating the framework Request object. */
 final class RequestTrace
@@ -12,7 +12,7 @@ final class RequestTrace
     private static ?\WeakMap $requestIds = null;
 
     public static function id(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         object $request,
         string $prefix = 'http',
     ): string
@@ -25,7 +25,7 @@ final class RequestTrace
         }
 
         try {
-            $current = $contexts->current();
+            $current = $executionContext->current();
         } catch (\Throwable) {
             $current = null;
         }

@@ -12,7 +12,7 @@ abstract class ContextualCommand extends Command
 {
     public function __construct(
         private readonly ExecutionContextStore $contexts,
-        private readonly ExecutionContextAccess $contextAccess,
+        private readonly CurrentExecutionContext $executionContext,
     ) {
         parent::__construct();
     }
@@ -32,9 +32,9 @@ abstract class ContextualCommand extends Command
         );
     }
 
-    final protected function executionContext(): ExecutionContextAccess
+    final protected function executionContext(): CurrentExecutionContext
     {
-        return $this->contextAccess;
+        return $this->executionContext;
     }
 
     abstract protected function handle(Input $input, Output $output): int;

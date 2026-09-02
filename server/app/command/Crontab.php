@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\execution\DatabaseContextualCommand;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
@@ -23,12 +23,12 @@ class Crontab extends DatabaseContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
-        ExecutionContextAccess $contextAccess,
+        CurrentExecutionContext $executionContext,
         PDO $pdo,
         private readonly TaskScheduler $taskScheduler,
         private readonly AdvisoryLockExecution $locks,
     ) {
-        parent::__construct($contexts, $contextAccess, $pdo);
+        parent::__construct($contexts, $executionContext, $pdo);
     }
 
     protected function configure()

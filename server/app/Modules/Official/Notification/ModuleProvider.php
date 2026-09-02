@@ -5,7 +5,6 @@ namespace app\Modules\Official\Notification;
 
 use app\common\composition\ModuleBindingContributor;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextAccess;
 use app\common\service\http\OutboundHttpTransport;
 use app\common\service\notice\ApplicationNoticeSmsSender;
 use app\common\service\notice\NoticeSmsSender;
@@ -39,20 +38,19 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(OutboundHttpTransport::class),
             ),
             NoticeSmsSender::class => fn(App $app): NoticeSmsSender => new ApplicationNoticeSmsSender(
-                $app->make(ExecutionContextAccess::class),
+                $app->make(CurrentExecutionContext::class),
                 $app->make(NoticeChannelService::class),
                 (string)env('APP_ENV', '') === 'development',
             ),
             VerificationCodeService::class => fn(App $app): VerificationCodeService => new VerificationCodeService(
                 $app->make(NoticeSmsSender::class),
                 $app->make(TransactionManager::class),
-                $app->make(ExecutionContextAccess::class),
+                $app->make(CurrentExecutionContext::class),
                 (string)env('APP_ENV', '') === 'development',
             ),
             NotificationApplicationService::class => fn(App $app): NotificationApplicationService => new NotificationApplicationService(
                 $app->make(CurrentExecutionContext::class),
                 $app->make(VerificationCodeService::class),
-                $app->make(ExecutionContextAccess::class),
                 $app->make(NoticeChannelService::class),
             ),
             NotificationCommands::class => fn(App $app): NotificationCommands => $app->make(NotificationApplicationService::class),

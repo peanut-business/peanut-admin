@@ -6,7 +6,7 @@ namespace app\adminapi\http\middleware;
 use app\adminapi\service\OperationLogService;
 use app\common\service\audit\OperationLogDiagnostics;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\ApiProblemMapper;
 use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
@@ -24,7 +24,7 @@ class OperationLogMiddleware
     protected array $except = ['log/clear'];
 
     public function __construct(
-        private readonly ExecutionContextAccess $contextAccess,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly OperationLogService $operationLogs,
         private readonly ApiProblemMapper $problems,
     ) {}
@@ -32,10 +32,10 @@ class OperationLogMiddleware
     public function handle($request, \Closure $next)
     {
         try {
-            $context = $this->contextAccess->tenantAdmin();
+            $context = $this->executionContext->tenantAdmin();
         } catch (\Throwable $exception) {
             OperationalLog::warning(
-                $this->contextAccess,
+                $this->executionContext,
                 'operation_log_tenant_context_unavailable',
                 OperationLogDiagnostics::attributes(null),
             );
@@ -86,7 +86,7 @@ class OperationLogMiddleware
             }
         }
 
-        $adminInfo = $this->contextAccess->principal();
+        $adminInfo = $this->executionContext->tenantAdminPrincipal();
 
         try {
             $this->operationLogs->record(
@@ -103,7 +103,7 @@ class OperationLogMiddleware
             );
         } catch (\Throwable $exception) {
             OperationalLog::error(
-                $this->contextAccess,
+                $this->executionContext,
                 'operation_log_write_failed',
                 OperationLogDiagnostics::attributes($context) + ['exception' => $exception::class],
             );

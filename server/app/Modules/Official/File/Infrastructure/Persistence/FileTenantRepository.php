@@ -5,7 +5,7 @@ namespace app\Modules\Official\File\Infrastructure\Persistence;
 
 use app\Modules\Official\File\Model\File;
 use app\Modules\Official\File\Model\FileCate;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\persistence\ConvertsModelPage;
 
 final class FileTenantRepository
@@ -41,9 +41,9 @@ final class FileTenantRepository
         return File::create($data);
     }
 
-    public static function tenantId(ExecutionContextAccess $contexts): int
+    public static function tenantId(CurrentExecutionContext $executionContext): int
     {
-        return $contexts->tenantId();
+        return $executionContext->tenantId();
     }
 
     public static function createCategory(array $data): FileCate

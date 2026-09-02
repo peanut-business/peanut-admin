@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\notice;
 
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\AdminExecutionContext;
 use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\SystemExecutionContext;
@@ -16,14 +16,14 @@ final class NoticeTenantContext
 {
     public const VERIFICATION_ACTOR = 'peanut.notice.verification';
 
-    public static function member(ExecutionContextAccess $contexts): TenantContext
+    public static function member(CurrentExecutionContext $executionContext): TenantContext
     {
-        $context = $contexts->tenantAdmin();
-        self::tenantId($contexts, $context);
+        $context = $executionContext->tenantAdmin();
+        self::tenantId($executionContext, $context);
         return $context;
     }
 
-    public static function tenantId(ExecutionContextAccess $contexts, mixed $context): int
+    public static function tenantId(CurrentExecutionContext $executionContext, mixed $context): int
     {
         if (!$context instanceof TenantContext
             || $context->tenantId < 1
@@ -35,16 +35,16 @@ final class NoticeTenantContext
             || $context->requestId === '') {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
-        return self::authoritativeTenantId($contexts, $context->tenantId);
+        return self::authoritativeTenantId($executionContext, $context->tenantId);
     }
 
     public static function verification(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         object $request,
         string $operation,
     ): TenantContext|TenantSystemContext
     {
-        $current = $contexts->current();
+        $current = $executionContext->current();
         $context = match (true) {
             $current instanceof AdminExecutionContext => $current->tenant,
             $current instanceof ConsumerExecutionContext => $current->publicTenant,
@@ -52,7 +52,7 @@ final class NoticeTenantContext
             default => null,
         };
         if ($context instanceof TenantContext) {
-            self::tenantId($contexts, $context);
+            self::tenantId($executionContext, $context);
             return $context;
         }
         if ($context instanceof TenantSystemContext
@@ -66,15 +66,15 @@ final class NoticeTenantContext
     }
 
     public static function verificationTenantId(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $operation
     ): int {
         if ($context instanceof AuthenticatedMemberContext) {
-            return self::authoritativeTenantId($contexts, $context->tenantId);
+            return self::authoritativeTenantId($executionContext, $context->tenantId);
         }
         if ($context instanceof TenantContext) {
-            return self::tenantId($contexts, $context);
+            return self::tenantId($executionContext, $context);
         }
         if ($context->tenantId < 1
             || $context->actorKey !== self::VERIFICATION_ACTOR
@@ -82,12 +82,12 @@ final class NoticeTenantContext
             || $context->operationId === '') {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
-        return self::authoritativeTenantId($contexts, $context->tenantId);
+        return self::authoritativeTenantId($executionContext, $context->tenantId);
     }
 
-    private static function authoritativeTenantId(ExecutionContextAccess $contexts, int $tenantId): int
+    private static function authoritativeTenantId(CurrentExecutionContext $executionContext, int $tenantId): int
     {
-        if ($contexts->current()?->tenantId() !== $tenantId) {
+        if ($executionContext->current()?->tenantId() !== $tenantId) {
             throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
         }
         return $tenantId;

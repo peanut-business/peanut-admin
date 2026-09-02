@@ -28,7 +28,7 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
 
 入口通过 `ExecutionContextStore` 建立并在 `finally` 中恢复上下文。业务代码使用
 `CurrentExecutionContext` 做强类型、fail-closed 读取；只读基础设施使用
-`ExecutionContextAccess`，不获得建立或切换上下文的能力。
+`CurrentExecutionContext`，不获得建立或切换上下文的能力。
 
 | 入口 | 上下文 | 说明 |
 |---|---|---|

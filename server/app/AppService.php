@@ -25,7 +25,6 @@ use app\common\service\audit\AuditContractHost;
 use app\common\service\external\ExternalTenantAudit;
 use app\common\service\external\ThinkPhpExternalTenantAudit;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\model\TenantOwnedModel;
 use app\common\service\http\GuzzleOutboundHttpTransport;
@@ -100,7 +99,6 @@ class AppService extends Service
         $current = new CurrentExecutionContext($contexts);
         $this->app->instance(ExecutionContextStore::class, $contexts);
         $this->app->instance(CurrentExecutionContext::class, $current);
-        $this->app->instance(ExecutionContextAccess::class, new ExecutionContextAccess($current));
         $configuredOverrides = Config::get('peanut.overrides', []);
         CoreServiceOverrides::configure(is_array($configuredOverrides) ? $configuredOverrides : []);
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
@@ -173,7 +171,7 @@ class AppService extends Service
             $this->app->make(PDO::class),
         ));
         $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport(
-            $this->app->make(ExecutionContextAccess::class),
+            $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
         $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
@@ -184,7 +182,7 @@ class AppService extends Service
             $this->app->make(OutboundHttpTransport::class),
             $this->app->make(AliyunStorageClientFactory::class),
             $this->app->make(QcloudStorageClientFactory::class),
-            $this->app->make(ExecutionContextAccess::class),
+            $this->app->make(CurrentExecutionContext::class),
             $this->app,
         ));
         $this->app->bind(StorageService::class, fn(): StorageService => new StorageService(

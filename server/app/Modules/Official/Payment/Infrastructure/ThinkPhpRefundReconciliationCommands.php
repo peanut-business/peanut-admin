@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Infrastructure;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\persistence\TransactionalExecution;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
@@ -19,7 +19,7 @@ final readonly class ThinkPhpRefundReconciliationCommands implements RefundRecon
     public function __construct(
         private PaymentServiceFactory $payments,
         private TransactionalExecution $transactions,
-        private ExecutionContextAccess $executionContext,
+        private CurrentExecutionContext $executionContext,
     ) {
     }
 

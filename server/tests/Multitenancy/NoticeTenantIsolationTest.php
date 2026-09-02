@@ -6,7 +6,6 @@ use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
 use app\Modules\Official\Notification\Model\NoticeLog;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\execution\ExecutionContextAccess;
 use app\common\service\notice\NoticeTenantContext;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\service\notice\NoticeSmsSender;
@@ -156,7 +155,7 @@ SQL);
     $alpha = noticeTenantContext(101, 1001, 501, 'fresh-notice-alpha');
     $beta = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta');
     $notifications = app(NotificationApplicationService::class);
-    $contexts = app(ExecutionContextAccess::class);
+    $contexts = app(CurrentExecutionContext::class);
     $invalidSend = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.send', 'invalid-send');
     $invalidVerify = new TenantSystemContext(0, NoticeTenantContext::VERIFICATION_ACTOR, 'notice.verification.verify', 'invalid-verify');
 

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\http;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\runtime\OperationalLog;
 use GuzzleHttp\Exception\ConnectException;
 
@@ -11,7 +11,7 @@ use GuzzleHttp\Exception\ConnectException;
 final class OutboundHttpAttemptObservation
 {
     public static function response(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $method,
         string $url,
         int $attempt,
@@ -24,11 +24,11 @@ final class OutboundHttpAttemptObservation
             $status < 500 => 'http_4xx',
             default => 'http_5xx',
         };
-        self::write($contexts, $method, $url, $attempt, $startedAt, $category, $status);
+        self::write($executionContext, $method, $url, $attempt, $startedAt, $category, $status);
     }
 
     public static function failure(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $method,
         string $url,
         int $attempt,
@@ -41,11 +41,11 @@ final class OutboundHttpAttemptObservation
                 || str_contains(strtolower($exception->getMessage()), 'timed out'))
             ? 'timeout'
             : 'transport';
-        self::write($contexts, $method, $url, $attempt, $startedAt, $category, null, $exception);
+        self::write($executionContext, $method, $url, $attempt, $startedAt, $category, null, $exception);
     }
 
     private static function write(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $method,
         string $url,
         int $attempt,
@@ -68,7 +68,7 @@ final class OutboundHttpAttemptObservation
         if ($exception !== null) {
             $attributes['exception'] = $exception::class;
         }
-        OperationalLog::warning($contexts, 'outbound_http_attempt', $attributes);
+        OperationalLog::warning($executionContext, 'outbound_http_attempt', $attributes);
     }
 
     private function __construct()

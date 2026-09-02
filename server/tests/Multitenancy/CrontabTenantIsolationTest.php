@@ -5,7 +5,7 @@ use app\Modules\Official\Task\Application\CrontabApplicationService;
 use app\Modules\Official\Task\Application\CrontabTaskDefinition;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\common\enum\CrontabEnum;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
@@ -194,7 +194,7 @@ SQL);
     $dispatch = static function (string $command, array $params) use (&$dispatches, &$taskTraces): void {
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
-        $current = app(ExecutionContextAccess::class)->current();
+        $current = app(CurrentExecutionContext::class)->current();
         $metadata = $current instanceof SystemExecutionContext ? $current->metadata : null;
         $taskTraces[] = [
             'job_key' => $metadata?->jobKey,

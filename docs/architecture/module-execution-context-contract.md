@@ -37,7 +37,7 @@ Platform 控制面需要跨 Tenant 发现数据时，只能走会留下操作记
 
 `ExecutionContextStore` 只负责在入口建立上下文，并在 `finally` 中恢复；未明确允许的受众切换
 或 Tenant 不匹配时 fail-closed。业务代码通过 `CurrentExecutionContext` 取得强类型上下文，类型
-不匹配立即失败。只需要读取身份的基础设施依赖 `ExecutionContextAccess`，避免获得建立或切换
+不匹配立即失败。只需要读取身份的基础设施依赖 `CurrentExecutionContext`，避免获得建立或切换
 上下文的能力。新增子目录或别名不会强化这个边界，因此这些类保持同目录，由上述职责区分。
 
 ## 四种入口

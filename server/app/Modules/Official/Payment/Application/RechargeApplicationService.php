@@ -12,7 +12,7 @@ use app\common\enum\AccountLogEnum;
 use app\common\enum\UserTerminalEnum;
 use app\common\application\BusinessException;
 use app\common\contract\audit\AuditResource;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\persistence\TransactionalExecution;
 use app\common\service\Money;
 use app\common\service\audit\AuditContractHost;
@@ -39,7 +39,7 @@ final class RechargeApplicationService implements RechargeCommands, RechargeQuer
         private readonly MemberBalanceCommands $memberBalances,
         private readonly OAuthQueries $oauth,
         private readonly TransactionalExecution $transactions,
-        private readonly ExecutionContextAccess $executionContext,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly RechargeTenantSettingService $rechargeSettings,
         private readonly PaymentChannelGrantCommands $channelGrants,
         private readonly PaymentServiceFactory $payments,

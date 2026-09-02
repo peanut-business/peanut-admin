@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\tenant;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver as CoreDefaultTenantContextResolver;
@@ -24,8 +24,8 @@ final readonly class DefaultTenantContextResolver
         return $this->delegate->system($actor, $operation, $operationId);
     }
 
-    public static function operationId(ExecutionContextAccess $contexts, object $request): string
+    public static function operationId(CurrentExecutionContext $executionContext, object $request): string
     {
-        return RequestTrace::id($contexts, $request, 'public');
+        return RequestTrace::id($executionContext, $request, 'public');
     }
 }

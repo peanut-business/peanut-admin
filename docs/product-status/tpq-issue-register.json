@@ -1395,6 +1395,19 @@
       "verification": "GENERATOR-CONTRACT-TPQ48"
     },
     {
+      "issue_id": "global_scope_bypass:e600baed9005",
+      "category": "global_scope_bypass",
+      "path": "server/app/common/model/TenantOwnedModel.php",
+      "line": 47,
+      "symbol": "return static::withoutGlobalScope([self::TENANT_GLOBAL_SCOPE]);",
+      "owner": "TPQ07 / Sol",
+      "decision": "allowlist",
+      "status": "closed",
+      "verification": "reviewed_canonical_tenant_scope_bypass",
+      "reason": "TenantOwnedModel is the canonical implementation behind the audited PlatformTenantDataGateway and disables only the tenantOwnership scope.",
+      "review_due": "2027-09-02"
+    },
+    {
       "issue_id": "handwritten_tenant_predicate:1e192d263962",
       "category": "handwritten_tenant_predicate",
       "path": "server/app/Modules/Fixture/DeliveryRecord/Infrastructure/Persistence/PdoDeliveryRecordRepository.php",

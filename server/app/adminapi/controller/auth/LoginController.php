@@ -10,7 +10,6 @@ use app\common\dto\authorization\AdminPrincipal;
 use app\adminapi\service\AdminTokenService;
 use app\adminapi\validate\auth\LoginValidate;
 use app\common\service\DemoAccountPolicy;
-use app\common\execution\ExecutionContextAccess;
 use app\common\application\BusinessException;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
@@ -23,7 +22,6 @@ class LoginController extends BaseAdminController
         CurrentExecutionContext $executionContext,
         private readonly AdminAuthorizationQuery $authorization,
         private readonly LoginApplicationService $loginApplication,
-        private readonly ExecutionContextAccess $contextAccess,
         private readonly DemoAccountPolicy $demoAccounts,
     ) {
         parent::__construct($app, $executionContext);
@@ -47,7 +45,7 @@ class LoginController extends BaseAdminController
         if ($admin === []) throw BusinessException::notFound('ADMIN_PRINCIPAL_NOT_FOUND', '管理员不存在');
         $roleNames = array_column($admin['roles'] ?? [], 'name');
         $accessData = $this->authorization->accessData(
-            $this->contextAccess->tenantAdmin(),
+            $this->executionContext->tenantAdmin(),
             AdminPrincipal::fromArray($admin),
         );
 
@@ -65,7 +63,7 @@ class LoginController extends BaseAdminController
             'menu'        => $accessData->menu,
             'permissions' => $accessData->permissions,
             'tenantName' => $admin['tenant_name'],
-            'canSwitchTenant' => !$this->contextAccess->tenantEntryBound()
+            'canSwitchTenant' => !$this->executionContext->tenantEntryBound()
                 && ($admin['switchable_tenant_count'] ?? 0) > 1,
             'demoMode' => $this->demoAccounts->isDemoEmail((string)$admin['username']),
         ]);

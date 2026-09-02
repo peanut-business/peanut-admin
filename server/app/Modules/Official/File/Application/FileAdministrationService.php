@@ -5,7 +5,7 @@ namespace app\Modules\Official\File\Application;
 
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\service\FileService;
 use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
@@ -20,7 +20,7 @@ final class FileAdministrationService implements FileAdministration
     public function __construct(
         private readonly TransactionManager $transactions,
         private readonly StorageService $storage,
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly FileService $files,
     ) {}
 
@@ -130,7 +130,7 @@ final class FileAdministrationService implements FileAdministration
             throw new \RuntimeException('素材记录删除失败');
         }
 
-        $tenantId = $this->contexts->tenantId();
+        $tenantId = $this->executionContext->tenantId();
         $storageDeleted = 0;
         foreach ($rows as $row) {
             $fileId = (int) $row['id'];

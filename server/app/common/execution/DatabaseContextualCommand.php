@@ -10,10 +10,10 @@ abstract class DatabaseContextualCommand extends ContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
-        ExecutionContextAccess $contextAccess,
+        CurrentExecutionContext $executionContext,
         private readonly PDO $pdo,
     ) {
-        parent::__construct($contexts, $contextAccess);
+        parent::__construct($contexts, $executionContext);
     }
 
     final protected function database(): PDO

@@ -10,7 +10,7 @@ use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\DemoAccountPolicy;
 use app\common\execution\AdminExecutionContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 
 /**
  * 权限中间件（原生 TP 风格）
@@ -22,7 +22,7 @@ use app\common\execution\ExecutionContextAccess;
 class AuthMiddleware
 {
     public function __construct(
-        private readonly ExecutionContextAccess $contextAccess,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly AdminAuthorizationService $authorization,
         private readonly AdminApiAccessRegistry $accessRegistry,
         private readonly DemoAccountPolicy $demoAccounts,
@@ -30,9 +30,9 @@ class AuthMiddleware
 
     public function handle($request, \Closure $next)
     {
-        $current = $this->contextAccess->current();
+        $current = $this->executionContext->current();
         $adminInfo = $current instanceof AdminExecutionContext
-            ? $this->contextAccess->principal()
+            ? $this->executionContext->tenantAdminPrincipal()
             : null;
         if (empty($adminInfo)) {
             throw \app\common\http\ApiProblem::fromEnvelope('请先登录', null, 40100);

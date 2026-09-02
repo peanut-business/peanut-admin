@@ -7,7 +7,7 @@ use app\Modules\Official\Payment\Contracts\RefundReconciliationCommands;
 use app\common\service\payment\PaymentScheduledTenantContext;
 use app\common\service\payment\PaymentTenantDiagnostics;
 use app\common\execution\ContextualCommand;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use think\console\Input;
 use think\console\Output;
@@ -17,10 +17,10 @@ class RefundReconcile extends ContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
-        ExecutionContextAccess $contextAccess,
+        CurrentExecutionContext $executionContext,
         private readonly RefundReconciliationCommands $refunds,
     ) {
-        parent::__construct($contexts, $contextAccess);
+        parent::__construct($contexts, $executionContext);
     }
 
     protected function configure()

@@ -6,7 +6,7 @@ namespace app\Modules\Official\Notification\Infrastructure\Persistence;
 use app\Modules\Official\Notification\Model\NoticeLog;
 use app\Modules\Official\Notification\Model\NoticeScene;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\notice\NoticeTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -24,34 +24,34 @@ final class NoticeTenantRepository
     public const LOG_VERIFIED_YES = NoticeLog::VERIFIED_YES;
 
     public static function scenes(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $operation = ''
     )
     {
-        self::tenantId($contexts, $context, $operation);
+        self::tenantId($executionContext, $context, $operation);
         return NoticeScene::where([]);
     }
 
     public static function logs(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $operation = ''
     )
     {
-        self::tenantId($contexts, $context, $operation);
+        self::tenantId($executionContext, $context, $operation);
         return NoticeLog::where([]);
     }
 
     /** @param array<string,mixed> $data */
     public static function createLog(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         array $data,
         string $operation = ''
     ): NoticeLog
     {
-        self::tenantId($contexts, $context, $operation);
+        self::tenantId($executionContext, $context, $operation);
         unset($data['tenant_id']);
         return NoticeLog::create($data);
     }
@@ -68,7 +68,7 @@ final class NoticeTenantRepository
     }
 
     private static function tenantId(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         string $operation
     ): int
@@ -76,7 +76,7 @@ final class NoticeTenantRepository
         return $context instanceof AuthenticatedMemberContext
             ? $context->tenantId
             : ($context instanceof TenantContext
-                ? NoticeTenantContext::tenantId($contexts, $context)
-                : NoticeTenantContext::verificationTenantId($contexts, $context, $operation));
+                ? NoticeTenantContext::tenantId($executionContext, $context)
+                : NoticeTenantContext::verificationTenantId($executionContext, $context, $operation));
     }
 }

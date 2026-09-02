@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\JsonService;
 use app\common\service\runtime\OperationalLog;
 use think\App;
@@ -21,7 +21,7 @@ final readonly class HostApiProblemRenderer
 
     public function __construct(
         private App $app,
-        private ExecutionContextAccess $contexts,
+        private CurrentExecutionContext $executionContext,
         private ApiProblemMapper $problems,
     ) {
     }
@@ -38,8 +38,8 @@ final readonly class HostApiProblemRenderer
             $problem = new ApiProblem($fallback[0], 500, $fallback[1]);
         }
 
-        $requestId = RequestTrace::id($this->contexts, $request, $application !== '' ? $application : 'http');
-        OperationalLog::warning($this->contexts, 'api_problem', [
+        $requestId = RequestTrace::id($this->executionContext, $request, $application !== '' ? $application : 'http');
+        OperationalLog::warning($this->executionContext, 'api_problem', [
             'application' => $application !== '' ? $application : 'unknown',
             'method' => $request->method(),
             'path' => '/' . ltrim($request->pathinfo(), '/'),

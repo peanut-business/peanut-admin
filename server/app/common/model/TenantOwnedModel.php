@@ -42,6 +42,11 @@ abstract class TenantOwnedModel extends BaseModel
         $this->policy()->applyTo($query);
     }
 
+    final public static function withoutTenantScope(): BaseQuery
+    {
+        return static::withoutGlobalScope([self::TENANT_GLOBAL_SCOPE]);
+    }
+
     public static function onBeforeInsert(Model $model): void
     {
         self::tenantModel($model)->policy()->prepareWrite($model);

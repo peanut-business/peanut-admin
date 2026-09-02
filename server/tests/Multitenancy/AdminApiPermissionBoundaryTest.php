@@ -7,7 +7,6 @@ use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\service\AdminApiAccessRegistry;
 use app\common\execution\AdminExecutionContext;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblem;
 use app\common\service\authorization\AdminAuthorizationService;
@@ -52,7 +51,7 @@ expectAdminApiBoundary(!$policy->canAccess(false, 'admin/status', ['admin/edit']
 $executionContexts = new ExecutionContextStore();
 $accessConfig = require dirname(__DIR__, 2) . '/config/admin_api_access.php';
 $middleware = new AuthMiddleware(
-    new ExecutionContextAccess(new CurrentExecutionContext($executionContexts)),
+    new CurrentExecutionContext($executionContexts),
     (new ReflectionClass(AdminAuthorizationService::class))->newInstanceWithoutConstructor(),
     new AdminApiAccessRegistry((int)$accessConfig['version'], $accessConfig),
     (new ReflectionClass(DemoAccountPolicy::class))->newInstanceWithoutConstructor(),

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\storage;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\runtime\OperationalLog;
 
 /** Normalizes provider failures and emits only secret-free diagnostics. */
@@ -12,7 +12,7 @@ final readonly class ObservedStorageDriver implements StorageDriver
     public function __construct(
         private string $provider,
         private StorageDriver $delegate,
-        private ExecutionContextAccess $contexts,
+        private CurrentExecutionContext $executionContext,
     ) {
     }
 
@@ -43,7 +43,7 @@ final readonly class ObservedStorageDriver implements StorageDriver
         } catch (StorageProviderException $exception) {
             throw $exception;
         } catch (\Throwable $exception) {
-            OperationalLog::warning($this->contexts, 'storage_provider_unavailable', [
+            OperationalLog::warning($this->executionContext, 'storage_provider_unavailable', [
                 'provider' => $this->provider,
                 'operation' => $operation,
                 'exception' => $exception::class,

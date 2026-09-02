@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\http\middleware;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\JsonService;
 use app\common\service\tenant\ApplicationHostPolicy;
@@ -15,7 +15,7 @@ final class PlatformLoginMiddleware
 {
     public function __construct(
         private readonly ExecutionContextStore $executionContexts,
-        private readonly ExecutionContextAccess $contextAccess,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly ApplicationHostPolicy $hosts,
         private readonly PlatformOperatorSessionService $sessions,
     ) {
@@ -36,7 +36,7 @@ final class PlatformLoginMiddleware
         try {
             $context = $this->sessions->context(
                 $token,
-                PlatformRequest::requestId($this->contextAccess, $request)
+                PlatformRequest::requestId($this->executionContext, $request)
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication credential is invalid.', null, 40100);

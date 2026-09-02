@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -11,7 +11,7 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
 final class ApplicationNoticeSmsSender implements NoticeSmsSender
 {
     public function __construct(
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly NoticeChannelService $channels,
         private readonly bool $developmentMode,
     ) {}
@@ -37,7 +37,7 @@ final class ApplicationNoticeSmsSender implements NoticeSmsSender
         }
 
         return $this->channels->sendSms(
-            $this->contexts,
+            $this->executionContext,
             $context,
             $mobile,
             $templateId,

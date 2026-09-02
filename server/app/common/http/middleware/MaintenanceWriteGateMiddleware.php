@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http\middleware;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
 use app\common\service\audit\AuditContractHost;
 use PDO;
@@ -17,7 +17,7 @@ final class MaintenanceWriteGateMiddleware
     public function __construct(
         private readonly PDO $pdo,
         private readonly AuditContractHost $audit,
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
     ) {
     }
 
@@ -29,7 +29,7 @@ final class MaintenanceWriteGateMiddleware
             return $next($request);
         }
 
-        $requestId = RequestTrace::id($this->contexts, $request, 'maintenance');
+        $requestId = RequestTrace::id($this->executionContext, $request, 'maintenance');
         try {
             $window = $this->activeWindow($this->pdo);
             if ($window !== null) {

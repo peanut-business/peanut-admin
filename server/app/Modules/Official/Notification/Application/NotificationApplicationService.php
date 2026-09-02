@@ -14,7 +14,6 @@ use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRep
 use app\common\service\notice\NoticeChannelService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\support\PaginationInput;
@@ -24,19 +23,18 @@ final class NotificationApplicationService implements NotificationCommands, Noti
     public function __construct(
         private readonly CurrentExecutionContext $executionContext,
         private readonly VerificationCodeService $verificationCodes,
-        private readonly ExecutionContextAccess $contexts,
         private readonly NoticeChannelService $channels,
     ) {
     }
 
     public function saveChannel(string $section, array $input): void
     {
-        $this->channels->save($this->contexts, $this->executionContext->tenantAdmin(), $section, $input);
+        $this->channels->save($this->executionContext, $this->executionContext->tenantAdmin(), $section, $input);
     }
 
     public function saveScene(array $params): void
     {
-        $scene = NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())
+        $scene = NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($scene->isEmpty()) {
@@ -56,7 +54,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function scenes(): array
     {
-        $list = NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())->field([
+        $list = NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
         ])->order('id', 'asc')->select()->toArray();
@@ -66,12 +64,12 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function sceneDetail(int $id): array
     {
-        return NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->toArray();
+        return NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->toArray();
     }
 
     public function sceneExists(int $id): bool
     {
-        return !NoticeTenantRepository::scenes($this->contexts, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->isEmpty();
+        return !NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->isEmpty();
     }
 
     public function logs(array $params): PageResult

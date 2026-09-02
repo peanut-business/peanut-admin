@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace app\common\service\storage;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\http\OutboundHttpTransport;
 use app\common\service\storage\driver\AliyunStorageDriver;
 use app\common\service\storage\driver\LocalStorageDriver;
@@ -18,7 +18,7 @@ final class StorageDriverFactory
         private readonly OutboundHttpTransport $http,
         private readonly AliyunStorageClientFactory $aliyun,
         private readonly QcloudStorageClientFactory $qcloud,
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly App $app,
     ) {
     }
@@ -40,12 +40,12 @@ final class StorageDriverFactory
         } catch (StorageProviderException $exception) {
             throw $exception;
         } catch (\Throwable $exception) {
-            OperationalLog::warning($this->contexts, 'storage_provider_unconfigured', [
+            OperationalLog::warning($this->executionContext, 'storage_provider_unconfigured', [
                 'provider' => $provider !== '' ? $provider : 'unknown',
                 'exception' => $exception::class,
             ]);
             throw StorageProviderException::unconfigured($exception);
         }
-        return new ObservedStorageDriver($provider, $driver, $this->contexts);
+        return new ObservedStorageDriver($provider, $driver, $this->executionContext);
     }
 }

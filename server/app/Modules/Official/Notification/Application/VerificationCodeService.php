@@ -11,7 +11,7 @@ use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\notice\NoticeSmsSender;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\VerificationCodeSecret;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
@@ -27,7 +27,7 @@ class VerificationCodeService
     public function __construct(
         private readonly NoticeSmsSender $sender,
         private readonly TransactionManager $transactions,
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly bool $developmentMode,
     ) {
     }
@@ -38,7 +38,7 @@ class VerificationCodeService
         string $mobile
     ): DeliveryResult
     {
-        NoticeTenantContext::verificationTenantId($this->contexts, $context, 'notice.verification.send');
+        NoticeTenantContext::verificationTenantId($this->executionContext, $context, 'notice.verification.send');
         if (!$this->validMobile($mobile)) {
             return new DeliveryResult(false, '', '手机号格式不正确');
         }
@@ -47,7 +47,7 @@ class VerificationCodeService
             return new DeliveryResult(false, '', '验证码场景不存在');
         }
 
-        $scene = NoticeTenantRepository::scenes($this->contexts, $context, 'notice.verification.send')
+        $scene = NoticeTenantRepository::scenes($this->executionContext, $context, 'notice.verification.send')
             ->where('code', $sceneCode)->findOrEmpty();
         if ($scene->isEmpty() || (int) $scene->sms_status !== $scene::STATUS_ENABLED) {
             return new DeliveryResult(false, '', '验证码场景未启用');
@@ -88,7 +88,7 @@ class VerificationCodeService
                 $code,
                 $templateId
             ): void {
-                $log = NoticeTenantRepository::createLog($this->contexts, $context, [
+                $log = NoticeTenantRepository::createLog($this->executionContext, $context, [
                     'template_id' => 0,
                     'scene_id' => (int)$scene->id,
                     'channel' => NoticeTenantRepository::LOG_CHANNEL_SMS,
@@ -131,7 +131,7 @@ class VerificationCodeService
         string $code
     ): VerificationResult
     {
-        NoticeTenantContext::verificationTenantId($this->contexts, $context, 'notice.verification.verify');
+        NoticeTenantContext::verificationTenantId($this->executionContext, $context, 'notice.verification.verify');
         if (!$this->validMobile($mobile)) {
             return new VerificationResult(false, '手机号格式不正确');
         }
@@ -140,14 +140,14 @@ class VerificationCodeService
             return new VerificationResult(false, '验证码场景不存在');
         }
 
-        $scene = NoticeTenantRepository::scenes($this->contexts, $context, 'notice.verification.verify')
+        $scene = NoticeTenantRepository::scenes($this->executionContext, $context, 'notice.verification.verify')
             ->where('code', $sceneCode)->findOrEmpty();
         if ($scene->isEmpty()) {
             return new VerificationResult(false, '验证码场景不存在');
         }
 
         return $this->transactions->run(function () use ($context, $scene, $mobile, $code): VerificationResult {
-            $log = NoticeTenantRepository::logs($this->contexts, $context, 'notice.verification.verify')
+            $log = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.verify')
                 ->where('scene_id', (int) $scene->id)
                 ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
                 ->where('receiver', $mobile)
@@ -181,7 +181,7 @@ class VerificationCodeService
 
     private function sentRecently(TenantContext|TenantSystemContext $context, string $mobile): bool
     {
-        return NoticeTenantRepository::logs($this->contexts, $context, 'notice.verification.send')
+        return NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.send')
             ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
             ->where('receiver', $mobile)
             ->where('scene_id', '>', 0)

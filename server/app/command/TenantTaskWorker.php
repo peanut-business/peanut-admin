@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\runtime\OperationalLog;
 use app\common\execution\DatabaseContextualCommand;
@@ -17,11 +17,11 @@ final class TenantTaskWorker extends DatabaseContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
-        ExecutionContextAccess $contextAccess,
+        CurrentExecutionContext $executionContext,
         PDO $pdo,
         private readonly ImportExportWorkerRuntime $runtime,
     ) {
-        parent::__construct($contexts, $contextAccess, $pdo);
+        parent::__construct($contexts, $executionContext, $pdo);
     }
 
     protected function configure()

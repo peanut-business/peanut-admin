@@ -12,7 +12,6 @@ use app\adminapi\validate\auth\MenuValidate;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\common\service\JsonService;
 use think\response\Json;
-use app\common\execution\ExecutionContextAccess;
 
 class MenuController extends BaseAdminController
 {
@@ -20,13 +19,12 @@ class MenuController extends BaseAdminController
         App $app,
         CurrentExecutionContext $executionContext,
         private readonly MenuApplicationService $menus,
-        private readonly ExecutionContextAccess $contextAccess,
     )
     {
         parent::__construct($app, $executionContext);
     }
 
-    public function route()  { return $this->data($this->menus->getMenuByAdminId($this->contextAccess->tenantAdmin(), $this->adminId)); }
+    public function route()  { return $this->data($this->menus->getMenuByAdminId($this->executionContext->tenantAdmin(), $this->adminId)); }
     public function lists()
     {
         return $this->instanceMenuDenial() ?? $this->data($this->menus->getAll());

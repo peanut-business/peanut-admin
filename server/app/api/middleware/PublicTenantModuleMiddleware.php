@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\middleware;
 
 use app\common\execution\ConsumerExecutionContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblem;
 use app\common\service\module\ModuleExecutionBoundary;
@@ -25,7 +25,7 @@ final class PublicTenantModuleMiddleware
 
     public function __construct(
         private readonly ExecutionContextStore $executionContexts,
-        private readonly ExecutionContextAccess $contexts,
+        private readonly CurrentExecutionContext $executionContext,
         private readonly TenantEntryBindingResolver $entryBindings,
         private readonly ModuleExecutionBoundary $modules,
     ) {}
@@ -48,7 +48,7 @@ final class PublicTenantModuleMiddleware
                 TenantEntryBindingResolver::MEMBER_CLIENT,
                 $actor,
                 $operation,
-                DefaultTenantContextResolver::operationId($this->contexts, $request),
+                DefaultTenantContextResolver::operationId($this->executionContext, $request),
             );
         } catch (TenantEntryResolutionException) {
             throw ApiProblem::fromEnvelope(

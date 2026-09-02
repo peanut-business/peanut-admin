@@ -6,7 +6,6 @@ namespace app\platform\controller;
 use app\BaseController;
 use app\common\traits\ApiResponseTrait;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextAccess;
 use app\common\execution\PlatformExecutionContext;
 use app\platform\context\PlatformOperatorContext;
 use app\platform\http\PlatformRequest;
@@ -17,17 +16,15 @@ abstract class BasePlatformController extends BaseController
     use ApiResponseTrait;
 
     protected ?PlatformOperatorContext $platformContext = null;
-    private readonly ExecutionContextAccess $contextAccess;
 
-    public function __construct(App $app, private readonly CurrentExecutionContext $execution)
+    public function __construct(App $app, private readonly CurrentExecutionContext $executionContext)
     {
         parent::__construct($app);
-        $this->contextAccess = new ExecutionContextAccess($execution);
     }
 
     protected function initialize(): void
     {
-        $context = $this->execution->current();
+        $context = $this->executionContext->current();
         $this->platformContext = $context instanceof PlatformExecutionContext
             ? $context->platform
             : null;
@@ -35,6 +32,6 @@ abstract class BasePlatformController extends BaseController
 
     protected function requestId(): string
     {
-        return PlatformRequest::requestId($this->contextAccess, $this->request);
+        return PlatformRequest::requestId($this->executionContext, $this->request);
     }
 }

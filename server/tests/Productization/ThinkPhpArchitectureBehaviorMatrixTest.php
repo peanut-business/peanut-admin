@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextAccess;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblemMapper;
 use app\common\http\PageResult;
@@ -309,7 +308,7 @@ expectTpq51($differentTenantRejected, 'nested execution context changed the auth
 expectTpq51($store->isEmpty(), 'rejected Tenant context leaked onto the execution stack');
 
 $connection->resetStatements();
-(new PlatformTenantDataGateway(new ExecutionContextAccess($current)))
+(new PlatformTenantDataGateway($current))
     ->query(Tpq51Child::class, 'platform-test', 'tpq51.cross-tenant-read')
     ->select();
 expectTpq51(

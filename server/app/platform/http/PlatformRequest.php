@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\http;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
 use PeanutAdmin\Kernel\Auth\PlatformRefreshCookie;
 
@@ -24,9 +24,9 @@ final class PlatformRequest
         return trim((string)$request->cookie(PlatformRefreshCookie::NAME, ''));
     }
 
-    public static function requestId(ExecutionContextAccess $contexts, $request): string
+    public static function requestId(CurrentExecutionContext $executionContext, $request): string
     {
-        return RequestTrace::id($contexts, $request, 'platform');
+        return RequestTrace::id($executionContext, $request, 'platform');
     }
 
     private function __construct()

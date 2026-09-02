@@ -200,7 +200,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "c74900c10bead10fffdf5d2c2d4e5ac608b31ce6a5d00f31b00c90ae30796199"
+                "sha256": "c90dc4a49fb54440abe238b81f6cb4c819b21ada375fbeccd6c2d9ae892cca7e"
             },
             "trust": {
                 "channel": "bundled",
@@ -284,7 +284,7 @@
                 }
             ],
             "manifest": "plugins/official.file/plugin.json",
-            "manifest_sha256": "fa967b81ee883727381c4c601c6045e8ecb7ebab82144292c7dd5d5664166f27"
+            "manifest_sha256": "dd84b939ebbe4c63639a446b31e3d00552c48743fb6b11632626007ccafd59be"
         },
         {
             "key": "official.import-export",
@@ -490,7 +490,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "d3dcac719ea565253eee58aedb7b1712771fedf7334b0c99347f6b4219815ecc"
+                "sha256": "3d5c1152afaaf3d6fed9071bd0e6353757e5da893fc2953a07afaf81ac8023ba"
             },
             "trust": {
                 "channel": "bundled",
@@ -574,7 +574,7 @@
                 }
             ],
             "manifest": "plugins/official.notification/plugin.json",
-            "manifest_sha256": "8ea6bf0294391099038948649f432dff5d82e4220e1f82a3cb62f6a8911a3811"
+            "manifest_sha256": "63e7c95a2f4871f2bb3abb6e85668ef78748865f9e4f3a9c114e1c5217ef2d08"
         },
         {
             "key": "official.oauth",
@@ -687,7 +687,7 @@
             "source": {
                 "type": "canonical-contents",
                 "reference": "canonical-plugin-contents-v1",
-                "sha256": "42e25e3eac7e525b8869a228d8637a1b158a9678e1187195bd963e17b4932377"
+                "sha256": "d88e797995a4a124c00983c2a7790922d1ac5dc2dc7ca13912b76ff2b6fb2769"
             },
             "trust": {
                 "channel": "bundled",
@@ -780,7 +780,7 @@
                 }
             ],
             "manifest": "plugins/official.payment/plugin.json",
-            "manifest_sha256": "445e4d1225f6d914d38da1caa4290548474c510a32e1a601ae74c23f6b1d8940"
+            "manifest_sha256": "7be4c65e26af85a007380527580a73c25597369648fa644500e9ecba688d0e80"
         },
         {
             "key": "official.task",

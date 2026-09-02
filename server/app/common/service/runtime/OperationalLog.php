@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\runtime;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\AdminExecutionContext;
 use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\InstallationExecutionContext;
@@ -18,47 +18,47 @@ final class OperationalLog
 {
     /** @param array<string,mixed> $attributes */
     public static function info(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $event,
         array $attributes = [],
     ): void
     {
-        self::write($contexts, 'info', $event, $attributes);
+        self::write($executionContext, 'info', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
     public static function notice(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $event,
         array $attributes = [],
     ): void
     {
-        self::write($contexts, 'notice', $event, $attributes);
+        self::write($executionContext, 'notice', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
     public static function warning(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $event,
         array $attributes = [],
     ): void
     {
-        self::write($contexts, 'warning', $event, $attributes);
+        self::write($executionContext, 'warning', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
     public static function error(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $event,
         array $attributes = [],
     ): void
     {
-        self::write($contexts, 'error', $event, $attributes);
+        self::write($executionContext, 'error', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
     private static function write(
-        ExecutionContextAccess $contexts,
+        CurrentExecutionContext $executionContext,
         string $level,
         string $event,
         array $attributes,
@@ -67,7 +67,7 @@ final class OperationalLog
         try {
             Log::$level(RedactionPolicy::encode([
                 'event' => self::event($event),
-                'attributes' => self::attributes($contexts, $attributes),
+                'attributes' => self::attributes($executionContext, $attributes),
             ]));
         } catch (\Throwable) {
             // Runtime diagnostics must never replace the product operation.
@@ -75,10 +75,10 @@ final class OperationalLog
     }
 
     /** @param array<string,mixed> $attributes @return array<string,mixed> */
-    private static function attributes(ExecutionContextAccess $contexts, array $attributes): array
+    private static function attributes(CurrentExecutionContext $executionContext, array $attributes): array
     {
         try {
-            $context = $contexts->current();
+            $context = $executionContext->current();
         } catch (\Throwable) {
             $context = null;
         }
