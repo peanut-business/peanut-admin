@@ -34,7 +34,7 @@
   },
   "lockfiles": {
     "server/composer.lock": "0bdd7fb32d2f3050082950d05750b4e1c152ad263eeb6a6b326d0c105eef715d",
-    "web/pnpm-lock.yaml": "9e41543ee613cf6173483385d177a0da29e8b458c21780dd120225dc6dda3d24",
+    "web/pnpm-lock.yaml": "b8e19b32016a81974df236632133e1136225bfa4d3543d13197ffef0fd54134a",
     "platform/package-lock.json": "4032cfc75f1455113db6016c350f4f9d12875005d5ae36de2541ea2a695094e8",
     "pc/package-lock.json": "3bc84a40a35d5be9adc328c28c533a2916feb2675b098965d9a3b41a9b6ede4c",
     "uniapp/package-lock.json": "85507a09d1af30c308843dfbad7abea2f0e443d6585643bec4711608c40cc6e1",
