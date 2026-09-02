@@ -4,13 +4,13 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "feat/v3013-candidate-freeze",
-    "commit": "f35feeed7e2c75c10c6315f7f41343034a8a7f77",
+    "commit": "c554fc486f0121a2b9119a327629a61465dd86c4",
     "reviewed_at": "2026-09-03"
   },
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。当前应用实现已在功能冻结提交 f35feeed7e2c75c10c6315f7f41343034a8a7f77 收敛为 v3.0.13 源码基线，application inventory、scaffold 与 P0-E fixture 已同步，资格合同和无资源计划通过；当前尚未合入 main、完成 P0-E、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。当前应用实现在 f35feeed7e2c75c10c6315f7f41343034a8a7f77 冻结，并由发布身份提交 c554fc486f0121a2b9119a327629a61465dd86c4 固定为 v3.0.13 源码基线；application inventory、scaffold 与 P0-E fixture 已同步，资格合同和无资源计划通过。当前尚未合入 main、完成 P0-E、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1431,7 +1431,7 @@
       "name": "双 Edition 安装与升级分发",
       "area": "delivery",
       "status": "implemented",
-      "summary": "当前应用实现已在功能冻结提交 f35feeed… 收敛为 v3.0.13 源码基线，application inventory、双 Edition scaffold 与 P0-E fixture 已同步，资格合同和无资源计划通过。首个正式安装基线仍待合入 main、P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。",
+      "summary": "当前应用实现在 f35feeed… 冻结，并由发布身份提交 c554fc48… 固定为 v3.0.13 源码基线；application inventory、双 Edition scaffold 与 P0-E fixture 已同步，资格合同和无资源计划通过。首个正式安装基线仍待合入 main、P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。",
       "acceptance": [
         "同一冻结 source commit/tree 生成两个 Edition 安装包并显式记录 Schema 与 checksum 差异",
         "下一正式版本为两个 Edition 分别发布签名升级包，并拒绝错 Edition、篡改、降级与不受支持来源",
@@ -1441,7 +1441,7 @@
       "evidence": [
         {
           "kind": "git",
-          "ref": "f35feeed7e2c75c10c6315f7f41343034a8a7f77"
+          "ref": "c554fc486f0121a2b9119a327629a61465dd86c4"
         },
         {
           "kind": "document",
