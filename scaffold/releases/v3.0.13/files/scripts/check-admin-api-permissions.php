@@ -4,30 +4,14 @@ declare(strict_types=1);
 
 $repositoryRoot = dirname(__DIR__);
 require_once $repositoryRoot . '/server/route/registry_source.php';
-$routeSource = peanut_route_registry_source($repositoryRoot . '/server');
+$inventory = peanut_route_endpoint_inventory($repositoryRoot . '/server');
 $accessConfig = require $repositoryRoot . '/server/config/admin_api_access.php';
+$markdown = in_array('--markdown', $argv, true);
+$inventoryJson = in_array('--inventory-json', $argv, true);
 
 /** @return list<array{method:string,path:string,permission:string,access:string}> */
-function adminApiMatrix(string $repositoryRoot, string $routeSource, array $accessConfig): array
+function adminApiMatrix(string $repositoryRoot, array $inventory, array $accessConfig): array
 {
-    $groupStart = strpos($routeSource, "Route::group('api/admin'");
-    $groupEnd = $groupStart === false
-        ? false
-        : strpos($routeSource, '})->middleware([LoginMiddleware::class, AuthMiddleware::class', $groupStart);
-    if ($groupStart === false || $groupEnd === false) {
-        throw new RuntimeException('api/admin route group or its authorization middleware chain is missing');
-    }
-
-    $group = substr($routeSource, $groupStart, $groupEnd - $groupStart);
-    if (preg_match_all(
-        "/Route::(get|post|put|delete|patch)\\(\\s*'([^']+)'/i",
-        $group,
-        $matches,
-        PREG_SET_ORDER,
-    ) === false) {
-        throw new RuntimeException('unable to parse api/admin routes');
-    }
-
     $permissionKeys = [];
     $sqlFiles = [$repositoryRoot . '/server/database/init.sql'];
     $sqlFiles = array_merge(
@@ -46,10 +30,14 @@ function adminApiMatrix(string $repositoryRoot, string $routeSource, array $acce
 
     $authenticated = array_fill_keys(normalizedExceptionRoutes($accessConfig['authenticated'] ?? []), true);
     $matrix = [];
-    foreach ($matches as $match) {
-        $method = strtoupper($match[1]);
-        $path = 'api/admin/' . strtolower(trim($match[2], '/'));
-        $permission = substr($path, strlen('api/admin/'));
+    foreach ($inventory['endpoints'] as $endpoint) {
+        if (($endpoint['source'] ?? null) !== 'server/route/admin.php'
+            || !hasMiddleware($endpoint, app\adminapi\http\middleware\AuthMiddleware::class)) {
+            continue;
+        }
+        $method = strtoupper((string)$endpoint['method']);
+        $path = strtolower(trim((string)$endpoint['path'], '/'));
+        $permission = substr($path, strlen('adminapi/'));
         $routeKey = $method . ' ' . $path;
         $access = isset($authenticated[$routeKey])
             ? 'authenticated'
@@ -57,6 +45,16 @@ function adminApiMatrix(string $repositoryRoot, string $routeSource, array $acce
         $matrix[] = compact('method', 'path', 'permission', 'access');
     }
     return $matrix;
+}
+
+function hasMiddleware(array $endpoint, string $middleware): bool
+{
+    foreach ($endpoint['middleware'] ?? [] as $descriptor) {
+        if (($descriptor['class'] ?? null) === $middleware) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /** @return list<string> */
@@ -75,26 +73,10 @@ function normalizedExceptionRoutes(mixed $routes): array
     return array_values(array_unique($normalized));
 }
 
-/** @return array<string,true> */
-function explicitRoutes(string $routeSource): array
-{
-    preg_match_all(
-        "/Route::(get|post|put|delete|patch)\\(\\s*'([^']+)'/i",
-        $routeSource,
-        $matches,
-        PREG_SET_ORDER,
-    );
-    $routes = [];
-    foreach ($matches as $match) {
-        $path = strtolower(trim($match[2], '/'));
-        if (!str_starts_with($path, 'api/admin/')) {
-            $routes[strtoupper($match[1]) . ' ' . $path] = true;
-        }
-    }
-    return $routes;
-}
-
 try {
+    if ($markdown && $inventoryJson) {
+        throw new RuntimeException('--markdown and --inventory-json cannot be combined');
+    }
     if (($accessConfig['version'] ?? null) !== 1) {
         throw new RuntimeException('admin API exception metadata version must be exactly 1');
     }
@@ -111,47 +93,38 @@ try {
         throw new RuntimeException('Platform routes cannot be both public and authenticated: ' . implode(', ', $platformOverlap));
     }
     foreach (array_merge($public, $authenticated) as $exception) {
-        if (str_contains($exception, ' api/platform/')) {
+        if (str_contains($exception, ' platformapi/')) {
             throw new RuntimeException('platform routes cannot use Tenant Admin metadata: ' . $exception);
         }
     }
     foreach (array_merge($platformPublic, $platformAuthenticated) as $exception) {
-        if (!str_contains($exception, ' api/platform/')) {
+        if (!str_contains($exception, ' platformapi/')) {
             throw new RuntimeException('non-platform route cannot use Platform metadata: ' . $exception);
         }
     }
 
-    preg_match_all(
-        "/Route::(get|post|put|delete|patch)\\(\\s*'(api\\/platform\\/[^']+)'/i",
-        $routeSource,
-        $platformMatches,
-        PREG_SET_ORDER,
-    );
     $platformExceptions = array_fill_keys(array_merge($platformPublic, $platformAuthenticated), true);
-    foreach ($platformMatches as $platformRoute) {
-        $method = strtoupper($platformRoute[1]);
-        $path = strtolower(trim($platformRoute[2], '/'));
+    foreach ($inventory['endpoints'] as $platformRoute) {
+        if (($platformRoute['application'] ?? null) !== 'platform') {
+            continue;
+        }
+        $method = strtoupper((string)$platformRoute['method']);
+        $path = strtolower(trim((string)$platformRoute['path'], '/'));
         $routeKey = $method . ' ' . $path;
         if (isset($platformExceptions[$routeKey])) {
             continue;
         }
-        $offset = strpos($routeSource, $platformRoute[0]);
-        $nextRoute = $offset === false ? false : strpos($routeSource, 'Route::', $offset + strlen($platformRoute[0]));
-        $statement = $offset === false
-            ? ''
-            : substr($routeSource, $offset, ($nextRoute === false ? strlen($routeSource) : $nextRoute) - $offset);
-        if (!str_contains($statement, 'PlatformLoginMiddleware::class')
-            || !str_contains($statement, 'PlatformPermissionMiddleware::class')) {
+        if (!hasMiddleware($platformRoute, app\platform\http\middleware\PlatformLoginMiddleware::class)
+            || !hasMiddleware($platformRoute, app\platform\http\middleware\PlatformPermissionMiddleware::class)) {
             throw new RuntimeException('Platform route lacks exact permission metadata: ' . $routeKey);
         }
     }
 
-    $matrix = adminApiMatrix($repositoryRoot, $routeSource, $accessConfig);
+    $matrix = adminApiMatrix($repositoryRoot, $inventory, $accessConfig);
     $known = [];
-    foreach ($matrix as $row) {
-        $known[$row['method'] . ' ' . $row['path']] = true;
+    foreach ($inventory['endpoints'] as $endpoint) {
+        $known[strtoupper((string)$endpoint['method']) . ' ' . strtolower(trim((string)$endpoint['path'], '/'))] = true;
     }
-    $known += explicitRoutes($routeSource);
     foreach (array_merge($public, $authenticated, $platformPublic, $platformAuthenticated) as $exception) {
         if (!isset($known[$exception])) {
             throw new RuntimeException('exception metadata does not match an exact route: ' . $exception);
@@ -163,7 +136,7 @@ try {
         static fn(array $row): bool => $row['access'] === 'unregistered',
     ));
 
-    if (in_array('--markdown', $argv, true)) {
+    if ($markdown) {
         echo "| Method | Admin API route | Access registration |\n";
         echo "|---|---|---|\n";
         foreach ($matrix as $row) {
@@ -191,12 +164,19 @@ try {
         static fn(array $row): bool => $row['access'] === 'permission',
     ));
     $authenticatedCount = count($matrix) - $permissionCount;
-    echo sprintf(
-        "Admin API permission gate passed: %d routes (%d permission, %d authenticated)\n",
-        count($matrix),
-        $permissionCount,
-        $authenticatedCount,
-    );
+    if ($inventoryJson) {
+        echo json_encode(
+            $inventory,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        ) . PHP_EOL;
+    } else {
+        echo sprintf(
+            "Admin API permission gate passed: %d routes (%d permission, %d authenticated)\n",
+            count($matrix),
+            $permissionCount,
+            $authenticatedCount,
+        );
+    }
 } catch (Throwable $exception) {
     fwrite(STDERR, 'Admin API permission gate failed: ' . $exception->getMessage() . PHP_EOL);
     exit(1);

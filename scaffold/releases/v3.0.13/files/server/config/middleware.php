@@ -3,11 +3,9 @@ use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\api\middleware\CheckTokenMiddleware;
-use app\api\middleware\PublicArticleTenantMiddleware;
-use app\api\middleware\PublicDecorationTenantMiddleware;
-use app\api\middleware\PublicHotSearchTenantMiddleware;
-use app\api\middleware\PublicMemberTenantMiddleware;
-use app\api\middleware\PublicNoticeTenantMiddleware;
+use app\api\middleware\PublicTenantModuleMiddleware;
+use app\common\http\middleware\InstallationStateMiddleware;
+use app\common\http\middleware\MaintenanceWriteGateMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use app\platform\http\middleware\PlatformHostMiddleware;
 use app\platform\http\middleware\PlatformInstanceToolMiddleware;
@@ -30,15 +28,13 @@ return [
     ],
     // 优先级设置，此数组中的中间件会按照数组中的顺序优先执行
     'priority' => [
+        InstallationStateMiddleware::class,
+        MaintenanceWriteGateMiddleware::class,
         PlatformHostMiddleware::class,
         PlatformLoginMiddleware::class,
         LoginMiddleware::class,
         CheckTokenMiddleware::class,
-        PublicArticleTenantMiddleware::class,
-        PublicDecorationTenantMiddleware::class,
-        PublicHotSearchTenantMiddleware::class,
-        PublicMemberTenantMiddleware::class,
-        PublicNoticeTenantMiddleware::class,
+        PublicTenantModuleMiddleware::class,
         OfficialModuleMiddleware::class,
         PlatformPermissionMiddleware::class,
         AuthMiddleware::class,

@@ -13,11 +13,11 @@ export interface HotSearchConfig {
 }
 
 export function getHotSearchConfig() {
-  return axios.get<HotSearchConfig>('/api/admin/setting/hot-search/config');
+  return axios.get<HotSearchConfig>('/adminapi/setting/hot-search/config');
 }
 
 export function saveHotSearchConfig(data: HotSearchConfig) {
-  return axios.post('/api/admin/setting/hot-search/save', data);
+  return axios.post('/adminapi/setting/hot-search/save', data);
 }
 
 // ─── 交易设置 ────────────────────────────────────────────────────────────────
@@ -29,9 +29,9 @@ export interface TransactionConfig {
 }
 
 export function getTransactionConfig() {
-  return axios.get<TransactionConfig>('/api/admin/setting/transaction/config');
+  return axios.get<TransactionConfig>('/adminapi/setting/transaction/config');
 }
 
 export function saveTransactionConfig(data: TransactionConfig) {
-  return axios.post('/api/admin/setting/transaction/save', data);
+  return axios.post('/adminapi/setting/transaction/save', data);
 }

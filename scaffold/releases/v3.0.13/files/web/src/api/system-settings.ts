@@ -13,10 +13,10 @@ export interface LoginSetting {
 }
 
 export const getUserSetting = () =>
-  axios.get<UserSetting>('/api/admin/config/user');
+  axios.get<UserSetting>('/adminapi/config/user');
 export const saveUserSetting = (data: UserSetting) =>
-  axios.post('/api/admin/config/user/save', data);
+  axios.post('/adminapi/config/user/save', data);
 export const getLoginSetting = () =>
-  axios.get<LoginSetting>('/api/admin/config/login');
+  axios.get<LoginSetting>('/adminapi/config/login');
 export const saveLoginSetting = (data: LoginSetting) =>
-  axios.post('/api/admin/config/login/save', data);
+  axios.post('/adminapi/config/login/save', data);

@@ -133,7 +133,7 @@ export async function loginPlatform(
   password: string
 ): Promise<void> {
   const session = await unwrap<{ access_token: string }>(
-    client.post('/api/platform/session/login', { email, password })
+    client.post('/platformapi/session/login', { email, password })
   );
   localStorage.setItem(PLATFORM_TOKEN_KEY, session.access_token);
 }
@@ -148,12 +148,12 @@ export function listModules(params: {
     count: number;
     pageNo: number;
     pageSize: number;
-  }>(client.get('/api/platform/instance-tools/modules', { params }));
+  }>(client.get('/platformapi/instance-tools/modules', { params }));
 }
 
 export function installPackage(form: FormData) {
   return unwrap<Record<string, unknown>>(
-    client.post('/api/platform/instance-tools/modules/install', form)
+    client.post('/platformapi/instance-tools/modules/install', form)
   );
 }
 
@@ -164,7 +164,7 @@ export function createModule(moduleKey: string) {
     backend_path: string;
     frontend_path: string;
   }>(
-    client.post('/api/platform/instance-tools/modules/create', {
+    client.post('/platformapi/instance-tools/modules/create', {
       module_key: moduleKey,
     })
   );
@@ -172,7 +172,7 @@ export function createModule(moduleKey: string) {
 
 export function previewUninstall(moduleKey: string, purge: boolean) {
   return unwrap<UninstallPreview>(
-    client.post('/api/platform/instance-tools/modules/uninstall', {
+    client.post('/platformapi/instance-tools/modules/uninstall', {
       module_key: moduleKey,
       purge,
       preview: true,
@@ -187,7 +187,7 @@ export function executeUninstall(
   changeReason: string
 ) {
   return unwrap<Record<string, unknown>>(
-    client.post('/api/platform/instance-tools/modules/uninstall', {
+    client.post('/platformapi/instance-tools/modules/uninstall', {
       module_key: moduleKey,
       purge,
       preview: false,
@@ -201,7 +201,7 @@ export function executeUninstall(
 
 export function disableModule(moduleKey: string, changeReason: string) {
   return unwrap<Record<string, unknown>>(
-    client.post('/api/platform/instance-tools/modules/disable', {
+    client.post('/platformapi/instance-tools/modules/disable', {
       module_key: moduleKey,
       change_reason: changeReason,
     })
@@ -210,7 +210,7 @@ export function disableModule(moduleKey: string, changeReason: string) {
 
 export function syncModules(moduleKey?: string) {
   return unwrap<Record<string, unknown>>(
-    client.post('/api/platform/instance-tools/modules/sync', {
+    client.post('/platformapi/instance-tools/modules/sync', {
       module_key: moduleKey || '',
     })
   );

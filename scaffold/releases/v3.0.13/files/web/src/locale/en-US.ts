@@ -31,6 +31,7 @@ import localeAppReadiness from '@/views/app-setting/readiness/locale/en-US';
 import localeArticleCate from '@/modules/official-article/views/cate/locale/en-US';
 import localeArticleList from '@/modules/official-article/views/list/locale/en-US';
 import localeConfigurationTransfer from '@/modules/official-import-export/views/locale/en-US';
+import localeRichText from '@/modules/official-rich-text/views/locale/en-US';
 import localeSettings from './en-US/settings';
 
 export default {
@@ -85,4 +86,5 @@ export default {
   ...localeArticleCate,
   ...localeArticleList,
   ...localeConfigurationTransfer,
+  ...localeRichText,
 };

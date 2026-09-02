@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PageData } from '@/types/global';
 
 export interface WebPageConfig {
   status: 0 | 1;
@@ -8,11 +9,11 @@ export interface WebPageConfig {
 }
 
 export function getWebPageConfig() {
-  return axios.get<WebPageConfig>('/api/admin/official.oauth.web-page.config');
+  return axios.get<WebPageConfig>('/adminapi/official.oauth.web-page.config');
 }
 
 export function saveWebPageConfig(data: Omit<WebPageConfig, 'url'>) {
-  return axios.post('/api/admin/official.oauth.web-page.save', data);
+  return axios.post('/adminapi/official.oauth.web-page.save', data);
 }
 
 export interface MiniProgramConfig {
@@ -30,7 +31,7 @@ export interface MiniProgramConfig {
 }
 
 export function getMiniProgramConfig() {
-  return axios.get<MiniProgramConfig>('/api/admin/official.oauth.mini-program.config');
+  return axios.get<MiniProgramConfig>('/adminapi/official.oauth.mini-program.config');
 }
 
 export function saveMiniProgramConfig(
@@ -39,7 +40,7 @@ export function saveMiniProgramConfig(
     'name' | 'original_id' | 'qr_code' | 'app_id' | 'app_secret'
   >
 ) {
-  return axios.post('/api/admin/official.oauth.mini-program.save', data);
+  return axios.post('/adminapi/official.oauth.mini-program.save', data);
 }
 
 /** 微信公众号配置（敏感 AppSecret 由服务端以 ****** 掩码返回）。 */
@@ -71,12 +72,12 @@ export type OfficialAccountConfigForm = Pick<
 
 export function getOfficialAccountConfig() {
   return axios.get<OfficialAccountConfig>(
-    '/api/admin/official.oauth.official-account.config'
+    '/adminapi/official.oauth.official-account.config'
   );
 }
 
 export function saveOfficialAccountConfig(data: OfficialAccountConfigForm) {
-  return axios.post('/api/admin/official.oauth.official-account.save', data);
+  return axios.post('/adminapi/official.oauth.official-account.save', data);
 }
 
 export type OfficialAccountMenuType = 'click' | 'view' | 'miniprogram';
@@ -97,16 +98,16 @@ export interface OfficialAccountMenuResponse {
 
 export function getOfficialAccountMenu() {
   return axios.get<OfficialAccountMenuResponse>(
-    '/api/admin/official.oauth.official-account.menu.detail'
+    '/adminapi/official.oauth.official-account.menu.detail'
   );
 }
 
 export function saveOfficialAccountMenu(menu: OfficialAccountMenuItem[]) {
-  return axios.post('/api/admin/official.oauth.official-account.menu.save', { menu });
+  return axios.post('/adminapi/official.oauth.official-account.menu.save', { menu });
 }
 
 export function publishOfficialAccountMenu(menu: OfficialAccountMenuItem[]) {
-  return axios.post('/api/admin/official.oauth.official-account.menu.publish', {
+  return axios.post('/adminapi/official.oauth.official-account.menu.publish', {
     menu,
   });
 }
@@ -134,12 +135,7 @@ export interface OfficialAccountReplyListParams {
   page_size?: number;
 }
 
-export interface OfficialAccountReplyListResponse {
-  list: OfficialAccountReplyRecord[];
-  total: number;
-  page_no: number;
-  page_size: number;
-}
+export type OfficialAccountReplyListResponse = PageData<OfficialAccountReplyRecord>;
 
 export type OfficialAccountReplyForm = Pick<
   OfficialAccountReplyRecord,
@@ -157,34 +153,34 @@ export function getOfficialAccountReplyList(
   params: OfficialAccountReplyListParams
 ) {
   return axios.get<OfficialAccountReplyListResponse>(
-    '/api/admin/official.oauth.official-account.reply.list',
+    '/adminapi/official.oauth.official-account.reply.list',
     { params }
   );
 }
 
 export function getOfficialAccountReplyDetail(id: number) {
   return axios.get<OfficialAccountReplyRecord>(
-    '/api/admin/official.oauth.official-account.reply.detail',
+    '/adminapi/official.oauth.official-account.reply.detail',
     { params: { id } }
   );
 }
 
 export function addOfficialAccountReply(data: OfficialAccountReplyForm) {
-  return axios.post('/api/admin/official.oauth.official-account.reply.add', data);
+  return axios.post('/adminapi/official.oauth.official-account.reply.add', data);
 }
 
 export function editOfficialAccountReply(data: OfficialAccountReplyForm) {
-  return axios.post('/api/admin/official.oauth.official-account.reply.edit', data);
+  return axios.post('/adminapi/official.oauth.official-account.reply.edit', data);
 }
 
 export function deleteOfficialAccountReply(id: number) {
-  return axios.post('/api/admin/official.oauth.official-account.reply.delete', {
+  return axios.post('/adminapi/official.oauth.official-account.reply.delete', {
     id,
   });
 }
 
 export function updateOfficialAccountReplyStatus(id: number, status: 0 | 1) {
-  return axios.post('/api/admin/official.oauth.official-account.reply.update-status', {
+  return axios.post('/adminapi/official.oauth.official-account.reply.update-status', {
     id,
     status,
   });
@@ -203,10 +199,10 @@ export type OpenPlatformConfigForm = Pick<
 
 export function getOpenPlatformConfig() {
   return axios.get<OpenPlatformConfig>(
-    '/api/admin/official.oauth.open-platform.config'
+    '/adminapi/official.oauth.open-platform.config'
   );
 }
 
 export function saveOpenPlatformConfig(data: OpenPlatformConfigForm) {
-  return axios.post('/api/admin/official.oauth.open-platform.save', data);
+  return axios.post('/adminapi/official.oauth.open-platform.save', data);
 }
