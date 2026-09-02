@@ -932,6 +932,7 @@
         "owner": "Peanut Admin deployment owner",
         "host": "127.0.0.1",
         "port": 20282,
+        "port_env": "RICH_TEXT_COLLABORATION_PORT",
         "url_env": "RICH_TEXT_COLLABORATION_URL",
         "service_type": "deployment-managed Hocuspocus-compatible WebSocket",
         "namespace": "peanut-admin-official-rich-text-module",
