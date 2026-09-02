@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\tenant;
 
 use app\common\service\runtime\ApplicationCache;
+use PeanutAdmin\Kernel\Tenancy\TenantCacheStore;
 use think\facade\Cache;
 
 /** Framework adapter used only behind TenantCache's scoped logical-key boundary. */

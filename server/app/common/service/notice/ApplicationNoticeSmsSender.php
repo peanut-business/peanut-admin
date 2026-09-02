@@ -6,6 +6,7 @@ namespace app\common\service\notice;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 
 /** Keeps Tenant-owned provider credentials behind the notification Host. */
 final class ApplicationNoticeSmsSender implements NoticeSmsSender

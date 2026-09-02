@@ -8,13 +8,13 @@ use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\enum\notice\NoticeSceneEnum;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\service\notice\NoticeSmsSender;
 use app\common\service\notice\NoticeTenantContext;
-use app\common\service\notice\VerificationCodeSecret;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
+use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 
 /**
  * 手机验证码发送与核验服务。

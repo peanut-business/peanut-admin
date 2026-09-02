@@ -20,10 +20,8 @@ function qualificationSource(string $root, string $relative): string
 $root = dirname(__DIR__, 2);
 $sources = [];
 foreach ([
-    'default_context' => 'app/common/service/tenant/DefaultTenantContextResolver.php',
     'app_service' => 'app/AppService.php',
     'default_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/DefaultTenantContextResolver.php',
-    'entry_binding' => 'app/common/service/tenant/TenantEntryBindingResolver.php',
     'entry_binding_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantEntryBindingResolver.php',
     'entry_schema' => 'database/init.sql',
     'public_tenant_module_middleware' => 'app/api/middleware/PublicTenantModuleMiddleware.php',
@@ -86,7 +84,6 @@ foreach ([
     'official_import_export_routes' => 'app/Modules/Official/ImportExport/Http/routes.php',
     'official_module_middleware' => 'app/common/service/module/OfficialModuleMiddleware.php',
     'module_execution_boundary' => 'app/common/service/module/ModuleExecutionBoundary.php',
-    'module_execution_context' => 'app/common/service/module/ModuleExecutionContext.php',
     'module_execution_context_core' => 'vendor/peanut-admin/core/kernel/src/Module/ModuleExecutionContext.php',
     'module_guard_core' => 'vendor/peanut-admin/core/kernel/src/Module/ModuleGuard.php',
     'oauth_controller' => 'app/api/controller/OAuthController.php',
@@ -149,8 +146,9 @@ qualificationExpect(
     'async exports lost private Tenant namespace'
 );
 qualificationExpect(
-    str_contains($sources['default_context'], 'new CoreDefaultTenantContextResolver($pdo)')
-        && str_contains($sources['default_context'], 'RequestTrace::id($executionContext, $request, \'public\')')
+    str_contains($sources['app_service'], 'use PeanutAdmin\\Kernel\\Tenancy\\DefaultTenantContextResolver;')
+        && str_contains($sources['public_tenant_module_middleware'], 'RequestTrace::id($this->executionContext, $request, \'public\')')
+        && !is_file($root . '/app/common/service/tenant/DefaultTenantContextResolver.php')
         && str_contains($sources['default_context_core'], "code = 'default'")
         && str_contains($sources['default_context_core'], "status = 'active'")
         && str_contains($sources['default_context_core'], 'LIMIT 2')
@@ -191,10 +189,8 @@ qualificationExpect(
 qualificationExpect(
     str_contains($sources['entry_schema'], 'pa_tenant_entry_binding')
         && str_contains($sources['entry_schema'], 'fk_tenant_entry_binding_tenant')
-        && str_contains($sources['entry_binding'], 'new CoreTenantEntryBindingResolver($pdo, $defaultSystem)')
-        && str_contains($sources['entry_binding'], '$this->delegate->loginTenantCode(')
-        && str_contains($sources['entry_binding'], '$this->delegate->assertTenantAccess(')
-        && str_contains($sources['entry_binding'], '$this->delegate->system(')
+        && str_contains($sources['app_service'], 'use PeanutAdmin\\Kernel\\Tenancy\\TenantEntryBindingResolver;')
+        && !is_file($root . '/app/common/service/tenant/TenantEntryBindingResolver.php')
         && str_contains($sources['app_service'], 'DefaultTenantContextResolver::class')
         && str_contains($sources['app_service'], 'DeploymentMode::Standalone')
         && str_contains($sources['app_service'], 'deployment.public_default_tenant_fallback')
@@ -436,11 +432,8 @@ foreach ($officialModules as $moduleKey => $routeSourceKey) {
     );
 }
 qualificationExpect(
-    str_contains(
-        $sources['module_execution_context'],
-        '\\PeanutAdmin\\Kernel\\Module\\ModuleExecutionContext::class'
-    )
-        && str_contains($sources['module_execution_context'], 'class_alias(')
+    !is_file($root . '/app/common/service/module/ModuleExecutionContext.php')
+        && str_contains($sources['module_execution_boundary'], 'use PeanutAdmin\\Kernel\\Module\\ModuleExecutionContext;')
         && str_contains($sources['module_execution_context_core'], 'public static function admin(')
         && str_contains($sources['module_execution_context_core'], 'public static function businessMember(')
         && str_contains($sources['module_execution_context_core'], 'public static function system(')

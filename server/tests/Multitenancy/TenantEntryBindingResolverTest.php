@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
-use app\common\service\tenant\TenantEntryBindingResolver;
-use app\common\service\tenant\ApplicationHostPolicy;
 use app\common\service\storage\StorageRepository;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 

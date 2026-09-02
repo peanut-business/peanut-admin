@@ -20,7 +20,7 @@ use app\Modules\Official\Oauth\Contracts\OAuthQueries;
 use app\Modules\Official\Oauth\Infrastructure\Persistence\ThinkPhpOAuthCallbackLocator;
 use app\Modules\Official\Oauth\Infrastructure\Persistence\ThinkPhpOAuthPersistence;
 use app\common\service\oauth\WechatOAuthTransport;
-use app\common\service\oauth\contract\OAuthTransportInterface;
+use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
@@ -41,7 +41,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return [
             OAuthCallbackLocator::class => fn(): OAuthCallbackLocator => new ThinkPhpOAuthCallbackLocator(),
             OAuthPersistence::class => ThinkPhpOAuthPersistence::class,
-            OAuthTransportInterface::class => WechatOAuthTransport::class,
+            OAuthTransport::class => WechatOAuthTransport::class,
             OfficialAccountCallbacks::class => \app\Modules\Official\Oauth\Application\OfficialAccountApplicationService::class,
             ThinkPhpExternalTenantBindingRepository::class => fn(App $app): ThinkPhpExternalTenantBindingRepository => new ThinkPhpExternalTenantBindingRepository(
                 $app->make(OAuthCallbackLocator::class),
@@ -67,7 +67,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(\app\common\service\config\TenantApplicationSettingService::class),
                 $app->make(ExternalTenantResolver::class),
                 $app->make(OAuthPersistence::class),
-                $app->make(OAuthTransportInterface::class),
+                $app->make(OAuthTransport::class),
                 (string)$app->config->get('project.default_image.user_avatar', ''),
             ),
             OAuthQueries::class => fn(App $app): OAuthQueries => new OAuthQueryService($app->make(OAuthPersistence::class)),

@@ -14,8 +14,8 @@ use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
 use app\common\persistence\TransactionalExecution;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\oauth\contract\OAuthTransportInterface;
-use app\common\service\oauth\dto\OAuthProfile;
+use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
+use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
@@ -50,7 +50,7 @@ final class OAuthCommandService implements OAuthCommands
         private readonly TenantApplicationSettingService $applicationSettings,
         private readonly ExternalTenantResolver $externalTenants,
         private readonly OAuthPersistence $persistence,
-        private readonly OAuthTransportInterface $transport,
+        private readonly OAuthTransport $transport,
         private readonly string $defaultAvatar,
     ) {
     }

@@ -3,14 +3,13 @@ declare(strict_types=1);
 
 namespace app\common\service\config;
 
-use app\common\contract\config\WebsiteConfigStore;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use PeanutAdmin\Settings\Contract\WebsiteConfigStore as CoreWebsiteConfigStore;
+use PeanutAdmin\Settings\Contract\WebsiteConfigStore;
 
-final class TenantSettingWebsiteStore implements WebsiteConfigStore, CoreWebsiteConfigStore
+final class TenantSettingWebsiteStore implements WebsiteConfigStore
 {
     public function __construct(
         private AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,

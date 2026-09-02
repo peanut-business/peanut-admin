@@ -57,10 +57,7 @@ use app\common\service\storage\StorageConfigurationService;
 use app\common\service\storage\StorageDriverFactory;
 use app\common\service\storage\StorageRepository;
 use app\common\service\storage\StorageService;
-use app\common\service\tenant\DefaultTenantContextResolver;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
-use app\common\service\tenant\TenantEntryBindingResolver;
-use app\common\service\tenant\ApplicationHostPolicy;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
@@ -87,6 +84,9 @@ use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /**
  * 应用服务类

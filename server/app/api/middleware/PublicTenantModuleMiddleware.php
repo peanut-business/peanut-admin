@@ -7,11 +7,10 @@ use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblem;
+use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;
-use app\common\service\tenant\DefaultTenantContextResolver;
-use app\common\service\tenant\TenantEntryBindingResolver;
-use app\common\service\tenant\TenantEntryResolutionException;
 use PeanutAdmin\Kernel\Module\ModuleException;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /** Establishes a Host-bound public Tenant and, when present, its Module boundary. */
 final class PublicTenantModuleMiddleware
@@ -48,9 +47,9 @@ final class PublicTenantModuleMiddleware
                 TenantEntryBindingResolver::MEMBER_CLIENT,
                 $actor,
                 $operation,
-                DefaultTenantContextResolver::operationId($this->executionContext, $request),
+                RequestTrace::id($this->executionContext, $request, 'public'),
             );
-        } catch (TenantEntryResolutionException) {
+        } catch (\DomainException|\InvalidArgumentException|\PDOException) {
             throw ApiProblem::fromEnvelope(
                 $moduleKey === 'official.article' ? '默认租户不可用' : '租户入口不可用',
                 null,

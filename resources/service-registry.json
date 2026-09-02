@@ -1216,7 +1216,7 @@
         "server/app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php",
         "server/app/api/application/OAuthApplicationService.php",
         "server/app/common/service/oauth/OAuthBrowserCallbackService.php",
-        "server/app/common/service/wechat/OfficialAccountService.php"
+        "server/app/Modules/Official/Oauth/Application/OfficialAccountApplicationService.php"
       ],
       "actual_callers": [
         "PC 微信登录",

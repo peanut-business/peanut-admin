@@ -8,7 +8,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\api\application\IndexApplicationService;
 use app\api\application\PcApplicationService;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
-use app\common\service\tenant\TenantEntryBindingResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /**
  * PC 端聚合接口（部分端点返回更丰富的字段或不同格式）

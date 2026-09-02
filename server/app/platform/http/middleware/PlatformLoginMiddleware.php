@@ -6,10 +6,10 @@ namespace app\platform\http\middleware;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\JsonService;
-use app\common\service\tenant\ApplicationHostPolicy;
 use app\platform\http\PlatformRequest;
 use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 
 final class PlatformLoginMiddleware
 {

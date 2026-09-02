@@ -8,9 +8,9 @@ use app\adminapi\service\AdminTokenService;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
-use app\common\service\tenant\TenantEntryBindingResolver;
-use app\common\service\tenant\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /** Establishes management identity only from a validated native Tenant session. */
 final class LoginMiddleware

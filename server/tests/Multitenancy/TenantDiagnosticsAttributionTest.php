@@ -1,11 +1,10 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\diagnostics\TenantDiagnosticAttributes;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
+use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 
-require dirname(__DIR__, 2) . '/app/common/service/tenant/TenantScope.php';
-require dirname(__DIR__, 2) . '/app/common/service/diagnostics/TenantDiagnosticAttributes.php';
+require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectTenantDiagnostics(bool $condition, string $message): void
 {

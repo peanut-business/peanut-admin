@@ -10,9 +10,9 @@ use app\common\execution\ExecutionContextStore;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantContext;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\oauth\contract\OAuthTransportInterface;
-use app\common\service\oauth\dto\OAuthProfile;
 use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
+use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
+use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -72,7 +72,7 @@ SQL);
     $pdo->exec($schema);
 }
 
-final readonly class OAuthTenantFixtureTransport implements OAuthTransportInterface
+final readonly class OAuthTenantFixtureTransport implements OAuthTransport
 {
     public function __construct(
         private string $subject,
@@ -129,7 +129,7 @@ function oauthRunTenant(TenantContext $context, string $operationId, callable $o
     );
 }
 
-function oauthCommands(OAuthTransportInterface $transport): OAuthCommandService
+function oauthCommands(OAuthTransport $transport): OAuthCommandService
 {
     return new OAuthCommandService(
         app(\app\Modules\Official\Member\Contracts\MemberQueries::class),

@@ -11,7 +11,7 @@ use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;
 use app\common\service\decoration\DecorationReadService;
-use app\common\service\tenant\TenantEntryBindingResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 use app\common\service\tenant\TenantIdentityQuery;
 
 class IndexApplicationService

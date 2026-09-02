@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\platform\http\middleware;
 
 use app\common\service\JsonService;
-use app\common\service\tenant\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 
 final class PlatformHostMiddleware
 {

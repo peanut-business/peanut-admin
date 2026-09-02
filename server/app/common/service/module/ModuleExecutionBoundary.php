@@ -13,6 +13,7 @@ use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\Kernel\Module\ModuleExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleGuard;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;

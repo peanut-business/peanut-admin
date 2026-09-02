@@ -61,7 +61,7 @@ foreach ([
     'private const COMPLETION_TTL = 600',
     "'state_hash' => hash('sha256', \$state)",
     'completionForUpdate($context, hash(\'sha256\', $rawTicket))',
-    'private readonly OAuthTransportInterface $transport',
+    'private readonly OAuthTransport $transport',
     '$this->transport->exchange(',
     'ExternalTenantBinding $binding',
 ] as $marker) {
@@ -83,6 +83,8 @@ $oauthWithoutAllowedContextTypes = str_replace([
     'PeanutAdmin\\Kernel\\Auth\\TenantContext',
     'PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext',
     'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+    'PeanutAdmin\\IntegrationSecurity\\OAuth\\OAuthProfile',
+    'PeanutAdmin\\IntegrationSecurity\\OAuth\\OAuthTransport',
 ], '', $oauthLogic);
 expectOAuthChannelHost(
     !str_contains($oauthWithoutAllowedContextTypes, 'PeanutAdmin\\'),

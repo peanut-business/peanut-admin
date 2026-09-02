@@ -7,7 +7,6 @@ use app\common\composition\ModuleBindingContributor;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\http\OutboundHttpTransport;
 use app\common\service\notice\ApplicationNoticeSmsSender;
-use app\common\service\notice\NoticeSmsSender;
 use app\common\service\notice\NoticeChannelService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
@@ -20,6 +19,7 @@ use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 use think\App;
 
 final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor

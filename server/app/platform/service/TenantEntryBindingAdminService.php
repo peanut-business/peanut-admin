@@ -5,7 +5,7 @@ namespace app\platform\service;
 
 use app\common\application\BusinessException;
 use app\common\service\audit\AuditContractHost;
-use app\common\service\tenant\TenantEntryBindingResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 use app\platform\context\PlatformOperatorContext;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;

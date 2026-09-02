@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
-use app\common\service\notice\VerificationCodeSecret;
+use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -211,6 +211,8 @@ foreach ($tenantSources as $source) {
         'PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext',
         'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
         'PeanutAdmin\\Kernel\\Persistence\\TransactionManager',
+        'PeanutAdmin\\NotificationSms\\Application\\VerificationCodeSecret',
+        'PeanutAdmin\\NotificationSms\\Sms\\NoticeSmsSender',
     ], '', $source);
     expectNotificationHost(
         !str_contains($withoutAllowedContextTypes, 'PeanutAdmin\\'),

@@ -2,7 +2,6 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\TenantEntryBindingResolver;
 use app\Modules\Official\Notification\Application\NotificationBootstrapService;
 use app\Modules\Official\Task\Application\TaskBootstrapService;
 use app\common\execution\CurrentExecutionContext;
@@ -21,6 +20,7 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 require __DIR__ . '/install.php';
 

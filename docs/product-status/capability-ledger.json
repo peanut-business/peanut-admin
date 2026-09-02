@@ -1111,7 +1111,6 @@
         "PA-NATIVE-001"
       ],
       "paths": [
-        "server/app/common/service/module/ModuleExecutionContext.php",
         "server/app/common/service/module/ModuleExecutionBoundary.php",
         "docs/architecture/module-execution-context-contract.md",
         "docs-site/guide/module-development.md",

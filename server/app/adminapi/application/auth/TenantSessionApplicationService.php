@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace app\adminapi\application\auth;
 
 use app\common\application\BusinessException;
-use app\common\service\tenant\ApplicationHostPolicy;
-use app\common\service\tenant\TenantEntryBindingResolver;
 use app\platform\http\PlatformRequest;
 use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Http\TenantAuthResponse;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 final readonly class TenantSessionApplicationService
 {

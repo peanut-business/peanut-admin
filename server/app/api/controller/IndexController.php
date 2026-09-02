@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\IndexApplicationService;
-use app\common\service\tenant\TenantEntryBindingResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 class IndexController extends BaseApiController
 {

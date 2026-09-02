@@ -8,7 +8,7 @@ use app\common\application\BusinessException;
 use app\common\service\FileService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\wechat\OfficialAccountService;
+use PeanutAdmin\IntegrationSecurity\Wechat\OfficialAccountService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;

@@ -5,8 +5,8 @@ namespace app\Modules\Official\Oauth\Application;
 
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\wechat\OfficialAccountService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\IntegrationSecurity\Wechat\OfficialAccountService;
 
 class OfficialAccountMenuApplicationService
 {

@@ -6,12 +6,12 @@ namespace app\adminapi\application\auth;
 use app\adminapi\http\AdminRequest;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\application\BusinessException;
-use app\common\service\tenant\ApplicationHostPolicy;
-use app\common\service\tenant\TenantEntryBindingResolver;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantAuthentication;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TenantSelectionRequired;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 final class LoginApplicationService
 {
