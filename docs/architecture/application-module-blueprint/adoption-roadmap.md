@@ -108,7 +108,7 @@ Context、授权、Tenant/DataScope、事务、审计和客户端/OpenAPI 在同
 **范围**：
 
 1. Admin route/controller/validate 调 `ArticleAdministration`；
-2. 匿名目录调 `PublishedArticleCatalog`，会员收藏调 `ArticleCollectionCommands`；
+2. 匿名目录与会员收藏统一调用 `PublicArticleQueries`；
 3. 三端口分别接收强类型 Context/actor、scope、输入/输出 DTO，不接收 `actorType` 或任意 filters；
 4. Article owner 独占规则、Repository、`pa_article*` 表与事务；收藏显式声明 Member 依赖；
 5. 同切片删除 Article `Http/Validation`、`backend.routes`、手工 Provider locator 和旧位置断言；

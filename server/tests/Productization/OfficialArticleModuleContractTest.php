@@ -31,6 +31,15 @@ officialArticleExpect(
     'official Article table ownership changed'
 );
 officialArticleExpect(
+    ($manifest['contracts']['exports'] ?? null) === [
+        'app\\Modules\\Official\\Article\\Contracts\\ArticleModuleAccess',
+        'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
+        'app\\Modules\\Official\\Article\\Contracts\\ArticleQueries',
+        'app\\Modules\\Official\\Article\\Contracts\\PublicArticleQueries',
+    ],
+    'official Article public contracts did not converge to four interfaces',
+);
+officialArticleExpect(
     ($manifest['backend']['migrations'] ?? null) === 'Database/Migrations'
         && ($manifest['backend']['setting_definitions'] ?? null) === 'Resources/setting-definitions.json',
     'official Article manifest does not declare its migrations and setting definitions'
@@ -91,6 +100,7 @@ $capability = (string)file_get_contents($moduleRoot . '/Application/ArticleCapab
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicTenantModuleMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
 $publicArticles = (string)file_get_contents($moduleRoot . '/Application/PublicArticleService.php');
+$publicContract = (string)file_get_contents($moduleRoot . '/Contracts/PublicArticleQueries.php');
 $provider = (string)file_get_contents($moduleRoot . '/ModuleProvider.php');
 $categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/application/auth/MenuApplicationService.php');
@@ -166,11 +176,11 @@ officialArticleExpect(
 officialArticleExpect(
     !is_file($serverRoot . '/app/api/application/ArticleApplicationService.php')
         && substr_count($publicArticles, 'ArticleTenantRepository::collections(') >= 4
-        && str_contains($publicArticles, 'implements PublicArticleQueries, ArticleCollectionCommands')
+        && str_contains($publicArticles, 'implements PublicArticleQueries')
         && str_contains($provider, 'PublicArticleQueries::class =>')
-        && str_contains($provider, 'ArticleCollectionCommands::class =>')
         && str_contains($articleController, 'private readonly PublicArticleQueries $articles')
-        && str_contains($articleController, 'private readonly ArticleCollectionCommands $collections')
+        && str_contains($articleController, '$this->articles->add(')
+        && str_contains($articleController, '$this->articles->cancel(')
         && str_contains($pcController, 'private readonly PublicArticleQueries $articles')
         && str_contains($indexApplication, 'private readonly PublicArticleQueries $articles')
         && str_contains($indexApplication, '$this->articles->homeArticles(20)')
@@ -179,8 +189,10 @@ officialArticleExpect(
     'public Article Host bypasses Module contracts or lost Article-owned storage'
 );
 officialArticleExpect(
-    str_contains($provider, 'ArticleCollectionSummary::class =>')
-        && str_contains($userApplication, 'private readonly ArticleCollectionSummary $articleCollections')
+    str_contains($publicContract, 'countForMember(AuthenticatedMemberContext $context, int $memberId): int')
+        && str_contains($publicContract, 'add(int $articleId, int $memberId): void')
+        && str_contains($publicContract, 'cancel(int $articleId, int $memberId): void')
+        && str_contains($userApplication, 'private readonly PublicArticleQueries $articleCollections')
         && str_contains($userApplication, '$this->articleCollections->countForMember(')
         && !str_contains($userApplication, 'ArticleModuleProvider')
         && str_contains($userApplication, 'catch (ModuleException)')
@@ -228,7 +240,6 @@ $moduleFiles = [
     'Application/PublicArticleService.php',
     'Contracts/ArticleAdministration.php',
     'Contracts/PublicArticleQueries.php',
-    'Contracts/ArticleCollectionCommands.php',
     'Validation/ArticleCateValidate.php',
     'Validation/ArticleValidate.php',
     'Model/Article.php',

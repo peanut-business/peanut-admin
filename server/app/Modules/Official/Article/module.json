@@ -28,11 +28,9 @@
   "contracts": {
     "exports": [
       "app\\Modules\\Official\\Article\\Contracts\\ArticleModuleAccess",
-      "app\\Modules\\Official\\Article\\Contracts\\ArticleCollectionSummary",
       "app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration",
       "app\\Modules\\Official\\Article\\Contracts\\ArticleQueries",
-      "app\\Modules\\Official\\Article\\Contracts\\PublicArticleQueries",
-      "app\\Modules\\Official\\Article\\Contracts\\ArticleCollectionCommands"
+      "app\\Modules\\Official\\Article\\Contracts\\PublicArticleQueries"
     ],
     "events": []
   },

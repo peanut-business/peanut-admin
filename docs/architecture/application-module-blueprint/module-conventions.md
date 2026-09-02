@@ -143,7 +143,7 @@ Contracts/
 
 同一 owner 面向不同受众时分别公开，例如：
 
-- Article：`ArticleAdministration`、`PublishedArticleCatalog`、`ArticleCollectionCommands`；
+- Article：`ArticleAdministration`、`PublicArticleQueries`、`ArticleQueries`、`ArticleModuleAccess`；
 - Member：`MemberAdministration`、`MemberSelfService`、`MemberIdentityCommands`、`MemberBalanceCommands`；
 - Payment：`RechargeCheckout`、`PaymentCallbackCommands`、`RefundAdministration`、`RefundReconciliation`；
 - Task：`ScheduleAdministration`、`TaskSubmission`、`TaskExecution`。

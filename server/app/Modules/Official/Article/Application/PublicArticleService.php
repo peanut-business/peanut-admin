@@ -8,11 +8,11 @@ use app\common\http\PageResult;
 use app\common\service\ProductAssetReferenceService;
 use app\common\service\RichTextResourceService;
 use app\common\support\PaginationInput;
-use app\Modules\Official\Article\Contracts\ArticleCollectionCommands;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
-final class PublicArticleService implements PublicArticleQueries, ArticleCollectionCommands
+final class PublicArticleService implements PublicArticleQueries
 {
     public function __construct(
         private readonly ProductAssetReferenceService $assets,
@@ -141,6 +141,17 @@ final class PublicArticleService implements PublicArticleQueries, ArticleCollect
         unset($row);
 
         return new PageResult($lists, $pageResult->total, $pageResult->page, $pageResult->pageSize);
+    }
+
+    public function countForMember(AuthenticatedMemberContext $context, int $memberId): int
+    {
+        return (int)ArticleTenantRepository::collections()->alias('c')
+            ->join('article a', 'a.tenant_id = c.tenant_id AND c.article_id = a.id')
+            ->where('c.member_id', $memberId)
+            ->where('c.status', 1)
+            ->where('a.is_show', 1)
+            ->where('a.delete_time', 'null')
+            ->count();
     }
 
     public function infoCenter(): array

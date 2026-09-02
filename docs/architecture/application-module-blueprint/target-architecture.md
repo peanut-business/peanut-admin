@@ -95,7 +95,7 @@ Platform 的 `TargetTenantId` 只是授权后的 Command 目标，不是第二�
 ### 3.2 同一 owner 的受众隔离
 
 同一 Module 可拥有多个公开端口，但端口必须体现受众和业务语义，例如 Article 的
-`ArticleAdministration`、`PublishedArticleCatalog` 与 `ArticleCollectionCommands`。它们可以复用同一领域规则、
+`ArticleAdministration`、`PublicArticleQueries`、`ArticleQueries` 与 `ArticleModuleAccess`。它们可以复用同一领域规则、
 Repository 和表，但必须使用不同强类型 Context/actor、授权 policy、DataScope、输入 DTO、输出 DTO 和 Host 映射。
 未来 WS 若被新的架构决定采用，也必须调用 Message 专属窄端口，只复用同一 owner 的规则、Repository 和表。
 

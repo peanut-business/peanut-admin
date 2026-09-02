@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use app\Modules\Official\Article\Contracts\ArticleAdministration;
-use app\Modules\Official\Article\Contracts\ArticleCollectionCommands;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\Modules\Official\Article\Model\Article;
@@ -183,7 +182,6 @@ foreach ([
     'app/api/controller/UserController.php',
     'app/Modules/Official/Article/Application/PublicArticleService.php',
     'app/Modules/Official/Article/Contracts/PublicArticleQueries.php',
-    'app/Modules/Official/Article/Contracts/ArticleCollectionCommands.php',
     'app/api/application/IndexApplicationService.php',
     'app/api/application/PcApplicationService.php',
     'app/api/application/UserApplicationService.php',
@@ -392,11 +390,11 @@ SQL);
 
     $crossCollectError = deniedShape(fn() => app(ExecutionContextStore::class)->run(
             \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.cross-tenant'),
-            fn() => app(ArticleCollectionCommands::class)->add(22, 501),
+            fn() => app(PublicArticleQueries::class)->add(22, 501),
     ));
     $missingCollectError = deniedShape(fn() => app(ExecutionContextStore::class)->run(
             \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.missing'),
-            fn() => app(ArticleCollectionCommands::class)->add(999999, 501),
+            fn() => app(PublicArticleQueries::class)->add(999999, 501),
     ));
     expectArticleTenant($missingCollectError === $crossCollectError, 'cross-tenant collection enumerated the target');
     expectArticleTenant($crossCollectError[0] === 'ARTICLE_NOT_FOUND', 'collection denial code changed');
@@ -427,7 +425,7 @@ SQL);
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(
             \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.add'),
-            fn() => app(ArticleCollectionCommands::class)->add($alphaArticleId, 501),
+            fn() => app(PublicArticleQueries::class)->add($alphaArticleId, 501),
         ),
         'Alpha collection failed',
     );
@@ -465,7 +463,7 @@ SQL);
     );
     app(ExecutionContextStore::class)->run(
         \app\common\execution\ConsumerExecutionContext::member($alphaMember, 'test.article.collect.cancel'),
-        fn() => app(ArticleCollectionCommands::class)->cancel($alphaArticleId, 501),
+        fn() => app(PublicArticleQueries::class)->cancel($alphaArticleId, 501),
     );
 
     expectArticleTenant(

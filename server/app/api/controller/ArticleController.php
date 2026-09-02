@@ -8,7 +8,6 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\common\validate\ListsValidate;
 use app\common\application\BusinessException;
-use app\Modules\Official\Article\Contracts\ArticleCollectionCommands;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 
 class ArticleController extends BaseApiController
@@ -17,7 +16,6 @@ class ArticleController extends BaseApiController
         App $app,
         CurrentExecutionContext $executionContext,
         private readonly PublicArticleQueries $articles,
-        private readonly ArticleCollectionCommands $collections,
     ) {
         parent::__construct($app, $executionContext);
     }
@@ -67,7 +65,7 @@ class ArticleController extends BaseApiController
     {
         $id = $this->request->post('id/d', 0);
         $this->memberContext();
-        $this->collections->add($id, $this->memberId);
+        $this->articles->add($id, $this->memberId);
         return $this->success('操作成功');
     }
 
@@ -76,7 +74,7 @@ class ArticleController extends BaseApiController
     {
         $id = $this->request->post('id/d', 0);
         $this->memberContext();
-        $this->collections->cancel($id, $this->memberId);
+        $this->articles->cancel($id, $this->memberId);
         return $this->success('操作成功');
     }
 

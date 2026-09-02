@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Contracts;
 
 use app\common\http\PageResult;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
 /** Public member and storefront reads owned by the Article Module. */
 interface PublicArticleQueries
@@ -17,6 +18,12 @@ interface PublicArticleQueries
     public function detail(int $id, int $memberId = 0): array;
 
     public function collectionLists(int $memberId, array $params): PageResult;
+
+    public function countForMember(AuthenticatedMemberContext $context, int $memberId): int;
+
+    public function add(int $articleId, int $memberId): void;
+
+    public function cancel(int $articleId, int $memberId): void;
 
     /** @return list<array<string,mixed>> */
     public function infoCenter(): array;

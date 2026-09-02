@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
-use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
@@ -21,7 +21,7 @@ class UserApplicationService
         private readonly MemberIdentityCommands $memberIdentities,
         private readonly MemberProfileCommands $memberProfiles,
         private readonly VerificationCodeCommands $verificationCodes,
-        private readonly ArticleCollectionSummary $articleCollections,
+        private readonly PublicArticleQueries $articleCollections,
         private readonly FileService $files,
     ) {
     }
