@@ -48,13 +48,14 @@
 <script lang="ts" setup>
   import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
   import { ElMessage } from 'element-plus';
-  import { Editor } from '@tiptap/core';
+  import { Editor, Node } from '@tiptap/core';
+  import Collaboration from '@tiptap/extension-collaboration';
+  import StarterKit from '@tiptap/starter-kit';
   import { HocuspocusProvider } from '@hocuspocus/provider';
+  import DOMPurify from 'dompurify';
   import * as Y from 'yjs';
   import {
-    cleanPastedHtml,
-    documentEnvelope,
-    editorExtensions,
+    DOCUMENT_VERSION,
     type RichTextDocumentValue,
   } from '../src/document';
   import type { RichTextCollaborationConfig } from './types';
@@ -77,6 +78,93 @@
   const link = ref('');
   const mediaRef = ref('');
   const mediaKind = ref<'image' | 'video' | 'audio'>('image');
+
+  const cleanPastedHtml = (html: string): string =>
+    DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'a',
+        'blockquote',
+        'br',
+        'code',
+        'em',
+        'figure',
+        'h1',
+        'h2',
+        'h3',
+        'li',
+        'ol',
+        'p',
+        'pre',
+        'span',
+        'strong',
+        'ul',
+      ],
+      ALLOWED_ATTR: [
+        'href',
+        'rel',
+        'target',
+        'data-media-kind',
+        'data-media-label',
+        'data-media-ref',
+      ],
+    });
+
+  const MediaPlaceholder = Node.create({
+    name: 'mediaPlaceholder',
+    group: 'block',
+    atom: true,
+    addAttributes: () => ({
+      ref: { default: '' },
+      kind: { default: 'image' },
+      label: { default: '' },
+    }),
+    parseHTML: () => [
+      {
+        tag: 'figure[data-media-ref]',
+        getAttrs: (element) => {
+          const node = element as HTMLElement;
+          return {
+            ref: node.dataset.mediaRef || '',
+            kind: node.dataset.mediaKind || 'image',
+            label: node.dataset.mediaLabel || '',
+          };
+        },
+      },
+    ],
+    renderHTML: ({ node }) => [
+      'figure',
+      {
+        'data-media-ref': node.attrs.ref,
+        'data-media-kind': node.attrs.kind,
+        'data-media-label': node.attrs.label,
+        'class': 'rich-text-editor__media',
+        'contenteditable': 'false',
+      },
+      ['span', {}, node.attrs.label || node.attrs.ref],
+    ],
+  });
+
+  const editorExtensions = (collaborationDocument?: Y.Doc) => [
+    StarterKit.configure({
+      undoRedo: collaborationDocument ? false : {},
+      link: {
+        autolink: false,
+        openOnClick: false,
+        HTMLAttributes: { rel: 'noopener noreferrer' },
+      },
+    }),
+    MediaPlaceholder,
+    ...(collaborationDocument
+      ? [Collaboration.configure({ document: collaborationDocument })]
+      : []),
+  ];
+
+  const documentEnvelope = (instance: Editor): RichTextDocumentValue => ({
+    schemaVersion: DOCUMENT_VERSION,
+    editorModel: 'tiptap-prosemirror',
+    content: instance.getJSON(),
+    annotations: [],
+  });
 
   const bytesToBase64 = (bytes: Uint8Array) => {
     let binary = '';

@@ -6,10 +6,11 @@ RBAC 和菜单提供文档 CRUD；编辑器页面和 `RichTextEditor` 组件都�
 ## Vue 使用
 
 ```ts
-import { RichTextEditor } from '@peanut-admin/official-rich-text/editor';
+import { RichTextEditor } from '@/modules/official-rich-text/src/editor';
 ```
 
-`RichTextEditor` 是异步组件，使用 `v-model` 读写 `peanut.richtext/1` JSON，使用
+`RichTextEditor` 是异步组件；Tiptap、Yjs、Hocuspocus 和 DOMPurify 只在组件挂载时加载。
+它使用 `v-model` 读写 `peanut.richtext/1` JSON，使用
 `v-model:collaboration-state` 读写 Yjs Snapshot。管理页是完整调用示例。
 
 ## 协同配置
