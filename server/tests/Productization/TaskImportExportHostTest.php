@@ -203,8 +203,7 @@ try {
 
     $file = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.xlsx.export'),
-        fn() => XlsxExportService::createForTenant(
-            $context,
+        fn() => app(XlsxExportService::class)->create(
             'PB04-task-export-' . $suffix,
             ['任务', '次数', '公式文本'],
             [['crontab:demo', 2, '=1+1']],
@@ -233,12 +232,13 @@ try {
     foreach ($exportCallers as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);
         expectTaskHost(
-            str_contains($source, 'XlsxExportService::createForTenant'),
-            'export caller must use the application XLSX owner: ' . $relativePath
+            str_contains($source, 'private readonly XlsxExportService $xlsxExport')
+                && str_contains($source, '$this->xlsxExport->create('),
+            'export caller must use the injected application XLSX owner: ' . $relativePath
         );
         expectTaskHost(
-            preg_match('/XlsxExportService::create\s*\(/', $source) !== 1,
-            'export caller retained the instance-wide XLSX API: ' . $relativePath
+            !str_contains($source, 'XlsxExportService::'),
+            'export caller retained a static XLSX service lookup: ' . $relativePath
         );
         expectTaskHost(!str_contains($source, 'new ZipArchive'), 'duplicate XLSX writer: ' . $relativePath);
         expectTaskHost(!str_contains($source, 'function createXlsx'), 'duplicate XLSX helper: ' . $relativePath);
