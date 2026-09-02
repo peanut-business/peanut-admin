@@ -51,6 +51,7 @@ $compiler = new ModuleRegistryCompiler(
         'official.oauth.channel',
         'official.payment.settings', 'official.payment.recharge', 'official.payment.refund',
         'official.member.list', 'official.member.tag', 'official.member.account-log',
+        'official.rich-text.documents',
         'official.task.schedules',
     ],
     $layout,
