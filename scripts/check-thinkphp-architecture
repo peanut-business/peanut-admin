@@ -20,6 +20,7 @@ OWNERSHIP = ROOT / "docs/product-status/tpq-data-ownership.json"
 RULE_OWNERS = {
     "global_scope_bypass": ("TPQ07", "Sol"),
     "handwritten_tenant_predicate": ("TPQ02-TPQ13", "Sol"),
+    "tenant_join_missing": ("TPQ13", "Sol"),
     "direct_db_in_business": ("TPQ08/TPQ24/TPQ42", "Sol"),
     "manual_pagination": ("TPQ30-TPQ32", "Luna max; Sol review"),
     "accessor_sql": ("TPQ36/TPQ38", "Luna max; Sol review"),
@@ -118,6 +119,21 @@ TRUSTED_TENANT_KEY_FILES = {
     "server/app/common/service/member/MemberApiTenantContextResolver.php",
 }
 
+TENANT_JOIN_GLOBAL_TABLES = {
+    "system_menu",
+    "system_dict_type",
+    "system_dict_data",
+    "permission",
+    "tenant",
+}
+
+TENANT_JOIN_PATTERN = re.compile(
+    r"->(?:join|leftJoin)\s*\(\s*"
+    r"(?P<table_quote>['\"])(?P<table>.*?)(?P=table_quote)\s*,\s*"
+    r"(?P<condition_quote>['\"])(?P<condition>.*?)(?P=condition_quote)",
+    re.IGNORECASE | re.DOTALL,
+)
+
 
 def trusted_tenant_key_path(rel: str) -> bool:
     return rel in TRUSTED_TENANT_KEY_FILES or rel.startswith(TRUSTED_TENANT_KEY_PATHS)
@@ -183,6 +199,14 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
         and ("$this->database()" in text or "use PluginCommandSupport;" in text)
         and "extends DatabaseContextualCommand" not in text):
         hits.append(("eager_cli_database_dependency", 1, "database command bypasses DatabaseContextualCommand"))
+    for join in TENANT_JOIN_PATTERN.finditer(text):
+        table = join.group("table").split()[0].strip("`").lower()
+        if table not in TENANT_JOIN_GLOBAL_TABLES and "tenant_id" not in join.group("condition").lower():
+            hits.append((
+                "tenant_join_missing",
+                text.count("\n", 0, join.start()) + 1,
+                re.sub(r"\s+", " ", join.group(0)).strip(),
+            ))
     for number, line in enumerate(lines, 1):
         declaration = re.search(r"\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", line)
         if declaration:

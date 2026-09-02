@@ -46,6 +46,11 @@
       "description": "Application code manually adds tenant_id predicates or payload ownership"
     },
     {
+      "id": "tenant_join_missing",
+      "tpq": "TPQ13",
+      "description": "Tenant-owned JOIN condition omits the tenant_id ownership equality"
+    },
+    {
       "id": "direct_db_in_business",
       "tpq": "TPQ08/TPQ24/TPQ42",
       "description": "Logic or Controller directly uses Db/PDO/query/prepare"

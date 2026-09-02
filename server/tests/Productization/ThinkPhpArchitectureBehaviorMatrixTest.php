@@ -425,6 +425,18 @@ cases = {
         "server/app/Modules/Official/Oauth/Application/TransportProbe.php",
         "<?php\nfinal class TransportProbe { public function run(): void { new WechatOAuthTransport(); } }\n",
     ),
+    "tenant_join_missing": (
+        "server/app/Modules/Official/Article/Application/JoinProbe.php",
+        "<?php\n$query->join('article a', 'a.id = c.article_id');\n",
+    ),
+    "tenant_join_scoped": (
+        "server/app/Modules/Official/Article/Application/ScopedJoinProbe.php",
+        "<?php\n$query->leftJoin('article a', 'a.tenant_id = c.tenant_id AND a.id = c.article_id');\n",
+    ),
+    "tenant_join_global": (
+        "server/app/common/service/authorization/GlobalJoinProbe.php",
+        "<?php\n$query->join('permission p', 'p.key = m.perms');\n",
+    ),
 }
 print(json.dumps({
     name: [hit[0] for hit in scanner.hits_for(scanner.ROOT / path, source)]
@@ -464,6 +476,18 @@ expectTpq51(
 expectTpq51(
     in_array('application_composition_root', $probeHits['application_transport'] ?? [], true),
     'Application construction of a transport dependency was not rejected',
+);
+expectTpq51(
+    in_array('tenant_join_missing', $probeHits['tenant_join_missing'] ?? [], true),
+    'Tenant JOIN without a tenant_id equality was not rejected',
+);
+expectTpq51(
+    !in_array('tenant_join_missing', $probeHits['tenant_join_scoped'] ?? [], true),
+    'Tenant-scoped JOIN was incorrectly rejected',
+);
+expectTpq51(
+    !in_array('tenant_join_missing', $probeHits['tenant_join_global'] ?? [], true),
+    'Global system-table JOIN was incorrectly rejected',
 );
 
 $contextFailure = false;
