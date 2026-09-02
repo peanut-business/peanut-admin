@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\contract\config\WebsiteConfigStore;
+use PeanutAdmin\Settings\Contract\WebsiteConfigStore;
 use app\common\service\config\WebsiteConfigService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';

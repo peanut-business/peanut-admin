@@ -4,9 +4,8 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Model;
 
 use app\common\model\TenantOwnedModel;
-use app\common\service\ProductAssetReferenceService;
-use app\common\service\RichTextResourceService;
-use app\common\service\article\ArticleTenantRepository;
+use app\common\service\HtmlSanitizerService;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use think\model\concern\SoftDelete;
 
 class Article extends TenantOwnedModel
@@ -24,13 +23,13 @@ class Article extends TenantOwnedModel
     /** local 封面存相对 URI；云/CDN 封面保留绝对来源。 */
     public function setImageAttr($value): string
     {
-        return $value ? ProductAssetReferenceService::forStorage((string)$value) : '';
+        return trim((string)$value);
     }
 
     /** Rich text is sanitized before any content reaches persistence. */
     public function setContentAttr($value): string
     {
-        return RichTextResourceService::forStorage((string)$value);
+        return HtmlSanitizerService::sanitize((string)$value);
     }
 
     /** 可见文章详情；读取即累计一次真实浏览量。 */
@@ -46,8 +45,6 @@ class Article extends TenantOwnedModel
         $article = ArticleTenantRepository::articles()->where('id', $id)->findOrEmpty();
         $data = $article->toArray();
         $data['click'] = (int) $data['click_actual'] + (int) $data['click_virtual'];
-        $data['image'] = ProductAssetReferenceService::forRead((string)($data['image'] ?? ''));
-        $data['content'] = RichTextResourceService::forRead((string)($data['content'] ?? ''));
         unset($data['click_actual'], $data['click_virtual']);
         return $data;
     }

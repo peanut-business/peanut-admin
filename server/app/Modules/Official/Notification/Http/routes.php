@@ -6,14 +6,15 @@ use app\Modules\Official\Notification\Http\Controller\NoticeChannelController;
 use app\Modules\Official\Notification\Http\Controller\NoticeLogController;
 use app\Modules\Official\Notification\Http\Controller\NoticeSceneController;
 use app\api\controller\SmsController as ApiSmsController;
-use app\api\middleware\PublicNoticeTenantMiddleware;
+use app\api\middleware\PublicTenantModuleMiddleware;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) === 'adminapi') {
+Route::group(function (): void {
     Route::get('official.notification.channel.detail', [NoticeChannelController::class, 'detail']);
     Route::post('official.notification.channel.save', [NoticeChannelController::class, 'save']);
     Route::get('official.notification.log.list', [NoticeLogController::class, 'lists']);
@@ -25,7 +26,9 @@ Route::group('api/admin', function (): void {
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
+}
 
-Route::post('api/sms/sendCode', [ApiSmsController::class, 'sendCode'])
-    ->middleware(PublicNoticeTenantMiddleware::class, 'notice.verification.send')
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.verification.send');
+if (($peanutRouteApplication ?? null) === 'api') {
+Route::post('sms/sendCode', [ApiSmsController::class, 'sendCode'])
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.notice.verification', (new ModuleProvider())->moduleKey(), 'notice.verification.send');
+}

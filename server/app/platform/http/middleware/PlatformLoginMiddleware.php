@@ -3,24 +3,28 @@ declare(strict_types=1);
 
 namespace app\platform\http\middleware;
 
-use app\common\execution\ExecutionContext;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\JsonService;
-use app\common\service\tenant\ApplicationHostPolicy;
 use app\platform\http\PlatformRequest;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 
 final class PlatformLoginMiddleware
 {
-    public function __construct(private readonly ?ExecutionContextStore $executionContexts = null)
-    {
+    public function __construct(
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly ApplicationHostPolicy $hosts,
+        private readonly PlatformOperatorSessionService $sessions,
+    ) {
     }
 
     public function handle($request, \Closure $next)
     {
         try {
-            ApplicationHostPolicy::production()->assertPlatform($request);
+            $this->hosts->assertPlatform($request);
         } catch (\DomainException|\InvalidArgumentException) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform host is not allowed.', null, 40300);
         }
@@ -30,9 +34,9 @@ final class PlatformLoginMiddleware
         }
 
         try {
-            $context = PlatformRuntimeFactory::sessions()->context(
+            $context = $this->sessions->context(
                 $token,
-                PlatformRequest::requestId($request)
+                PlatformRequest::requestId($this->executionContext, $request)
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication credential is invalid.', null, 40100);
@@ -43,8 +47,8 @@ final class PlatformLoginMiddleware
             strtolower((string)$request->method()),
             trim((string)$request->pathinfo(), '/'),
         );
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::platform($context, $operation),
+        return $this->executionContexts->run(
+            new \app\common\execution\PlatformExecutionContext($context, $operation),
             static fn() => $next($request),
         );
     }

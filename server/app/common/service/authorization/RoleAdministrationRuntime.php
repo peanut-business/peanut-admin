@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\authorization;
 
+use app\common\contract\authorization\AdminMenuPersistence;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
@@ -10,13 +11,17 @@ use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 /** Container-owned assembly and read projections for native Tenant roles. */
 final readonly class RoleAdministrationRuntime
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private RoleAdminService $roles,
+        private AdminAuthorizationService $authorization,
+        private AdminMenuPersistence $menus,
+    ) {
     }
 
     public function service(): RoleAdminService
     {
-        return new RoleAdminService($this->pdo);
+        return $this->roles;
     }
 
     /** @param list<string> $permissionKeys @return list<int> */
@@ -25,13 +30,8 @@ final readonly class RoleAdministrationRuntime
         if ($permissionKeys === []) {
             return [];
         }
-        $placeholders = implode(',', array_fill(0, count($permissionKeys), '?'));
-        $statement = $this->pdo->prepare(
-            "SELECT id FROM pa_system_menu WHERE is_disable=0 AND perms IN ({$placeholders}) ORDER BY id"
-        );
-        $statement->execute($permissionKeys);
-        $ids = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
-        foreach ((new AdminAuthorizationService($this->pdo))->assignableMenuRecords($context) as $menu) {
+        $ids = $this->menus->enabledMenuIds($permissionKeys);
+        foreach ($this->authorization->assignableMenuRecords($context) as $menu) {
             if (in_array((string)$menu['required_permission'], $permissionKeys, true)) {
                 $ids[] = (int)$menu['id'];
             }
@@ -54,16 +54,9 @@ final readonly class RoleAdministrationRuntime
         if ($menuIds === []) {
             return [];
         }
-        $placeholders = implode(',', array_fill(0, count($menuIds), '?'));
-        $statement = $this->pdo->prepare(
-            "SELECT DISTINCT p.`key` FROM pa_system_menu m "
-            . "JOIN pa_permission p ON p.`key`=m.perms AND p.status='active' "
-            . "WHERE m.id IN ({$placeholders}) AND m.is_disable=0 AND m.perms<>'' ORDER BY p.`key`"
-        );
-        $statement->execute($menuIds);
-        $keys = array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+        $keys = $this->menus->activePermissionKeys($menuIds);
         $selected = array_fill_keys($menuIds, true);
-        foreach ((new AdminAuthorizationService($this->pdo))->assignableMenuRecordsForTenant($tenantId) as $menu) {
+        foreach ($this->authorization->assignableMenuRecordsForTenant($tenantId) as $menu) {
             if (isset($selected[(int)$menu['id']]) && trim((string)$menu['required_permission']) !== '') {
                 $keys[] = (string)$menu['required_permission'];
             }

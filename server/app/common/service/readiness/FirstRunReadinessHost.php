@@ -3,17 +3,15 @@ declare(strict_types=1);
 
 namespace app\common\service\readiness;
 
-use app\Modules\Official\Notification\ModuleProvider as NotificationModuleProvider;
+use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\config\BrandDefaults;
-use app\common\service\config\TenantSettingWebsiteStore;
-use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantContext;
+use app\common\service\config\WebsiteConfigService;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PDO;
-use think\facade\Db;
 
 /**
  * Read-only first-run readiness projection.
@@ -23,14 +21,23 @@ use think\facade\Db;
  */
 final class FirstRunReadinessHost
 {
+    public function __construct(
+        private readonly NotificationQueries $notifications,
+        private readonly CoreTenantModuleAdminBridge $modules,
+        private readonly StorageConfigurationService $storage,
+        private readonly PDO $pdo,
+        private readonly WebsiteConfigService $website,
+    ) {
+    }
+
     /** @return array{production_ready:bool,summary:array<string,int>,items:list<array<string,mixed>>} */
     public function checklist(
         AuthenticatedMemberContext|TenantContext $context,
         string $requestOrigin,
         string $deploymentMode,
     ): array {
-        $tenantId = MemberTenantContext::tenantId($context);
-        $registeredPermissions = (new CoreTenantModuleAdminBridge())->registeredPermissions($tenantId);
+        $tenantId = $context->tenantId;
+        $registeredPermissions = $this->modules->registeredPermissions($tenantId);
         $notificationEnabled = in_array(
             'official.notification.channel.detail',
             $registeredPermissions,
@@ -76,7 +83,7 @@ final class FirstRunReadinessHost
     private function brand(AuthenticatedMemberContext|TenantContext $context): array
     {
         $defaults = BrandDefaults::website();
-        $website = (new TenantSettingWebsiteStore($context))->read();
+        $website = $this->website->get($context);
         $requiredFields = ['name', 'web_logo', 'web_favicon', 'shop_name', 'pc_title'];
         $complete = $this->fieldsPresent($website, $requiredFields);
         $customized = false;
@@ -102,7 +109,7 @@ final class FirstRunReadinessHost
     {
         $smsConfigured = false;
         if ($moduleEnabled) {
-            $detail = (new NotificationModuleProvider())->queries()->channelDetail();
+            $detail = $this->notifications->channelDetail();
             $smsConfigured = (bool)($detail['status']['sms'] ?? false);
         }
 
@@ -127,7 +134,7 @@ final class FirstRunReadinessHost
     private function storage(string $deploymentMode): array
     {
         try {
-            $snapshot = StorageConfigurationService::fromDefaultConnection()->snapshot();
+            $snapshot = $this->storage->snapshot();
             $configured = $this->defaultStorageRoutesConfigured($snapshot);
         } catch (\Throwable) {
             $configured = false;
@@ -153,18 +160,15 @@ final class FirstRunReadinessHost
         $ledgerAvailable = false;
         $verifiedAt = null;
         try {
-            $pdo = Db::connect()->connect();
-            if ($pdo instanceof PDO) {
-                $statement = $pdo->query(
-                    'SELECT verified_at FROM pa_ops_backup_evidence ORDER BY verified_at DESC, id DESC LIMIT 1'
-                );
-                $ledgerAvailable = $statement !== false;
-                $value = $statement === false ? false : $statement->fetchColumn();
-                $verifiedAt = is_string($value) && $value !== ''
-                    ? (new \DateTimeImmutable($value, new \DateTimeZone('UTC')))
-                        ->format('Y-m-d\TH:i:s.v\Z')
-                    : null;
-            }
+            $statement = $this->pdo->query(
+                'SELECT verified_at FROM pa_ops_backup_evidence ORDER BY verified_at DESC, id DESC LIMIT 1'
+            );
+            $ledgerAvailable = $statement !== false;
+            $value = $statement === false ? false : $statement->fetchColumn();
+            $verifiedAt = is_string($value) && $value !== ''
+                ? (new \DateTimeImmutable($value, new \DateTimeZone('UTC')))
+                    ->format('Y-m-d\TH:i:s.v\Z')
+                : null;
         } catch (\Throwable) {
             $ledgerAvailable = false;
             $verifiedAt = null;

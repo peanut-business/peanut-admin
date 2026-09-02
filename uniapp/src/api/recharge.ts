@@ -32,8 +32,8 @@ export interface RechargeOrder {
 export interface RechargeListResult {
   lists: RechargeOrder[]
   count: number
-  page_no: number
-  page_size: number
+  pageNo: number
+  pageSize: number
 }
 
 export type PaymentScene = 'JSAPI' | 'MWEB' | 'NATIVE' | 'APP' | 'WAP' | 'PAGE'
@@ -80,6 +80,9 @@ export function getRechargeDetail(orderId: number) {
   return http.get<RechargeOrder>('api/recharge/detail', { order_id: orderId })
 }
 
-export function getRechargeLists(params: { page_no?: number; page_size?: number } = {}) {
-  return http.get<RechargeListResult>('api/recharge/lists', params as Record<string, unknown>)
+export function getRechargeLists(params: { pageNo?: number; pageSize?: number } = {}) {
+  return http.get<RechargeListResult>('api/recharge/lists', {
+    page_no: params.pageNo,
+    page_size: params.pageSize,
+  })
 }

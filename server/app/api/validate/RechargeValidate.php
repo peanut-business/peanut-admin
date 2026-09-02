@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\validate;
 
 use app\common\enum\UserTerminalEnum;
-use app\Modules\Official\Payment\Model\PaymentScene;
+use app\Modules\Official\Payment\Contracts\PaymentMethod;
 use think\Validate;
 
 /** 用户充值创建、查询和预支付参数验证。 */
@@ -62,7 +62,7 @@ class RechargeValidate extends Validate
 
     protected function checkPayWay($value): bool|string
     {
-        return in_array((int)$value, [PaymentScene::PAY_WAY_WECHAT, PaymentScene::PAY_WAY_ALIPAY], true)
+        return PaymentMethod::isProvider((int)$value)
             ? true
             : '支付方式不支持';
     }

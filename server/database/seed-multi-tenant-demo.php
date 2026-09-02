@@ -2,8 +2,14 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\TenantEntryBindingResolver;
+use app\Modules\Official\Notification\Application\NotificationBootstrapService;
+use app\Modules\Official\Task\Application\TaskBootstrapService;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\common\service\DemoAccountPolicy;
+use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
+use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
+use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
@@ -14,6 +20,7 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 require __DIR__ . '/install.php';
 
@@ -111,7 +118,8 @@ function demoMultiTenant(
     string $email,
     string $password,
     PasswordHasher $passwords,
-    PdoMembershipRepository $memberships
+    PdoMembershipRepository $memberships,
+    DemoAccountPolicy $demoAccounts,
 ): array {
     $statement = $pdo->prepare(
         'SELECT id, name, display_name, status FROM pa_tenant WHERE code = ? ORDER BY id LIMIT 1'
@@ -119,7 +127,7 @@ function demoMultiTenant(
     $statement->execute([$code]);
     $tenant = $statement->fetch(PDO::FETCH_ASSOC);
     if (!is_array($tenant)) {
-        $bootstrapPassword = DemoAccountPolicy::bootstrapPassword();
+        $bootstrapPassword = $demoAccounts->bootstrapPassword();
         $candidate = $bootstrap->provisionTenantOwnerCandidate(
             $platformOperatorId,
             $code,
@@ -150,7 +158,7 @@ function demoMultiTenant(
         }
     }
 
-    DemoAccountPolicy::replaceCredentialHashes($pdo, [$email]);
+    $demoAccounts->replaceCredentialHashes([$email]);
 
     $owner = demoMultiOwner($pdo, $memberships, $tenantId, $email);
     if (!$passwords->verify($password, (string)$owner['secret_hash'])) {
@@ -457,6 +465,7 @@ function demoMultiMain(): int
     $transactions = new PdoTransactionManager($pdo);
     $memberships = new PdoMembershipRepository($pdo);
     $passwords = \app\common\service\ApplicationPasswordPolicy::hasher();
+    $demoAccounts = new DemoAccountPolicy($pdo, true, [$tenantAEmail, $tenantBEmail]);
     $bootstrap = new BootstrapService(
         $transactions,
         new PdoIdentityRepository($pdo),
@@ -466,7 +475,19 @@ function demoMultiMain(): int
         new PdoAuditRepository($pdo),
         $passwords
     );
-    $adminProvisioner = new PdoTenantOwnerAdminProvisioner($pdo);
+    $applicationContexts = new ExecutionContextStore();
+    $currentExecution = new CurrentExecutionContext($applicationContexts);
+    $adminProvisioner = new PdoTenantOwnerAdminProvisioner(
+        $pdo,
+        new ApplicationTenantBootstrapService(
+            $pdo,
+            new NotificationBootstrapService(),
+            new TaskBootstrapService(),
+            $applicationContexts,
+            TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+            new ThinkPhpTenantApplicationBootstrapPersistence(),
+        ),
+    );
     [$tenantA, $tenantB] = $transactions->run(function () use (
         $pdo,
         $bootstrap,
@@ -476,6 +497,7 @@ function demoMultiMain(): int
         $tenantAEmail,
         $tenantBEmail,
         $sharedPassword,
+        $demoAccounts,
         $tenantAHost,
         $tenantBHost,
         $sharedAdminHosts
@@ -498,7 +520,8 @@ function demoMultiMain(): int
             $tenantAEmail,
             $sharedPassword,
             $passwords,
-            $memberships
+            $memberships,
+            $demoAccounts,
         );
         $tenantB = demoMultiTenant(
             $pdo,
@@ -510,7 +533,8 @@ function demoMultiMain(): int
             $tenantBEmail,
             $sharedPassword,
             $passwords,
-            $memberships
+            $memberships,
+            $demoAccounts,
         );
         demoMultiEnsureSharedOwner(
             $pdo,

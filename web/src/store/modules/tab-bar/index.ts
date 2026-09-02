@@ -1,13 +1,16 @@
 import type { RouteLocationNormalized } from 'vue-router';
 import { defineStore } from 'pinia';
-import { tabFromRoute } from '@peanut-admin/admin/shell';
+import {
+  tabFromRoute,
+  type ShellTab as TagProps,
+  type ShellTabState as TabBarState,
+} from '@peanut-admin/admin/shell';
 import {
   DEFAULT_ROUTE,
   DEFAULT_ROUTE_NAME,
   REDIRECT_ROUTE_NAME,
 } from '@/router/constants';
 import { isString } from '@/utils/is';
-import { TabBarState, TagProps } from './types';
 
 const BAN_LIST = [REDIRECT_ROUTE_NAME];
 

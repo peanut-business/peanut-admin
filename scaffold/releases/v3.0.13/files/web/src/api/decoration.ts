@@ -82,45 +82,45 @@ export interface DecorationTabbar {
 
 export function getMobileDecorationLists() {
   return axios.get<DecorationPageSummary[]>(
-    '/api/admin/decoration/mobile/page/lists'
+    '/adminapi/decoration/mobile/page/lists'
   );
 }
 
 export function getMobileDecorationDetail(id: number) {
-  return axios.get<DecorationPage>('/api/admin/decoration/mobile/page/detail', {
+  return axios.get<DecorationPage>('/adminapi/decoration/mobile/page/detail', {
     params: { id },
   });
 }
 
 export function saveMobileDecoration(data: DecorationSavePayload) {
-  return axios.post('/api/admin/decoration/mobile/page/save', data);
+  return axios.post('/adminapi/decoration/mobile/page/save', data);
 }
 
 export function getDecorationArticleOptions(limit = 50) {
   return axios.get<DecorationArticleOption[]>(
-    '/api/admin/decoration/mobile/article',
+    '/adminapi/decoration/mobile/article',
     { params: { limit } }
   );
 }
 
 export function getDecorationTabbar() {
-  return axios.get<DecorationTabbar>('/api/admin/decoration/tabbar/detail');
+  return axios.get<DecorationTabbar>('/adminapi/decoration/tabbar/detail');
 }
 
 export function saveDecorationTabbar(data: DecorationTabbar) {
-  return axios.post('/api/admin/decoration/tabbar/save', data);
+  return axios.post('/adminapi/decoration/tabbar/save', data);
 }
 
 export function getPcDecorationLists() {
-  return axios.get<DecorationPageSummary[]>('/api/admin/decoration/pc/page/lists');
+  return axios.get<DecorationPageSummary[]>('/adminapi/decoration/pc/page/lists');
 }
 
 export function getPcDecorationDetail(id: number) {
-  return axios.get<DecorationPage>('/api/admin/decoration/pc/page/detail', {
+  return axios.get<DecorationPage>('/adminapi/decoration/pc/page/detail', {
     params: { id },
   });
 }
 
 export function savePcDecoration(data: DecorationSavePayload) {
-  return axios.post('/api/admin/decoration/pc/page/save', data);
+  return axios.post('/adminapi/decoration/pc/page/save', data);
 }

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\external;
 
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

@@ -4,15 +4,17 @@ declare(strict_types=1);
 namespace app\common\service;
 
 use app\common\execution\CurrentExecutionContext;
+use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use ZipArchive;
 
 /** 小型无外部依赖 XLSX 导出器，供管理端表格导出复用。 */
 class XlsxExportService
 {
-    public function __construct(private readonly CurrentExecutionContext $executionContext)
-    {
-    }
+    public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly StorageService $storage,
+    ) {}
 
     /** Creates a private XLSX through the canonical storage service. */
     public function create(
@@ -26,7 +28,7 @@ class XlsxExportService
         $memberId = $this->executionContext->tenantAdmin()->memberId;
         [$path,$filename] = self::createArtifact($name,$headings,$rows);
         try {
-            return \app\common\service\storage\StorageService::fromDefaultConnection()->storePath(
+            return $this->storage->storePath(
                 $tenantId,(int)$memberId,'export.xlsx',$path,$filename,
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             );

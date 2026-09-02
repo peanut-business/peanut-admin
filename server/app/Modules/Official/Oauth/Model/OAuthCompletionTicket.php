@@ -9,4 +9,9 @@ use app\common\model\TenantOwnedModel;
 class OAuthCompletionTicket extends TenantOwnedModel
 {
     protected $name = 'oauth_completion_ticket';
+
+    public static function callbackCandidates()
+    {
+        return (new self())->db(['tenantOwnership']);
+    }
 }

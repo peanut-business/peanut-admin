@@ -16,7 +16,6 @@ use PeanutAdmin\Settings\Definition\SettingDefinition;
 use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
 use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
 use PeanutAdmin\Settings\Secret\SecretProtector;
-use think\facade\Config;
 
 /** Transfers deployment-scoped values through the Core Settings contract. */
 final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTransferAdapter
@@ -31,6 +30,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
      */
     public function __construct(
         private PDO $pdo,
+        private PdoModuleGovernanceProvider $moduleGovernance,
         SettingDefinitionRegistry|SecretProtector|null $definitions = null,
         ?SecretProtector $protector = null,
     ) {
@@ -179,11 +179,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
         $registry = $this->providedDefinitions;
         if (!$registry instanceof SettingDefinitionRegistry) {
             try {
-                $moduleConfig = Config::get('modules', []);
-                if (!is_array($moduleConfig)) {
-                    throw new \RuntimeException('TRANSFER_CORE_SETTINGS_UNAVAILABLE');
-                }
-                $compiled = PdoModuleGovernanceProvider::forApplication($this->pdo)->registry()->compiled();
+                $compiled = $this->moduleGovernance->registry()->compiled();
                 $loader = new SettingDefinitionLoader();
                 $registry = new SettingDefinitionRegistry();
                 foreach ($compiled->modules as $manifest) {

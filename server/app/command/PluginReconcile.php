@@ -5,13 +5,13 @@ namespace app\command;
 
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLockResolver;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 
-final class PluginReconcile extends ContextualCommand
+final class PluginReconcile extends DatabaseContextualCommand
 {
     use PluginCommandSupport;
 

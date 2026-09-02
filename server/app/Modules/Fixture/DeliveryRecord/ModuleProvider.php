@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace app\Modules\Fixture\DeliveryRecord;
 
 use PDO;
+use app\common\composition\ModuleBindingContributor;
 use app\Modules\Fixture\DeliveryRecord\Application\DeliveryRecordService;
 use app\Modules\Fixture\DeliveryRecord\Contracts\DeliveryRecordCommands;
 use app\Modules\Fixture\DeliveryRecord\Infrastructure\Authorization\PdoDeliveryRecordAccess;
@@ -12,9 +13,8 @@ use app\Modules\Fixture\DeliveryRecord\Infrastructure\Persistence\PdoDeliveryRec
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
-use think\facade\Db;
 
-final class ModuleProvider implements ModuleProviderContract
+final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
 {
     public function moduleKey(): string
     {
@@ -30,14 +30,13 @@ final class ModuleProvider implements ModuleProviderContract
         );
     }
 
-    public function register(App $app): void
+    public function bindings(): array
     {
-        $app->bind(DeliveryRecordCommands::class, function () use ($app): DeliveryRecordCommands {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('FIXTURE_DELIVERY_RECORD_DATABASE_UNAVAILABLE');
-            }
-            return $this->commands($pdo, $app->make(CurrentExecutionContext::class));
-        });
+        return [
+            DeliveryRecordCommands::class => fn(App $app): DeliveryRecordCommands => $this->commands(
+                $app->make(PDO::class),
+                $app->make(CurrentExecutionContext::class),
+            ),
+        ];
     }
 }

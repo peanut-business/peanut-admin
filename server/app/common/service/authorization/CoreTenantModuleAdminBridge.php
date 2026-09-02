@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\authorization;
 
+use app\common\contract\authorization\AdminMenuPersistence;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -10,7 +11,6 @@ use PeanutAdmin\Kernel\Authorization\PdoTenantAuthorizationRepository;
 use PeanutAdmin\Kernel\Menu\MenuDefinition;
 use PeanutAdmin\Kernel\Menu\MenuRegistry;
 use PeanutAdmin\Kernel\Menu\PdoMenuCatalogRepository;
-use think\facade\Db;
 
 /**
  * Adapts the Core Module/TenantModule catalog to the Admin Shell menu payload.
@@ -41,8 +41,11 @@ final readonly class CoreTenantModuleAdminBridge
         ];
     }
 
-    public function __construct(private ?PDO $pdo = null)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+        private AdminMenuPersistence $menus,
+    ) {
     }
 
     /** @return array{menu:list<array<string,mixed>>,permissions:list<string>} */
@@ -54,7 +57,7 @@ final readonly class CoreTenantModuleAdminBridge
             return ['menu' => [], 'permissions' => []];
         }
 
-        $pdo = $this->connection();
+        $pdo = $this->pdo;
         $permissions = array_values(array_unique([
             ...(new PdoTenantAuthorizationRepository($pdo))->permissions(
                 $tenantContext->tenantId,
@@ -70,7 +73,7 @@ final readonly class CoreTenantModuleAdminBridge
         }
         $catalog = new PdoMenuCatalogRepository($pdo);
         $definitions = $catalog->activeDefinitions('tenant');
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $qualification = $this->moduleGovernance->qualification();
         $deploymentModules = array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -95,9 +98,9 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $pdo = $this->connection();
+        $pdo = $this->pdo;
         $catalog = new PdoMenuCatalogRepository($pdo);
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $qualification = $this->moduleGovernance->qualification();
         $deploymentModules = array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -119,8 +122,8 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $pdo = $this->connection();
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $pdo = $this->pdo;
+        $qualification = $this->moduleGovernance->qualification();
         $installed = array_fill_keys(array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -154,8 +157,8 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $pdo = $this->connection();
-        $qualification = PdoModuleGovernanceProvider::forApplication($pdo)->qualification();
+        $pdo = $this->pdo;
+        $qualification = $this->moduleGovernance->qualification();
         $installed = array_fill_keys(array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
@@ -167,14 +170,8 @@ final readonly class CoreTenantModuleAdminBridge
                 static fn(string $moduleKey): bool => isset($installed[$moduleKey])
             ),
         ])), true);
-        $rows = $pdo->query(
-            "SELECT DISTINCT m.perms, p.module_key, p.status AS permission_status "
-            . "FROM pa_system_menu m LEFT JOIN pa_permission p ON p.`key` = m.perms "
-            . "WHERE m.is_disable = 0 AND m.perms <> ''"
-        )->fetchAll(PDO::FETCH_ASSOC);
-
         $permissions = [];
-        foreach ($rows as $row) {
+        foreach ($this->menus->systemMenuPermissionRows() as $row) {
             $moduleKey = $row['module_key'] ?? null;
             if ($moduleKey !== null && $moduleKey !== '') {
                 if (($row['permission_status'] ?? null) !== 'active' || !isset($active[$moduleKey])) {
@@ -185,18 +182,6 @@ final readonly class CoreTenantModuleAdminBridge
         }
 
         return array_values(array_unique($permissions));
-    }
-
-    private function connection(): PDO
-    {
-        if ($this->pdo instanceof PDO) {
-            return $this->pdo;
-        }
-        $connection = Db::connect()->connect();
-        if (!$connection instanceof PDO) {
-            throw new \RuntimeException('CORE_TENANT_MODULE_DATABASE_UNAVAILABLE');
-        }
-        return $connection;
     }
 
     /** @return list<string> */

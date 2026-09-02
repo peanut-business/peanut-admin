@@ -11,34 +11,38 @@ class CrontabCommandService
         'refund:reconcile',
     ];
 
-    public static function allowedCommands(): array
+    public function __construct(
+        private readonly array $configuredCommands,
+        private readonly array $moduleCommands,
+    ) {}
+
+    public function allowedCommands(): array
     {
-        $commands = array_keys((array)config('console.commands', []));
+        $commands = array_keys($this->configuredCommands);
         return array_values(array_filter(
             $commands,
             static fn(string $command): bool => $command !== 'crontab'
         ));
     }
 
-    public static function assertAllowed(string $command): void
+    public function assertAllowed(string $command): void
     {
-        if (!in_array($command, self::allowedCommands(), true)) {
+        if (!in_array($command, $this->allowedCommands(), true)) {
             throw new \RuntimeException('定时任务命令未注册或不允许调度');
         }
     }
 
-    public static function assertTenantAware(string $command): void
+    public function assertTenantAware(string $command): void
     {
-        self::assertAllowed($command);
-        if (!in_array($command, self::TENANT_AWARE_COMMANDS, true) || self::moduleKey($command) === null) {
+        $this->assertAllowed($command);
+        if (!in_array($command, self::TENANT_AWARE_COMMANDS, true) || $this->moduleKey($command) === null) {
             throw new \RuntimeException('定时任务命令尚未采用可信租户上下文');
         }
     }
 
-    public static function moduleKey(string $command): ?string
+    public function moduleKey(string $command): ?string
     {
-        $key = (array) config('console.module_commands', []);
-        $module = $key[trim($command)] ?? null;
+        $module = $this->moduleCommands[trim($command)] ?? null;
         if ($module === null || trim((string) $module) === '') {
             return null;
         }

@@ -10,7 +10,7 @@ use app\common\service\payment\dto\TransportResponse;
 
 final class CurlPaymentTransport implements PaymentTransportInterface
 {
-    public function __construct(private readonly ?OutboundHttpTransport $transport = null)
+    public function __construct(private readonly OutboundHttpTransport $transport)
     {
     }
 
@@ -23,7 +23,7 @@ final class CurlPaymentTransport implements PaymentTransportInterface
             }
             $normalizedHeaders[trim((string)$name)] = trim((string)$value);
         }
-        $response = ($this->transport ?? app(OutboundHttpTransport::class))->send(
+        $response = $this->transport->send(
             new OutboundHttpRequest(
                 $method,
                 $url,

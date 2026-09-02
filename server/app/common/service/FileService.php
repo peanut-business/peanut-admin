@@ -1,24 +1,38 @@
 <?php
 declare(strict_types=1);
+
 namespace app\common\service;
 
-use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** Business file references enter the physical storage layer only here. */
-final class FileService
+final readonly class FileService
 {
-    public static function getFileUrl(string $reference='',?string $unusedStorage=null):string
+    public function __construct(
+        private StorageService $storage,
+        private string $applicationOrigin,
+    ) {}
+
+    public function getFileUrl(string $reference = ''): string
     {
-        $reference=trim($reference);if($reference==='')return '';
-        if(preg_match('#^https?://#i',$reference)===1)return $reference;
-        $url=StorageService::fromDefaultConnection()->publicUrl($reference);
-        return $url!==''?$url:rtrim((string)request()->domain(),'/').'/'.ltrim($reference,'/');
+        $reference = trim($reference);
+        if ($reference === '') {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $reference) === 1) {
+            return $reference;
+        }
+        $url = $this->storage->publicUrl($reference);
+        return $url !== '' ? $url : rtrim($this->applicationOrigin, '/') . '/' . ltrim($reference, '/');
     }
-    public static function setFileUrl(string $value=''):string{return trim($value);}
-    public static function setTenantFileUrl(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,string $value=''):string
-    {return StorageService::fromDefaultConnection()->normalizePublicReference(MemberTenantContext::tenantId($context),$value);}
+
+    public function setTenantFileUrl(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        string $value = '',
+    ): string {
+        return $this->storage->normalizePublicReference($context->tenantId, $value);
+    }
 }

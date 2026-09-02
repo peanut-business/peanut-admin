@@ -8,9 +8,9 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\service\ProductAssetReferenceService;
 use app\common\service\RichTextResourceService;
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\support\PaginationInput;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /** Application use cases for Article content and categories. */
 final class ArticleAdministrationService implements ArticleAdministration
@@ -18,9 +18,12 @@ final class ArticleAdministrationService implements ArticleAdministration
     private const PAGE_SIZE_DEFAULT = 25;
     private const PAGE_SIZE_MAX = 25000;
 
-    public function __construct(private readonly CurrentExecutionContext $executionContext)
-    {
-    }
+    public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly TransactionManager $transactions,
+        private readonly ProductAssetReferenceService $assets,
+        private readonly RichTextResourceService $richText,
+    ) {}
 
     /** 分页列表。 */
     public function lists(array $params): PageResult
@@ -66,10 +69,8 @@ final class ArticleAdministrationService implements ArticleAdministration
                 'var_page' => 'page_no',
             ]), $pageNo)
             : $pagination->result($query);
-        $lists = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = ArticleTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
         $categoryNames = $this->categoryNames(array_column($lists, 'cid'));
         foreach ($lists as &$row) {
             $row = $this->formatArticleRow($row, $categoryNames);
@@ -171,10 +172,8 @@ final class ArticleAdministrationService implements ArticleAdministration
                 'var_page' => 'page_no',
             ]), $pageNo)
             : $pagination->result($query);
-        $lists = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = ArticleTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
         $articleCounts = $this->articleCounts(array_column($lists, 'id'));
         foreach ($lists as &$row) {
             $row = $this->formatCategoryRow($row);
@@ -235,7 +234,7 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function deleteCategory(int $id): void
     {
-        Db::transaction(function () use ($id): void {
+        $this->transactions->run(function () use ($id): void {
             $category = ArticleTenantRepository::categories()->where('id', $id)->lock(true)->findOrEmpty();
             if ($category->isEmpty()) {
                 throw new \RuntimeException('资讯分类不存在');
@@ -278,13 +277,13 @@ final class ArticleAdministrationService implements ArticleAdministration
             'title' => (string) $params['title'],
             'desc' => (string) ($params['desc'] ?? ''),
             'abstract' => (string) ($params['abstract'] ?? ''),
-            'image' => ProductAssetReferenceService::forStorage(
+            'image' => $this->assets->forStorage(
                 (string) ($params['image'] ?? ''),
                 null,
                 $context,
             ),
             'author' => (string) ($params['author'] ?? ''),
-            'content' => RichTextResourceService::forStorage(
+            'content' => $this->richText->forStorage(
                 (string) ($params['content'] ?? ''),
                 $context,
             ),
@@ -318,8 +317,8 @@ final class ArticleAdministrationService implements ArticleAdministration
         }
         $row['cate_name'] = (string) ($categoryNames[$row['cid']] ?? '');
         $row['click'] = $row['click_actual'] + $row['click_virtual'];
-        $row['image'] = ProductAssetReferenceService::forRead((string) ($row['image'] ?? ''));
-        $row['content'] = RichTextResourceService::forRead((string) ($row['content'] ?? ''));
+        $row['image'] = $this->assets->forRead((string) ($row['image'] ?? ''));
+        $row['content'] = $this->richText->forRead((string) ($row['content'] ?? ''));
         foreach (['create_time', 'update_time', 'delete_time'] as $field) {
             $row[$field] = self::formatTime($row[$field] ?? 0);
         }

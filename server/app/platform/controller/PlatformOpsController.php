@@ -4,22 +4,22 @@ declare(strict_types=1);
 namespace app\platform\controller;
 
 use app\common\service\JsonService;
-use app\platform\http\PlatformRequest;
+use app\common\execution\CurrentExecutionContext;
 use app\platform\service\ops\PlatformOpsApplicationService;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use think\App;
 use think\Response;
 use think\response\Json;
-use Throwable;
 
 /** Platform-only Ops Console Host; PC20 reads plus the bounded PC21 artifact. */
 final class PlatformOpsController extends BasePlatformController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $execution,
         private readonly PlatformOpsApplicationService $operations,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $execution);
     }
 
     public function status(): Json
@@ -85,49 +85,22 @@ final class PlatformOpsController extends BasePlatformController
 
     public function diagnostics(): Response
     {
-        $requestId = PlatformRequest::requestId($this->request);
-        try {
-            $windowMinutes = $this->windowMinutes($this->request->get('window_minutes', 60));
-        } catch (\InvalidArgumentException) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Diagnostic window is invalid.',
-                ['error_code' => 'OPS_DIAGNOSTIC_WINDOW_INVALID'],
-                42200,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
-        }
+        $requestId = $this->requestId();
+        $artifact = $this->operations->diagnostics(
+            $this->context(),
+            $this->windowMinutes($this->request->get('window_minutes', 60)),
+            $requestId,
+        );
 
-        try {
-            $artifact = $this->operations->diagnostics(
-                $this->context(),
-                $windowMinutes,
-                $requestId,
-            );
-
-            return response($artifact['json'], 200, [
-                'Cache-Control' => 'no-store',
-                'Content-Disposition' => 'attachment; filename="' . $artifact['filename'] . '"',
-                'Content-Length' => (string)$artifact['bytes'],
-                'Content-Type' => 'application/json; charset=utf-8',
-                'X-Content-Type-Options' => 'nosniff',
-                'X-Diagnostic-SHA256' => $artifact['sha256'],
-                'X-Request-Id' => $requestId,
-            ]);
-        } catch (OpsConsoleException $exception) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Diagnostic bundle is unavailable.',
-                ['error_code' => $exception->problemCode],
-                $exception->status * 100,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
-        } catch (Throwable) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Diagnostic bundle is unavailable.',
-                ['error_code' => 'OPS_DIAGNOSTIC_UNAVAILABLE'],
-                50300,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
-        }
+        return response($artifact['json'], 200, [
+            'Cache-Control' => 'no-store',
+            'Content-Disposition' => 'attachment; filename="' . $artifact['filename'] . '"',
+            'Content-Length' => (string)$artifact['bytes'],
+            'Content-Type' => 'application/json; charset=utf-8',
+            'X-Content-Type-Options' => 'nosniff',
+            'X-Diagnostic-SHA256' => $artifact['sha256'],
+            'X-Request-Id' => $requestId,
+        ]);
     }
 
     public function backup(): Json
@@ -215,32 +188,10 @@ final class PlatformOpsController extends BasePlatformController
 
     private function run(callable $operation): Json
     {
-        try {
-            return JsonService::data($operation())->header([
-                'Cache-Control' => 'no-store',
-                'X-Request-Id' => PlatformRequest::requestId($this->request),
-            ]);
-        } catch (OpsConsoleException $exception) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Operations status is unavailable.',
-                ['error_code' => $exception->problemCode],
-                $exception->status * 100,
-                [
-                    'Cache-Control' => 'no-store',
-                    'X-Request-Id' => PlatformRequest::requestId($this->request),
-                ],
-            );
-        } catch (Throwable) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Operations status is unavailable.',
-                ['error_code' => 'OPS_STATUS_UNAVAILABLE'],
-                50300,
-                [
-                    'Cache-Control' => 'no-store',
-                    'X-Request-Id' => PlatformRequest::requestId($this->request),
-                ],
-            );
-        }
+        return JsonService::data($operation())->header([
+            'Cache-Control' => 'no-store',
+            'X-Request-Id' => $this->requestId(),
+        ]);
     }
 
     private function context(): \PeanutAdmin\Kernel\Context\PlatformContext
@@ -255,7 +206,11 @@ final class PlatformOpsController extends BasePlatformController
     {
         $candidate = is_int($value) ? (string)$value : trim((string)$value);
         if (!in_array($candidate, ['60', '360', '1440'], true)) {
-            throw new \InvalidArgumentException('OPS_DIAGNOSTIC_WINDOW_INVALID');
+            throw \app\common\http\ApiProblem::fromEnvelope(
+                'Diagnostic window is invalid.',
+                ['error_code' => 'OPS_DIAGNOSTIC_WINDOW_INVALID'],
+                42200,
+            )->withHeaders(['Cache-Control' => 'no-store']);
         }
         return (int)$candidate;
     }

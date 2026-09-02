@@ -1,5 +1,9 @@
 # Peanut Admin 模块架构细化设计增补
 
+> **已废弃**：本文沿用了“Module 自带最终 HTTP route/Controller”的旧前提，不再作为源码组织目标。
+> 现行目标以 [Application 与 Module 永久架构蓝图](application-module-blueprint/README.md) 为准；
+> 包完整性、安装、退役和 purge 的已实现事实仍回到现行生命周期合同与代码核对。
+
 本附录不含实现代码，仅细化 §11 的 4 个黄项。
 
 本附录以 `docs/architecture/optimized-module-architecture-plan.md` 的 §8、§9、§11 为上位约束。

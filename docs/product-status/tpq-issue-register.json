@@ -46,6 +46,11 @@
       "description": "Application code manually adds tenant_id predicates or payload ownership"
     },
     {
+      "id": "tenant_join_missing",
+      "tpq": "TPQ13",
+      "description": "Tenant-owned JOIN condition omits the tenant_id ownership equality"
+    },
+    {
       "id": "direct_db_in_business",
       "tpq": "TPQ08/TPQ24/TPQ42",
       "description": "Logic or Controller directly uses Db/PDO/query/prepare"
@@ -159,6 +164,96 @@
       "id": "oversized_route_registry",
       "tpq": "TPQ21/TPQ43",
       "description": "The root route registry still owns Module and identity-specific route declarations"
+    },
+    {
+      "id": "database_connection_locator",
+      "tpq": "WP1",
+      "description": "Runtime code obtains another database connection outside the single composition root"
+    },
+    {
+      "id": "global_service_locator",
+      "tpq": "WP1",
+      "description": "Application, service or Module provider code locates dependencies through global app()"
+    },
+    {
+      "id": "nullable_pdo_fallback",
+      "tpq": "WP1",
+      "description": "A runtime dependency permits a nullable PDO and silently locates or substitutes a connection"
+    },
+    {
+      "id": "application_raw_persistence",
+      "tpq": "WP1",
+      "description": "Application orchestration performs a raw database query or mutation"
+    },
+    {
+      "id": "model_owner_bypass",
+      "tpq": "WP1",
+      "description": "Raw database access bypasses the registered Model owner for a table"
+    },
+    {
+      "id": "eager_cli_database_dependency",
+      "tpq": "WP1",
+      "description": "A generic CLI base forces database construction for commands that do not use persistence"
+    },
+    {
+      "id": "common_module_reverse_dependency",
+      "tpq": "WP1",
+      "description": "Common code imports or constructs a concrete application Module"
+    },
+    {
+      "id": "host_module_internal_dependency",
+      "tpq": "WP1",
+      "description": "Host business code imports a Module Application, Infrastructure or Model implementation instead of its Contracts"
+    },
+    {
+      "id": "application_framework_model",
+      "tpq": "WP1",
+      "description": "Application orchestration imports or branches on a ThinkORM Model or ThinkPHP Console"
+    },
+    {
+      "id": "framework_upload_contract",
+      "tpq": "WP1",
+      "description": "Application or Module Contracts expose ThinkPHP UploadedFile"
+    },
+    {
+      "id": "application_composition_root",
+      "tpq": "WP1",
+      "description": "Application orchestration constructs a service, factory, transport, gateway, provider or client dependency instead of receiving it"
+    },
+    {
+      "id": "controller_catch_all",
+      "tpq": "TPQ41/TPQ46",
+      "description": "Controller catches Throwable or base Exception instead of using the host problem renderer"
+    },
+    {
+      "id": "model_service_locator",
+      "tpq": "WP1",
+      "description": "Model resolves a dependency through the global application container"
+    },
+    {
+      "id": "common_facade_persistence",
+      "tpq": "WP1",
+      "description": "A Common business service uses the ThinkPHP database Facade outside an explicit adapter"
+    },
+    {
+      "id": "mutable_error_state",
+      "tpq": "TPQ41/TPQ46",
+      "description": "Service or driver propagates a business failure through mutable getError/setError state"
+    },
+    {
+      "id": "global_configuration_locator",
+      "tpq": "WP1",
+      "description": "Application or service code locates runtime configuration, environment or HTTP request state outside an explicit boundary"
+    },
+    {
+      "id": "static_runtime_assembly",
+      "tpq": "WP1",
+      "description": "Application or service code assembles a stateful runtime through a zero-argument static factory"
+    },
+    {
+      "id": "classified_false_error",
+      "tpq": "TPQ41/TPQ46",
+      "description": "A classified authentication, scheduler, payment or persistence error is collapsed to false"
     }
   ],
   "known_tenant_models": [
@@ -1305,6 +1400,19 @@
       "verification": "GENERATOR-CONTRACT-TPQ48"
     },
     {
+      "issue_id": "global_scope_bypass:e600baed9005",
+      "category": "global_scope_bypass",
+      "path": "server/app/common/model/TenantOwnedModel.php",
+      "line": 47,
+      "symbol": "return static::withoutGlobalScope([self::TENANT_GLOBAL_SCOPE]);",
+      "owner": "TPQ07 / Sol",
+      "decision": "allowlist",
+      "status": "closed",
+      "verification": "reviewed_canonical_tenant_scope_bypass",
+      "reason": "TenantOwnedModel is the canonical implementation behind the audited PlatformTenantDataGateway and disables only the tenantOwnership scope.",
+      "review_due": "2027-09-02"
+    },
+    {
       "issue_id": "handwritten_tenant_predicate:1e192d263962",
       "category": "handwritten_tenant_predicate",
       "path": "server/app/Modules/Fixture/DeliveryRecord/Infrastructure/Persistence/PdoDeliveryRecordRepository.php",
@@ -1552,7 +1660,7 @@
       "issue_id": "handwritten_tenant_predicate:fdfc49a710a0",
       "category": "handwritten_tenant_predicate",
       "path": "server/app/adminapi/application/auth/LoginApplicationService.php",
-      "line": 59,
+      "line": 66,
       "symbol": "'tenant_id' => (string)$outcome->context->tenantId,",
       "owner": "TPQ02-TPQ13 / Sol",
       "decision": "allowlist",
@@ -2249,7 +2357,7 @@
       "issue_id": "handwritten_tenant_predicate:4597fa25228f",
       "category": "handwritten_tenant_predicate",
       "path": "server/app/common/service/org/DepartmentAdministrationRuntime.php",
-      "line": 45,
+      "line": 46,
       "symbol": "'tenant_id' => $context->tenantId,",
       "owner": "TPQ02-TPQ13 / Sol",
       "decision": "allowlist",
@@ -4338,6 +4446,19 @@
       "verification": "TPQ50-STRICT-ABSENCE@fc6fcb803240effdb584c0442dcfdb5650d3e913"
     },
     {
+      "issue_id": "model_accessor_mutator:c029b62d00f2",
+      "category": "model_accessor_mutator",
+      "path": "server/app/Modules/Official/Article/Model/Article.php",
+      "line": 24,
+      "symbol": "public function setImageAttr($value): string",
+      "owner": "TPQ05/TPQ13 / Sol",
+      "decision": "allowlist",
+      "status": "closed",
+      "verification": "reviewed_persistence_write_hook",
+      "reason": "The hook canonicalizes local asset references at the ORM write boundary so create, save and future relation writes cannot persist request-origin URLs directly.",
+      "review_due": "2027-02-28"
+    },
+    {
       "issue_id": "model_accessor_mutator:6e5da17cc8ef",
       "category": "model_accessor_mutator",
       "path": "server/app/Modules/Official/Article/Model/Article.php",
@@ -4349,23 +4470,10 @@
       "verification": "TPQ50-STRICT-ABSENCE@fc6fcb803240effdb584c0442dcfdb5650d3e913"
     },
     {
-      "issue_id": "model_accessor_mutator:c029b62d00f2",
-      "category": "model_accessor_mutator",
-      "path": "server/app/Modules/Official/Article/Model/Article.php",
-      "line": 25,
-      "symbol": "public function setImageAttr($value): string",
-      "owner": "TPQ05/TPQ13 / Sol",
-      "decision": "allowlist",
-      "status": "closed",
-      "verification": "reviewed_persistence_write_hook",
-      "reason": "The hook canonicalizes local asset references at the ORM write boundary so create, save and future relation writes cannot persist request-origin URLs directly.",
-      "review_due": "2027-02-28"
-    },
-    {
       "issue_id": "model_accessor_mutator:2288d8caa2b5",
       "category": "model_accessor_mutator",
       "path": "server/app/Modules/Official/Article/Model/Article.php",
-      "line": 31,
+      "line": 30,
       "symbol": "public function setContentAttr($value): string",
       "owner": "TPQ05/TPQ13 / Sol",
       "decision": "allowlist",
@@ -4411,7 +4519,7 @@
       "issue_id": "model_accessor_mutator:c335d0595d37",
       "category": "model_accessor_mutator",
       "path": "server/app/Modules/Official/Member/Model/Member.php",
-      "line": 20,
+      "line": 19,
       "symbol": "public function setAvatarAttr($value): string",
       "owner": "TPQ05/TPQ13 / Sol",
       "decision": "allowlist",

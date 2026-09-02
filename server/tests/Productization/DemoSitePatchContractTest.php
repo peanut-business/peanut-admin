@@ -36,7 +36,6 @@ $removeTree = static function (string $path) use (&$removeTree): void {
 $bootstrap = $read($root . '/server/app/platform/service/ApplicationTenantBootstrapService.php');
 foreach ([
     'pa_role_permission',
-    'pa_notice_scene',
     'pa_decorate_page',
     'pa_decorate_tabbar',
     'pa_transaction_setting',
@@ -44,6 +43,16 @@ foreach ([
 ] as $table) {
     $expect(str_contains($bootstrap, $table), 'new Tenant bootstrap omits ' . $table);
 }
+$notificationCommands = $read($root . '/server/app/Modules/Official/Notification/Contracts/NotificationBootstrapCommands.php');
+$notificationApplication = $read($root . '/server/app/Modules/Official/Notification/Application/NotificationBootstrapService.php');
+$expect(
+    str_contains($bootstrap, 'NotificationBootstrapCommands')
+        && str_contains($bootstrap, '->provisionTenantDefaults(')
+        && !str_contains($bootstrap, 'INSERT INTO pa_notice_scene')
+        && str_contains($notificationCommands, 'provisionTenantDefaults')
+        && str_contains($notificationApplication, 'NoticeTenantRepository::provisionDefaultScenes'),
+    'new Tenant notification defaults bypass the Notification owner command'
+);
 $provisioner = $read($root . '/server/app/platform/service/PdoTenantOwnerAdminProvisioner.php');
 $expect(
     str_contains($provisioner, 'ApplicationTenantBootstrapService')
@@ -81,8 +90,8 @@ $expect(
 $admin = $read($root . '/server/app/adminapi/application/auth/AdminApplicationService.php');
 $tenantAdminRuntime = $read($root . '/server/app/common/service/org/TenantAdminRuntime.php');
 $expect(
-    str_contains($admin, 'self::runtime()->assertPasswordChangeAllowed')
-        && str_contains($tenantAdminRuntime, 'DemoAccountPolicy::assertPasswordChangeAllowed'),
+    str_contains($admin, '$this->tenantAdmins->assertPasswordChangeAllowed')
+        && str_contains($tenantAdminRuntime, '$this->demoAccounts->assertPasswordChangeAllowed'),
     'demo password mutation is not rejected by the Server'
 );
 $workbench = $read($root . '/server/app/adminapi/application/WorkbenchApplicationService.php');
@@ -168,7 +177,7 @@ $profile = $read($root . '/server/app/platform/service/module/ProductTenantModul
 $expect(
     str_contains($profile, 'TenantModuleManager')
         && str_contains($profile, 'VerifiedTenantModuleRepository')
-        && str_contains($profile, 'appendTenantSystem')
+        && str_contains($profile, 'recordTenantSystem')
         && str_contains($profile, "'product_profile'")
         && !str_contains($profile, 'INSERT INTO pa_tenant_module'),
     'product profile bypasses the canonical TenantModule runtime or audit boundary'

@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.0.13",
-        "source_commit": "cc4f1e1ee8558c6916ed12096e79542482fc8460",
-        "source_tree": "fe52d7236cf658dec74a3c59cf2b7b314d871d56",
-        "inventory_sha256": "0bee28d0bd1e38fd0ad229d0d149d8b4c89bbf5527b8abc9b82a9a9676e5cf67",
+        "source_commit": "c554fc486f0121a2b9119a327629a61465dd86c4",
+        "source_tree": "1c85c9f20c5396d4d8babc610a19f0cdf5a8e1ff",
+        "inventory_sha256": "633094660a3a4a0af5c6941f8a5e9384042887099eb3cec510708dbddc9679f7",
         "inventory_template_version": "3.0.13",
-        "managed_tree_sha256": "f8dea22453eb0e1c3d45623d5a67c062663b78c3b002d4679974621456dfc13d",
+        "managed_tree_sha256": "0d50b143c5d1c2e1c766587c88d53a5bbb6aafaffade9a2a5787207aa56a52b8",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -222,7 +222,7 @@
         {
             "path": "deploy/nginx/peanut-admin.conf",
             "source": "files/deploy/nginx/peanut-admin.conf",
-            "template_sha256": "d09bf5c481825bccd67617a552c4cabaf154531f1e94c1326ec0b33b89575f7d",
+            "template_sha256": "ed2bef0d00f95f84e3af4bd76eab58a3fb26b0f1a9a1e1afe8b71c5a1b414d2c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -290,6 +290,16 @@
             "owner": "frontend"
         },
         {
+            "path": "pc/api/article.ts",
+            "source": "files/pc/api/article.ts",
+            "template_sha256": "36df5ed0e4a608fef9039be1d2fa8e97782554e915a93e62573aa17928ea8f40",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
             "path": "pc/api/oauth.ts",
             "source": "files/pc/api/oauth.ts",
             "template_sha256": "ba55d867374e59fae94222cf1ad629105bfa2a3d85df1343e32fbcb149dc4eb6",
@@ -322,7 +332,7 @@
         {
             "path": "pc/composables/useRequest.ts",
             "source": "files/pc/composables/useRequest.ts",
-            "template_sha256": "06dd1e822cd48ca5bc5cbf58e52ac05387cc3c12bcc29f7736dc755358efe10c",
+            "template_sha256": "dafaf322bdccea6f892a8efbcb4989445bcfe8305b89a629447fb12404cdb0b5",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -512,7 +522,7 @@
         {
             "path": "pc/tests/Productization/article-module-capability.test.mjs",
             "source": "files/pc/tests/Productization/article-module-capability.test.mjs",
-            "template_sha256": "3d80f4d275770ae539e9cf0a8e6902fb18e9a48d095d000c144b352dcabd17fc",
+            "template_sha256": "7df2e68f306ed594f64eac2dd32c12a018868adbb3e1f0de1d17b35d35e40c70",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -592,7 +602,7 @@
         {
             "path": "platform/vite.config.ts",
             "source": "files/platform/vite.config.ts",
-            "template_sha256": "262f3a6d32147ccc7ca7d2c4b1a9024da7d027b4f14677ce208e8c482ab92aa5",
+            "template_sha256": "9a73d346ef071a41dba04ce742e516445df1de50d69db801776a4b9779482165",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -602,7 +612,7 @@
         {
             "path": "plugins.lock",
             "source": "files/plugins.lock",
-            "template_sha256": "0299daea1ab99aa5f7f7ea76711f1183cf89480d25046164976ddbd2669c230e",
+            "template_sha256": "a2813442517b895a375217f008384160ff7012d0b3f39b0e7149a05013a3002f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -622,7 +632,7 @@
         {
             "path": "plugins/official.article/plugin.json",
             "source": "files/plugins/official.article/plugin.json",
-            "template_sha256": "9ab00e74b0cad58fc54d00ba082fc5b64b6295a8a492cd473aadc139f69c3459",
+            "template_sha256": "3159990623613b6bbb49fb8f329bc7479afcf64a79a917ab82f77e3a5595a693",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -632,7 +642,7 @@
         {
             "path": "plugins/official.file/plugin.json",
             "source": "files/plugins/official.file/plugin.json",
-            "template_sha256": "8548b3696e6ee23efec4e172d0a00dc05385bb419b4b5a2d50698bc5a6dd2aca",
+            "template_sha256": "dd84b939ebbe4c63639a446b31e3d00552c48743fb6b11632626007ccafd59be",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -642,7 +652,7 @@
         {
             "path": "plugins/official.import-export/plugin.json",
             "source": "files/plugins/official.import-export/plugin.json",
-            "template_sha256": "675cf5c17362f7153da96fe4b1f924ee533e437640a92dc0d047d9282331a7a7",
+            "template_sha256": "4b4a59a5d3f3a4be720dbf9b57bbf20937505b52da8a39f8829b42d9d35927b8",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -652,7 +662,7 @@
         {
             "path": "plugins/official.member/plugin.json",
             "source": "files/plugins/official.member/plugin.json",
-            "template_sha256": "a4b9d04204c60b8409f6c0b23aeddbc51a221d745b2170d5fc943f8b8669b3b4",
+            "template_sha256": "b2dc48ca77b90ab06af944431884cfb280edec8f340aa2c7d62c1f02e804665f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -662,7 +672,7 @@
         {
             "path": "plugins/official.notification/plugin.json",
             "source": "files/plugins/official.notification/plugin.json",
-            "template_sha256": "f9ad43cb904b43308273568e04d36aa8acf54fd0c8a848c555069f4b3c0454b0",
+            "template_sha256": "e5ed501c99685448b0d334fba33f2633bcabcec9501a2fbd87d33afe20d30f92",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -672,7 +682,7 @@
         {
             "path": "plugins/official.oauth/plugin.json",
             "source": "files/plugins/official.oauth/plugin.json",
-            "template_sha256": "98887a27256878cc0f064e8d40a1a3d6edfc15ca5825a86c5bb1f62539c829cb",
+            "template_sha256": "14f2e1d914af722e363e71a4ca512bad031b34f065497b39dd48ce3843d77e54",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -682,7 +692,17 @@
         {
             "path": "plugins/official.payment/plugin.json",
             "source": "files/plugins/official.payment/plugin.json",
-            "template_sha256": "df363826b64f622e736fd58260e6ec7f7d524443ffde10e4805a9058bfedef4a",
+            "template_sha256": "7be4c65e26af85a007380527580a73c25597369648fa644500e9ecba688d0e80",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "host"
+        },
+        {
+            "path": "plugins/official.rich-text/plugin.json",
+            "source": "files/plugins/official.rich-text/plugin.json",
+            "template_sha256": "002049af18cac00693d93b902a5b7a6617ff4fcbeec909c666becd8d3d03f4f8",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -692,7 +712,7 @@
         {
             "path": "plugins/official.task/plugin.json",
             "source": "files/plugins/official.task/plugin.json",
-            "template_sha256": "b5d636785fb2d3a9336931d00a4d71e81881e51ee6c001d00504a262045dc6a2",
+            "template_sha256": "c932d082f0815f3bac6c4b378cf5134cb44e105445f658be4299a7a93e97a0f3",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -732,7 +752,7 @@
         {
             "path": "scripts/check-admin-api-permissions.php",
             "source": "files/scripts/check-admin-api-permissions.php",
-            "template_sha256": "cdee10ae07143b5f0304550da24049cb3fcadf0e79381b34aa15f6c952f037dc",
+            "template_sha256": "856b90e90b0f1ce82c84ced6b0e8a2e7545b30263d2d2a6d7b39d57f265454e1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -772,7 +792,7 @@
         {
             "path": "scripts/check-thinkphp-architecture",
             "source": "files/scripts/check-thinkphp-architecture",
-            "template_sha256": "d1a256debb0272d3768f7e5dc013b0aeaf9ec01de8cf5841f4ed8c367ba2242d",
+            "template_sha256": "e834253947e519d423b35615c956d001af0e9b1c524f043b90fbcb97ed5a5101",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -782,7 +802,7 @@
         {
             "path": "scripts/ci-server-check.sh",
             "source": "files/scripts/ci-server-check.sh",
-            "template_sha256": "ed52e3b5d3ebf5421a412ce7e1f2629b16e881cab11e297df952b9000c4e9766",
+            "template_sha256": "afdb96fffa88ef5c4ea715698e506f25ea338121be3d83ff6256eb25dcf25d4d",
             "classification": "managed",
             "transform": "tokens",
             "mode": 493,
@@ -962,7 +982,7 @@
         {
             "path": "server/.env.example",
             "source": "files/server/.env.example",
-            "template_sha256": "5944d30f218fc32472d477958158659d6f6ed1fc1ab6159cc525ade830861f09",
+            "template_sha256": "a6ccb356dfaa83d05e7e7151e6aa09eea47363ba1ac16c0cca538d9d6d8994df",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1022,7 +1042,7 @@
         {
             "path": "server/composer.json",
             "source": "files/server/composer.json",
-            "template_sha256": "fc1c03b59a6f4b3f9b932ada9b9d5644f0e841dedead358bad96fe2d1783ec21",
+            "template_sha256": "61d61afd1d1afca3bd3c2733a796d1592e2dc8f5311b130a08e29118ef4d59c6",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1032,7 +1052,7 @@
         {
             "path": "server/composer.lock",
             "source": "files/server/composer.lock",
-            "template_sha256": "9b09cf8b09dc4d4db44faa6058f3ccf744529cd83fbd22d4cb528af807a5e9b4",
+            "template_sha256": "2e1b42c2a84d19f7e9f990cebe0f1329a4dbe1d6c031849756dae0839201aecd",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1042,7 +1062,7 @@
         {
             "path": "server/config/admin_api_access.php",
             "source": "files/server/config/admin_api_access.php",
-            "template_sha256": "1ec46fe20d0ffc29172673fb9321a0593bb398ea890177d2e3bef326142c3403",
+            "template_sha256": "e64d0dda83d920f007f592d7abf52dfa4422d63385f7bbb6235374cc7e4e3f28",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1062,7 +1082,7 @@
         {
             "path": "server/config/app.php",
             "source": "files/server/config/app.php",
-            "template_sha256": "28bcec45821e39bc241ce74b263f01bdbb4d981c414aa359668e209b817aa0af",
+            "template_sha256": "2c164c58f669139239d868bb34b33104382318a5e36f745826cb741daef5b9a9",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1182,7 +1202,7 @@
         {
             "path": "server/config/middleware.php",
             "source": "files/server/config/middleware.php",
-            "template_sha256": "ec565d4a857840571529ae5027fed99929ce1722abea37900b3449ddf1e67136",
+            "template_sha256": "71a44d60ef24a3fe1d1479e185bf31b2b097c86dceddcae1662009d466c5fd22",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1442,7 +1462,7 @@
         {
             "path": "server/public/router.php",
             "source": "files/server/public/router.php",
-            "template_sha256": "b9c45f3913985f999261aedba44cf5fa71ea022f197b8c81e8562cef71272827",
+            "template_sha256": "76fd02a3e15016289937532f4284dfac10d5abd73d583ca593bdb2048c1b1c24",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1602,7 +1622,7 @@
         {
             "path": "server/route/admin.php",
             "source": "files/server/route/admin.php",
-            "template_sha256": "9cefe2c92593e0464fe9a227c8219f05032744c3daeec04ad60798c35f6c8eb5",
+            "template_sha256": "37c59c68c2c20cefd9b7e1096c42bf1cb8ff4f35b7d160f10155179bb45439c3",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1612,7 +1632,7 @@
         {
             "path": "server/route/app.php",
             "source": "files/server/route/app.php",
-            "template_sha256": "1b3c303a77175b5500931eceedc5f5413646a9ff1c8987b1d9361e5a08ba8869",
+            "template_sha256": "3d9fcae5a96e80768fe503e5d19d485db06890eca7a026ea01e3364a660dbcc1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1702,7 +1722,7 @@
         {
             "path": "server/route/platform.php",
             "source": "files/server/route/platform.php",
-            "template_sha256": "d5cb6180ce742930268fba0f698b2fd0ed03380496a75459a854d35dc82a0355",
+            "template_sha256": "f945d4a0515ac44417a45f6e269026ee754eacaf36a4a3ec382d932c0eadb91c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1712,7 +1732,7 @@
         {
             "path": "server/route/public_api.php",
             "source": "files/server/route/public_api.php",
-            "template_sha256": "70359400679bf05ea8363a6f09d335a20fb0768f69749ee219dc2909d36fa6bf",
+            "template_sha256": "4d5c60c45a3dae499d4d9c39937000458973f50d4a007105c2d26532f7996266",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1722,7 +1742,7 @@
         {
             "path": "server/route/registry_source.php",
             "source": "files/server/route/registry_source.php",
-            "template_sha256": "7137f7e6d7c99dd98a3ea2634f0f9221eb63ea41254d9d1145cc1077c79111d2",
+            "template_sha256": "6cc6dc045d962ffdcd13425005fb228ad0a9581746f89d8187b3d153b6673eee",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1732,7 +1752,7 @@
         {
             "path": "server/route/tenant.php",
             "source": "files/server/route/tenant.php",
-            "template_sha256": "d5dd0641572b09ffe2dab2c27c47aac50bb0a04ad6ae444a1e6ef113d44fea96",
+            "template_sha256": "e8d2c51ae2cbd715605e8c100279b200a4109fcf5cd1c9307c629af3e0d43adf",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1852,7 +1872,7 @@
         {
             "path": "uniapp/tests/Productization/article-module-capability.test.mjs",
             "source": "files/uniapp/tests/Productization/article-module-capability.test.mjs",
-            "template_sha256": "24a19d70406553e07a0e29ea8d37278e621c10a638cd24c308eed7ff914f6162",
+            "template_sha256": "759a3553bfd72e472d6d8bd3d3251d0b8935bff482655e7203e174aaadec56d7",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2072,7 +2092,7 @@
         {
             "path": "web/config/vite.config.dev.ts",
             "source": "files/web/config/vite.config.dev.ts",
-            "template_sha256": "e0a1c1db2f53f47b1a3c5613e34b968690b6b1524e60e8eb4b639cfe3af8874e",
+            "template_sha256": "ae573e4d4ec0fb993ce229286cb4d71fd93a3e7144668f035f74696d60aec737",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2102,7 +2122,7 @@
         {
             "path": "web/package.json",
             "source": "files/web/package.json",
-            "template_sha256": "5f93d0987409288198016951645ce4f602d10b8608b7ea9a7294355258baab23",
+            "template_sha256": "533631893908bc09f6ab0987e61801f304ad6be7ea5065b02b21493ed8f6bbfb",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2112,7 +2132,7 @@
         {
             "path": "web/pnpm-lock.yaml",
             "source": "files/web/pnpm-lock.yaml",
-            "template_sha256": "9e41543ee613cf6173483385d177a0da29e8b458c21780dd120225dc6dda3d24",
+            "template_sha256": "b8e19b32016a81974df236632133e1136225bfa4d3543d13197ffef0fd54134a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2212,7 +2232,7 @@
         {
             "path": "web/src/api/app.ts",
             "source": "files/web/src/api/app.ts",
-            "template_sha256": "db0a9b09be1ccd0066289286152c7a1fb5a2efb876aa217f55e5f47df78ba561",
+            "template_sha256": "5dc854e29248484e98171cc51b7db9acd56df674bc8580a898c9aaa62142286d",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2222,7 +2242,7 @@
         {
             "path": "web/src/api/decoration.ts",
             "source": "files/web/src/api/decoration.ts",
-            "template_sha256": "df9b7034b40b224452c935475e54ed53df84ffc683aa5d622eb9f6f55c08a5b2",
+            "template_sha256": "f838a91367cc0318d329e381f48ca8ec3e5453d4d3c044eefb672f75f97c012c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2232,7 +2252,7 @@
         {
             "path": "web/src/api/dev-tools/modules.ts",
             "source": "files/web/src/api/dev-tools/modules.ts",
-            "template_sha256": "2355bd4de5ba5cfd7683181717b8d22e9aee9cde228b2a2d823d18318c315e0a",
+            "template_sha256": "d0d89446c90762cbb0d690e721adee54af75c891423c026c3685bdf149e7d88e",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2242,7 +2262,7 @@
         {
             "path": "web/src/api/installation.ts",
             "source": "files/web/src/api/installation.ts",
-            "template_sha256": "aa101f1f2596ddd710c7dfb81fe89664488b5816175b4a5cfb43e40db33ae4ad",
+            "template_sha256": "d4d91321f24816d78080bf55540d3585e68cde7d05cde11b2400b3ae4922e747",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2252,7 +2272,7 @@
         {
             "path": "web/src/api/interceptor.ts",
             "source": "files/web/src/api/interceptor.ts",
-            "template_sha256": "b66e620b142010b11b31265b5ce51aad3d5c7add61eec6e1b8752a3e6c23e591",
+            "template_sha256": "5bb0f8adaa430971dd7ca8345f3e18fea1d146848cd26fb33e1a9d4fed52712e",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2262,7 +2282,7 @@
         {
             "path": "web/src/api/readiness.ts",
             "source": "files/web/src/api/readiness.ts",
-            "template_sha256": "bce134a625c54bed51f82ff9733b778e383b60efdd94f63456770d07645f923a",
+            "template_sha256": "565b43de5b93a2d9fc0927aa874c0b075bce5c9c482d210646af0726a4d50930",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2272,7 +2292,7 @@
         {
             "path": "web/src/api/system-settings.ts",
             "source": "files/web/src/api/system-settings.ts",
-            "template_sha256": "be0c9542b251733cc55e78fa42ed10ab0904a31114208b12cb3f8fd2c2b3474b",
+            "template_sha256": "40d24061eeaacb0c6910d716a9eca7fff7fd7e1b0df5b412b05d3bceaa34d143",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2282,7 +2302,7 @@
         {
             "path": "web/src/api/system/admin.ts",
             "source": "files/web/src/api/system/admin.ts",
-            "template_sha256": "d154e5e758b4e2476a0b0a0526377b04641c9f06645cd08085420e397127ed4e",
+            "template_sha256": "10ae5ef5570dede13c9b2e122e98d490e676ce2d4d0a09a0af66276c1eaf16d1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2292,7 +2312,7 @@
         {
             "path": "web/src/api/system/config.ts",
             "source": "files/web/src/api/system/config.ts",
-            "template_sha256": "624bbc32cfaa5c8fa9a8f0c0bff2d67749c704c8cc92fc9aaa1c66f802402b84",
+            "template_sha256": "41f71cbefdd673fafc0fbe96c41e6d6001a65299b32abf97d10d0b180fb80431",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2302,7 +2322,7 @@
         {
             "path": "web/src/api/system/dept.ts",
             "source": "files/web/src/api/system/dept.ts",
-            "template_sha256": "11748df4a62c6c2bea6307123b954f131d44a7c2c153cb96b6b905495e92b8ce",
+            "template_sha256": "b50223f6d534947c0ebfcbb2c1159fbbbb2498b7dcb2d0a6dd54309acf16a0a2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2312,7 +2332,7 @@
         {
             "path": "web/src/api/system/dict.ts",
             "source": "files/web/src/api/system/dict.ts",
-            "template_sha256": "6bde0a5401e5fb381aca45d784cf897b89cf9d885f19fe2724dd959b397ebee5",
+            "template_sha256": "95f8e30347c00ef36d353d29bbdf298f97ba9f98f2fb2a587a3d5361f068204c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2322,7 +2342,7 @@
         {
             "path": "web/src/api/system/generator.ts",
             "source": "files/web/src/api/system/generator.ts",
-            "template_sha256": "fb8829a41882a0cab1ed87931cba56fd4b70d51c24bcb3ba1e8ae95ef0f57ab4",
+            "template_sha256": "72228d9d08874904ba567f9686bcac1f256f2c40a691be459d0c2af3fbe8c067",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2332,7 +2352,7 @@
         {
             "path": "web/src/api/system/jobs.ts",
             "source": "files/web/src/api/system/jobs.ts",
-            "template_sha256": "5bbc05bfa208c4a536013b1b5ee7d0a428ed4ef1d34c2412d7011b2aee1c3112",
+            "template_sha256": "1e601d446b0ccf5c57f0a688e21afe5929beadf31238ad3e070244b9ca68795c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2342,7 +2362,7 @@
         {
             "path": "web/src/api/system/log.ts",
             "source": "files/web/src/api/system/log.ts",
-            "template_sha256": "eb337dc3979b5591f8bcf98ef999f16519c008c1f4964586dcd152ff182976d2",
+            "template_sha256": "432a7ffabc15ad7697c369eaf5a570e0a5084498d5811c9cc5c120c512de4a85",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2352,7 +2372,7 @@
         {
             "path": "web/src/api/system/menu.ts",
             "source": "files/web/src/api/system/menu.ts",
-            "template_sha256": "4236ee8e538576ca964eff1a204554dd5d6bc37b3f7ec3161e4da5b17d52693a",
+            "template_sha256": "c4eaafd56020a668daebc22b57e42b23c93ee2225ff2a3165806c65ee237a66c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2362,7 +2382,7 @@
         {
             "path": "web/src/api/system/role.ts",
             "source": "files/web/src/api/system/role.ts",
-            "template_sha256": "55845b386b7bb8e251d736d322a05e421c754ed3d054231bbb4b19e2c79a8254",
+            "template_sha256": "ecce3455a07def1d316427cf6d65b18e94befe5596dfa825cd23a40d772dd16a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2372,7 +2392,7 @@
         {
             "path": "web/src/api/system/system.ts",
             "source": "files/web/src/api/system/system.ts",
-            "template_sha256": "973d4363d650ceb4b94cd037b4b4057f4a1189bfc3f28d3797ed8ddacda772d1",
+            "template_sha256": "5ba973820a32f02b896bd2021aa06a1bf953574fa1b09755742b3ec38dbd01ee",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2382,7 +2402,7 @@
         {
             "path": "web/src/api/tenant-session.ts",
             "source": "files/web/src/api/tenant-session.ts",
-            "template_sha256": "49ad4874a52a1cad012718497b06f736f6deafffe4a9f6e9c1a21992e703072b",
+            "template_sha256": "e7c61bbddaf4daae9808e71aff692bf8af03377615fc1305a224c6d3f842a570",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2392,7 +2412,7 @@
         {
             "path": "web/src/api/user.ts",
             "source": "files/web/src/api/user.ts",
-            "template_sha256": "f0f2ca42d243e3ae97a86e6ec1951dfee6e0baeb4cc7ce33babc5aec93ac95e0",
+            "template_sha256": "b0cb25d0ce8cd407f65288e4f74f2947683b7c99e8e1ca368a87d9b5bb210de1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2402,7 +2422,7 @@
         {
             "path": "web/src/api/workbench.ts",
             "source": "files/web/src/api/workbench.ts",
-            "template_sha256": "e820b573eec99877e22521c367cbaccfabb6dec4c24b821cf400bb97eca3f5a4",
+            "template_sha256": "fb071dc3d0833413007bec2da026abf7dae0cc4fe9d3af4c4bc21afd7671dcd1",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2462,7 +2482,7 @@
         {
             "path": "web/src/components/file-picker/index.vue",
             "source": "files/web/src/components/file-picker/index.vue",
-            "template_sha256": "6673b4dbd7e29e0e930ddfb8265e7c07c5a87fca21a1bc85522884d5d0526366",
+            "template_sha256": "9c6542ccae428cc895c8145f22975a785eb6dccde4636efe8534a6dd9629a93a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2572,7 +2592,7 @@
         {
             "path": "web/src/components/tab-bar/tab-item.vue",
             "source": "files/web/src/components/tab-bar/tab-item.vue",
-            "template_sha256": "a02e7454482be470b551f3f1dcc18b34b08e321edc1f00de6fc411839a12a112",
+            "template_sha256": "52cedb84b90ac438a8bcb15101e1ed238e7c2583d434d7e35d68311318171b4a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2672,7 +2692,7 @@
         {
             "path": "web/src/generated/openapi.d.ts",
             "source": "files/web/src/generated/openapi.d.ts",
-            "template_sha256": "cc4c53086f0de65612ddad7b39cc024386ef9936e5a53dec042c49ad3973e4d9",
+            "template_sha256": "338abc4ae7270267d6ca463bd3f3e33a55a45d1d30b04420bf60043f637c6f93",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2792,7 +2812,7 @@
         {
             "path": "web/src/locale/en-US.ts",
             "source": "files/web/src/locale/en-US.ts",
-            "template_sha256": "a9d3531995fac01846dd95058d21578c48fe9074a66b541eae8a7e200ede9cd1",
+            "template_sha256": "cec4e3a0ce4c039839a611b5fc52fa80a39b50dc0a4bf53b42e612d223e4bea2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2822,7 +2842,7 @@
         {
             "path": "web/src/locale/zh-CN.ts",
             "source": "files/web/src/locale/zh-CN.ts",
-            "template_sha256": "43fa58fd0303fb55b1d9a3d28dcf5b69c135c2381311902b33e14ff80bdf0201",
+            "template_sha256": "2fdfe83cb84d806c55a3ee4a6dcb63768d84bde63fd4c8ee2670f5d44b882323",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2852,7 +2872,7 @@
         {
             "path": "web/src/modules/official-article/api.ts",
             "source": "files/web/src/modules/official-article/api.ts",
-            "template_sha256": "e28cf434382c8c78c27375c1e4777a2a9b66ec44555859e10df4d6ce343934c8",
+            "template_sha256": "18a45cb9349df921ae95211bed75aaf1f68df4d769f3d11178130f2a7aa6b50c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2882,7 +2902,7 @@
         {
             "path": "web/src/modules/official-article/views/cate/index.vue",
             "source": "files/web/src/modules/official-article/views/cate/index.vue",
-            "template_sha256": "8994c5030fb4509232e2195cdd6660dfdeb7a2ba1a97fa3bd238de2638240b26",
+            "template_sha256": "7e3024c94c84ed001f4b978933654c587cf2c979cf2dbb702f8b47a91518eb9c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2912,7 +2932,7 @@
         {
             "path": "web/src/modules/official-article/views/list/index.vue",
             "source": "files/web/src/modules/official-article/views/list/index.vue",
-            "template_sha256": "a347cc3ba234b1e80665dc44ab120cb414234f5d8efc67a4559cf3fd7fee0f36",
+            "template_sha256": "1c1b9dab61845b6b8c7716ffc5cdd6083db2be5aa717df706053c71f43ceb73c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2942,7 +2962,7 @@
         {
             "path": "web/src/modules/official-file/api.ts",
             "source": "files/web/src/modules/official-file/api.ts",
-            "template_sha256": "ca7ca8b83022ea4f609c00ee5908f8d3562f3168f8bf50821ba214c53b22b0ed",
+            "template_sha256": "68fbf661bded0ae48bb02245a0cabdf581b9da367c4763297da9541fe1d52496",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2972,7 +2992,7 @@
         {
             "path": "web/src/modules/official-file/views/index.vue",
             "source": "files/web/src/modules/official-file/views/index.vue",
-            "template_sha256": "d570f2661c16c67726cddafff24285cf38d60ebe95571b4d3732a6d806a97b42",
+            "template_sha256": "4b6be3f1d1599c2fdfd97f5bb71c2e80b22a21641e7978a779b0760890e52ba7",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3002,7 +3022,7 @@
         {
             "path": "web/src/modules/official-import-export/api.ts",
             "source": "files/web/src/modules/official-import-export/api.ts",
-            "template_sha256": "e285dda75d12482710fb8f9988a811fdce0e22c4e483ddcaa82356fa8b4303b9",
+            "template_sha256": "929cca8c4f9f6c83b29b5b73112907dc31b71b5c070f5c9a87bd4e3f47fe8d7a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3062,7 +3082,7 @@
         {
             "path": "web/src/modules/official-member/api.ts",
             "source": "files/web/src/modules/official-member/api.ts",
-            "template_sha256": "b3d6392d3d05ef1b9cbd7f2daf5908e0c897e067ae70871ef6c70a31f40612c0",
+            "template_sha256": "4971dbcd8bd4f659c9a666d9fe568ebb7eac4f97a2c723171e707dfeae8fcd9a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3182,7 +3202,7 @@
         {
             "path": "web/src/modules/official-notification/api.ts",
             "source": "files/web/src/modules/official-notification/api.ts",
-            "template_sha256": "8193f631a935df693d99d3a5e70e4677431f35412514f639ba324806c9d60902",
+            "template_sha256": "076f00ba9e9c281cb88e9ec145a47768d8d0eb8c943453a1cad144198d6810ad",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3242,7 +3262,7 @@
         {
             "path": "web/src/modules/official-notification/views/log/index.vue",
             "source": "files/web/src/modules/official-notification/views/log/index.vue",
-            "template_sha256": "a92397d6827ca64fe8a9c1f9285c2e851bb9a96ba2f80e0e3e51252b7e272ded",
+            "template_sha256": "ec78f7114bc227be4a0b9d9ed87e51a8af05b488a120076cd35efc62c8646367",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3302,7 +3322,7 @@
         {
             "path": "web/src/modules/official-oauth/api.ts",
             "source": "files/web/src/modules/official-oauth/api.ts",
-            "template_sha256": "69d746674b877cec2e13c29d4d460743ff35b1bb23df7d1c3c7565ba7278b4b6",
+            "template_sha256": "d375249e67001032a94651d1b11ac59757625c9db48f87f74198b25e55147907",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3352,7 +3372,7 @@
         {
             "path": "web/src/modules/official-oauth/views/channel/OfficialAccountReply.vue",
             "source": "files/web/src/modules/official-oauth/views/channel/OfficialAccountReply.vue",
-            "template_sha256": "d52a43782f06fbabc7fb40f27849fcd8f23f6d687b3f4ca5b0ec003f7f71816d",
+            "template_sha256": "2f950c92793136d8bebefa5acaf175971a9c224fe7b35b625e9c0388242c065e",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3412,7 +3432,7 @@
         {
             "path": "web/src/modules/official-payment/api.ts",
             "source": "files/web/src/modules/official-payment/api.ts",
-            "template_sha256": "12a95c07850b96d95fbd57fbaf89eab10d79bcaa8c7f925e9ec37c2ba6c3f5ca",
+            "template_sha256": "1b5b9d1af99a33473760bd7212e761d060830f87138a9e4baa8f870a03d13e61",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3442,7 +3462,7 @@
         {
             "path": "web/src/modules/official-payment/views/recharge/index.vue",
             "source": "files/web/src/modules/official-payment/views/recharge/index.vue",
-            "template_sha256": "4d8f70a63d3764e5de696551e9a00342538efbc866761f6c8e484563775ac99f",
+            "template_sha256": "4448013a7588ec33014d8d3f3c2834fbff78d75e34f511a9aa343baad6199ca0",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3472,7 +3492,7 @@
         {
             "path": "web/src/modules/official-payment/views/refund/index.vue",
             "source": "files/web/src/modules/official-payment/views/refund/index.vue",
-            "template_sha256": "b7c37d53a46a1f28dcdd2ab4e544bb8760e8e197c4836c36e2ed1a77e6eb66ca",
+            "template_sha256": "b870de7c6f29a23ce0b95b9b6ab3ba0e6b797083f3bb1ac6e790bf062bc30e3e",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3530,9 +3550,129 @@
             "owner": "frontend"
         },
         {
+            "path": "web/src/modules/official-rich-text/.gitignore",
+            "source": "files/web/src/modules/official-rich-text/.gitignore",
+            "template_sha256": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/README.md",
+            "source": "files/web/src/modules/official-rich-text/README.md",
+            "template_sha256": "9dc6831faea2e1c4ccd025a4797bb2a385f4e0b1afcef714e0e07b927823f655",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/api.ts",
+            "source": "files/web/src/modules/official-rich-text/api.ts",
+            "template_sha256": "5ede1bf857f04c77c4c3d0e7fe90df8fb887dbc61f8f9369550159e8f3e737a4",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/components/RichTextEditor.vue",
+            "source": "files/web/src/modules/official-rich-text/components/RichTextEditor.vue",
+            "template_sha256": "a6f582f6e5c4b741fb4311dec29a70e2e4010a7715cd41dd99df2206a0b894bc",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/components/types.ts",
+            "source": "files/web/src/modules/official-rich-text/components/types.ts",
+            "template_sha256": "be51fb3a36dc43cb63bbbc3253b77be8dfd0d5ae45aa105134dc85017dba3db5",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/contribution.ts",
+            "source": "files/web/src/modules/official-rich-text/contribution.ts",
+            "template_sha256": "fd2b648b21c7d6fbe58263ebfd079481adeff50ab3ff04a2daa2e42eff184c31",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/package.json",
+            "source": "files/web/src/modules/official-rich-text/package.json",
+            "template_sha256": "7c2988714e009186ad06091d3f36bd51051bca3cb693108eb729467cde0a3283",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/src/document.ts",
+            "source": "files/web/src/modules/official-rich-text/src/document.ts",
+            "template_sha256": "c6ab440f23fec1364a97d927db0076f4dbe21d1ba20225fa4518b94357518c27",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/src/editor.ts",
+            "source": "files/web/src/modules/official-rich-text/src/editor.ts",
+            "template_sha256": "ea7bd5913419c9a6368d82381f9e159adf99ef448d4d460337e88b24b5bd986a",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/views/index.vue",
+            "source": "files/web/src/modules/official-rich-text/views/index.vue",
+            "template_sha256": "38043e4d6578b741e9bbc548098ec3b833a4dba6d1fd9df5350d41cf529e79ee",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/views/locale/en-US.ts",
+            "source": "files/web/src/modules/official-rich-text/views/locale/en-US.ts",
+            "template_sha256": "504e450b78e1cfc7d6989114c376c0539b32cab073b9c1ad007a798498de2638",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
+            "path": "web/src/modules/official-rich-text/views/locale/zh-CN.ts",
+            "source": "files/web/src/modules/official-rich-text/views/locale/zh-CN.ts",
+            "template_sha256": "5c340a36a4fd6f21750f34a9cd5ed62c5ccd23d29e7620c1354d8a8b3b42005e",
+            "classification": "managed",
+            "transform": "tokens",
+            "mode": 420,
+            "policy": "managed",
+            "owner": "frontend"
+        },
+        {
             "path": "web/src/modules/official-task/api.ts",
             "source": "files/web/src/modules/official-task/api.ts",
-            "template_sha256": "11812b0a6ac2c32bc6786c4f9cc018b510609c57eb6b6c8e6dc2f0c06d3b593b",
+            "template_sha256": "491f596dea7fca069a08c38f11174c813f2348d5d7f98a1c41ad2a14fd0090bc",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3852,17 +3992,7 @@
         {
             "path": "web/src/store/modules/tab-bar/index.ts",
             "source": "files/web/src/store/modules/tab-bar/index.ts",
-            "template_sha256": "86e8009369c513b342d9d5c3f1df980f167c8f320370b44a6055a66827bbb94e",
-            "classification": "managed",
-            "transform": "tokens",
-            "mode": 420,
-            "policy": "managed",
-            "owner": "frontend"
-        },
-        {
-            "path": "web/src/store/modules/tab-bar/types.ts",
-            "source": "files/web/src/store/modules/tab-bar/types.ts",
-            "template_sha256": "5932b07640c994ba6294a9a99d0fd629583e6d55d1cd6abedd2c9c0209c3bbab",
+            "template_sha256": "974df79ecbe8ae52128c00ee381c50326b7ab7fa8e5540d2fdfaa110d87a7f48",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -3902,7 +4032,7 @@
         {
             "path": "web/src/types/global.ts",
             "source": "files/web/src/types/global.ts",
-            "template_sha256": "515e36b2085495faeb1695e9dc3f414dca80f5ff19e8c9b677d611e29b501317",
+            "template_sha256": "d7e48222959b20c2147b379ca03a4b290fe14e25dad606fbf3387c9a7ed1f19f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

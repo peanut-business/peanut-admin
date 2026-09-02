@@ -40,8 +40,8 @@ onShow(() => loadRecords(1))
 async function loadRecords(page: number) {
   loading.value = true
   try {
-    const data = await getRechargeLists({ page_no: page, page_size: pageSize })
-    pageNo.value = data.page_no
+    const data = await getRechargeLists({ pageNo: page, pageSize })
+    pageNo.value = data.pageNo
     total.value = data.count
     records.value = page === 1 ? data.lists : [...records.value, ...data.lists]
   } catch (error) {

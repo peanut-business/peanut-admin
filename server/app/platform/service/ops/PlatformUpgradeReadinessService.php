@@ -11,6 +11,7 @@ use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Package;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use RuntimeException;
 use Throwable;
 
@@ -24,6 +25,9 @@ final readonly class PlatformUpgradeReadinessService
     public function __construct(
         private PDO $pdo,
         private string $projectRoot,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+        private PlatformBackupCenterService $backups,
+        private MaintenanceService $maintenance,
     ) {
     }
 
@@ -371,7 +375,7 @@ final readonly class PlatformUpgradeReadinessService
                 }
             }
             ksort($targetModules, SORT_STRING);
-            $installed = PdoModuleGovernanceProvider::forApplication($this->pdo)
+            $installed = $this->moduleGovernance
                 ->qualification()
                 ->installedModules();
             $installedVersions = [];
@@ -495,7 +499,7 @@ final readonly class PlatformUpgradeReadinessService
     private function backupProjection(PlatformContext $context, string $runtimeCommit): array
     {
         try {
-            return (new PlatformBackupCenterService($this->pdo))->snapshot($context, $runtimeCommit);
+            return $this->backups->snapshot($context, $runtimeCommit);
         } catch (Throwable) {
             return $this->backupUnavailable('UPGRADE_BACKUP_EVIDENCE_INVALID');
         }
@@ -505,7 +509,7 @@ final readonly class PlatformUpgradeReadinessService
     private function maintenanceProjection(PlatformContext $context): ?array
     {
         try {
-            return PlatformOpsRuntimeFactory::maintenance($this->pdo)
+            return $this->maintenance
                 ->current($context)
                 ?->toPublicArray();
         } catch (Throwable) {

@@ -41,8 +41,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
-const userStore = useUserStore()
-const apiBase = useRuntimeConfig().public.apiBase
+const request = useRequest()
 const pwdLoading = ref(false)
 const mobileLoading = ref(false)
 
@@ -56,13 +55,12 @@ async function handleChangePwd() {
     return ElMessage.warning('两次密码不一致')
   pwdLoading.value = true
   try {
-    await $fetch(`${apiBase}/api/user/changePassword`, {
-      method: 'POST', body: pwdForm.value,
-      headers: { Authorization: `Bearer ${userStore.token}` },
-    })
+    await request.post('api/user/changePassword', pwdForm.value)
     ElMessage.success('密码修改成功')
     pwdForm.value = { old_password: '', new_password: '', new_password_confirm: '' }
-  } catch { ElMessage.error('修改失败') }
+  } catch {
+    // useRequest already reports the server message.
+  }
   finally { pwdLoading.value = false }
 }
 
@@ -71,12 +69,11 @@ async function handleBindMobile() {
     return ElMessage.warning('请输入正确的手机号')
   mobileLoading.value = true
   try {
-    await $fetch(`${apiBase}/api/user/bindMobile`, {
-      method: 'POST', body: mobileForm.value,
-      headers: { Authorization: `Bearer ${userStore.token}` },
-    })
+    await request.post('api/user/bindMobile', mobileForm.value)
     ElMessage.success('绑定成功')
-  } catch { ElMessage.error('绑定失败') }
+  } catch {
+    // useRequest already reports the server message.
+  }
   finally { mobileLoading.value = false }
 }
 </script>

@@ -24,15 +24,17 @@ Platform 审计。`If-Match: "rev-<revision>"` 实现 revision fencing，Core �
 
 ## 后端门禁
 
-全局 `MaintenanceWriteGateMiddleware` 在每一个 HTTP `POST`、`PUT`、`PATCH`、`DELETE`
-之前查询当前 UTC 时间内生效的窗口。窗口生效时，所有这类请求统一返回
+`adminapi`、`api` 和 `platform` 的原生 Application middleware 入口在每一个 HTTP
+`POST`、`PUT`、`PATCH`、`DELETE` 之前运行 `MaintenanceWriteGateMiddleware`，并在查询前先通过
+安装状态门禁。`installation` 保留自己的同源与一次性 setup token 边界，不连接尚未建立的业务数据库查询维护窗口。
+窗口生效时，所有业务写请求统一返回
 `503 MAINTENANCE_WRITE_BLOCKED`，并将窗口 key、原因、方法和路径作为 denied Platform
 审计事件记录。
 
 唯一的精确例外是：
 
-- `PUT /api/platform/v1/ops/maintenance`
-- `POST /api/platform/v1/ops/maintenance/{maintenance_key}/close`
+- `PUT /platformapi/v1/ops/maintenance`
+- `POST /platformapi/v1/ops/maintenance/{maintenance_key}/close`
 
 这两个路由仍须通过 Platform host、独立会话和
 `platform.ops.maintenance.manage` 权限。没有按前缀、菜单、客户端或身份设置额外旁路；

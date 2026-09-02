@@ -1,5 +1,10 @@
 # Peanut Admin 模块架构优化方案（完整版 v2）
 
+> **已废弃**：本文把 Module 同时作为业务边界与 HTTP Host，未正确恢复 ThinkPHP 多应用边界。
+> 现行目标以 [Application 与 Module 永久架构蓝图](application-module-blueprint/README.md) 为准；
+> 已实现的 Package 生命周期事实仍以现行命令和
+> [可消费 Module Package 生命周期合同](consumer-module-lifecycle-contract.md) 为准。
+
 > **状态**：待审批（确认后交由 Codex 分析并执行）
 > **作者**：Claude Opus 4.8 架构评审
 > **日期**：2026-08-26

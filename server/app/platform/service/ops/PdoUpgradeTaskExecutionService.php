@@ -7,6 +7,7 @@ use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -14,6 +15,7 @@ use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\OpsAuditEvent;
 use PeanutAdmin\OpsConsole\Task\OpsTaskSubmission;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use Throwable;
 
 /** Trusted state machine behind the fixed deployment-control worker. */
@@ -42,7 +44,12 @@ final readonly class PdoUpgradeTaskExecutionService
 
     public function __construct(
         private PDO $pdo,
+        private AuditContractHost $audit,
+        private PdoOpsTaskDispatcher $tasks,
+        private PdoMaintenanceWindowStore $maintenance,
         private string $projectRoot,
+        private BackupRestoreProviderRegistry $backupProviders,
+        private ApplicationRuntimeStatusProvider $runtimeStatus,
     ) {
     }
 
@@ -87,7 +94,7 @@ SQL);
                 'task_key' => $task['task_key'],
                 'target_release_key' => $payload['target_release_key'],
                 'execution_revision' => $revision,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'execution_revision' => $revision,
@@ -151,8 +158,7 @@ SQL);
             }
         });
         $context = $this->context($task);
-        $snapshot = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))
-            ->snapshot($context);
+        $snapshot = $this->runtimeStatus->snapshot($context);
         if (!hash_equals((string)$execution['target_commit'], $snapshot->commit)
             || !hash_equals((string)$execution['target_tree'], $snapshot->tree)
             || $snapshot->releaseKey !== (string)$execution['target_release_key']
@@ -221,12 +227,11 @@ SQL);
             $pointerJson = $this->canonicalJson($pointer);
             $pointerSha = hash('sha256', $pointerJson);
 
-            $store = new PdoMaintenanceWindowStore($this->pdo);
             $maintenanceKey = (string)$lockedExecution['maintenance_key'];
             $maintenanceRevision = (int)$lockedExecution['maintenance_revision'];
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-close');
             $requestDigest = hash('sha256', $maintenanceKey . ':' . $maintenanceRevision);
-            $store->close(
+            $this->maintenance->close(
                 $context,
                 $maintenanceKey,
                 $maintenanceRevision,
@@ -267,7 +272,7 @@ SQL);
                 'task_key' => $task['task_key'],
                 'target_release_key' => $lockedExecution['target_release_key'],
                 'recovery_pointer_sha256' => $pointerSha,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'status' => 'succeeded',
@@ -309,7 +314,7 @@ SQL);
                 'task_key' => $taskKey,
                 'failed_step' => $step,
                 'error_code' => $errorCode,
-            ]);
+            ], AuditOutcome::Error, $errorCode);
             return ['task_key' => $taskKey, 'status' => 'dead', 'error_code' => $errorCode];
         });
     }
@@ -340,8 +345,7 @@ SQL);
         $payload = $this->payload($task);
         $target = PlatformUpgradeTarget::load($this->projectRoot);
         $context = $this->context($task);
-        $readiness = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))
-            ->upgradeReadiness($context);
+        $readiness = $this->runtimeStatus->upgradeReadiness($context);
         if (($readiness['preflight']['state'] ?? null) !== 'ready'
             || !hash_equals($payload['source_commit'], (string)($readiness['source']['runtime']['commit'] ?? ''))
             || !hash_equals($payload['source_tree'], (string)($readiness['source']['runtime']['tree'] ?? ''))
@@ -359,7 +363,7 @@ SQL);
             if ((string)$execution['current_step'] !== 'preflight') {
                 throw new \RuntimeException('OPS_UPGRADE_STEP_INVALID');
             }
-            $provider = PlatformOpsRuntimeFactory::backupProviders()
+            $provider = $this->backupProviders
                 ->require(PairedBackupProvider::PROVIDER_KEY);
             $submission = $this->childSubmission(
                 Package::BACKUP_TASK_TYPE,
@@ -371,7 +375,7 @@ SQL);
                 'platform.ops.backup.submitted',
                 'backup.submit',
             );
-            $child = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($context, $submission);
+            $child = $this->tasks->dispatch($context, $submission);
             $this->succeedStep(
                 (string)$task['task_key'],
                 'preflight',
@@ -422,7 +426,7 @@ SQL);
                 throw new \RuntimeException('OPS_UPGRADE_BACKUP_FAILED');
             }
             $context = $this->context($task);
-            $provider = PlatformOpsRuntimeFactory::backupProviders()
+            $provider = $this->backupProviders
                 ->require(PairedBackupProvider::PROVIDER_KEY);
             $payload = [
                 'provider_key' => $provider->key,
@@ -439,7 +443,7 @@ SQL);
                 'platform.ops.restore.submitted',
                 'restore.submit',
             );
-            $restore = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($context, $submission);
+            $restore = $this->tasks->dispatch($context, $submission);
             $this->succeedStep((string)$task['task_key'], 'backup', (string)$evidence['manifest_sha256']);
             $this->startStep((string)$task['task_key'], 'restore_verification');
             $update = $this->pdo->prepare(<<<'SQL'
@@ -536,7 +540,7 @@ SQL);
             );
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-open');
             $requestDigest = hash('sha256', $maintenanceKey . ':' . $window->startsAt . ':' . $window->endsAt);
-            $created = (new PdoMaintenanceWindowStore($this->pdo))->schedule(
+            $created = $this->maintenance->schedule(
                 $context,
                 $window,
                 0,
@@ -564,8 +568,7 @@ SQL);
                 throw new \RuntimeException('OPS_UPGRADE_STEP_CONFLICT');
             }
 
-            $readiness = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))
-                ->upgradeReadiness($context);
+            $readiness = $this->runtimeStatus->upgradeReadiness($context);
             if (($readiness['state'] ?? null) !== 'ready'
                 || !hash_equals((string)$execution['target_descriptor_sha256'], (string)($readiness['target']['descriptor_sha256'] ?? ''))
                 || !hash_equals((string)$execution['backup_reference_key'], (string)($readiness['recovery_pointer']['backup_reference_key'] ?? ''))
@@ -837,15 +840,24 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformUpgradeExecutionService::TA
     }
 
     /** @param array<string,mixed> $task @param array<string,mixed> $metadata */
-    private function audit(array $task, string $eventType, string $action, array $metadata): void
+    private function audit(
+        array $task,
+        string $eventType,
+        string $action,
+        array $metadata,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+    ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             $action,
             'upgrade-' . substr((string)$task['task_key'], 4),
             (int)$task['submitted_by_operator_id'],
             (int)$task['account_id'],
             $metadata,
+            $outcome,
+            $reasonCode,
         );
     }
 

@@ -4,26 +4,28 @@ declare(strict_types=1);
 namespace app\adminapi\controller\decoration;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\decoration\DecorationPageApplicationService;
 use app\adminapi\validate\decoration\DecorationPageValidate;
 use app\common\enum\decoration\DecorationEnum;
-use app\common\service\decoration\DecorationTenantContext;
-use app\common\service\module\ModuleExecutionBoundary;
-use PeanutAdmin\Kernel\Module\ModuleException;
 
 class DecorationPageController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly DecorationPageApplicationService $decorationPages)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly DecorationPageApplicationService $decorationPages,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function mobileLists()
     {
         return $this->data($this->decorationPages->lists(
-            DecorationTenantContext::member(),
+            $this->tenantAdminContext(),
             DecorationEnum::MOBILE_TYPES
         ));
     }
@@ -46,7 +48,7 @@ class DecorationPageController extends BaseAdminController
     public function pcLists()
     {
         return $this->data($this->decorationPages->lists(
-            DecorationTenantContext::member(),
+            $this->tenantAdminContext(),
             [DecorationEnum::PC_HOME]
         ));
     }
@@ -60,13 +62,8 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.article');
-        try {
-            app(ModuleExecutionBoundary::class)->assertHttp('official.article', 'http.admin');
-        } catch (ModuleException) {
-            return $this->data([]);
-        }
         return $this->data($this->decorationPages->articleOptions(
-            DecorationTenantContext::member(),
+            $this->tenantAdminContext(),
             (int)($params['limit'] ?? 20)
         ));
     }
@@ -75,23 +72,22 @@ class DecorationPageController extends BaseAdminController
     {
         $params = $this->request->get();
         $this->validate($params, DecorationPageValidate::class . '.detail');
-        $result = $this->decorationPages->detail(
-            DecorationTenantContext::member(),
+        return $this->data($this->decorationPages->detail(
+            $this->tenantAdminContext(),
             (int)$params['id'],
             $allowedTypes
-        );
-        return $result === false ? $this->fail($this->decorationPages->getError()) : $this->data($result);
+        ));
     }
 
     private function save(array $allowedTypes)
     {
         $params = $this->request->post();
         $this->validate($params, DecorationPageValidate::class . '.save');
-        $result = $this->decorationPages->save(
-            DecorationTenantContext::member(),
+        $this->decorationPages->save(
+            $this->tenantAdminContext(),
             $params,
             $allowedTypes
         );
-        return $result ? $this->success('保存成功') : $this->fail($this->decorationPages->getError());
+        return $this->success('保存成功');
     }
 }

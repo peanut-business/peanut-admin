@@ -6,40 +6,48 @@ namespace app\common\service\audit;
 use app\common\contract\audit\AuditActor;
 use app\common\contract\audit\AuditEvent;
 use app\common\contract\audit\AuditResource;
+use app\common\execution\CurrentExecutionContext;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
 
 final class AuditContractHost implements AuditRepository
 {
     private OperationLogProjection $operationLogs;
 
-    public function __construct(private readonly PDO $pdo)
+    public function __construct(
+        private readonly PDO $pdo,
+        ?CurrentExecutionContext $execution,
+    )
     {
-        $this->operationLogs = new OperationLogProjection();
+        $this->operationLogs = new OperationLogProjection($execution);
     }
 
     public static function fromPdo(PDO $pdo): self
     {
-        return new self($pdo);
-    }
-
-    public static function production(): self
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new \RuntimeException('AUDIT_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return new self($pdo);
+        return new self($pdo, null);
     }
 
     public function record(AuditEvent $event): void
     {
         if ($event->projection === AuditEvent::OPERATION_LOG) {
-            $this->operationLogs->append($event);
-            $this->appendTenantEvent($event);
+            $ownsTransaction = !$this->pdo->inTransaction();
+            if ($ownsTransaction) {
+                $this->pdo->beginTransaction();
+            }
+            try {
+                $this->operationLogs->append($event);
+                $this->appendTenantEvent($event);
+                if ($ownsTransaction) {
+                    $this->pdo->commit();
+                }
+            } catch (\Throwable $exception) {
+                if ($ownsTransaction && $this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+                throw $exception;
+            }
             return;
         }
         if ($event->projection === AuditEvent::PLATFORM) {
@@ -73,6 +81,27 @@ final class AuditContractHost implements AuditRepository
             $reasonCode,
             $httpStatus,
         ));
+    }
+
+    public function appendPlatform(
+        string $eventType,
+        string $action,
+        string $requestId,
+        ?int $operatorId,
+        ?int $accountId,
+        array $metadata = [],
+    ): void {
+        $this->recordPlatform($eventType, $action, $requestId, $operatorId, $accountId, $metadata);
+    }
+
+    public function appendTenantSystem(
+        int $tenantId,
+        string $eventType,
+        string $action,
+        string $requestId,
+        array $metadata = [],
+    ): void {
+        $this->recordTenantSystem($tenantId, $eventType, $action, $requestId, $metadata);
     }
 
     public function recordPlatform(
@@ -119,31 +148,6 @@ final class AuditContractHost implements AuditRepository
             $reasonCode,
             $resource,
         ));
-    }
-
-    public function appendPlatform(
-        string $eventType,
-        string $action,
-        string $requestId,
-        ?int $operatorId,
-        ?int $accountId,
-        array $metadata = [],
-    ): void {
-        $reasonCode = isset($metadata['reason']) ? trim((string)$metadata['reason']) : null;
-        unset($metadata['reason']);
-        $this->recordPlatform($eventType, $action, $requestId, $operatorId, $accountId, $metadata, AuditOutcome::Success, $reasonCode);
-    }
-
-    public function appendTenantSystem(
-        int $tenantId,
-        string $eventType,
-        string $action,
-        string $requestId,
-        array $metadata = [],
-    ): void {
-        $reasonCode = isset($metadata['reason']) ? trim((string)$metadata['reason']) : null;
-        unset($metadata['reason']);
-        $this->recordTenantSystem($tenantId, $eventType, $action, $requestId, $metadata, AuditOutcome::Success, $reasonCode);
     }
 
     public function appendTenantMember(

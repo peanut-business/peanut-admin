@@ -5,18 +5,24 @@ namespace app\platform\http\middleware;
 
 use app\common\service\JsonService;
 use app\common\service\DemoAccountPolicy;
+use app\common\execution\CurrentExecutionContext;
 use app\platform\context\PlatformOperatorContext;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Authorization\AuthorizationException;
-use think\facade\Db;
-use app\common\execution\ExecutionContextAccess;
 
 final class PlatformPermissionMiddleware
 {
+    public function __construct(
+        private readonly CurrentExecutionContext $execution,
+        private readonly PlatformOperatorSessionService $sessions,
+        private readonly DemoAccountPolicy $demoAccounts,
+    ) {
+    }
+
     public function handle($request, \Closure $next, string $permission)
     {
         try {
-            $context = ExecutionContextAccess::platform();
+            $context = $this->execution->platform();
         } catch (\Throwable) {
             $context = null;
         }
@@ -28,15 +34,13 @@ final class PlatformPermissionMiddleware
         }
 
         try {
-            PlatformRuntimeFactory::sessions()->assertAllowed($context, $permission);
+            $this->sessions->assertAllowed($context, $permission);
         } catch (AuthorizationException) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform permission is required.', null, 40300);
         }
 
         if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-            $pdo = Db::connect()->connect();
-            if ($pdo instanceof \PDO
-                && DemoAccountPolicy::platformMutationLocked($pdo, $context->core->accountId)) {
+            if ($this->demoAccounts->platformMutationLocked($context->core->accountId)) {
                 throw \app\common\http\ApiProblem::fromEnvelope('演示账号已锁定平台权限和关键配置操作', null, 40300);
             }
         }

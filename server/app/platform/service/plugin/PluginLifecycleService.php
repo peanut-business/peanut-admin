@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\platform\service\plugin;
 
 use app\common\contract\module\PluginLifecycleCommands;
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
 use PDO;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 
@@ -25,10 +27,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         $plugin = $this->resolver->require($pluginKey);
         $this->assertTrustEligible($plugin);
         $lockName = $this->lockName($pluginKey);
-        if ($acquireLock && !$this->advisoryLock($lockName)) {
-            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
-        }
-        try {
+        $operation = function () use ($plugin, $pluginKey): array {
             $manifests = $this->pluginManifests($plugin);
             $this->assertPreflightOwnership($plugin, $manifests, false);
             $current = $this->pluginInstallation($pluginKey, false);
@@ -61,10 +60,14 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
                 throw new PluginLifecycleException('PLUGIN_ALREADY_INSTALLED', 'Use plugin:upgrade for an installed Plugin.');
             }
             return $this->activate($plugin, $manifests, false);
-        } finally {
-            if ($acquireLock) {
-                $this->releaseAdvisoryLock($lockName);
-            }
+        };
+        if (!$acquireLock) {
+            return $operation();
+        }
+        try {
+            return (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, $operation);
+        } catch (AdvisoryLockUnavailable) {
+            throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         }
     }
 
@@ -768,22 +771,6 @@ SQL);
     private function lockName(string $pluginKey): string
     {
         return 'pa:module-runtime:' . substr(hash('sha256', $pluginKey), 0, 40);
-    }
-
-    private function advisoryLock(string $name): bool
-    {
-        $statement = $this->pdo->prepare('SELECT GET_LOCK(?,0)');
-        $statement->execute([$name]);
-        return (int)$statement->fetchColumn() === 1;
-    }
-
-    private function releaseAdvisoryLock(string $name): void
-    {
-        try {
-            $statement = $this->pdo->prepare('SELECT RELEASE_LOCK(?)');
-            $statement->execute([$name]);
-        } catch (\Throwable) {
-        }
     }
 
 }

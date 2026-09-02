@@ -23,10 +23,7 @@ if ($requestPath === '/admin') {
     return true;
 }
 
-$adminApi = (bool) preg_match('#^/admin/login/(?:login|logout)/?$#', $requestPath);
-$apiRequest = str_starts_with($requestPath, '/api/');
-
-if (!$adminApi && !$apiRequest && str_starts_with($requestPath, '/admin/')) {
+if (str_starts_with($requestPath, '/admin/')) {
     $staticPath = __DIR__ . $requestPath;
 
     if (is_file($staticPath)) {

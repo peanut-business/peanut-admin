@@ -3,11 +3,15 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\persistence\AdvisoryLockExecution;
+use app\common\persistence\AdvisoryLockUnavailable;
+use app\Modules\Official\Task\Contracts\TaskScheduler;
+use PDO;
 use think\console\Input;
 use think\console\Output;
-use think\facade\Db;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
 /**
@@ -15,8 +19,18 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
  * 由系统 cron 每分钟调用一次：`* * * * * cd /path/to/server && php think crontab`
  * 每次调用扫描所有「运行中」任务，比对 cron 表达式，派发到期的 console 命令。
  */
-class Crontab extends ContextualCommand
+class Crontab extends DatabaseContextualCommand
 {
+    public function __construct(
+        ExecutionContextStore $contexts,
+        CurrentExecutionContext $executionContext,
+        PDO $pdo,
+        private readonly TaskScheduler $taskScheduler,
+        private readonly AdvisoryLockExecution $locks,
+    ) {
+        parent::__construct($contexts, $executionContext, $pdo);
+    }
+
     protected function configure()
     {
         $this->setName('crontab')->setDescription('定时任务调度器');
@@ -24,35 +38,27 @@ class Crontab extends ContextualCommand
 
     protected function handle(Input $input, Output $output): int
     {
-        if (!self::acquireSchedulerLock()) {
-            return 0;
-        }
         try {
-            (new TaskModuleProvider())->scheduler()->runDue(time());
-        } finally {
-            self::releaseSchedulerLock();
+            $this->locks->run(
+                'peanut:crontab:scheduler',
+                0,
+                fn() => $this->scheduler()->runDue(time()),
+            );
+        } catch (AdvisoryLockUnavailable) {
+            return 0;
         }
 
         return 0;
     }
 
     /** Compatibility entry for explicit trusted scheduler callers. */
-    public static function start(TenantScope $scope, array $item): void
+    public function start(TenantScope $scope, array $item): void
     {
-        (new TaskModuleProvider())->scheduler()->start($scope, $item);
+        $this->scheduler()->start($scope, $item);
     }
 
-    private static function acquireSchedulerLock(): bool
+    private function scheduler(): TaskScheduler
     {
-        $rows = Db::query("SELECT GET_LOCK('peanut:crontab:scheduler', 0) AS acquired");
-        return (int)($rows[0]['acquired'] ?? 0) === 1;
-    }
-
-    private static function releaseSchedulerLock(): void
-    {
-        try {
-            Db::query("SELECT RELEASE_LOCK('peanut:crontab:scheduler')");
-        } catch (\Throwable) {
-        }
+        return $this->taskScheduler;
     }
 }

@@ -289,7 +289,8 @@ function initializeCoreIdentity(
     PDO $pdo,
     string $email,
     string $password,
-    ?array $platformCredentials
+    ?array $platformCredentials,
+    \app\common\service\DemoAccountPolicy $demoAccounts,
 ): array
 {
     foreach (KernelSchema::tableNames() as $table) {
@@ -308,8 +309,8 @@ function initializeCoreIdentity(
         \app\common\service\ApplicationPasswordPolicy::hasher()
     );
     $separatePlatformOperator = $platformCredentials !== null;
-    $demoBootstrapPassword = \app\common\service\DemoAccountPolicy::enabled()
-        ? \app\common\service\DemoAccountPolicy::bootstrapPassword()
+    $demoBootstrapPassword = $demoAccounts->enabled()
+        ? $demoAccounts->bootstrapPassword()
         : null;
     $platformPassword = $demoBootstrapPassword
         ?? ($platformCredentials['password'] ?? $password);
@@ -640,20 +641,26 @@ function installFreshDatabase(string $serverDir, array $input): array
         $adminEmail = $credentials['admin_email'];
         $adminPassword = $credentials['admin_password'];
         $platformCredentials = $credentials['platform_credentials'];
+        $demoAccounts = new \app\common\service\DemoAccountPolicy(
+            $pdo,
+            getenv('PEANUT_DEMO_MODE') === 'enabled',
+            array_values(array_filter([
+                $adminEmail,
+                $platformCredentials['email'] ?? '',
+            ])),
+        );
         $coreIdentity = initializeCoreIdentity(
             $pdo,
             $adminEmail,
             $adminPassword,
-            $platformCredentials
+            $platformCredentials,
+            $demoAccounts,
         );
-        if (\app\common\service\DemoAccountPolicy::enabled()) {
-            \app\common\service\DemoAccountPolicy::replaceCredentialHashes(
-                $pdo,
-                array_values(array_filter([
-                    $adminEmail,
-                    $platformCredentials['email'] ?? '',
-                ])),
-            );
+        if ($demoAccounts->enabled()) {
+            $demoAccounts->replaceCredentialHashes([
+                $adminEmail,
+                $platformCredentials['email'] ?? '',
+            ]);
         }
         executeSqlFiles($pdo, $files);
         seedBrandDefaults($pdo, brandWebsiteDefaults($serverDir));

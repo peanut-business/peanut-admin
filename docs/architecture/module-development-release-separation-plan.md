@@ -1,5 +1,9 @@
 # Module 独立开发与能力包发布分离方案（评审稿）
 
+> **已废弃**：本文是旧评审输入，不再承担 Application/Module 源码组织目标。
+> 现行目标以 [Application 与 Module 永久架构蓝图](application-module-blueprint/README.md) 为准；
+> 当前可执行的 Module 开发与发布操作仍以现行命令和开发指南为准。
+
 > 状态：评审稿，未实施
 >
 > 目的：解决前端项目、后端 ThinkPHP 项目独立开发时，开发人员被迫理解

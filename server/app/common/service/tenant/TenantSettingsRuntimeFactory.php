@@ -5,12 +5,12 @@ namespace app\common\service\tenant;
 
 final class TenantSettingsRuntimeFactory
 {
-    public static function service(): TenantSettingService
+    public function __construct(private readonly ThinkPhpTenantSettingsProvider $provider)
     {
-        return new TenantSettingService(new ThinkPhpTenantSettingsProvider());
     }
 
-    private function __construct()
+    public function service(): TenantSettingService
     {
+        return new TenantSettingService($this->provider);
     }
 }

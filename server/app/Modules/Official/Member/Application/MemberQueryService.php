@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Application;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\http\PageResult;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\MemberBalanceService;
-use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantRepository;
+use app\common\service\Money;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\support\PaginationInput;
@@ -18,6 +19,20 @@ final class MemberQueryService implements MemberQueries
 {
     public function __construct(private readonly CurrentExecutionContext $executionContext)
     {
+    }
+
+    public function identity(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+    ): ?MemberIdentitySnapshot {
+        return $this->identitySnapshot($context, $memberId, false);
+    }
+
+    public function lockedIdentity(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+    ): ?MemberIdentitySnapshot {
+        return $this->identitySnapshot($context, $memberId, true);
     }
 
     public function memberFields(
@@ -53,8 +68,8 @@ final class MemberQueryService implements MemberQueries
 
         return new MemberBalanceSnapshot(
             (int)$member->id,
-            MemberBalanceService::moneyToCents((string)$member->getData('user_money')),
-            MemberBalanceService::moneyToCents((string)$member->getData('total_recharge_amount')),
+            Money::toCents((string)$member->getData('user_money')),
+            Money::toCents((string)$member->getData('total_recharge_amount')),
         );
     }
 
@@ -70,11 +85,31 @@ final class MemberQueryService implements MemberQueries
             'page_size' => $pageSize,
         ])->result($query->order('id', 'desc'));
 
-        return new PageResult(
-            array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items),
-            $pageResult->total,
-            $pageResult->page,
-            $pageResult->pageSize,
+        return MemberTenantRepository::arrayPage($pageResult);
+    }
+
+    private function identitySnapshot(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+        bool $lock,
+    ): ?MemberIdentitySnapshot {
+        $query = MemberTenantRepository::members($context)->where('id', $memberId);
+        if ($lock) {
+            $query->lock(true);
+        }
+        $member = $query->findOrEmpty();
+        return $member->isEmpty() ? null : self::snapshot($member);
+    }
+
+    private static function snapshot(object $member): MemberIdentitySnapshot
+    {
+        return new MemberIdentitySnapshot(
+            (int)$member->id,
+            (string)$member->sn,
+            (string)$member->nickname,
+            (string)$member->avatar,
+            (string)$member->mobile,
+            (int)$member->status,
         );
     }
 }

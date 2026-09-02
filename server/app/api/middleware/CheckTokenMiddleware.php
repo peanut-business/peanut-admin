@@ -4,13 +4,11 @@ declare(strict_types=1);
 namespace app\api\middleware;
 
 use app\api\service\UserTokenService;
-use app\Modules\Official\Member\Model\Member;
-use app\common\execution\ExecutionContext;
+use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\JsonService;
 use app\common\service\member\MemberApiTenantContextResolver;
-use app\common\service\member\MemberTenantRepository;
 
 /**
  * 用户端登录中间件
@@ -20,8 +18,10 @@ use app\common\service\member\MemberTenantRepository;
 class CheckTokenMiddleware
 {
     public function __construct(
-        private readonly ?ExecutionContextStore $executionContexts = null,
-        private ?MemberApiTenantContextResolver $tenantContexts = null,
+        private readonly MemberQueries $members,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly MemberApiTenantContextResolver $tenantContexts,
+        private readonly UserTokenService $tokens,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -32,14 +32,15 @@ class CheckTokenMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('请求缺少 token', null, 40100);
         }
 
-        $memberId = UserTokenService::parseToken($token);
-        if ($memberId === false) {
+        try {
+            $memberId = $this->tokens->parseToken($token);
+        } catch (\UnexpectedValueException) {
             throw \app\common\http\ApiProblem::fromEnvelope('登录超时，请重新登录', null, 40100);
         }
 
         try {
             $requestId = RequestTrace::id($request, 'member');
-            $memberContext = $this->tenantContexts()->resolve(
+            $memberContext = $this->tenantContexts->resolve(
                 $memberId,
                 $token,
                 $requestId,
@@ -48,15 +49,15 @@ class CheckTokenMiddleware
             throw \app\common\http\ApiProblem::fromEnvelope('租户上下文不可用', null, 40300);
         }
 
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::member($memberContext, sprintf(
+        return $this->executionContexts->run(
+            \app\common\execution\ConsumerExecutionContext::member($memberContext, sprintf(
                 'http.member.%s.%s',
                 strtolower((string)$request->method()),
                 trim((string)$request->pathinfo(), '/'),
             )),
-            static function () use ($memberId, $next, $request) {
-                $member = MemberTenantRepository::members()->where('id', $memberId)->findOrEmpty();
-                if ($member->isEmpty()) {
+            function () use ($memberContext, $memberId, $next, $request) {
+                $member = $this->members->identity($memberContext, $memberId);
+                if ($member === null) {
                     throw \app\common\http\ApiProblem::fromEnvelope('账号不存在', null, 40100);
                 }
                 if (!$member->status) {
@@ -77,8 +78,4 @@ class CheckTokenMiddleware
         ) === 1 ? $matches[1] : '';
     }
 
-    private function tenantContexts(): MemberApiTenantContextResolver
-    {
-        return $this->tenantContexts ??= new MemberApiTenantContextResolver();
-    }
 }

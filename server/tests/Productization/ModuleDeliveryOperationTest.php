@@ -6,10 +6,16 @@ require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\ops\DeploymentModuleRequestService;
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\PdoMaintenanceWindowStore;
+use app\platform\service\ops\PdoOpsTaskDispatcher;
+use app\platform\service\ops\PairedBackupProvider;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use app\platform\service\ops\PlatformModuleOperationExecutionService;
 use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 
@@ -110,7 +116,13 @@ $pdo = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
 );
-$identity = initializeCoreIdentity($pdo, 'module-delivery@example.test', 'module-delivery-password', null);
+$identity = initializeCoreIdentity(
+    $pdo,
+    'module-delivery@example.test',
+    'module-delivery-password',
+    null,
+    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+);
 $serverRoot = dirname(__DIR__, 2);
 executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
 $migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
@@ -181,7 +193,14 @@ try {
     $v2Path = $packageDirectory . '/' . $v2['sha256'] . '.tar';
     rename($v2Temporary, $v2Path);
 
-    $requests = new DeploymentModuleRequestService($pdo, $target, $config, [], $registryPath);
+    $requests = new DeploymentModuleRequestService(
+        $pdo,
+        $target,
+        $config,
+        [],
+        new PluginRuntimeGovernanceService($pdo, $target . '/server', $config),
+        $registryPath,
+    );
     $preview = $requests->preview(
         'fixture-module-delivery', 'fixture-target', 'update', 'official-content-bundle', $v2['sha256'], null,
     );
@@ -208,11 +227,22 @@ try {
         'health' => 'healthy',
         'repository_clean' => true,
     ];
-    $platform = new PlatformModuleOperationExecutionService($pdo, $target, $config, [], $registryPath, $runtime);
+    $audit = AuditContractHost::fromPdo($pdo);
+    $tasks = new PdoOpsTaskDispatcher($pdo, $audit);
+    $maintenance = new PdoMaintenanceWindowStore($pdo, $audit);
+    $platform = new PlatformModuleOperationExecutionService($pdo, $tasks, $requests, $runtime);
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
 
-    $executor = new PdoModuleOperationTaskExecutionService($pdo, $target, $config, [], $registryPath, $runtime);
+    $executor = new PdoModuleOperationTaskExecutionService(
+        $pdo,
+        $audit,
+        $tasks,
+        $maintenance,
+        $requests,
+        new BackupRestoreProviderRegistry([new PairedBackupProvider()]),
+        $runtime,
+    );
     $claimed = $executor->claim();
     moduleDeliveryExpect(is_array($claimed) && ($claimed['current_step'] ?? null) === 'preflight', 'Module operation was not claimed');
     $taskKey = (string)$claimed['task_key'];
@@ -263,7 +293,7 @@ SQL)->execute([
 
     $route = peanut_route_registry_source($serverRoot);
     $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformOpsController.php');
-    moduleDeliveryExpect(str_contains($route, "api/platform/v1/ops/tasks/module"), 'opaque Module task route is missing');
+    moduleDeliveryExpect(str_contains($route, "v1/ops/tasks/module"), 'opaque Module task route is missing');
     moduleDeliveryExpect(!str_contains($controller, "archive_sha256'") && !str_contains($controller, "package_key'"), 'production HTTP accepts Module package details');
 
     $completed = true;

@@ -40,10 +40,20 @@ export function useRequest() {
   const client = createClient({
     transport: createNuxtClientTransport({
       baseUrl,
-      $fetch: (url, options) => $fetch(
-        url,
-        options as unknown as Parameters<typeof $fetch>[1],
-      ),
+      $fetch: async (url, options) => {
+        try {
+          return await $fetch(
+            url,
+            options as unknown as Parameters<typeof $fetch>[1],
+          )
+        } catch (error) {
+          const data = typeof error === 'object' && error !== null && 'data' in error
+            ? error.data
+            : undefined
+          if (isApiResponse(data)) return data
+          throw error
+        }
+      },
     }),
     session: {
       accessToken: () => userStore.token,

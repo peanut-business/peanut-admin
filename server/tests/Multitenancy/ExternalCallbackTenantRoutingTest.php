@@ -6,9 +6,9 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 use app\common\service\external\ExternalTenantAudit;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantBindingRepository;
-use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\service\external\ThinkPhpExternalTenantBindingRepository;
 
 function externalExpect(bool $condition, string $message): void
 {
@@ -41,7 +41,7 @@ final class ExternalFixtureRepository implements ExternalTenantBindingRepository
         return $this->matching($provider, static fn(): bool => true);
     }
 
-    public function byTenant(string $provider, int $tenantId): array
+    public function byTenant(string $provider, int $tenantId, bool $lock = false): array
     {
         return $this->matching($provider, static fn(ExternalTenantBinding $binding): bool =>
             $binding->tenantId === $tenantId);
@@ -200,15 +200,16 @@ $root = dirname(__DIR__, 2);
 $paymentController = (string)file_get_contents($root . '/app/api/controller/PaymentNotifyController.php');
 $officialController = (string)file_get_contents($root . '/app/api/controller/OfficialAccountController.php');
 $oauthController = (string)file_get_contents($root . '/app/api/controller/OAuthController.php');
-$settlement = (string)file_get_contents($root . '/app/api/application/RechargeApplicationService.php');
+$settlement = (string)file_get_contents($root . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 $schema = (string)file_get_contents($root . '/database/init.sql');
-$bindingService = (string)file_get_contents($root . '/app/common/service/external/ExternalChannelBindingService.php');
+$bindingRepository = (string)file_get_contents($root . '/app/common/service/external/ThinkPhpExternalTenantBindingRepository.php');
 $bootstrapService = (string)file_get_contents($root . '/app/platform/service/ApplicationTenantBootstrapService.php');
 foreach ([$paymentController, $officialController, $oauthController] as $source) {
     externalExpect(!str_contains($source, "['tenant_id']") && !str_contains($source, "get('tenant_id")
         && !str_contains($source, "header('tenant_id"), 'callback wiring trusts request tenant_id');
 }
-externalExpect(strpos($paymentController, 'verifiedCallback(') < strpos($paymentController, 'app(RechargeApplicationService::class)->settleVerifiedCallback('), 'payment write precedes verification');
+externalExpect(!str_contains($paymentController, 'static function () use ($event, $resolution): void'), 'payment callback uses injected service from a static closure');
+externalExpect(strpos($paymentController, 'verifiedCallback(') < strpos($paymentController, '$this->recharges->settleVerifiedCallback('), 'payment write precedes verification');
 externalExpect(str_contains($settlement, 'settle(object $context'), 'settlement does not require a verified context port');
 externalExpect(!str_contains($settlement, 'VerifiedPaymentTenantResolver::resolve'), 'settlement still derives Tenant from an order number');
 foreach (['uk_external_callback_key', 'uk_external_provider_identity', 'uk_external_tenant_provider',
@@ -222,7 +223,7 @@ externalExpect(
 );
 foreach (['Db::transaction(', "->where('tenant_id', \$tenantId)", "->lock(true)",
     "'callback_key' => \$callbackKey", 'bin2hex(random_bytes(32))'] as $marker) {
-    externalExpect(str_contains($bindingService, $marker), 'binding Runtime invariant missing: ' . $marker);
+    externalExpect(str_contains($bindingRepository, $marker), 'binding persistence invariant missing: ' . $marker);
 }
 externalExpect(
     str_contains($bootstrapService, "'callback_key' => bin2hex(random_bytes(32))")
@@ -230,7 +231,7 @@ externalExpect(
     'Tenant bootstrap still derives callback keys from tenant identity'
 );
 
-$keyTransition = new ReflectionMethod(ExternalChannelBindingService::class, 'callbackKeyForUpdate');
+$keyTransition = new ReflectionMethod(ThinkPhpExternalTenantBindingRepository::class, 'callbackKeyForUpdate');
 $keyTransition->setAccessible(true);
 $provider = ExternalTenantResolver::WECHAT_PAYMENT;
 $placeholder = hash('sha256', 'fresh-default:' . $provider);

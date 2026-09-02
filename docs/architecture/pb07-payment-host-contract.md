@@ -32,9 +32,10 @@
 
 ## 4. 退款与外部结果合同
 
-- 历史首次退款在本地事务内锁订单、单次扣余额并建立主 record/log，再调用外部渠道；明确失败进入 ERROR，可能已受理但结果未知时保持 ING，不能伪造成功。
+- 首次退款在本地事务内锁订单、单次扣余额并建立主 record/log，提交后才调用外部渠道；明确失败进入 ERROR，可能已受理但结果未知时保持 ING，不能伪造成功。
 - 部分/多次退款由 Finance Host 独立拥有；每次退款先生成独立 `RefundRecord.sn` 并作为余额流水 source，充值入账继续使用充值订单号。`PAYMENT-DYNAMIC-PAY240DYN-001` 已验证部分退款、重复请求与失败重试不会重复扣款，也不会与充值流水的唯一约束冲突。
-- 失败重试复用同一 record，只新增 attempt log，不再次扣余额；MySQL 命名锁覆盖外部请求周期。`refund:reconcile` 只收敛当前 ING record 的最近 ING log。
+- 首次请求、失败重试和 `refund:reconcile` 的 Provider refund/query 幂等键统一使用稳定的 `RefundRecord.sn`；`RefundLog.sn` 只标识本地 attempt。失败重试复用同一 record，只新增 attempt log，不再次扣余额；MySQL 命名锁覆盖外部请求周期。
+- Provider 调用保持在数据库事务外；调用返回后短事务锁定 record/log，把本地业务结果与现有幂等 receipt finalize 一并提交或回滚。`refund:reconcile` 只收敛当前 ING record 的最近 ING log。
 - 退款 gateway 与预支付/回调共用 `PaymentServiceFactory`、`PaymentTransportInterface` 和 `PaymentCrypto`；旧静态 `RefundGatewayService` 退出，不保留第二条签名/HTTP 路径。
 - 微信预支付、退款请求和退款查询都必须用配置的平台证书验证响应时间戳、nonce、序列号和 RSA 签名。支付宝退款/查询必须验证响应节点原文的 RSA2 签名。
 - 数据库只保存 Provider 回执白名单和截断后的标量，不保存完整响应、证书、私钥、APIv3 密钥、请求 Authorization 或个人收款账户。
@@ -61,7 +62,7 @@ Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `s
 4. 退款只保存安全回执，调用方不持久化原始 Provider 响应；应用支付 owner 不 deep import 核心。
 5. 只读绑定封存 S01 单次入账/重复回调和 F02 首次单退款/单扣款证据，并保留 `real_merchant_called=false` 的外部停止线。
 
-数据库动态 owner `PAYMENT-DYNAMIC-PAY240DYN-001` 另行固定两个 Tenant 共享同一渠道、跨 Tenant 回调拒绝、撤销 grant 后拒绝新请求，以及部分退款/重复请求幂等；该证据已随 PR #240 合入，不因本文收口重复运行。
+数据库动态 owner `PAYMENT-DYNAMIC-PAY240DYN-001` 另行固定两个 Tenant 共享同一渠道、跨 Tenant 回调拒绝、撤销 grant 后拒绝新请求，以及部分退款/重复请求幂等；`MT03-RECHARGE-REFUND-TENANT-001` 在登记隔离库用假 Provider 覆盖已受理后异常、失败重试、reconcile、receipt finalize 回滚、重复请求重放与 Tenant 隔离。真实 Provider 仍不在本地合同范围。
 
 固定命令：
 

@@ -176,14 +176,20 @@ UNIQUE KEY uk_fixture_delivery_tenant_ref (tenant_id, reference)
 FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id)
 ```
 
-Repository 不能接收浏览器提交的任意 Tenant ID，而是从可信 `TenantContext` 取值：
+Repository 不能接收浏览器或跨 Module 调用方提交的任意 Tenant ID，而是从
+当前 `CurrentExecutionContext` 取值。ThinkORM Tenant Model 的 global scope 也只消费这一个值：
 
 ```php
+$tenantId = $executionContext->tenantId();
 $statement->execute([
-    'tenant_id' => $context->tenantId,
+    'tenant_id' => $tenantId,
     'reference' => $reference,
 ]);
 ```
+
+合同因身份验证需要保留显式 context 时，它必须与当前 execution Tenant 一致，
+不能再另外驱动 ORM scope。Platform 跨 Tenant 读取只能使用 Host 提供的显式、可审计
+gateway，Module 不能自行取消 global scope。
 
 ### 2. 定义公开合同
 
@@ -192,13 +198,15 @@ $statement->execute([
 ```php
 interface DeliveryRecordCommands
 {
-    public function record(TenantContext $context, string $reference): array;
-    public function list(TenantContext $context): array;
+    public function record(string $reference): array;
+    public function list(): array;
 }
 ```
 
 合同使用稳定业务输入和 DTO，不泄漏 PDO、ThinkPHP Model 或私有表名。`ModuleProvider` 负责
 装配具体实现；调用方不能自行 new 另一个模块的 Repository。
+新 Tenant 初始化也遵守同一边界：Host bootstrap 建立 Tenant system execution context 后调用
+Module Commands，不得直接写入 Module 自有表。
 
 ### 3. 登记权限和菜单
 

@@ -162,8 +162,8 @@
         page_size: pagination.pageSize,
       });
       renderData.value = data.lists;
-      pagination.current = data.page_no;
-      pagination.pageSize = data.page_size;
+      pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
       pagination.total = data.count;
     } finally {
       setLoading(false);

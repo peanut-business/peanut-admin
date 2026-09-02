@@ -4,13 +4,25 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Contracts;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\common\http\PageResult;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 interface MemberQueries
 {
+    public function identity(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+    ): ?MemberIdentitySnapshot;
+
+    /** The caller owns the transaction containing this row lock. */
+    public function lockedIdentity(
+        AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        int $memberId,
+    ): ?MemberIdentitySnapshot;
+
     /**
      * Returns Tenant-scoped member fields without resolving file URLs.
      * Consumers keep presentation and storage URL handling at their boundary.

@@ -14,22 +14,28 @@ $serverRoot = dirname(__DIR__, 2);
 $read = static fn(string $path): string => (string)file_get_contents($serverRoot . '/' . $path);
 
 $noticeController = $read('app/Modules/Official/Notification/Http/Controller/NoticeChannelController.php');
+$notificationApplication = $read('app/Modules/Official/Notification/Application/NotificationApplicationService.php');
 $noticeService = $read('app/common/service/notice/NoticeChannelService.php');
 $sender = $read('app/common/service/notice/ApplicationNoticeSmsSender.php');
-$verification = $read('app/common/service/notice/VerificationCodeService.php');
+$verification = $read('app/Modules/Official/Notification/Application/VerificationCodeService.php');
 $menuController = $read('app/Modules/Official/Oauth/Http/Controller/OfficialAccountMenuController.php');
 $menuLogic = $read('app/Modules/Official/Oauth/Application/OfficialAccountMenuApplicationService.php');
 
 foreach ([$noticeController, $menuController] as $controller) {
     expectChannelBindingTenant(
-        str_contains($controller, 'MemberTenantContext::member()'),
+        str_contains($controller, 'CurrentExecutionContext $executionContext'),
         'admin controller does not inject its trusted Tenant context'
     );
 }
+expectChannelBindingTenant(
+    str_contains($noticeController, 'NotificationQueries $queries')
+        && str_contains($notificationApplication, '$this->executionContext->tenantAdmin()'),
+    'notification application service drops the trusted Tenant context'
+);
 
 foreach ([
     "private const BINDING_PROVIDER = 'notice.sms'",
-    'ExternalChannelBindingService::mutate',
+    '$this->bindings->mutate(',
     "'sms_default'",
     "'sms_aliyun'",
     "'sms_tencent'",
@@ -46,7 +52,8 @@ expectChannelBindingTenant(
     'Tenant SMS configuration falls back to global pa_config'
 );
 expectChannelBindingTenant(
-    str_contains($sender, 'NoticeChannelService::sendSms($context,'),
+    str_contains($sender, '$this->channels->sendSms(')
+        && str_contains($sender, '$this->contexts,'),
     'application sender drops the trusted Tenant context'
 );
 expectChannelBindingTenant(
@@ -54,7 +61,7 @@ expectChannelBindingTenant(
     'verification sender call does not preserve the trusted Tenant context'
 );
 
-foreach (['ExternalChannelBindingService::config', 'ExternalChannelBindingService::update',
+foreach (['$this->bindings->config(', '$this->bindings->update(',
     'ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK'] as $marker) {
     expectChannelBindingTenant(str_contains($menuLogic, $marker), 'official-account menu binding invariant missing: ' . $marker);
 }

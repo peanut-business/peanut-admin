@@ -6,18 +6,17 @@ namespace app\common\service\authorization;
 use app\common\dto\authorization\AdminPrincipal;
 use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
 
 /** Reads the management principal exclusively from the Core identity and RBAC tables. */
 final class NativeAdminPrincipalRepository
 {
-    public function __construct(private ?PDO $pdo = null)
+    public function __construct(private readonly PDO $pdo)
     {
     }
 
     public function require(TenantContext $context): AdminPrincipal
     {
-        $statement = $this->connection()->prepare(<<<'SQL'
+        $statement = $this->pdo->prepare(<<<'SQL'
 SELECT
     tm.id,
     tm.tenant_id,
@@ -104,7 +103,7 @@ SQL);
     /** @return list<array{id:int,key:string,name:string,is_builtin:bool}> */
     private function roles(int $tenantId, int $memberId): array
     {
-        $statement = $this->connection()->prepare(<<<'SQL'
+        $statement = $this->pdo->prepare(<<<'SQL'
 SELECT r.id, r.`key`, r.name, r.is_builtin
 FROM pa_member_role mr
 JOIN pa_role r
@@ -126,17 +125,5 @@ SQL);
             ];
         }
         return $roles;
-    }
-
-    private function connection(): PDO
-    {
-        if ($this->pdo instanceof PDO) {
-            return $this->pdo;
-        }
-        $connection = Db::connect()->connect();
-        if (!$connection instanceof PDO) {
-            throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-        }
-        return $connection;
     }
 }

@@ -20,6 +20,13 @@ final class ThinkPhpTenantSettingsProvider implements TenantSettingsProvider
 
     public function replace(int $tenantId, string $namespace, array $document): TenantSettingSnapshot
     {
+        return Db::transaction(
+            fn(): TenantSettingSnapshot => $this->replaceLocked($tenantId, $namespace, $document),
+        );
+    }
+
+    private function replaceLocked(int $tenantId, string $namespace, array $document): TenantSettingSnapshot
+    {
         $encoded = json_encode($document, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $row = Db::name('tenant_setting')->where('tenant_id', $tenantId)->where('namespace', $namespace)->lock(true)->find();
         $now = time();

@@ -4,13 +4,13 @@ declare(strict_types=1);
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\adminapi\application\log\OperationLogApplicationService;
 use app\adminapi\service\OperationLogService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\audit\OperationLogDiagnostics;
-use app\common\service\audit\OperationLogTenantContext;
+use app\common\execution\CurrentExecutionContext;
+use app\platform\service\ops\PlatformDiagnosticBundleService;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -59,6 +59,35 @@ CREATE TABLE pa_operation_log (
   KEY idx_operation_log_tenant_created (tenant_id, create_time, id),
   CONSTRAINT fk_operation_log_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+CREATE TABLE pa_tenant_audit_event (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  event_type VARCHAR(128) NOT NULL,
+  action VARCHAR(255) NOT NULL,
+  outcome VARCHAR(32) NOT NULL,
+  reason_code VARCHAR(128) NULL,
+  actor_tenant_id BIGINT UNSIGNED NULL,
+  actor_tenant_member_id BIGINT UNSIGNED NULL,
+  actor_account_id BIGINT UNSIGNED NULL,
+  actor_platform_operator_id BIGINT UNSIGNED NULL,
+  actor_type VARCHAR(64) NOT NULL,
+  target_resource_type VARCHAR(128) NULL,
+  target_resource_id VARCHAR(255) NULL,
+  boundary_target_type VARCHAR(128) NULL,
+  boundary_target_id VARCHAR(255) NULL,
+  target_count INT UNSIGNED NOT NULL DEFAULT 0,
+  target_set_digest VARCHAR(255) NULL,
+  authorization_basis_json TEXT NULL,
+  request_id VARCHAR(128) NOT NULL,
+  operation_id VARCHAR(128) NULL,
+  ip_address VARCHAR(50) NULL,
+  user_agent_hash VARCHAR(255) NULL,
+  before_json TEXT NULL,
+  after_json TEXT NULL,
+  metadata_json TEXT NULL,
+  occurred_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
 SQL);
 }
 
@@ -68,7 +97,7 @@ $port = (int)IsolatedBackendEnvironment::required('DB_PORT');
 $user = IsolatedBackendEnvironment::required('DB_USER');
 $password = IsolatedBackendEnvironment::required('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
-$database = 'peanut_admin_mt03_audit_' . $runId;
+$database = IsolatedBackendEnvironment::required('DB_NAME');
 
 $admin = new PDO(
     "mysql:host={$host};port={$port};charset=utf8mb4",
@@ -96,19 +125,19 @@ try {
     $alpha = operationTenantContext(101, 501, 'mt03-audit-alpha-' . $runId);
     $beta = operationTenantContext(202, 502, 'mt03-audit-beta-' . $runId);
     try {
-        OperationLogTenantContext::member();
+        app(CurrentExecutionContext::class)->tenantAdmin();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectOperationTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
     }
     expectOperationTenant(
-        OperationLogDiagnostics::attributes(null) === [
+        TenantDiagnosticAttributes::fromTenantContext(null) === [
             'scope' => 'unavailable', 'tenant_id' => null, 'request_id' => '',
         ],
         'unavailable diagnostics were attributed to a default Tenant'
     );
     expectOperationTenant(
-        OperationLogDiagnostics::attributes($alpha)['tenant_id'] === 101,
+        TenantDiagnosticAttributes::fromTenantContext($alpha)['tenant_id'] === 101,
         'trusted diagnostics lost Tenant attribution'
     );
 
@@ -117,7 +146,7 @@ try {
         public function method(): string { return 'POST'; }
     };
     try {
-        (new OperationLogMiddleware())->handle($missingRequest, function () use (&$handlerCalled): void {
+        $app->make(OperationLogMiddleware::class)->handle($missingRequest, function () use (&$handlerCalled): void {
             $handlerCalled = true;
         });
         throw new RuntimeException('middleware accepted a write without TenantContext');
@@ -130,8 +159,8 @@ try {
     }
 
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.record.alpha'),
-        fn() => OperationLogService::record(
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.record.alpha'),
+        fn() => app(OperationLogService::class)->record(
             $alpha,
             1,
             'alpha',
@@ -148,8 +177,8 @@ try {
         ),
     );
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.operation-log.record.beta'),
-        fn() => OperationLogService::record(
+        new \app\common\execution\AdminExecutionContext($beta, 'test.operation-log.record.beta'),
+        fn() => app(OperationLogService::class)->record(
             $beta,
             2,
             'beta',
@@ -160,9 +189,9 @@ try {
                 'tenant_id' => 101,
                 'marker' => 'beta-only-' . $runId,
             ],
-            AuditOutcome::Success,
-            null,
-            200,
+            AuditOutcome::Denied,
+            'HTTP_403',
+            403,
         ),
     );
     expectOperationTenant(
@@ -173,14 +202,92 @@ try {
         (int)$pdo->query("SELECT tenant_id FROM pa_operation_log WHERE username = 'beta'")->fetchColumn() === 202,
         'payload forged Beta audit ownership'
     );
+    $betaAudit = $pdo->query("SELECT tenant_id,request_id,outcome,reason_code,target_resource_id,metadata_json FROM pa_tenant_audit_event WHERE request_id='mt03-audit-beta-{$runId}'")->fetch(PDO::FETCH_ASSOC);
+    expectOperationTenant(
+        $betaAudit !== false
+            && (int)$betaAudit['tenant_id'] === 202
+            && $betaAudit['outcome'] === 'denied'
+            && $betaAudit['reason_code'] === 'HTTP_403'
+            && $betaAudit['target_resource_id'] === 'same/write',
+        'Operation Log projections lost Tenant, request, outcome, reason, or route correlation',
+    );
+    expectOperationTenant(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_operation_log WHERE request_id='mt03-audit-beta-{$runId}'")->fetchColumn() === 1
+            && (int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_audit_event WHERE request_id='mt03-audit-beta-{$runId}'")->fetchColumn() === 1,
+        'one Operation Log fact was not projected exactly once to both stores',
+    );
+
+    $projectionFailure = operationTenantContext(101, 503, 'mt03-audit-rollback-' . $runId);
+    $operationCountBeforeFailure = (int)$pdo->query('SELECT COUNT(*) FROM pa_operation_log')->fetchColumn();
+    $pdo->exec("CREATE TRIGGER reject_tenant_audit_projection BEFORE INSERT ON pa_tenant_audit_event FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'injected projection failure'");
+    try {
+        app(ExecutionContextStore::class)->run(
+            new \app\common\execution\AdminExecutionContext($projectionFailure, 'test.operation-log.rollback'),
+            fn() => app(OperationLogService::class)->record(
+                $projectionFailure,
+                3,
+                'rollback-user',
+                '127.0.0.3',
+                'rollback/write',
+                'POST',
+                ['password' => 'must-not-survive'],
+            ),
+        );
+        throw new RuntimeException('injected audit projection failure unexpectedly committed');
+    } catch (PDOException $exception) {
+        expectOperationTenant(
+            str_contains($exception->getMessage(), 'injected projection failure'),
+            'atomic projection failure returned another database error',
+        );
+    } finally {
+        $pdo->exec('DROP TRIGGER reject_tenant_audit_projection');
+    }
+    expectOperationTenant(
+        (int)$pdo->query('SELECT COUNT(*) FROM pa_operation_log')->fetchColumn() === $operationCountBeforeFailure
+            && (int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_audit_event WHERE request_id='mt03-audit-rollback-{$runId}'")->fetchColumn() === 0,
+        'projection failure left a half-persisted Operation Log fact',
+    );
+
+    $evidenceMethod = new ReflectionMethod(PlatformDiagnosticBundleService::class, 'operationLogEvidence');
+    $evidence = $evidenceMethod->invoke(
+        $app->make(PlatformDiagnosticBundleService::class),
+        new DateTimeImmutable('2000-01-01T00:00:00Z'),
+    );
+    $evidenceByRequest = array_column($evidence, null, 'request_id');
+    expectOperationTenant(
+        isset($evidenceByRequest['mt03-audit-alpha-' . $runId], $evidenceByRequest['mt03-audit-beta-' . $runId])
+            && $evidenceByRequest['mt03-audit-alpha-' . $runId]['tenant_id'] === 101
+            && $evidenceByRequest['mt03-audit-beta-' . $runId]['tenant_id'] === 202,
+        'diagnostic Operation Log evidence lost request correlation or Tenant isolation',
+    );
+    $encodedEvidence = json_encode($evidence, JSON_THROW_ON_ERROR);
+    foreach (['alpha-only-' . $runId, 'beta-only-' . $runId, '127.0.0.1', '127.0.0.2', 'metadata_json'] as $prohibited) {
+        expectOperationTenant(
+            !str_contains($encodedEvidence, $prohibited),
+            'diagnostic Operation Log evidence leaked payload, identity, IP, or metadata: ' . $prohibited,
+        );
+    }
+    expectOperationTenant(
+        $evidenceByRequest['mt03-audit-beta-' . $runId] === [
+            'tenant_id' => 202,
+            'request_id' => 'mt03-audit-beta-' . $runId,
+            'operation_id' => null,
+            'operation' => 'POST same/write',
+            'outcome' => 'denied',
+            'reason_code' => 'HTTP_403',
+            'route' => 'same/write',
+            'occurred_at' => $evidenceByRequest['mt03-audit-beta-' . $runId]['occurred_at'],
+        ],
+        'diagnostic Operation Log evidence changed its minimal redacted shape',
+    );
 
     $alphaList = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.list.alpha'),
-        fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 202, 'uri' => 'same/write']),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.list.alpha'),
+        fn() => app(OperationLogApplicationService::class)->lists($alpha, ['tenant_id' => 202, 'uri' => 'same/write']),
     );
     $betaList = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.operation-log.list.beta'),
-        fn() => app(OperationLogApplicationService::class)->lists(['tenant_id' => 101, 'uri' => 'same/write']),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.operation-log.list.beta'),
+        fn() => app(OperationLogApplicationService::class)->lists($beta, ['tenant_id' => 101, 'uri' => 'same/write']),
     );
     expectOperationTenant(
         $alphaList->total() === 1
@@ -197,8 +304,8 @@ try {
     foreach ([$betaId, 999999] as $target) {
         try {
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.operation-log.detail.denied'),
-                fn() => app(OperationLogApplicationService::class)->detail($target),
+                new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.detail.denied'),
+                fn() => app(OperationLogApplicationService::class)->detail($alpha, $target),
             );
             throw new RuntimeException('cross/missing audit detail unexpectedly succeeded');
         } catch (InvalidArgumentException $exception) {
@@ -207,8 +314,8 @@ try {
     }
 
     $export = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.export.alpha'),
-        fn() => app(OperationLogApplicationService::class)->lists([
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.export.alpha'),
+        fn() => app(OperationLogApplicationService::class)->lists($alpha, [
             'tenant_id' => 202,
             'uri' => 'same/write',
             'export' => 2,
@@ -233,8 +340,8 @@ try {
     expectOperationTenant(!str_contains($sheet, 'beta-only-' . $runId), 'Alpha export leaked Beta audit content');
 
     $cleared = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.operation-log.clear.alpha'),
-        fn() => app(OperationLogApplicationService::class)->clear(1, 'alpha', '127.0.0.1'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.operation-log.clear.alpha'),
+        fn() => app(OperationLogApplicationService::class)->clear($alpha, 1, 'alpha', '127.0.0.1'),
     );
     expectOperationTenant($cleared === 2, 'Alpha clear did not count only Alpha rows');
     expectOperationTenant(

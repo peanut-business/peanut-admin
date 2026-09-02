@@ -5,7 +5,6 @@ namespace app\api\service;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use think\facade\Config;
 
 /**
  * 用户端 JWT Token 服务（无状态，与 AdminTokenService 同构）
@@ -17,15 +16,25 @@ class UserTokenService
     private const AUDIENCE = 'peanut-admin-member-api';
     private const SUBJECT_PREFIX = 'member:';
 
-    public static function createToken(int $memberId): string
+    public function __construct(
+        private readonly string $secret,
+        private readonly int $expire,
+    ) {
+        if (strlen($this->secret) < 32) {
+            throw new \RuntimeException('JWT_SECRET 必须至少为 32 字节');
+        }
+        if ($this->expire < 1) {
+            throw new \RuntimeException('JWT 有效期配置无效');
+        }
+    }
+
+    public function createToken(int $memberId): string
     {
         if ($memberId < 1) {
             throw new \InvalidArgumentException('会员身份无效');
         }
-        $secret = self::secret();
-        $expire = self::expire();
         $issuedAt = time();
-        if ($expire > PHP_INT_MAX - $issuedAt) {
+        if ($this->expire > PHP_INT_MAX - $issuedAt) {
             throw new \RuntimeException('JWT 有效期配置无效');
         }
         $payload = [
@@ -34,19 +43,19 @@ class UserTokenService
             'sub'       => self::SUBJECT_PREFIX . $memberId,
             'iat'       => $issuedAt,
             'nbf'       => $issuedAt,
-            'exp'       => $issuedAt + $expire,
+            'exp'       => $issuedAt + $this->expire,
             'member_id' => $memberId,
         ];
-        return JWT::encode($payload, $secret, self::ALGORITHM);
+        return JWT::encode($payload, $this->secret, self::ALGORITHM);
     }
 
-    public static function parseToken(string $token): int|false
+    public function parseToken(string $token): int
     {
         try {
             if ($token === '') {
-                return false;
+                throw new \UnexpectedValueException('MEMBER_TOKEN_INVALID');
             }
-            $decoded = JWT::decode($token, new Key(self::secret(), self::ALGORITHM));
+            $decoded = JWT::decode($token, new Key($this->secret, self::ALGORITHM));
             $memberId = is_int($decoded->member_id ?? null) && $decoded->member_id > 0
                 ? $decoded->member_id
                 : null;
@@ -65,30 +74,14 @@ class UserTokenService
                 || !hash_equals(self::AUDIENCE, $decoded->aud)
                 || !is_string($decoded->sub ?? null)
                 || !hash_equals(self::SUBJECT_PREFIX . $memberId, $decoded->sub)) {
-                return false;
+                throw new \UnexpectedValueException('MEMBER_TOKEN_INVALID');
             }
             return $memberId;
-        } catch (\Throwable) {
-            return false;
+        } catch (\UnexpectedValueException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            throw new \UnexpectedValueException('MEMBER_TOKEN_INVALID', 0, $exception);
         }
-    }
-
-    private static function secret(): string
-    {
-        $secret = (string) Config::get('jwt.secret', '');
-        if (strlen($secret) < 32) {
-            throw new \RuntimeException('JWT_SECRET 必须至少为 32 字节');
-        }
-        return $secret;
-    }
-
-    private static function expire(): int
-    {
-        $expire = Config::get('jwt.expire');
-        if (!is_int($expire) || $expire < 1) {
-            throw new \RuntimeException('JWT 有效期配置无效');
-        }
-        return $expire;
     }
 
     private static function timestamp(mixed $value): ?int

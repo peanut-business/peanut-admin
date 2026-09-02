@@ -3,14 +3,17 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\dept;
 
-use app\common\application\ApplicationService;
 use app\common\service\org\DepartmentAdministrationRuntime;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 
 /** Compatibility department tree backed by native pa_department. */
-final class DeptApplicationService extends ApplicationService
+final class DeptApplicationService
 {
+    public function __construct(private readonly DepartmentAdministrationRuntime $runtime)
+    {
+    }
+
     public function validationRules(string $scene): array
     {
         $rules = ['id' => 'require|integer|gt:0', 'name' => 'require|length:1,120',
@@ -22,7 +25,7 @@ final class DeptApplicationService extends ApplicationService
 
     public function lists(TenantContext $context, array $params = []): array
     {
-        $items = self::service()->list($context->tenantId, new PageRequest(1, 100))['items'];
+        $items = $this->service()->list($context->tenantId, new PageRequest(1, 100))['items'];
         $items = array_values(array_filter($items, static fn(array $row): bool =>
             (empty($params['name']) || str_contains((string)$row['name'], trim((string)$params['name'])))
             && (!isset($params['status']) || $params['status'] === '' || self::statusInt($row['status']) === (int)$params['status'])));
@@ -37,7 +40,7 @@ final class DeptApplicationService extends ApplicationService
     public function leaderDept(TenantContext $context): array
     {
         $flat = [];
-        foreach (self::service()->list($context->tenantId, new PageRequest(1, 100))['items'] as $row) {
+        foreach ($this->service()->list($context->tenantId, new PageRequest(1, 100))['items'] as $row) {
             if ($row['status'] === 'active') $flat[] = ['id' => (int)$row['id'], 'name' => $row['name']];
         }
         return $flat;
@@ -45,25 +48,21 @@ final class DeptApplicationService extends ApplicationService
 
     public function detail(TenantContext $context, int $id): array
     {
-        try { return self::compat(self::service()->get($context->tenantId, $id)); }
-        catch (\Throwable) { return []; }
+        return self::compat($this->service()->get($context->tenantId, $id));
     }
 
     public function add(TenantContext $context, array $params): bool
     {
-        try {
-            $department = self::service()->create($context->tenantId, self::code($params), (string)$params['name'],
+        $department = $this->service()->create($context->tenantId, self::code($params), (string)$params['name'],
                 (int)$params['pid'] > 0 ? (int)$params['pid'] : null, (int)($params['sort'] ?? 0),
                 $context->memberId, $context->accountId, $context->requestId);
-            if ((int)$params['status'] === 0) self::runtime()->setStatus($department, 0);
-            return true;
-        } catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
+            if ((int)$params['status'] === 0) $this->runtime->setStatus($department, 0);
+        return true;
     }
 
     public function edit(TenantContext $context, array $params): bool
     {
-        try {
-            $service = self::service();
+        $service = $this->service();
             $current = $service->get($context->tenantId, (int)$params['id']);
             $updated = $service->update($context->tenantId, (int)$params['id'], (string)$current['code'],
                 (string)$params['name'], (int)($params['sort'] ?? 0), (int)$current['revision'],
@@ -74,24 +73,21 @@ final class DeptApplicationService extends ApplicationService
                 $updated = $service->move($context->tenantId, (int)$params['id'], $parent, (int)$updated['revision'],
                     $context->memberId, $context->accountId, $context->requestId);
             }
-            self::runtime()->setStatus($updated, (int)$params['status']);
-            return true;
-        } catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
+            $this->runtime->setStatus($updated, (int)$params['status']);
+        return true;
     }
 
     public function delete(TenantContext $context, int $id): bool
     {
-        try {
-            $service = self::service(); $row = $service->get($context->tenantId, $id);
+        $service = $this->service(); $row = $service->get($context->tenantId, $id);
             $service->archive($context->tenantId, $id, (int)$row['revision'], $context->memberId, $context->accountId, $context->requestId);
-            return true;
-        } catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
+        return true;
     }
 
     public function updateStatus(TenantContext $context, int $id, int $status): bool
     {
-        try { self::runtime()->setStatus(self::service()->get($context->tenantId, $id), $status); return true; }
-        catch (\Throwable $e) { self::setError($e->getMessage()); return false; }
+        $this->runtime->setStatus($this->service()->get($context->tenantId, $id), $status);
+        return true;
     }
 
     private static function compat(array $row): array
@@ -112,6 +108,5 @@ final class DeptApplicationService extends ApplicationService
 
     private static function statusInt(string $status): int { return $status === 'active' ? 1 : 0; }
     private static function code(array $params): string { return 'application.department.' . bin2hex(random_bytes(8)); }
-    private static function service() { return self::runtime()->service(); }
-    private static function runtime(): DepartmentAdministrationRuntime { return app(DepartmentAdministrationRuntime::class); }
+    private function service() { return $this->runtime->service(); }
 }

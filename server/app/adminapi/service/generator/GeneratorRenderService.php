@@ -352,15 +352,17 @@ namespace app\adminapi\controller\{{module}};
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\{{module}}\{{entity}}ApplicationService;
 use app\adminapi\validate\{{module}}\{{entity}}Validate;
+use app\common\execution\CurrentExecutionContext;
 use think\App;
 
 class {{entity}}Controller extends BaseAdminController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $executionContext,
         private readonly {{entity}}ApplicationService $service,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()
@@ -446,18 +448,19 @@ namespace app\adminapi\application\{{module}};
 
 use app\common\http\PageResult;
 use app\common\model\{{module}}\{{entity}};
+use app\common\persistence\TransactionalExecution;
 use app\common\repository\{{module}}\{{entity}}Repository;
 use app\common\support\PaginationInput;
-use think\facade\Db;
 
 final readonly class {{entity}}ApplicationService
 {
     private const INSERT_FIELDS = {{insertFields}};
     private const UPDATE_FIELDS = {{updateFields}};
 
-    public function __construct(private {{entity}}Repository $records)
-    {
-    }
+    public function __construct(
+        private {{entity}}Repository $records,
+        private TransactionalExecution $transactions,
+    ) {}
 
     public function lists(array $params): array|PageResult
     {
@@ -491,7 +494,7 @@ final readonly class {{entity}}ApplicationService
 
     private function mutate(int|string $id, callable $callback): void
     {
-        Db::transaction(function () use ($id, $callback): void {
+        $this->transactions->run(function () use ($id, $callback): void {
             $callback($this->records->find($id, true));
         });
     }
@@ -573,7 +576,7 @@ PHP, $c + [
             $fields .= "  {$column['name']}" . ($column['required'] ? '' : '?') . ": {$column['tsType']};\n";
         }
         $treeField = $c['tree'] === [] ? '' : "  children?: {$c['entity']}Record[];\n";
-        $endpoint = "/api/admin/{$c['module']}/{$c['resource']}";
+        $endpoint = "/adminapi/{$c['module']}/{$c['resource']}";
         return self::replace(<<<'TS'
 import axios from 'axios';
 

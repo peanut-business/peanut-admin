@@ -11,7 +11,7 @@ description: ThinkPHP 后端的路由、服务、数据、命令与验证路径�
 
 ## 步骤
 
-1. 在 `server/route/` 的对应文件定位入口，在所属 Module 或 Host controller 处理传输层。
+1. 在 `server/route/` 的对应文件定位入口，在所属 Module 或 Host controller 处理传输层；管理端、Platform、安装和会员端分别使用 `/adminapi/*`、`/platformapi/*`、`/installapi/*` 与 `/api/*`。
 2. 把业务编排放到 owner 的 service/application 层；不要让 controller 跨 Module 写表。
 3. 数据变更按当前基线规则进入 Schema 或增量 migration，并同步数据 owner 合同。
 4. 新命令放在现有 command 装配点，保持 `--help` 是参数事实源。

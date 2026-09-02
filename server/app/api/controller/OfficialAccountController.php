@@ -4,40 +4,48 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\OfficialAccountApplicationService;
+use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
+use app\common\application\BusinessException;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\execution\ExecutionContext;
+use app\common\service\external\ExternalTenantResolutionException;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;
+use PeanutAdmin\Kernel\Module\ModuleException;
 
 class OfficialAccountController extends BaseApiController
 {
-    public function __construct(App $app, private readonly OfficialAccountApplicationService $officialAccount)
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly OfficialAccountCallbacks $officialAccount,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly ModuleExecutionBoundary $modules,
+        private readonly ExternalTenantResolver $externalTenants,
+    )
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['verify', 'callback'];
 
     public function verify()
     {
         $params = $this->request->get();
         try {
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+            $resolution = $this->externalTenants->verifiedCallback(
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.verify',
                 $this->operationId(),
-                static fn(array $config): bool => $this->officialAccount->verify($params, $config),
+                fn(array $config): bool => $this->officialAccount->verify($params, $config),
             );
-            app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
-                static fn() => app(ModuleExecutionBoundary::class)
-                    ->assertExternalCallback('official.oauth'),
+            $this->executionContexts->run(
+                new \app\common\execution\SystemExecutionContext($resolution->context),
+                fn() => $this->modules->assertExternalCallback('official.oauth'),
             );
-        } catch (\Throwable) {
+        } catch (ExternalTenantResolutionException|ModuleException) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
         }
         return response((string)($params['echostr'] ?? ''), 200, ['Content-Type' => 'text/plain; charset=utf-8']);
@@ -47,27 +55,27 @@ class OfficialAccountController extends BaseApiController
     {
         $params = $this->request->get();
         try {
-            $resolution = ExternalTenantResolver::production()->verifiedCallback(
+            $resolution = $this->externalTenants->verifiedCallback(
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
                 (string)$this->request->route('binding'),
                 'wechat.official.callback',
                 $this->operationId(),
-                static function (array $config) use ($params): bool {
+                function (array $config) use ($params): bool {
                     return strtolower((string)($params['encrypt_type'] ?? '')) !== 'aes'
                         && $this->officialAccount->verify($params, $config);
                 },
             );
-            $result = app(ExecutionContextStore::class)->run(
-                ExecutionContext::system($resolution->context),
+            $result = $this->executionContexts->run(
+                new \app\common\execution\SystemExecutionContext($resolution->context),
                 function () use ($resolution): string {
-                    app(ModuleExecutionBoundary::class)->assertExternalCallback('official.oauth');
+                    $this->modules->assertExternalCallback('official.oauth');
                     return $this->officialAccount->handlePlain(
                         $resolution->context,
                         (string)$this->request->getContent(),
                     );
                 },
             );
-        } catch (\Throwable) {
+        } catch (ExternalTenantResolutionException|ModuleException|BusinessException) {
             return response('callback rejected', 403, ['Content-Type' => 'text/plain; charset=utf-8']);
         }
         $contentType = $result === 'success' ? 'text/plain; charset=utf-8' : 'application/xml; charset=utf-8';

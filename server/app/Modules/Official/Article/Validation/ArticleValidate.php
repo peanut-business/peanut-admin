@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Validation;
 
-use app\common\service\article\ArticleTenantRepository;
+use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\validate\PageSizeRule;
 use app\common\validate\TenantContextValidate;
 

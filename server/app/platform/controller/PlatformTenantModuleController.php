@@ -3,16 +3,23 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
-use app\common\service\JsonService;
+use app\common\execution\CurrentExecutionContext;
 use app\platform\http\PlatformRequest;
-use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\validate\PlatformTenantModuleValidate;
 use DateTimeImmutable;
-use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
-use PeanutAdmin\Kernel\Module\ModuleException;
+use think\App;
 
 final class PlatformTenantModuleController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly PlatformTenantModuleService $tenantModules,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function enable()
     {
         if ($this->platformContext === null) {
@@ -21,29 +28,17 @@ final class PlatformTenantModuleController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformTenantModuleValidate::class . '.enable');
-        try {
-            return $this->data(PlatformRuntimeFactory::tenantModules()->enable(
-                PlatformRequest::bearerToken($this->request),
-                (int)$params['tenant_id'],
-                trim((string)$params['module_key']),
-                is_array($params['config'] ?? null) ? $params['config'] : [],
-                'manual',
-                $this->optionalDate($params['effective_at'] ?? null),
-                $this->optionalDate($params['expires_at'] ?? null),
-                trim((string)$params['change_reason']),
-                $this->platformContext->core->requestId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        } catch (ModuleException $exception) {
-            return $this->moduleFailure($exception);
-        } catch (\Exception) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Tenant Module request is invalid.',
-                ['error_code' => 'MODULE_REQUEST_INVALID'],
-                42200
-            );
-        }
+        return $this->data($this->tenantModules->enable(
+            PlatformRequest::bearerToken($this->request),
+            (int)$params['tenant_id'],
+            trim((string)$params['module_key']),
+            is_array($params['config'] ?? null) ? $params['config'] : [],
+            'manual',
+            $this->optionalDate($params['effective_at'] ?? null),
+            $this->optionalDate($params['expires_at'] ?? null),
+            trim((string)$params['change_reason']),
+            $this->platformContext->core->requestId
+        ));
     }
 
     public function disable()
@@ -54,19 +49,13 @@ final class PlatformTenantModuleController extends BasePlatformController
 
         $params = $this->request->post();
         $this->validate($params, PlatformTenantModuleValidate::class . '.disable');
-        try {
-            return $this->data(PlatformRuntimeFactory::tenantModules()->disable(
-                PlatformRequest::bearerToken($this->request),
-                (int)$params['tenant_id'],
-                trim((string)$params['module_key']),
-                trim((string)$params['change_reason']),
-                $this->platformContext->core->requestId
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->accessFailure($exception);
-        } catch (ModuleException $exception) {
-            return $this->moduleFailure($exception);
-        }
+        return $this->data($this->tenantModules->disable(
+            PlatformRequest::bearerToken($this->request),
+            (int)$params['tenant_id'],
+            trim((string)$params['module_key']),
+            trim((string)$params['change_reason']),
+            $this->platformContext->core->requestId
+        ));
     }
 
     private function optionalDate(mixed $value): ?DateTimeImmutable
@@ -80,24 +69,5 @@ final class PlatformTenantModuleController extends BasePlatformController
             throw new \InvalidArgumentException('Invalid date.');
         }
         return $date;
-    }
-
-    private function accessFailure(AdminAccessException $exception)
-    {
-        throw \app\common\http\ApiProblem::fromEnvelope(
-            $exception->getMessage(),
-            ['error_code' => $exception->errorCode],
-            $exception->httpStatus * 100
-        );
-    }
-
-    private function moduleFailure(ModuleException $exception)
-    {
-        $status = $exception->errorCode === 'MODULE_REGISTRY_UNAVAILABLE' ? 503 : 409;
-        throw \app\common\http\ApiProblem::fromEnvelope(
-            'Tenant Module request was rejected.',
-            ['error_code' => $exception->errorCode],
-            $status * 100
-        );
     }
 }

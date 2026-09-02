@@ -11,6 +11,7 @@ use think\db\BaseQuery;
 abstract class TenantOwnedModel extends BaseModel
 {
     private const TENANT_GLOBAL_SCOPE = 'tenantOwnership';
+    private DataScopePolicy $dataScopePolicy;
 
     protected function getOptions(): array
     {
@@ -20,19 +21,30 @@ abstract class TenantOwnedModel extends BaseModel
             self::TENANT_GLOBAL_SCOPE,
         ]));
 
-        if (!$this->policy()->usesTenantColumn()) {
-            $options['disuse'] = array_values(array_unique([
-                ...($options['disuse'] ?? []),
-                'tenant_id',
-            ]));
-        }
         return $options;
+    }
+
+    /** ThinkORM maker callback injection; only the application composition root calls this. */
+    final public function setDataScopePolicy(DataScopePolicy $policy): void
+    {
+        $this->dataScopePolicy = $policy;
+        if (!$policy->usesTenantColumn()) {
+            $this->setOption('disuse', array_values(array_unique([
+                ...(array)$this->getOption('disuse', []),
+                'tenant_id',
+            ])));
+        }
     }
 
     /** ThinkORM global-scope callback; application code must never call it directly. */
     public function scopeTenantOwnership(BaseQuery $query): void
     {
         $this->policy()->applyTo($query);
+    }
+
+    final public static function withoutTenantScope(): BaseQuery
+    {
+        return static::withoutGlobalScope([self::TENANT_GLOBAL_SCOPE]);
     }
 
     public static function onBeforeInsert(Model $model): void
@@ -55,10 +67,9 @@ abstract class TenantOwnedModel extends BaseModel
 
     private function policy(): DataScopePolicy
     {
-        $policy = app(DataScopePolicy::class);
-        if (!$policy instanceof DataScopePolicy) {
+        if (!isset($this->dataScopePolicy)) {
             throw new \LogicException('DATA_SCOPE_POLICY_UNAVAILABLE');
         }
-        return $policy;
+        return $this->dataScopePolicy;
     }
 }

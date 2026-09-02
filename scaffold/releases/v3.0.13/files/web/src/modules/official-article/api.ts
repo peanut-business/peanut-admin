@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PageData } from '@/types/global';
 
 // ─── 文章分类 ──────────────────────────────────────────────────────────────
 export interface ArticleCateRecord {
@@ -26,46 +27,42 @@ export interface ArticleCateListParams {
   export?: 1 | 2;
 }
 
-export interface ArticleCateListRes {
-  lists: ArticleCateRecord[];
-  count: number;
-  page_no: number;
-  page_size: number;
+export type ArticleCateListRes = PageData<ArticleCateRecord> & {
   extend: [];
-}
+};
 
 export function getArticleCateList(params: ArticleCateListParams = {}) {
   return axios.get<ArticleCateListRes>(
-    '/api/admin/official.article.category.list',
+    '/adminapi/official.article.category.list',
     { params }
   );
 }
 
 export function getArticleCateAll() {
-  return axios.get<ArticleCateOption[]>('/api/admin/official.article.category.all');
+  return axios.get<ArticleCateOption[]>('/adminapi/official.article.category.all');
 }
 
 export function getArticleCateDetail(id: number) {
   return axios.get<ArticleCateRecord>(
-    '/api/admin/official.article.category.detail',
+    '/adminapi/official.article.category.detail',
     { params: { id } }
   );
 }
 
 export function addArticleCate(data: Partial<ArticleCateRecord>) {
-  return axios.post('/api/admin/official.article.category.add', data);
+  return axios.post('/adminapi/official.article.category.add', data);
 }
 
 export function editArticleCate(data: Partial<ArticleCateRecord>) {
-  return axios.post('/api/admin/official.article.category.edit', data);
+  return axios.post('/adminapi/official.article.category.edit', data);
 }
 
 export function deleteArticleCate(id: number) {
-  return axios.post('/api/admin/official.article.category.delete', { id });
+  return axios.post('/adminapi/official.article.category.delete', { id });
 }
 
 export function updateArticleCateStatus(id: number, isShow: number) {
-  return axios.post('/api/admin/official.article.category.update-status', {
+  return axios.post('/adminapi/official.article.category.update-status', {
     id,
     is_show: isShow,
   });
@@ -102,40 +99,36 @@ export interface ArticleListParams {
   order_by?: 'asc' | 'desc';
 }
 
-export interface ArticleListRes {
-  lists: ArticleRecord[];
-  count: number;
-  page_no: number;
-  page_size: number;
+export type ArticleListRes = PageData<ArticleRecord> & {
   extend: [];
-}
+};
 
 export function getArticleList(params: ArticleListParams = {}) {
-  return axios.get<ArticleListRes>('/api/admin/official.article.list', {
+  return axios.get<ArticleListRes>('/adminapi/official.article.list', {
     params,
   });
 }
 
 export function getArticleDetail(id: number) {
-  return axios.get<ArticleRecord>('/api/admin/official.article.detail', {
+  return axios.get<ArticleRecord>('/adminapi/official.article.detail', {
     params: { id },
   });
 }
 
 export function addArticle(data: Partial<ArticleRecord>) {
-  return axios.post('/api/admin/official.article.add', data);
+  return axios.post('/adminapi/official.article.add', data);
 }
 
 export function editArticle(data: Partial<ArticleRecord>) {
-  return axios.post('/api/admin/official.article.edit', data);
+  return axios.post('/adminapi/official.article.edit', data);
 }
 
 export function deleteArticle(id: number) {
-  return axios.post('/api/admin/official.article.delete', { id });
+  return axios.post('/adminapi/official.article.delete', { id });
 }
 
 export function updateArticleStatus(id: number, isShow: number) {
-  return axios.post('/api/admin/official.article.update-status', {
+  return axios.post('/adminapi/official.article.update-status', {
     id,
     is_show: isShow,
   });

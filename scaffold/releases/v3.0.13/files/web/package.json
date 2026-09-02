@@ -37,7 +37,12 @@
     },
     "dependencies": {
         "@element-plus/icons-vue": "2.3.2",
+        "@hocuspocus/provider": "4.6.0",
         "@peanut-admin/admin": "0.1.0-alpha.11",
+        "@tiptap/core": "3.30.0",
+        "@tiptap/extension-collaboration": "3.30.0",
+        "@tiptap/pm": "3.30.0",
+        "@tiptap/starter-kit": "3.30.0",
         "@vueuse/core": "^9.3.0",
         "axios": "^0.24.0",
         "dayjs": "^1.11.5",
@@ -54,7 +59,8 @@
         "vue": "^3.2.40",
         "vue-echarts": "^6.2.3",
         "vue-i18n": "^9.2.2",
-        "vue-router": "^4.0.14"
+        "vue-router": "^4.0.14",
+        "yjs": "13.6.32"
     },
     "devDependencies": {
         "@commitlint/cli": "^17.1.2",

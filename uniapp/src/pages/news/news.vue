@@ -25,7 +25,7 @@
           <view class="article-desc">{{ item.desc }}</view>
           <view class="article-meta">
             <text>{{ item.author }}</text>
-            <text>{{ item.click_num }}次浏览</text>
+            <text>{{ item.click }}次浏览</text>
           </view>
         </view>
       </view>
@@ -61,7 +61,7 @@ async function loadCategories() {
 
 async function loadArticles() {
   try {
-    const data = await getArticleLists({ cate_id: currentCateId.value || undefined })
+    const data = await getArticleLists({ cid: currentCateId.value || undefined })
     articles.value = data.lists
   } catch (error) {
     articles.value = []

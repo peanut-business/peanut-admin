@@ -6,6 +6,7 @@ namespace app\Modules\Official\Notification\Http\Controller;
 use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\adminapi\controller\BaseAdminController;
+use app\common\execution\CurrentExecutionContext;
 use think\App;
 
 /**
@@ -15,10 +16,11 @@ class NoticeChannelController extends BaseAdminController
 {
     public function __construct(
         App $app,
+        CurrentExecutionContext $executionContext,
         private readonly NotificationQueries $queries,
         private readonly NotificationCommands $commands,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     /**

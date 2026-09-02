@@ -3,60 +3,51 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Application;
 
-use app\common\application\ApplicationService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\wechat\OfficialAccountService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\IntegrationSecurity\Wechat\OfficialAccountService;
 
-class OfficialAccountMenuApplicationService extends ApplicationService
+class OfficialAccountMenuApplicationService
 {
+    public function __construct(
+        private readonly ExternalChannelBindingService $bindings,
+        private readonly OfficialAccountService $officialAccount,
+    ) {}
+
     public function detail(TenantContext $context): array
     {
-        self::clearError();
-        $stored = self::config($context);
+        $stored = $this->config($context);
         $menu = $stored['menu'] ?? [];
         return ['menu' => is_array($menu) ? $menu : []];
     }
 
     public function save(TenantContext $context, array $menu): bool
     {
-        self::clearError();
-        try {
-            self::store($context, $menu);
-            return true;
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        $this->store($context, $menu);
+        return true;
     }
 
     public function saveAndPublish(
         TenantContext $context,
         array $menu,
-        ?OfficialAccountService $service = null
     ): bool
     {
-        self::clearError();
-        try {
-            $config = self::config($context);
-            $service ??= new OfficialAccountService();
-            $service->publishMenu(
+        $config = $this->config($context);
+            $this->officialAccount->publishMenu(
                 (string)($config['app_id'] ?? ''),
                 (string)($config['app_secret'] ?? ''),
                 $menu
             );
-            self::store($context, $menu, $config);
-            return true;
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+            $this->store($context, $menu, $config);
+        return true;
     }
 
-    private static function store(TenantContext $context, array $menu, ?array $config = null): void
+    private function store(TenantContext $context, array $menu, ?array $config = null): void
     {
-        $config ??= self::config($context);
+        $config ??= $this->config($context);
         $config['menu'] = $menu;
-        ExternalChannelBindingService::update(
+        $this->bindings->update(
             $context,
             ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,
             $config,
@@ -64,9 +55,9 @@ class OfficialAccountMenuApplicationService extends ApplicationService
         );
     }
 
-    private static function config(TenantContext $context): array
+    private function config(TenantContext $context): array
     {
-        return ExternalChannelBindingService::config(
+        return $this->bindings->config(
             $context,
             ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK
         );

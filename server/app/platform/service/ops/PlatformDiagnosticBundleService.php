@@ -6,17 +6,15 @@ namespace app\platform\service\ops;
 use app\common\service\instance\DeploymentMode;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use Composer\InstalledVersions;
+use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
-use PeanutAdmin\OpsConsole\Logs\RuntimeLogProviderRegistry;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogQuery;
-use PeanutAdmin\OpsConsole\Logs\RuntimeLogService;
-use PeanutAdmin\OpsConsole\Logs\SafeLogMessageCatalog;
 use PeanutAdmin\OpsConsole\Package;
-use think\facade\Config;
+use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 
 /** Creates a fixed-schema JSON artifact without reading arbitrary files or raw log messages. */
 final readonly class PlatformDiagnosticBundleService
@@ -26,6 +24,12 @@ final readonly class PlatformDiagnosticBundleService
 
     public function __construct(
         private PDO $pdo,
+        private PlatformOpsPermissionChecker $permissions,
+        private Closure $runtimeLogs,
+        private OpsStatusService $status,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+        private string $deploymentMode,
+        private bool $debugEnabled,
     ) {
     }
 
@@ -36,21 +40,20 @@ final readonly class PlatformDiagnosticBundleService
             throw new \InvalidArgumentException('OPS_DIAGNOSTIC_WINDOW_INVALID');
         }
 
-        $permissions = new PlatformOpsPermissionChecker($this->pdo);
-        if (!$permissions->allows($context, Package::READ_PERMISSION)
-            || !$permissions->allows($context, Package::LOGS_PERMISSION)) {
+        if (!$this->permissions->allows($context, Package::READ_PERMISSION)
+            || !$this->permissions->allows($context, Package::LOGS_PERMISSION)) {
             throw OpsConsoleException::denied();
         }
 
         $zone = new DateTimeZone('UTC');
         $generatedAt = new DateTimeImmutable('now', $zone);
         $since = $generatedAt->modify('-' . $windowMinutes . ' minutes');
-        $status = PlatformOpsRuntimeFactory::status($this->pdo)
+        $status = $this->status
             ->read($context)
             ->toPublicArray();
         $modules = array_map(
             static fn(object $module): array => $module->toArray(),
-            PdoModuleGovernanceProvider::forApplication($this->pdo)
+            $this->moduleGovernance
                 ->qualification()
                 ->installedModules(),
         );
@@ -58,15 +61,11 @@ final readonly class PlatformDiagnosticBundleService
             throw new \RuntimeException('OPS_DIAGNOSTIC_MODULE_LIMIT_EXCEEDED');
         }
 
-        $logs = (new RuntimeLogService(
-            $permissions,
-            new RuntimeLogProviderRegistry([
-                new PlatformAuditRuntimeLogProvider($this->pdo, $this->databaseInstant($since)),
-            ]),
-            new SafeLogMessageCatalog([]),
-        ))->read($context, new RuntimeLogQuery('platform.audit', 'info', null, 100))->toPublicArray();
+        $logs = ($this->runtimeLogs)($since)
+            ->read($context, new RuntimeLogQuery('platform.audit', 'info', null, 100))
+            ->toPublicArray();
 
-        $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
+        $mode = DeploymentMode::fromConfiguredValue($this->deploymentMode);
         $payload = [
             'generated_at' => $this->instant($generatedAt),
             'window' => [
@@ -79,6 +78,7 @@ final readonly class PlatformDiagnosticBundleService
                 'maximum_modules' => 100,
                 'maximum_task_groups' => 200,
                 'maximum_log_groups' => 100,
+                'maximum_operation_logs' => 100,
             ],
             'redaction' => [
                 'raw_log_files' => 'excluded',
@@ -87,10 +87,11 @@ final readonly class PlatformDiagnosticBundleService
                 'request_headers_and_cookies' => 'excluded',
                 'absolute_paths' => 'excluded',
                 'personal_and_tenant_records' => 'excluded',
+                'operation_log_payloads_and_identity' => 'excluded',
             ],
             'configuration' => [
                 'deployment_mode' => $mode?->value ?? 'unconfigured',
-                'debug_enabled' => (bool)Config::get('app.app_debug', false),
+                'debug_enabled' => $this->debugEnabled,
                 'php_version' => PHP_VERSION,
                 'core_package_version' => InstalledVersions::isInstalled('peanut-admin/core')
                     ? (InstalledVersions::getPrettyVersion('peanut-admin/core') ?? 'unknown')
@@ -105,6 +106,10 @@ final readonly class PlatformDiagnosticBundleService
             'structured_logs' => [
                 'source' => 'platform.audit',
                 'items' => $logs['items'],
+            ],
+            'operation_logs' => [
+                'source' => 'tenant.audit',
+                'items' => $this->operationLogEvidence($since),
             ],
         ];
 
@@ -171,6 +176,34 @@ SQL);
             ];
         }
         return $groups;
+    }
+
+    /** @return list<array{tenant_id:int,request_id:string,operation_id:?string,operation:string,outcome:string,reason_code:?string,route:string,occurred_at:string}> */
+    private function operationLogEvidence(DateTimeImmutable $since): array
+    {
+        $statement = $this->pdo->prepare(<<<'SQL'
+SELECT tenant_id, request_id, operation_id, action, outcome, reason_code,
+       target_resource_id, occurred_at
+FROM pa_tenant_audit_event
+WHERE event_type = 'admin.operation' AND occurred_at >= :since
+ORDER BY occurred_at DESC, id DESC
+LIMIT 100
+SQL);
+        $statement->execute(['since' => $this->databaseInstant($since)]);
+
+        return array_map(fn(array $row): array => [
+            'tenant_id' => (int)$row['tenant_id'],
+            'request_id' => (string)$row['request_id'],
+            'operation_id' => $row['operation_id'] === null ? null : (string)$row['operation_id'],
+            'operation' => (string)$row['action'],
+            'outcome' => (string)$row['outcome'],
+            'reason_code' => $row['reason_code'] === null ? null : (string)$row['reason_code'],
+            'route' => (string)$row['target_resource_id'],
+            'occurred_at' => $this->instant(new DateTimeImmutable(
+                $this->databaseValue((string)$row['occurred_at']),
+                new DateTimeZone('UTC'),
+            )),
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
     }
 
     private function instant(DateTimeImmutable $value): string

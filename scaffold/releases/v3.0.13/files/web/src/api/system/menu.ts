@@ -24,30 +24,30 @@ export type MenuForm = Partial<MenuRecord> & { id?: number };
 
 /** 树形全量列表（含禁用项，供后台管理） */
 export function getMenuList() {
-  return axios.get<MenuRecord[]>('/api/admin/menu/lists');
+  return axios.get<MenuRecord[]>('/adminapi/menu/lists');
 }
 
 /** 精简树（id/pid/name），供上级菜单选择器 */
 export function getMenuAll() {
-  return axios.get<MenuRecord[]>('/api/admin/menu/all');
+  return axios.get<MenuRecord[]>('/adminapi/menu/all');
 }
 
 export function getMenuDetail(id: number) {
-  return axios.get<MenuRecord>('/api/admin/menu/detail', { params: { id } });
+  return axios.get<MenuRecord>('/adminapi/menu/detail', { params: { id } });
 }
 
 export function addMenu(data: MenuForm) {
-  return axios.post('/api/admin/menu/add', data);
+  return axios.post('/adminapi/menu/add', data);
 }
 
 export function editMenu(data: MenuForm) {
-  return axios.post('/api/admin/menu/edit', data);
+  return axios.post('/adminapi/menu/edit', data);
 }
 
 export function deleteMenu(id: number) {
-  return axios.post('/api/admin/menu/delete', { id });
+  return axios.post('/adminapi/menu/delete', { id });
 }
 
 export function updateMenuStatus(id: number, isDisable: number) {
-  return axios.post('/api/admin/menu/status', { id, is_disable: isDisable });
+  return axios.post('/adminapi/menu/status', { id, is_disable: isDisable });
 }

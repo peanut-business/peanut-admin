@@ -4,7 +4,6 @@ declare(strict_types=1);
 use app\Modules\Fixture\DeliveryRecord\Contracts\DeliveryRecordCommands;
 use app\Modules\Fixture\DeliveryRecord\Http\DeliveryRecordHttpHandler;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -63,7 +62,7 @@ $contexts = new ExecutionContextStore();
 $handler = new DeliveryRecordHttpHandler($disabledCommands, new CurrentExecutionContext($contexts));
 fixtureHttpRejects(
     static fn() => $contexts->run(
-        ExecutionContext::tenantAdmin($context, 'test.fixture.delivery-record.list'),
+        new \app\common\execution\AdminExecutionContext($context, 'test.fixture.delivery-record.list'),
         static fn() => $handler->lists(),
     ),
     'MODULE_TENANT_DISABLED'
@@ -74,7 +73,7 @@ fixtureHttpExpect($contexts->isEmpty(), 'Tenant Admin failure leaked execution c
 $systemContext = new TenantSystemContext(11, 'fixture.system', 'list', 'fixture-system-1');
 fixtureHttpRejects(
     static fn() => $contexts->run(
-        ExecutionContext::system($systemContext),
+        new \app\common\execution\SystemExecutionContext($systemContext),
         static fn() => $handler->lists(),
     ),
     'CONTEXT_TENANT_REQUIRED'

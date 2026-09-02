@@ -36,6 +36,8 @@ if [[ "$mode" == '--full' ]]; then
 
   tests=(
     server/tests/Productization/FreshSchemaBaselineTest.php
+    server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php
+    server/tests/Productization/OAuthChannelHostTest.php
     server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
     server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
     server/tests/Productization/MemberFinanceHostTest.php
@@ -47,6 +49,9 @@ if [[ "$mode" == '--full' ]]; then
   for test_file in "${tests[@]}"; do
     run_php_test "$test_file"
   done
+  php server/tests/Ablation/DataIsolationAblationTest.php
+  php server/tests/Ablation/LazyDiPerformanceAblationTest.php
+  php server/tests/Ablation/ErgonomicsAblationTest.php
   exit 0
 fi
 
@@ -69,7 +74,7 @@ changed_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-changed-server.XXXXXX")"
 changed_php_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-changed-php.XXXXXX")"
 selected_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-focused-tests.XXXXXX")"
 trap 'rm -f -- "$changed_file" "$changed_php_file" "$selected_file"' EXIT
-git diff --name-only "$base...HEAD" -- server > "$changed_file"
+git diff --name-only "$base...HEAD" -- server plugins plugins.lock scripts/check-admin-api-permissions.php > "$changed_file"
 
 select_test() {
   local path="$1"
@@ -133,7 +138,17 @@ while IFS= read -r path; do
       select_test server/tests/Multitenancy/NativeAdminIdentityRuntimeContractTest.php
       select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
       ;;
+    server/database/migrations/*.sql)
+      select_test server/tests/Productization/FreshSchemaBaselineTest.php
+      ;;
   esac
+
+  if [[ "$path" == server/app/Modules/Official/Oauth/* \
+    || "$path" == server/app/api/application/OAuthApplicationService.php \
+    || "$path" == server/app/api/application/RechargeApplicationService.php \
+    || "$path" == server/app/common/service/oauth/* ]]; then
+    select_test server/tests/Productization/OAuthChannelHostTest.php
+  fi
 done < "$changed_file"
 
 while IFS= read -r path; do

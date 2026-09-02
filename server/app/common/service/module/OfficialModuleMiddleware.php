@@ -9,14 +9,14 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 /** Enforces deployment and Tenant enablement after an upstream identity boundary. */
 final class OfficialModuleMiddleware
 {
-    public function __construct(private readonly ?ModuleExecutionBoundary $modules = null)
+    public function __construct(private readonly ModuleExecutionBoundary $modules)
     {
     }
 
     public function handle($request, \Closure $next, string $moduleKey, string $operation)
     {
         try {
-            ($this->modules ?? app(ModuleExecutionBoundary::class))->assertHttp($moduleKey, $operation);
+            $this->modules->assertHttp($moduleKey, $operation);
         } catch (ModuleException $exception) {
             $status = in_array($exception->errorCode, ['MODULE_NOT_INSTALLED', 'MODULE_INSTALLATION_FAILED'], true)
                 ? 50300

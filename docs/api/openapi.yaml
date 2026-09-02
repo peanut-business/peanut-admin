@@ -18,7 +18,7 @@ tags:
   - name: ImportExport
   - name: PlatformOps
 paths:
-  /api/user/login:
+  /adminapi/user/login:
     post:
       tags: [Auth]
       operationId: userLogin
@@ -29,7 +29,7 @@ paths:
             schema: {$ref: '#/components/schemas/LoginRequest'}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
-  /api/tenant/session/select:
+  /adminapi/tenant/session/select:
     post:
       tags: [Tenant]
       operationId: selectTenant
@@ -148,7 +148,7 @@ paths:
                 mobile: {type: string}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
-  /api/admin/readiness/checklist:
+  /adminapi/readiness/checklist:
     get:
       tags: [Readiness]
       operationId: getFirstRunReadinessChecklist
@@ -165,7 +165,7 @@ paths:
               schema: {$ref: '#/components/schemas/ReadinessChecklistResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/admin/official.import-export.configuration.export:
+  /adminapi/official.import-export.configuration.export:
     get:
       tags: [ImportExport]
       operationId: exportTenantConfiguration
@@ -182,7 +182,7 @@ paths:
               schema: {$ref: '#/components/schemas/ConfigurationTransferPackageResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/admin/official.import-export.configuration.dry-run:
+  /adminapi/official.import-export.configuration.dry-run:
     post:
       tags: [ImportExport]
       operationId: previewTenantConfigurationImport
@@ -204,7 +204,7 @@ paths:
         '400': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/admin/official.import-export.configuration.apply:
+  /adminapi/official.import-export.configuration.apply:
     post:
       tags: [ImportExport]
       operationId: applyTenantConfigurationImport
@@ -228,7 +228,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/backups:
+  /platformapi/v1/ops/backups:
     get:
       tags: [PlatformOps]
       operationId: getPlatformBackupCenter
@@ -240,7 +240,7 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/upgrade-readiness:
+  /platformapi/v1/ops/upgrade-readiness:
     get:
       tags: [PlatformOps]
       operationId: getPlatformUpgradeReadiness
@@ -254,7 +254,7 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/upgrades:
+  /platformapi/v1/ops/upgrades:
     get:
       tags: [PlatformOps]
       operationId: getPlatformUpgradeExecutions
@@ -266,7 +266,7 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/modules:
+  /platformapi/v1/ops/modules:
     get:
       tags: [PlatformOps]
       operationId: getPlatformModuleOperations
@@ -279,7 +279,7 @@ paths:
         '200': {$ref: '#/components/responses/ApiResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/providers:
+  /platformapi/v1/ops/providers:
     get:
       tags: [PlatformOps]
       operationId: getPlatformProviderQualifications
@@ -297,7 +297,7 @@ paths:
               schema: {$ref: '#/components/schemas/PlatformProviderQualificationResponse'}
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/maintenance:
+  /platformapi/v1/ops/maintenance:
     get:
       tags: [PlatformOps]
       operationId: getPlatformMaintenanceWindow
@@ -335,7 +335,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/maintenance/{maintenance_key}/close:
+  /platformapi/v1/ops/maintenance/{maintenance_key}/close:
     post:
       tags: [PlatformOps]
       operationId: closePlatformMaintenanceWindow
@@ -360,7 +360,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/tasks/backup:
+  /platformapi/v1/ops/tasks/backup:
     post:
       tags: [PlatformOps]
       operationId: submitPlatformBackup
@@ -384,7 +384,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/tasks/restore:
+  /platformapi/v1/ops/tasks/restore:
     post:
       tags: [PlatformOps]
       operationId: submitPlatformRestoreVerification
@@ -409,7 +409,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/tasks/upgrade:
+  /platformapi/v1/ops/tasks/upgrade:
     post:
       tags: [PlatformOps]
       operationId: submitPlatformUpgradeExecution
@@ -438,7 +438,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/tasks/module:
+  /platformapi/v1/ops/tasks/module:
     post:
       tags: [PlatformOps]
       operationId: submitPlatformModuleOperation
@@ -463,7 +463,7 @@ paths:
         '401': {$ref: '#/components/responses/ApiResponse'}
         '403': {$ref: '#/components/responses/ApiResponse'}
         '409': {$ref: '#/components/responses/ApiResponse'}
-  /api/platform/v1/ops/tasks/{task_key}:
+  /platformapi/v1/ops/tasks/{task_key}:
     get:
       tags: [PlatformOps]
       operationId: getPlatformOpsTask

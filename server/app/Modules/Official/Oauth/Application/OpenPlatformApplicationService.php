@@ -3,18 +3,22 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Application;
 
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class OpenPlatformApplicationService extends ApplicationService
+class OpenPlatformApplicationService
 {
     private const CONFIG_TYPE = 'open_platform';
 
+    public function __construct(private readonly ExternalChannelBindingService $bindings)
+    {
+    }
+
     public function getConfig(TenantContext $context): array
     {
-        $stored = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_OPEN_PLATFORM);
+        $stored = $this->bindings->config($context, ExternalTenantResolver::WECHAT_OPEN_PLATFORM);
         $secret = (string)($stored['app_secret'] ?? '');
         return [
             'app_id' => (string)($stored['app_id'] ?? ''),
@@ -25,19 +29,18 @@ class OpenPlatformApplicationService extends ApplicationService
 
     public function setConfig(TenantContext $context, array $params): bool
     {
-        $current = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_OPEN_PLATFORM);
+        $current = $this->bindings->config($context, ExternalTenantResolver::WECHAT_OPEN_PLATFORM);
         $currentSecret = (string)($current['app_secret'] ?? '');
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
         if ($secret === '') {
-            self::setError('AppSecret 不能为空');
-            return false;
+            throw BusinessException::invalid('OAUTH_APP_SECRET_REQUIRED', 'AppSecret 不能为空');
         }
         $data = [
             'app_id' => trim((string)$params['app_id']),
             'app_secret' => $secret,
         ];
-        ExternalChannelBindingService::update(
+        $this->bindings->update(
             $context,
             ExternalTenantResolver::WECHAT_OPEN_PLATFORM,
             $data,

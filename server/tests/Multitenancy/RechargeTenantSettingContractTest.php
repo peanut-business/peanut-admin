@@ -12,9 +12,9 @@ $serverRoot = dirname(__DIR__, 2);
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $settingService = (string)file_get_contents($serverRoot . '/app/common/service/tenant/TenantSettingService.php');
 $settingProvider = (string)file_get_contents($serverRoot . '/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php');
-$rechargeService = (string)file_get_contents($serverRoot . '/app/common/service/finance/RechargeTenantSettingService.php');
+$rechargeService = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeTenantSettingService.php');
 $adminLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeSettingApplicationService.php');
-$apiLogic = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
+$apiLogic = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 
 foreach (['`tenant_id`', '`namespace`', '`config_json`', 'uk_tenant_setting_namespace',
     'fk_tenant_setting_tenant'] as $marker) {
@@ -34,8 +34,8 @@ foreach ([$adminLogic, $apiLogic] as $source) {
         'recharge runtime still reads global configuration'
     );
 }
-foreach (['TenantSettingsRuntimeFactory::service()->get', 'TenantSettingsRuntimeFactory::service()->replace',
-    'PaymentChannelGrantService::channelConfigured', 'defaultScene', 'enabledScenes'] as $marker) {
+foreach (['$this->settings->get', '$this->settings->replace',
+    '$this->channelGrants->channelConfigured', 'defaultScene', 'enabledScenes'] as $marker) {
     expectRechargeTenantSetting(str_contains($rechargeService, $marker), 'Tenant recharge invariant missing: ' . $marker);
 }
 

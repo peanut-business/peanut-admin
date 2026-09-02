@@ -43,13 +43,13 @@
         </el-input>
         <el-upload
           v-if="canUpload"
-          :action="uploadUrl[type]"
-          :headers="uploadHeaders"
+          :http-request="
+            (options: UploadRequestOptions) => uploadFile(type, options)
+          "
           :data="{ cid: String(cid === '' ? 0 : cid) }"
           :accept="acceptMap[type]"
           :show-file-list="false"
           :on-success="onUploadSuccess"
-          :on-error="onUploadError"
         >
           <el-button type="primary" :icon="Upload">上传</el-button>
         </el-upload>
@@ -107,7 +107,7 @@
 
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
-  import { ElMessage } from 'element-plus';
+  import { ElMessage, type UploadRequestOptions } from 'element-plus';
   import {
     Document,
     Folder,
@@ -116,12 +116,11 @@
     Upload,
     VideoPlay,
   } from '@element-plus/icons-vue';
-  import { getToken } from '@/utils/auth';
   import { hasPermission } from '@/hooks/permission';
   import {
     getFileCateList,
     getFileList,
-    uploadUrl,
+    uploadFile,
     type FileCateRecord,
     type FileRecord,
     type FileType,
@@ -181,12 +180,6 @@
     20: 'video/*',
     30: '.zip,.rar,.txt,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.7z,.gz',
   };
-  const uploadHeaders = computed<Record<string, string>>(() => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-  });
   const flatCategories = computed(() => {
     const result: Array<FileCateRecord & { depth: number }> = [];
     const walk = (items: FileCateRecord[], depth: number) => {
@@ -263,15 +256,10 @@
     );
     close();
   };
-  const onUploadSuccess = async (response: any) => {
-    if (!response || response.code !== 20000) {
-      ElMessage.error(response?.msg || '上传失败');
-      return;
-    }
+  const onUploadSuccess = async () => {
     ElMessage.success('上传成功');
     await fetchFiles(1);
   };
-  const onUploadError = () => ElMessage.error('上传失败');
 </script>
 
 <style scoped lang="less">

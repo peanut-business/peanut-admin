@@ -60,8 +60,8 @@
     Refresh,
     Switch,
   } from '@element-plus/icons-vue';
+  import type { ShellTab as TagProps } from '@peanut-admin/admin/shell';
   import { useTabBarStore } from '@/store';
-  import type { TagProps } from '@/store/modules/tab-bar/types';
   import { DEFAULT_ROUTE_NAME, REDIRECT_ROUTE_NAME } from '@/router/constants';
 
   // eslint-disable-next-line no-shadow

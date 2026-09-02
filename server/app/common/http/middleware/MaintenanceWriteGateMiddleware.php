@@ -3,17 +3,23 @@ declare(strict_types=1);
 
 namespace app\common\http\middleware;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
 use app\common\service\audit\AuditContractHost;
-use app\common\service\JsonService;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use think\facade\Db;
 
 /** Fails closed for every HTTP mutation while an active maintenance window is in effect. */
 final class MaintenanceWriteGateMiddleware
 {
     private const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly AuditContractHost $audit,
+        private readonly CurrentExecutionContext $executionContext,
+    ) {
+    }
 
     public function handle($request, \Closure $next)
     {
@@ -23,47 +29,43 @@ final class MaintenanceWriteGateMiddleware
             return $next($request);
         }
 
-        $requestId = RequestTrace::id($request, 'maintenance');
+        $requestId = RequestTrace::id($this->executionContext, $request, 'maintenance');
         try {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('MAINTENANCE_GATE_DATABASE_UNAVAILABLE');
+            $window = $this->activeWindow($this->pdo);
+            if ($window !== null) {
+                $this->audit->recordPlatform(
+                    'platform.maintenance.write-blocked',
+                    'maintenance.write',
+                    $requestId,
+                    null,
+                    null,
+                    [
+                        'maintenance_key' => (string)$window['maintenance_key'],
+                        'reason_key' => (string)$window['reason_key'],
+                        'request_method' => strtoupper((string)$request->method()),
+                        'request_path' => trim((string)$request->pathinfo(), '/'),
+                    ],
+                    AuditOutcome::Denied,
+                    'MAINTENANCE_WRITE_BLOCKED',
+                );
             }
-            $window = $this->activeWindow($pdo);
-            if ($window === null) {
-                return $next($request);
-            }
-
-            AuditContractHost::fromPdo($pdo)->recordPlatform(
-                'platform.maintenance.write-blocked',
-                'maintenance.write',
-                $requestId,
-                null,
-                null,
-                [
-                    'maintenance_key' => (string)$window['maintenance_key'],
-                    'reason_key' => (string)$window['reason_key'],
-                    'request_method' => strtoupper((string)$request->method()),
-                    'request_path' => trim((string)$request->pathinfo(), '/'),
-                ],
-                AuditOutcome::Denied,
-                'MAINTENANCE_WRITE_BLOCKED',
-            );
-
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                '系统维护中，暂不支持写入操作。',
-                ['error_code' => 'MAINTENANCE_WRITE_BLOCKED'],
-                50300,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
         } catch (\Throwable) {
             throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统维护状态不可用，写入操作已拒绝。',
                 ['error_code' => 'MAINTENANCE_GATE_UNAVAILABLE'],
                 50300,
-                ['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId],
-            );
+            )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
         }
+
+        if ($window === null) {
+            return $next($request);
+        }
+
+        throw \app\common\http\ApiProblem::fromEnvelope(
+            '系统维护中，暂不支持写入操作。',
+            ['error_code' => 'MAINTENANCE_WRITE_BLOCKED'],
+            50300,
+        )->withHeaders(['Cache-Control' => 'no-store', 'X-Request-Id' => $requestId]);
     }
 
     /** @return array{maintenance_key:string,reason_key:string}|null */
@@ -86,9 +88,8 @@ SQL);
     {
         $method = strtoupper((string)$request->method());
         $path = trim((string)$request->pathinfo(), '/');
-        return ($method === 'PUT' && $path === 'api/platform/v1/ops/maintenance')
+        return ($method === 'PUT' && $path === 'v1/ops/maintenance')
             || ($method === 'POST'
-                && preg_match('#^api/platform/v1/ops/maintenance/maintenance_[a-f0-9]{32}/close$#D', $path) === 1);
+                && preg_match('#^v1/ops/maintenance/maintenance_[a-f0-9]{32}/close$#D', $path) === 1);
     }
-
 }

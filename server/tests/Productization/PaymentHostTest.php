@@ -130,21 +130,21 @@ foreach ([$wechatPrepay, $wechatRefund] as $source) {
     );
 }
 
-$settlement = (string)file_get_contents($serverRoot . '/app/api/application/RechargeApplicationService.php');
+$settlement = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
 foreach (["where('sn', \$orderSn)->lock(true)", "\$currency !== 'CNY'",
     '$callbackCents !== $orderCents', '支付渠道不一致', '支付交易流水冲突'] as $marker) {
     expectPaymentHost(str_contains($settlement, $marker), 'settlement invariant missing: ' . $marker);
 }
 expectPaymentHost(
-    str_contains($settlement, 'MemberModuleProvider')
-        && str_contains($settlement, 'balanceCommands()->applyInTransaction')
+    str_contains($settlement, 'MemberBalanceCommands')
+        && str_contains($settlement, 'memberBalances->applyInTransaction')
         && str_contains($settlement, 'MemberBalanceMutation'),
     'settlement does not use the public Member balance contract'
 );
 $adminRefund = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Payment/Application/RechargeAdministrationService.php'
 );
-$reconcile = (string)file_get_contents($serverRoot . '/app/command/RefundReconcile.php');
+$reconcile = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Infrastructure/ThinkPhpRefundReconciliationCommands.php');
 foreach ([$adminRefund, $reconcile] as $source) {
     expectPaymentHost(
         str_contains($source, 'PaymentServiceFactory'),
@@ -152,11 +152,26 @@ foreach ([$adminRefund, $reconcile] as $source) {
     );
     expectPaymentHost(!str_contains($source, "['raw']"), 'raw provider response is persisted');
 }
+expectPaymentHost(
+    str_contains($adminRefund, '(string)$record->sn')
+        && str_contains($reconcile, '(string)$record->sn')
+        && !str_contains($adminRefund, '(string)$log->sn')
+        && !str_contains($reconcile, '(string)$log->sn'),
+    'refund paths do not share the stable RefundRecord Provider key'
+);
+$resultTransaction = strpos($adminRefund, '// 渠道请求完成后使用新的短事务');
+$receiptFinalize = strpos($adminRefund, 'self::finishRefundIdempotency', $resultTransaction ?: 0);
+$resultCommit = strpos($adminRefund, "\n        });", $receiptFinalize ?: 0);
+expectPaymentHost(
+    $resultTransaction !== false && $receiptFinalize !== false && $resultCommit !== false
+        && $resultTransaction < $receiptFinalize && $receiptFinalize < $resultCommit,
+    'refund receipt finalization is outside the locked result transaction'
+);
 
 $payConfig = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Payment/Application/PayConfigApplicationService.php'
 );
-foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'Db::transaction'] as $marker) {
+foreach (['wx_pay_secret', 'ali_pay_private_key', "'******'", 'transactions->run'] as $marker) {
     expectPaymentHost(str_contains($payConfig, $marker), 'payment config boundary missing: ' . $marker);
 }
 $legacyWebApi = (string)file_get_contents($repositoryRoot . '/web/src/api/app.ts');
@@ -196,7 +211,10 @@ foreach (['one_refund_record_per_order', 'one_101_log_at_most_per_order'] as $ch
 }
 
 foreach ([$factory, $settlement, $adminRefund, $reconcile] as $source) {
-    expectPaymentHost(!str_contains($source, 'PeanutAdmin\\'), 'application payment owner deep imports core');
+    expectPaymentHost(
+        preg_match('/PeanutAdmin\\\\[^;]*(?:Payment|Refund|Gateway|FinanceService)/', $source) !== 1,
+        'application payment owner deep imports a Core payment implementation'
+    );
 }
 
 echo "PB07-PAYMENT-HOST-001 passed\n";

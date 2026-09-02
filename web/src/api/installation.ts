@@ -144,7 +144,7 @@ function normalizeExecuteResult(value: unknown): InstallationExecuteResult {
 export async function getInstallationStatus(): Promise<InstallationStatus> {
   const response = await installationClient.get<
     JsonServiceResponse<InstallationStatus>
-  >('/api/installation/status');
+  >('/installapi/status');
   return normalizeStatus(unwrap(response));
 }
 
@@ -164,7 +164,7 @@ export async function executeInstallation(
   };
   const response = await installationClient.post<
     JsonServiceResponse<InstallationExecuteResult>
-  >('/api/installation/execute', requestPayload, {
+  >('/installapi/execute', requestPayload, {
     headers: {
       Authorization: `Bearer ${setupToken.trim()}`,
     },

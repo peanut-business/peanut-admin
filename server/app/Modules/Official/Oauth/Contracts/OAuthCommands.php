@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace app\Modules\Official\Oauth\Contracts;
 
 use app\common\service\external\ExternalTenantBinding;
-use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\oauth\contract\OAuthTransportInterface;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
+use app\Modules\Official\Oauth\Contracts\Dto\OAuthAuthorizationResult;
+use app\Modules\Official\Oauth\Contracts\Dto\OAuthLoginResult;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -16,21 +17,14 @@ use PeanutAdmin\Kernel\Context\TenantSystemContext;
  */
 interface OAuthCommands
 {
-    /** @return list<ExternalTenantBinding> */
-    public function locateState(string $provider, string $stateHash): array;
+    public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding): OAuthAuthorizationResult;
 
-    /** @return list<ExternalTenantBinding> */
-    public function locateTicket(string $ticketHash): array;
+    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, string $ip): OAuthLoginResult;
 
-    public function begin(TenantSystemContext $context, string $scene, string $returnPath, string $redirectUri, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array|false;
+    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, string $ip): OAuthLoginResult;
 
-    public function callback(TenantSystemContext $context, string $scene, string $code, string $state, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array|false;
+    public function complete(TenantContext|TenantSystemContext $context, array $params, string $ip): OAuthLoginResult;
 
-    public function miniProgramLogin(TenantSystemContext $context, string $code, ExternalTenantBinding $binding, ?OAuthTransportInterface $transport = null): array|false;
+    public function bind(AuthenticatedMemberContext $context, int $memberId, string $scene, string $code): bool;
 
-    public function complete(TenantContext|TenantSystemContext $context, array $params): array|false;
-
-    public function bind(AuthenticatedMemberContext $context, int $memberId, string $scene, string $code, ?OAuthTransportInterface $transport = null): bool;
-
-    public function error(): string;
 }

@@ -4,6 +4,12 @@ declare(strict_types=1);
 namespace app\common\service\runtime;
 
 use app\common\execution\CurrentExecutionContext;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\ConsumerExecutionContext;
+use app\common\execution\InstallationExecutionContext;
+use app\common\execution\InstanceExecutionContext;
+use app\common\execution\PlatformExecutionContext;
+use app\common\execution\SystemExecutionContext;
 use app\common\service\audit\RedactionPolicy;
 use think\facade\Log;
 
@@ -11,53 +17,84 @@ use think\facade\Log;
 final class OperationalLog
 {
     /** @param array<string,mixed> $attributes */
-    public static function info(string $event, array $attributes = []): void
+    public static function info(
+        CurrentExecutionContext $executionContext,
+        string $event,
+        array $attributes = [],
+    ): void
     {
-        self::write('info', $event, $attributes);
+        self::write($executionContext, 'info', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
-    public static function notice(string $event, array $attributes = []): void
+    public static function notice(
+        CurrentExecutionContext $executionContext,
+        string $event,
+        array $attributes = [],
+    ): void
     {
-        self::write('notice', $event, $attributes);
+        self::write($executionContext, 'notice', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
-    public static function warning(string $event, array $attributes = []): void
+    public static function warning(
+        CurrentExecutionContext $executionContext,
+        string $event,
+        array $attributes = [],
+    ): void
     {
-        self::write('warning', $event, $attributes);
+        self::write($executionContext, 'warning', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
-    public static function error(string $event, array $attributes = []): void
+    public static function error(
+        CurrentExecutionContext $executionContext,
+        string $event,
+        array $attributes = [],
+    ): void
     {
-        self::write('error', $event, $attributes);
+        self::write($executionContext, 'error', $event, $attributes);
     }
 
     /** @param array<string,mixed> $attributes */
-    private static function write(string $level, string $event, array $attributes): void
+    private static function write(
+        CurrentExecutionContext $executionContext,
+        string $level,
+        string $event,
+        array $attributes,
+    ): void
     {
         try {
-            Log::$level(self::event($event), self::attributes($attributes));
+            Log::$level(RedactionPolicy::encode([
+                'event' => self::event($event),
+                'attributes' => self::attributes($executionContext, $attributes),
+            ]));
         } catch (\Throwable) {
             // Runtime diagnostics must never replace the product operation.
         }
     }
 
     /** @param array<string,mixed> $attributes @return array<string,mixed> */
-    private static function attributes(array $attributes): array
+    private static function attributes(CurrentExecutionContext $executionContext, array $attributes): array
     {
         try {
-            $context = app(CurrentExecutionContext::class)->current();
+            $context = $executionContext->current();
         } catch (\Throwable) {
             $context = null;
         }
         $trace = $context === null ? [] : [
-            'request_id' => $context->requestId,
-            'operation' => $context->operation,
-            'actor_type' => $context->actorType,
+            'request_id' => $context->requestId(),
+            'operation' => $context->operation(),
+            'audience' => match (true) {
+                $context instanceof AdminExecutionContext => 'adminapi',
+                $context instanceof ConsumerExecutionContext => 'api',
+                $context instanceof PlatformExecutionContext => 'platform',
+                $context instanceof InstallationExecutionContext => 'installation',
+                $context instanceof SystemExecutionContext => 'system',
+                $context instanceof InstanceExecutionContext => 'instance',
+            },
             'tenant_id' => $context->tenantId(),
-        ];
+        ] + ($context instanceof SystemExecutionContext ? $context->metadata->toArray() : []);
         $trace['runtime_id'] = RuntimeNamespace::fromEnvironment()->fingerprint();
 
         $sanitized = RedactionPolicy::sanitize($trace + $attributes);

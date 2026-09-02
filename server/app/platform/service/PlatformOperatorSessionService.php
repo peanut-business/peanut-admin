@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\common\application\BusinessException;
 use app\platform\context\PlatformOperatorContext;
 use PeanutAdmin\Kernel\Auth\PlatformAuthentication;
+use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationRepository;
@@ -25,7 +27,15 @@ final readonly class PlatformOperatorSessionService
         ?string $userAgent,
         string $requestId
     ): PlatformAuthentication {
-        return $this->authentication->login($email, $password, $ipAddress, $userAgent, $requestId);
+        try {
+            return $this->authentication->login($email, $password, $ipAddress, $userAgent, $requestId);
+        } catch (\PeanutAdmin\Kernel\Auth\AuthException|\DomainException|\InvalidArgumentException) {
+            throw new BusinessException(
+                'PLATFORM_AUTHENTICATION_REJECTED',
+                401,
+                'Email or password is incorrect.',
+            );
+        }
     }
 
     public function refresh(
@@ -34,7 +44,11 @@ final readonly class PlatformOperatorSessionService
         ?string $userAgent,
         string $requestId
     ): PlatformAuthentication {
-        return $this->authentication->refresh($refreshToken, $ipAddress, $userAgent, $requestId);
+        try {
+            return $this->authentication->refresh($refreshToken, $ipAddress, $userAgent, $requestId);
+        } catch (AuthException $exception) {
+            throw new PlatformRefreshCredentialException($exception);
+        }
     }
 
     public function context(string $accessToken, string $requestId): PlatformOperatorContext
@@ -46,7 +60,11 @@ final readonly class PlatformOperatorSessionService
 
     public function logout(string $accessToken): void
     {
-        $this->authentication->logout($accessToken);
+        try {
+            $this->authentication->logout($accessToken);
+        } catch (\PeanutAdmin\Kernel\Auth\AuthException) {
+            // Logout is idempotent when the supplied credential is already invalid.
+        }
     }
 
     public function assertAllowed(PlatformOperatorContext $context, string $permission): void

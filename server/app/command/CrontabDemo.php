@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\diagnostics\TenantDiagnosticAttributes;
+use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use app\common\execution\ContextualCommand;
@@ -31,7 +31,7 @@ class CrontabDemo extends ContextualCommand
             $scope->tenantId(),
             date('Y-m-d H:i:s')
         );
-        OperationalLog::info('crontab_demo_executed', $diagnostics + ['message' => $msg]);
+        OperationalLog::info($this->executionContext(), 'crontab_demo_executed', $diagnostics + ['message' => $msg]);
         $output->writeln($msg);
         return 0;
     }

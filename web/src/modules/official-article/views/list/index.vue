@@ -204,12 +204,12 @@
           <el-form-item prop="image" :label="$t('article.field.image')">
             <el-space alignment="flex-end">
               <el-upload
-                :action="uploadUrl[10]"
-                :headers="uploadHeaders"
+                :http-request="
+                  (options: UploadRequestOptions) => uploadFile(10, options)
+                "
                 :show-file-list="false"
                 accept="image/*"
                 :on-success="onCoverSuccess"
-                :on-error="onUploadError"
               >
                 <div class="img-uploader">
                   <img v-if="form.image" :src="form.image" alt="cover" />
@@ -270,16 +270,15 @@
                   </el-button>
                 </el-tooltip>
                 <el-upload
-                  :action="uploadUrl[10]"
-                  :headers="uploadHeaders"
+                  :http-request="
+                    (options: UploadRequestOptions) => uploadFile(10, options)
+                  "
                   :show-file-list="false"
                   accept="image/*"
                   :before-upload="beforeContentUpload"
                   :on-success="
-                    (response: UploadResponse) =>
-                      onContentMediaSuccess(response, 'image')
+                    (file: FileRecord) => onContentMediaSuccess(file, 'image')
                   "
-                  :on-error="onUploadError"
                 >
                   <el-tooltip content="插入图片"
                     ><el-button size="small" aria-label="插入图片"
@@ -295,16 +294,15 @@
                   @select="(urls) => onContentMaterialSelected(urls, 'image')"
                 />
                 <el-upload
-                  :action="uploadUrl[20]"
-                  :headers="uploadHeaders"
+                  :http-request="
+                    (options: UploadRequestOptions) => uploadFile(20, options)
+                  "
                   :show-file-list="false"
                   accept="video/*"
                   :before-upload="beforeContentUpload"
                   :on-success="
-                    (response: UploadResponse) =>
-                      onContentMediaSuccess(response, 'video')
+                    (file: FileRecord) => onContentMediaSuccess(file, 'video')
                   "
-                  :on-error="onUploadError"
                 >
                   <el-tooltip content="插入视频"
                     ><el-button size="small" aria-label="插入视频"
@@ -346,7 +344,12 @@
 <script lang="ts" setup>
   import { computed, nextTick, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
-  import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+  import {
+    ElMessage,
+    type FormInstance,
+    type FormRules,
+    type UploadRequestOptions,
+  } from 'element-plus';
   import {
     List,
     Picture,
@@ -356,10 +359,9 @@
     VideoCamera,
   } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
-  import { getToken } from '@/utils/auth';
   import sanitizeRichText from '@/utils/sanitize-rich-text';
   import FilePicker from '@/components/file-picker/index.vue';
-  import { uploadUrl } from '@/modules/official-file/api';
+  import { uploadFile, type FileRecord } from '@/modules/official-file/api';
   import {
     getArticleList,
     getArticleCateAll,
@@ -391,12 +393,6 @@
   const renderData = ref<ArticleRecord[]>([]);
   const cateOptions = ref<Array<{ label: string; value: number }>>([]);
 
-  const uploadHeaders = computed(() => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-  });
 
   const generateFormModel = () => ({
     title: '',
@@ -448,8 +444,8 @@
       };
       const { data } = await getArticleList(params);
       renderData.value = data.lists;
-      pagination.current = data.page_no;
-      pagination.pageSize = data.page_size;
+      pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
       pagination.total = data.count;
     } finally {
       setLoading(false);
@@ -607,25 +603,8 @@
     }
   };
 
-  type UploadResponse = {
-    code: number;
-    msg: string;
-    data: { url?: string; uri?: string };
-  };
-
-  const uploadResult = (response: UploadResponse | undefined): string => {
-    const url = response?.data?.url || response?.data?.uri || '';
-    if (!response || response.code !== 20000 || !url) {
-      ElMessage.error(response?.msg || t('article.tip.uploadFail'));
-      return '';
-    }
-    return url;
-  };
-
-  const onCoverSuccess = (response: UploadResponse) => {
-    const url = uploadResult(response);
-    if (!url) return;
-    form.value.image = url;
+  const onCoverSuccess = (file: FileRecord) => {
+    form.value.image = file.url || file.uri;
     ElMessage.success(t('article.tip.uploadSuccess'));
   };
 
@@ -665,17 +644,11 @@
   };
 
   const onContentMediaSuccess = (
-    response: UploadResponse,
+    file: FileRecord,
     type: 'image' | 'video'
   ) => {
-    const url = uploadResult(response);
-    if (!url) return;
-    insertContentMedia(url, type);
+    insertContentMedia(file.url || file.uri, type);
     ElMessage.success(t('article.tip.uploadSuccess'));
-  };
-
-  const onUploadError = () => {
-    ElMessage.error(t('article.tip.uploadFail'));
   };
 
   const closeModal = () => {

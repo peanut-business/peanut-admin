@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
@@ -15,8 +16,10 @@ use Throwable;
 /** Application-owned persistence and audit transaction for the Core maintenance contract. */
 final readonly class PdoMaintenanceWindowStore implements MaintenanceWindowStore
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private AuditContractHost $audit,
+    ) {
     }
 
     public function current(PlatformContext $context): ?MaintenanceWindow
@@ -189,13 +192,15 @@ SQL);
 
     private function audit(PlatformContext $context, OpsAuditEvent $audit): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        $this->audit->recordPlatform(
             $audit->eventType,
             $audit->action,
             $context->requestId,
             $context->operatorId,
             $context->accountId,
             $audit->metadata,
+            AuditOutcome::Success,
+            null,
         );
     }
 

@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/user/login": {
+    "/adminapi/user/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/tenant/session/select": {
+    "/adminapi/tenant/session/select": {
         parameters: {
             query?: never;
             header?: never;
@@ -133,7 +133,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/readiness/checklist": {
+    "/adminapi/readiness/checklist": {
         parameters: {
             query?: never;
             header?: never;
@@ -150,7 +150,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/official.import-export.configuration.export": {
+    "/adminapi/official.import-export.configuration.export": {
         parameters: {
             query?: never;
             header?: never;
@@ -167,7 +167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/official.import-export.configuration.dry-run": {
+    "/adminapi/official.import-export.configuration.dry-run": {
         parameters: {
             query?: never;
             header?: never;
@@ -184,7 +184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/official.import-export.configuration.apply": {
+    "/adminapi/official.import-export.configuration.apply": {
         parameters: {
             query?: never;
             header?: never;
@@ -201,7 +201,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/backups": {
+    "/platformapi/v1/ops/backups": {
         parameters: {
             query?: never;
             header?: never;
@@ -218,7 +218,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/upgrade-readiness": {
+    "/platformapi/v1/ops/upgrade-readiness": {
         parameters: {
             query?: never;
             header?: never;
@@ -235,7 +235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/upgrades": {
+    "/platformapi/v1/ops/upgrades": {
         parameters: {
             query?: never;
             header?: never;
@@ -252,7 +252,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/modules": {
+    "/platformapi/v1/ops/modules": {
         parameters: {
             query?: never;
             header?: never;
@@ -269,7 +269,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/providers": {
+    "/platformapi/v1/ops/providers": {
         parameters: {
             query?: never;
             header?: never;
@@ -286,7 +286,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/maintenance": {
+    "/platformapi/v1/ops/maintenance": {
         parameters: {
             query?: never;
             header?: never;
@@ -304,7 +304,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/maintenance/{maintenance_key}/close": {
+    "/platformapi/v1/ops/maintenance/{maintenance_key}/close": {
         parameters: {
             query?: never;
             header?: never;
@@ -321,7 +321,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/tasks/backup": {
+    "/platformapi/v1/ops/tasks/backup": {
         parameters: {
             query?: never;
             header?: never;
@@ -338,7 +338,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/tasks/restore": {
+    "/platformapi/v1/ops/tasks/restore": {
         parameters: {
             query?: never;
             header?: never;
@@ -355,7 +355,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/tasks/upgrade": {
+    "/platformapi/v1/ops/tasks/upgrade": {
         parameters: {
             query?: never;
             header?: never;
@@ -372,7 +372,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/tasks/module": {
+    "/platformapi/v1/ops/tasks/module": {
         parameters: {
             query?: never;
             header?: never;
@@ -389,7 +389,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/platform/v1/ops/tasks/{task_key}": {
+    "/platformapi/v1/ops/tasks/{task_key}": {
         parameters: {
             query?: never;
             header?: never;

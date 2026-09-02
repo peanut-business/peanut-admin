@@ -13,12 +13,13 @@ final readonly class DepartmentAdministrationRuntime
     public function __construct(
         private PDO $pdo,
         private CurrentExecutionContext $execution,
+        private DepartmentAdminService $departments,
     ) {
     }
 
     public function service(): DepartmentAdminService
     {
-        return new DepartmentAdminService($this->pdo);
+        return $this->departments;
     }
 
     /** @param array<string,mixed> $department */

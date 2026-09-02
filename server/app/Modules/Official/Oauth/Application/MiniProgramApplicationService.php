@@ -3,28 +3,34 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Application;
 
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\FileService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 微信小程序基础配置。 */
-class MiniProgramApplicationService extends ApplicationService
+class MiniProgramApplicationService
 {
     protected const CONFIG_TYPE = 'mnp_setting';
 
-    public function getConfig(TenantContext $context): array
+    public function __construct(
+        private readonly ExternalChannelBindingService $bindings,
+        private readonly FileService $files,
+    ) {
+    }
+
+    public function getConfig(TenantContext $context, string $domain): array
     {
-        $stored = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
+        $stored = $this->bindings->config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
         $qrCode = (string)($stored['qr_code'] ?? '');
         $secret = (string)($stored['app_secret'] ?? '');
-        $domains = self::domainConfig();
+        $domains = self::domainConfig($domain);
 
         return [
             'name'                 => (string)($stored['name'] ?? ''),
             'original_id'          => (string)($stored['original_id'] ?? ''),
-            'qr_code'              => FileService::getFileUrl($qrCode),
+            'qr_code'              => $this->files->getFileUrl($qrCode),
             'app_id'               => (string)($stored['app_id'] ?? ''),
             'app_secret'           => $secret !== '' ? '******' : '',
             'app_secret_configured'=> $secret !== '',
@@ -39,22 +45,21 @@ class MiniProgramApplicationService extends ApplicationService
 
     public function setConfig(TenantContext $context, array $params): bool
     {
-        $current = ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
+        $current = $this->bindings->config($context, ExternalTenantResolver::WECHAT_MINI_PROGRAM);
         $currentSecret = (string)($current['app_secret'] ?? '');
         $incomingSecret = trim((string)$params['app_secret']);
         $secret = $incomingSecret === '******' ? $currentSecret : $incomingSecret;
         if ($secret === '') {
-            self::setError('AppSecret 不能为空');
-            return false;
+            throw BusinessException::invalid('OAUTH_APP_SECRET_REQUIRED', 'AppSecret 不能为空');
         }
         $data = [
             'name'        => trim((string) ($params['name'] ?? '')),
             'original_id' => trim((string) ($params['original_id'] ?? '')),
-            'qr_code'     => self::relativeQrCode($context, (string) ($params['qr_code'] ?? '')),
+            'qr_code'     => $this->relativeQrCode($context, (string) ($params['qr_code'] ?? '')),
             'app_id'      => trim((string) $params['app_id']),
             'app_secret'  => $secret,
         ];
-        ExternalChannelBindingService::update(
+        $this->bindings->update(
             $context,
             ExternalTenantResolver::WECHAT_MINI_PROGRAM,
             $data,
@@ -64,9 +69,9 @@ class MiniProgramApplicationService extends ApplicationService
     }
 
     /** @return array{https:string,wss:string,udp:string,authority:string} */
-    private static function domainConfig(): array
+    private static function domainConfig(string $domain): array
     {
-        $domain = rtrim((string) request()->domain(), '/');
+        $domain = rtrim($domain, '/');
         $parts = parse_url($domain);
         $host = is_array($parts) ? (string) ($parts['host'] ?? '') : '';
 
@@ -89,14 +94,14 @@ class MiniProgramApplicationService extends ApplicationService
         ];
     }
 
-    private static function relativeQrCode(TenantContext $context, string $value): string
+    private function relativeQrCode(TenantContext $context, string $value): string
     {
         $value = trim($value);
         if ($value === '') {
             return '';
         }
 
-        $uri = FileService::setTenantFileUrl($context, $value);
+        $uri = $this->files->setTenantFileUrl($context, $value);
         if (preg_match('#^https?://#i', $uri)) {
             $uri = (string) parse_url($uri, PHP_URL_PATH);
         }

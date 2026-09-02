@@ -5,20 +5,23 @@ namespace app\adminapi\http\middleware;
 
 use app\adminapi\http\AdminRequest;
 use app\adminapi\service\AdminTokenService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
-use app\common\service\tenant\TenantEntryBindingResolver;
-use app\common\service\tenant\ApplicationHostPolicy;
-use app\tenant\service\TenantAuthRuntimeFactory;
+use PeanutAdmin\Kernel\Auth\TenantAuthService;
+use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /** Establishes management identity only from a validated native Tenant session. */
 final class LoginMiddleware
 {
-    public function __construct(private readonly ?ExecutionContextStore $executionContexts = null)
-    {
-    }
+    public function __construct(
+        private readonly TenantAuthService $tenantAuth,
+        private readonly ExecutionContextStore $executionContexts,
+        private readonly AdminAuthorizationService $authorization,
+        private readonly ApplicationHostPolicy $hostPolicy,
+        private readonly TenantEntryBindingResolver $entryBindings,
+    ) {}
 
     public function handle($request, \Closure $next)
     {
@@ -31,18 +34,18 @@ final class LoginMiddleware
         }
 
         try {
-            ApplicationHostPolicy::production()->assertTenantAdmin($request);
-            $context = TenantAuthRuntimeFactory::service()->context(
+            $this->hostPolicy->assertTenantAdmin($request);
+            $context = $this->tenantAuth->context(
                 $token,
                 AdminRequest::requestId($request),
             );
-            $entryBindings = TenantEntryBindingResolver::production();
+            $entryBindings = $this->entryBindings;
             $entryBindings->assertTenantAccess(
                 $request,
                 TenantEntryBindingResolver::ADMIN_CLIENT,
                 $context->tenantId,
             );
-            $principal = (new AdminAuthorizationService())->principal($context)->toArray();
+            $principal = $this->authorization->principal($context)->toArray();
             $principal['terminal'] = 1;
             $entryBound = $entryBindings->boundTenantId(
                 $request,
@@ -57,8 +60,8 @@ final class LoginMiddleware
             strtolower((string)$request->method()),
             trim((string)$request->pathinfo(), '/'),
         );
-        return ($this->executionContexts ?? app(ExecutionContextStore::class))->run(
-            ExecutionContext::tenantAdmin($context, $operation, $principal, $entryBound),
+        return $this->executionContexts->run(
+            new \app\common\execution\AdminExecutionContext($context, $operation, $principal, $entryBound),
             static fn() => $next($request),
         );
     }

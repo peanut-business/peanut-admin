@@ -1,7 +1,7 @@
 # Peanut Admin — Agent Context
 
 > **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-28
+> Last updated: 2026-08-31
 
 执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
 路线，执行规则由该独立文档维护。
@@ -235,6 +235,10 @@ peanut-admin/
   不含 PHP 服务，容器通过 `host.docker.internal:${PHP_PORT}` 访问宿主 API。所有本地
   监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取，`201xx` 只是项目登记默认值。
   Docker PHP 只用于 local-production-preview、生产构建和明确要求的容器等价 Gate。
+- Platform 的日常依赖安装和静态检查使用登记资源
+  `peanut-admin-host-node24-npm-development`（Node 24.13.0、npm 11.6.2）与
+  `platform/package-lock.json`；每个 worktree 运行自己的 `npm ci`，不得复用其他
+  worktree 的 `node_modules`。
 
 ---
 
@@ -256,7 +260,7 @@ LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
 ## 6. 给 Codex 的工作约定
 
 1. 所有任务在 `/Users/xing/Documents/company-projects/peanut-admin/` 下执行
-2. 功能分支命名：`feat/<描述>`，完成后 PR → `dev`；阶段验收通过后 `dev` → `main`
+2. 功能分支命名：`feat/<描述>`；任务完成并通过最低充分验证后，直接合入并推送 `dev`，随后删除本地/远端分支和 worktree。PR 仅用于 `dev` → `main`、正式发布或用户明确要求评审的变更
 3. 不要创建带产品版本后缀的名称、路径或文件名
 4. SaaS 相关实现需求 → 先查阅 `docs/design/saas-roadmap/` 再动手
 5. DB 变更：新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不要直接修改 `init.sql`
@@ -267,5 +271,5 @@ LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
 - 任何“阻塞”必须写明被阻塞的具体交付物、缺失输入和解除条件；不得只用“前一阶段未完成”冻结整个后续阶段。
 - 不依赖缺失输入、文件 owner 不重叠且可独立回滚的合同、迁移、Runtime、fixture 和测试准备应并行推进。
 - 外部发布、Registry 身份或单个 CI Gate 只阻塞直接消费该身份或证据的候选填值、最终验收和完成声明，不冻结无依赖实现。
-- 后续阶段可以形成独立 PR，但在其真实前置尚未满足时不得合入共享集成候选、执行最终 Gate 或声称阶段完成。
+- 后续阶段可以形成独立候选，但在其真实前置尚未满足时不得合入共享集成候选、执行最终 Gate 或声称阶段完成。
 - 每次设置停止线时同时列出“仍可并行项”；若没有可并行项，必须记录具体代码或数据依赖，而不是沿用阶段序号推断。

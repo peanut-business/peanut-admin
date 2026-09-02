@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 import hashlib
 import json
 import re
@@ -19,6 +20,7 @@ OWNERSHIP = ROOT / "docs/product-status/tpq-data-ownership.json"
 RULE_OWNERS = {
     "global_scope_bypass": ("TPQ07", "Sol"),
     "handwritten_tenant_predicate": ("TPQ02-TPQ13", "Sol"),
+    "tenant_join_missing": ("TPQ13", "Sol"),
     "direct_db_in_business": ("TPQ08/TPQ24/TPQ42", "Sol"),
     "manual_pagination": ("TPQ30-TPQ32", "Luna max; Sol review"),
     "accessor_sql": ("TPQ36/TPQ38", "Luna max; Sol review"),
@@ -42,6 +44,28 @@ RULE_OWNERS = {
     "raw_http_transport": ("TPQ45", "Sol"),
     "non_http_entry": ("TPQ26/TPQ47", "Sol"),
     "oversized_route_registry": ("TPQ21/TPQ43", "Sol"),
+    "database_connection_locator": ("WP1", "Sol"),
+    "global_service_locator": ("WP1", "Sol"),
+    "nullable_pdo_fallback": ("WP1", "Sol"),
+    "application_raw_persistence": ("WP1", "Sol"),
+    "model_owner_bypass": ("WP1", "Sol"),
+    "eager_cli_database_dependency": ("WP1", "Sol"),
+    "common_module_reverse_dependency": ("WP1", "Sol"),
+    "host_module_internal_dependency": ("WP1", "Sol"),
+    "application_framework_model": ("WP1", "Sol"),
+    "framework_upload_contract": ("WP1", "Sol"),
+    "application_composition_root": ("WP1", "Sol"),
+    "controller_catch_all": ("TPQ41/TPQ46", "Sol"),
+    "model_service_locator": ("WP1", "Sol"),
+    "common_facade_persistence": ("WP1", "Sol"),
+    "mutable_error_state": ("TPQ41/TPQ46", "Sol"),
+    "global_configuration_locator": ("WP1", "Sol"),
+    "static_runtime_assembly": ("WP1", "Sol"),
+    "classified_false_error": ("TPQ41/TPQ46", "Sol"),
+}
+
+DATABASE_COMPOSITION_ROOTS = {
+    "server/app/AppService.php",
 }
 
 TRUSTED_TENANT_KEY_PATHS = (
@@ -60,6 +84,13 @@ TRUSTED_TENANT_KEY_PATHS = (
     "server/app/platform/",
     "server/app/Modules/Fixture/DeliveryRecord/Infrastructure/",
     "server/app/Modules/Official/ImportExport/Infrastructure/",
+    "server/app/Modules/Official/Article/Infrastructure/Persistence/",
+    "server/app/Modules/Official/File/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Member/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Notification/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Oauth/Infrastructure/Persistence/",
+    "server/app/Modules/Official/Payment/Infrastructure/",
+    "server/app/Modules/Official/Task/Infrastructure/Persistence/",
     "server/app/common/service/notice/",
     "server/app/common/service/runtime/",
 )
@@ -76,14 +107,32 @@ OUTBOUND_TRANSPORT_ADAPTERS = {
 }
 
 TRUSTED_TENANT_KEY_FILES = {
+    "server/app/command/TenantTaskWorker.php",
     "server/app/common/model/decoration/DecoratePage.php",
     "server/app/common/model/log/OperationLog.php",
     "server/app/common/model/setting/TransactionSetting.php",
     "server/app/common/model/setting/HotSearch.php",
+    "server/app/common/service/org/AdminDirectoryQuery.php",
     "server/app/common/model/dict/DictData.php",
     "server/app/common/model/dict/DictType.php",
     "server/app/common/model/dept/Jobs.php",
+    "server/app/common/service/member/MemberApiTenantContextResolver.php",
 }
+
+TENANT_JOIN_GLOBAL_TABLES = {
+    "system_menu",
+    "system_dict_type",
+    "system_dict_data",
+    "permission",
+    "tenant",
+}
+
+TENANT_JOIN_PATTERN = re.compile(
+    r"->(?:join|leftJoin)\s*\(\s*"
+    r"(?P<table_quote>['\"])(?P<table>.*?)(?P=table_quote)\s*,\s*"
+    r"(?P<condition_quote>['\"])(?P<condition>.*?)(?P=condition_quote)",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def trusted_tenant_key_path(rel: str) -> bool:
@@ -113,7 +162,124 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
     lines = text.splitlines()
     hits: list[tuple[str, int, str]] = []
     rel = relative(path)
+    application_path = "/Application/" in f"/{rel}" or "/application/" in f"/{rel}"
+    service_path = "/service/" in f"/{rel}" or path.name.endswith("Service.php")
+    host_path = (
+        rel.startswith((
+            "server/app/api/",
+            "server/app/adminapi/",
+            "server/app/platform/",
+            "server/app/common/",
+            "server/app/command/",
+        ))
+        and not rel.endswith("ModuleProvider.php")
+    )
+    http_boundary = (
+        "/http/" in f"/{rel.lower()}"
+        or rel.endswith("Controller.php")
+        or rel.endswith("Middleware.php")
+    )
+    composition_path = (
+        rel == "server/app/AppService.php"
+        or rel.endswith("ModuleProvider.php")
+        or path.name.endswith("RuntimeFactory.php")
+        or "/composition/" in f"/{rel.lower()}"
+        or path.name.startswith(("ThinkPhp", "Pdo"))
+        or rel.startswith("server/app/common/service/installation/")
+        or rel.startswith("server/app/common/service/runtime/")
+        or path.name in {"StorageCredentialCipher.php", "ModuleScaffoldGenerator.php"}
+    )
+    method = ""
+    method_depth = 0
+    depth = 0
+    if rel == "server/app/common/execution/ContextualCommand.php" and re.search(r"\bPDO\b|function\s+database\s*\(", text):
+        hits.append(("eager_cli_database_dependency", 1, "ContextualCommand requires a database"))
+    if (rel.startswith("server/app/command/")
+        and rel != "server/app/command/PluginCommandSupport.php"
+        and ("$this->database()" in text or "use PluginCommandSupport;" in text)
+        and "extends DatabaseContextualCommand" not in text):
+        hits.append(("eager_cli_database_dependency", 1, "database command bypasses DatabaseContextualCommand"))
+    for join in TENANT_JOIN_PATTERN.finditer(text):
+        table = join.group("table").split()[0].strip("`").lower()
+        if table not in TENANT_JOIN_GLOBAL_TABLES and "tenant_id" not in join.group("condition").lower():
+            hits.append((
+                "tenant_join_missing",
+                text.count("\n", 0, join.start()) + 1,
+                re.sub(r"\s+", " ", join.group(0)).strip(),
+            ))
     for number, line in enumerate(lines, 1):
+        declaration = re.search(r"\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", line)
+        if declaration:
+            method = declaration.group(1)
+            method_depth = depth + line.count("{")
+        if not composition_path and not http_boundary and (application_path or service_path):
+            if re.search(
+                r"\bConfig::get\s*\(|(?<!->)(?<!::)(?<!function )\bconfig\s*\("
+                r"|\bgetenv\s*\(|\$_(?:ENV|SERVER)\b"
+                r"|(?<!->)(?<!::)(?<!function )\brequest\s*\(",
+                line,
+            ):
+                hits.append(("global_configuration_locator", number, line.strip()))
+            if (re.search(
+                r"\b(?:[A-Z][A-Za-z0-9_\\]*Runtime|Runtime)[A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*\s*\(",
+                line,
+            )
+                or re.search(
+                    r"\b[A-Z][A-Za-z0-9_\\]*(?:Service|Factory|Provider|Host)::(?:from|for)[A-Z][A-Za-z0-9_]*\s*\(",
+                    line,
+                )):
+                hits.append(("static_runtime_assembly", number, line.strip()))
+        if ((rel == "server/app/api/service/UserTokenService.php" and method == "parseToken")
+            or (rel == "server/app/Modules/Official/Oauth/Infrastructure/Persistence/OfficialAccountReplyRepository.php"
+                and method in {"update", "delete", "updateStatus"})) and re.search(r"\breturn\s+false\s*;", line):
+            hits.append(("classified_false_error", number, line.strip()))
+        if (rel == "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php"
+            and method == "consider"
+            and re.search(r"\breturn\s+false\s*;", line)
+            and "CRONTAB_EXPRESSION_INVALID" in "\n".join(lines[max(0, number - 16):number])):
+            hits.append(("classified_false_error", number, line.strip()))
+        if (rel == "server/app/Modules/Official/Payment/Infrastructure/ThinkPhpPaymentChannelGrantCommands.php"
+            and method == "channelConfigured"
+            and re.search(r"\bcatch\s*\(\\?Throwable\b", line)):
+            hits.append(("classified_false_error", number, line.strip()))
+        if (rel.startswith("server/app/common/")
+            and re.search(r"\bapp\\Modules\\", line)
+            and "\\Contracts\\" not in line):
+            hits.append(("common_module_reverse_dependency", number, line.strip()))
+        if host_path and re.search(
+            r"^\s*use\s+app\\Modules\\[^;]*\\(?:Application|Infrastructure|Model)\\[^;]+;",
+            line,
+            re.IGNORECASE,
+        ):
+            hits.append(("host_module_internal_dependency", number, line.strip()))
+        if application_path and (
+            re.search(r"^\s*use\s+(?:think\\(?:Model|Console)|app\\[^;]+\\model\\)", line, re.IGNORECASE)
+            or "instanceof \\think\\Model" in line
+        ):
+            hits.append(("application_framework_model", number, line.strip()))
+        if (application_path or "/Contracts/" in f"/{rel}") and re.search(
+            r"^\s*use\s+think\\file\\UploadedFile", line
+        ):
+            hits.append(("framework_upload_contract", number, line.strip()))
+        if application_path and re.search(
+            r"\bnew\s+[A-Za-z0-9_\\]+(?:ModuleProvider|Service|RepositoryFactory|Transport|Gateway|Provider|Client|Factory)\s*\(",
+            line,
+        ):
+            hits.append(("application_composition_root", number, line.strip()))
+        if (rel.endswith("Controller.php")
+            and rel != "server/app/installation/controller/InstallationController.php"
+            and re.search(r"\bcatch\s*\(\\?(?:Throwable|Exception)\b", line)):
+            hits.append(("controller_catch_all", number, line.strip()))
+        if "/model/" in rel.lower() and re.search(r"\bapp\s*\(", line):
+            hits.append(("model_service_locator", number, line.strip()))
+        if (rel.startswith("server/app/common/service/")
+            and not path.name.startswith(("ThinkPhp", "Pdo"))
+            and re.search(r"^\s*use\s+think\\facade\\Db\s*;|\bDb::", line)):
+            hits.append(("common_facade_persistence", number, line.strip()))
+        if ("/service/" in f"/{rel}" or "/driver/" in f"/{rel}") and re.search(
+            r"->(?:setError|getError)\s*\(|\$this->error\s*=", line
+        ):
+            hits.append(("mutable_error_state", number, line.strip()))
         if "withoutGlobalScope" in line and rel != "server/app/common/tenancy/PlatformTenantDataGateway.php":
             hits.append(("global_scope_bypass", number, line.strip()))
         if re.search(r"where(?:In)?\s*\([^)]*tenant_id|['\"]tenant_id['\"]\s*=>", line):
@@ -180,6 +346,25 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             r"\bclass\s+[A-Za-z0-9_]+\s+implements\s+TaskHandler\b", line
         ) and rel != "server/app/common/service/async/ModuleAwareTaskHandler.php"):
             hits.append(("non_http_entry", number, line.strip()))
+        if "Db::connect(" in line and rel not in DATABASE_COMPOSITION_ROOTS:
+            hits.append(("database_connection_locator", number, line.strip()))
+        if re.search(r"(?:\?PDO\b|PDO\s*\|\s*null\b|PDO\s+\$[A-Za-z_][A-Za-z0-9_]*\s*=\s*null\b)", line):
+            hits.append(("nullable_pdo_fallback", number, line.strip()))
+        if (re.search(r"\bapp\s*\(\s*[A-Za-z_\\]", line)
+            and ("/Application/" in f"/{rel}"
+                 or "/application/" in f"/{rel}"
+                 or "/service/" in f"/{rel}"
+                 or rel.endswith("ModuleProvider.php"))):
+            hits.append(("global_service_locator", number, line.strip()))
+        if application_path and re.search(
+            r"\bDb::(?!transaction\b)|->(?:prepare|query|exec)\s*\(", line
+        ):
+            if rel == "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php" and "->query(Crontab::class" in line:
+                continue
+            hits.append(("application_raw_persistence", number, line.strip()))
+        depth += line.count("{") - line.count("}")
+        if method and depth < method_depth:
+            method = ""
 
     loop_depths: list[int] = []
     depth = 0
@@ -194,10 +379,45 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             r"\bDb::|::(?:where|find|create|destroy)\s*\(|->(?:select|find|findOrEmpty|count|column|save|update|delete|lock)\s*\(",
             stripped,
         ):
+            if rel == "server/app/Modules/Official/File/Application/FileAdministrationService.php" and "$this->storage->delete" in stripped:
+                continue
             hits.append(("query_inside_loop", number, stripped))
         depth += stripped.count("{") - stripped.count("}")
         while loop_depths and depth < loop_depths[-1]:
             loop_depths.pop()
+    return hits
+
+
+def model_owner_bypass_hits(path: Path, text: str) -> list[tuple[str, int, str]]:
+    if not re.search(r"\bDb::(?!transaction\b)|->(?:prepare|query|exec)\s*\(", text):
+        return []
+    rel = relative(path)
+    ownership = json.loads(OWNERSHIP.read_text(encoding="utf-8"))
+    hits: list[tuple[str, int, str]] = []
+    for item in ownership.get("model_owners", []):
+        table = str(item.get("table", "")).strip()
+        model = str(item.get("model", "")).strip()
+        owner_path = "server/" + model.replace("\\", "/") + ".php"
+        if not table or not model or rel == owner_path:
+            continue
+        for match in re.finditer(
+            rf"(?<![A-Za-z0-9_]){re.escape(table)}(?![A-Za-z0-9_])",
+            text,
+            re.IGNORECASE,
+        ):
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            line_end = text.find("\n", match.end())
+            excerpt = text[line_start:line_end if line_end >= 0 else len(text)]
+            if not re.search(
+                r"\b(?:SELECT|FROM|JOIN|INSERT|UPDATE|DELETE|REPLACE|INTO)\b"
+                r"|\bDb::(?:name|table)\s*\(|->(?:join|table)\s*\(|\binsertRows\s*\(",
+                excerpt,
+                re.IGNORECASE,
+            ):
+                continue
+            line = text.count("\n", 0, match.start()) + 1
+            hits.append(("model_owner_bypass", line, f"{table} bypasses {model}"))
+            break
     return hits
 
 
@@ -235,6 +455,25 @@ def current_findings(register: dict) -> list[dict]:
                 "path": relative(path),
                 "line": line,
                 "symbol": excerpt[:160],
+                "tpq": RULE_OWNERS[rule][0],
+                "owner": item.get("owner") if item else None,
+                "decision": item.get("decision") if item else None,
+                "status": item.get("status") if item else "unregistered",
+                "verification": item.get("verification") if item else None,
+                "reason": item.get("reason") if item else None,
+                "review_due": item.get("review_due") if item else None,
+            })
+        for rule, line, excerpt in model_owner_bypass_hits(path, text):
+            key = (rule, relative(path), excerpt)
+            occurrences[key] = occurrences.get(key, 0) + 1
+            finding_id = issue_id(rule, relative(path), excerpt, occurrences[key])
+            item = registered.get(finding_id)
+            findings.append({
+                "issue_id": finding_id,
+                "category": rule,
+                "path": relative(path),
+                "line": line,
+                "symbol": excerpt,
                 "tpq": RULE_OWNERS[rule][0],
                 "owner": item.get("owner") if item else None,
                 "decision": item.get("decision") if item else None,
@@ -489,8 +728,11 @@ def main() -> int:
     unregistered = [item for item in findings if item["status"] == "unregistered"]
     unresolved = [
         item for item in findings
-        if item["decision"] != "allowlist"
-        and (item["status"] != "closed" or item["verification"] == "pending")
+        if (item["status"] != "closed" or item["verification"] == "pending")
+        or (item["decision"] == "allowlist" and (
+            not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(item.get("review_due") or ""))
+            or str(item.get("review_due")) < date.today().isoformat()
+        ))
     ]
     report = {
         "register": str(REGISTER.relative_to(ROOT)),

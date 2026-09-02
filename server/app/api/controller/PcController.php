@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
-use app\api\application\ArticleApplicationService;
+use app\common\execution\CurrentExecutionContext;
 use app\api\application\IndexApplicationService;
 use app\api\application\PcApplicationService;
-use app\common\service\article\ArticleTenantContext;
-use app\common\service\decoration\DecorationTenantContext;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
+use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /**
  * PC 端聚合接口（部分端点返回更丰富的字段或不同格式）
@@ -16,21 +16,28 @@ use app\common\service\decoration\DecorationTenantContext;
 class PcController extends BaseApiController
 {
     public function __construct(
-        App $app,
-        private readonly ArticleApplicationService $articles,
+        App $app, CurrentExecutionContext $executionContext,
+        private readonly PublicArticleQueries $articles,
         private readonly IndexApplicationService $indexApplication,
         private readonly PcApplicationService $pcApplication,
+        private readonly TenantEntryBindingResolver $entryBindings,
     ) {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['config', 'index', 'infoCenter', 'articleDetail'];
 
     /** PC 配置 */
     public function config()
     {
+        $entryTenantId = $this->entryBindings->boundTenantId(
+            $this->request,
+            TenantEntryBindingResolver::ADMIN_CLIENT,
+        );
         $result = $this->indexApplication->getConfigData(
-            DecorationTenantContext::read(DecorationTenantContext::CONFIG_OPERATION)
+            $this->publicTenantContext('decoration.config'),
+            (string)$this->request->domain(),
+            (string)$this->request->host(),
+            $entryTenantId,
         );
         return $this->data($result);
     }
@@ -38,14 +45,14 @@ class PcController extends BaseApiController
     /** PC 首页 */
     public function index()
     {
-        $result = $this->pcApplication->getIndexData(ArticleTenantContext::read('article.pc-index'));
+        $result = $this->pcApplication->getIndexData($this->publicTenantContext('article.pc-index'));
         return $this->data($result);
     }
 
     /** PC 资讯中心（同 article/lists） */
     public function infoCenter()
     {
-        ArticleTenantContext::read('article.info-center');
+        $this->publicTenantContext('article.info-center');
         return $this->data($this->articles->infoCenter());
     }
 
@@ -54,7 +61,7 @@ class PcController extends BaseApiController
     {
         $id     = $this->request->get('id/d', 0);
         $source = $this->request->get('source/s', 'default');
-        $context = ArticleTenantContext::read('article.pc-detail');
+        $this->publicTenantContext('article.pc-detail');
         return $this->data($this->articles->pcDetail($this->memberId, $id, $source));
     }
 }

@@ -2,11 +2,10 @@
 declare(strict_types=1);
 
 use app\adminapi\application\decoration\DecorationTabbarApplicationService;
-use app\common\execution\ExecutionContext;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationTabbarTenantRepository;
-use app\common\service\decoration\DecorationTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -146,21 +145,21 @@ SQL);
 
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.detail.alpha'),
-            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.tabbar.detail.alpha'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail($alpha),
         )['list'][0]['name'] === '首页',
         'Alpha detail crossed Tenant boundary',
     );
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.decoration.tabbar.detail.beta'),
-            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.decoration.tabbar.detail.beta'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail($beta),
         )['list'][0]['name'] === 'Beta Home',
         'Beta detail crossed Tenant boundary',
     );
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.read.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.tabbar.read.alpha'),
             fn() => DecorationReadService::tabbar($alpha, true),
         )['list'][0]['id'] === $alphaFirstId,
         'same order read selected another Tenant',
@@ -170,18 +169,19 @@ SQL);
         ->fetchAll(PDO::FETCH_ASSOC);
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.save.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.tabbar.save.alpha'),
             fn() => app(DecorationTabbarApplicationService::class)->save(
+                $alpha,
                 ['default_color' => '#333333', 'selected_color' => '#CC5500'],
                 tabbarItems('Saved Alpha'),
             ),
         ),
-        app(DecorationTabbarApplicationService::class)->getError()
+        'Alpha Tabbar save failed'
     );
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.decoration.tabbar.detail.saved-alpha'),
-            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.tabbar.detail.saved-alpha'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail($alpha),
         )['list'][0]['name'] === 'Saved Alpha Home',
         'Alpha Tabbar save did not persist',
     );
@@ -192,22 +192,22 @@ SQL);
     );
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.decoration.tabbar.detail.saved-beta'),
-            fn() => app(DecorationTabbarApplicationService::class)->detail(),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.decoration.tabbar.detail.saved-beta'),
+            fn() => app(DecorationTabbarApplicationService::class)->detail($beta),
         )['style']['default_color'] === '#222222',
         'Alpha save changed Beta style',
     );
 
     $publicAlpha = new TenantSystemContext(
         101,
-        DecorationTenantContext::PUBLIC_ACTOR,
-        DecorationTenantContext::CONFIG_OPERATION,
+        'peanut.decoration.public-read',
+        'decoration.config',
         'fresh-tabbar-public-alpha'
     );
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::system($publicAlpha),
-            fn() => DecorationReadService::tabbar($publicAlpha, true, DecorationTenantContext::CONFIG_OPERATION),
+            \app\common\execution\ConsumerExecutionContext::publicTenant($publicAlpha),
+            fn() => DecorationReadService::tabbar($publicAlpha, true, 'decoration.config'),
         )['list'][0]['name'] === 'Saved Alpha Home',
         'trusted public Tabbar read selected another Tenant'
     );
@@ -218,7 +218,7 @@ SQL);
         expectTabbarTenant($exception->getMessage() !== '', 'untrusted context denial lost shape');
     }
     try {
-        DecorationTenantContext::member();
+        app(CurrentExecutionContext::class)->tenantAdmin();
         throw new RuntimeException('missing TenantContext unexpectedly reached Tabbar Runtime');
     } catch (Throwable $exception) {
         expectTabbarTenant($exception->getMessage() !== '', 'missing context denial lost shape');

@@ -7,11 +7,17 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
+use app\Modules\Official\Notification\Application\NotificationBootstrapService;
+use app\Modules\Official\Task\Application\TaskBootstrapService;
+use app\common\execution\ExecutionContextStore;
+use app\common\execution\CurrentExecutionContext;
+use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
+use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
+use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use app\platform\service\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
-use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
@@ -23,6 +29,8 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
@@ -72,7 +80,7 @@ $admin = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
 );
-$database = 'pa_pm01_http_' . strtolower(bin2hex(random_bytes(6)));
+$database = IsolatedBackendEnvironment::required('DB_NAME');
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
 
 try {
@@ -90,9 +98,15 @@ try {
         $pdo->exec(KernelSchema::createSql($table));
     }
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
-    foreach (ModuleSchema::tableNames() as $table) {
-        $pdo->exec(ModuleSchema::createSql($table));
-    }
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant
+  (code,name,display_name,status,activated_at,created_at,updated_at)
+VALUES
+  ('default','Default','Default','active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+SQL);
+    $applicationSchema = (string)file_get_contents(dirname(__DIR__, 2) . '/database/init.sql');
+    lifecycleExpect($applicationSchema !== '', 'canonical application schema is missing');
+    $pdo->exec($applicationSchema);
     $transactions = new PdoTransactionManager($pdo);
     $bootstrap = new BootstrapService(
         $transactions,
@@ -119,12 +133,23 @@ try {
             }
         }
     );
+    $applicationContexts = new ExecutionContextStore();
     $service = new TenantGovernanceService(
         new LifecycleIdentity(new PlatformOperatorIdentity($platform->operatorId, $platform->accountId)),
         $transactions,
         $bootstrap,
         new PlatformTenantAdminService($pdo, $modules),
-        new PdoTenantOwnerAdminProvisioner($pdo)
+        new PdoTenantOwnerAdminProvisioner(
+            $pdo,
+            new ApplicationTenantBootstrapService(
+                $pdo,
+                new NotificationBootstrapService(),
+                new TaskBootstrapService(),
+                $applicationContexts,
+                TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+                new ThinkPhpTenantApplicationBootstrapPersistence(),
+            ),
+        )
     );
 
     lifecycleRejects(static fn() => $service->provision(
@@ -136,7 +161,7 @@ try {
         'Forged Owner',
         'pm01-forged'
     ));
-    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === 0, 'forged platform token wrote a Tenant');
+    lifecycleExpect((int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn() === 1, 'forged platform token wrote a Tenant');
 
     $candidate = $service->provision(
         'pm01-lifecycle-token',
@@ -169,6 +194,10 @@ try {
         (int)$pdo->query("SELECT COUNT(*) FROM pa_member_role WHERE tenant_id={$tenantId} AND tenant_member_id={$candidate['member_id']} AND role_id={$candidate['role_id']}")->fetchColumn() === 1,
         'owner membership does not point to the native Tenant role'
     );
+    lifecycleExpect(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_notice_scene WHERE tenant_id={$tenantId}")->fetchColumn() === 4,
+        'provision did not run application-owned Tenant bootstrap'
+    );
 
     $secondCandidate = $service->provision(
         'pm01-lifecycle-token',
@@ -197,7 +226,20 @@ try {
     $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
     $failingOwnerAdmins = new class($pdo) implements TenantOwnerAdminProvisioner {
         private PdoTenantOwnerAdminProvisioner $delegate;
-        public function __construct(PDO $pdo) { $this->delegate = new PdoTenantOwnerAdminProvisioner($pdo); }
+        public function __construct(PDO $pdo) {
+            $contexts = new ExecutionContextStore();
+            $this->delegate = new PdoTenantOwnerAdminProvisioner(
+                $pdo,
+                new ApplicationTenantBootstrapService(
+                    $pdo,
+                    new NotificationBootstrapService(),
+                    new TaskBootstrapService(),
+                    $contexts,
+                    TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+                    new ThinkPhpTenantApplicationBootstrapPersistence(),
+                ),
+            );
+        }
         public function provision(
             int $tenantId,
             int $accountId,
@@ -287,15 +329,15 @@ try {
 
     $route = peanut_route_registry_source(dirname(__DIR__, 2));
     lifecycleExpect(
-        str_contains($route, "Route::post('api/platform/tenants/provision'")
+        str_contains($route, "Route::post('tenants/provision'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.provision-owner'")
-            && str_contains($route, "Route::post('api/platform/tenants/activate'")
-            && str_contains($route, "Route::post('api/platform/tenants/close'")
+            && str_contains($route, "Route::post('tenants/activate'")
+            && str_contains($route, "Route::post('tenants/close'")
             && str_contains($route, "PlatformPermissionMiddleware::class, 'platform.tenant.lifecycle'"),
         'platform lifecycle HTTP routes lost their dedicated permissions'
     );
-    $resendRoute = strpos($route, "Route::post('api/platform/tenants/invitations/resend'");
-    $inviteRoute = strpos($route, "Route::post('api/platform/tenants/invitations'");
+    $resendRoute = strpos($route, "Route::post('tenants/invitations/resend'");
+    $inviteRoute = strpos($route, "Route::post('tenants/invitations'");
     lifecycleExpect(
         $resendRoute !== false && $inviteRoute !== false && $resendRoute < $inviteRoute,
         'specific invitation actions must precede the prefix-sensitive invitation collection route'

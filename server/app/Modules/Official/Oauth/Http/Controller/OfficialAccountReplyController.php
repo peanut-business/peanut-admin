@@ -3,36 +3,39 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Http\Controller;
 
-use app\adminapi\controller\AbstractTenantCrudController;
-use app\common\http\PageResult;
+use app\adminapi\controller\BaseAdminController;
+use app\common\traits\CrudTrait;
 use app\Modules\Official\Oauth\Application\OfficialAccountReplyApplicationService;
 use app\Modules\Official\Oauth\Validation\OfficialAccountReplyValidate;
-use app\common\service\member\MemberTenantContext;
-use PeanutAdmin\Kernel\Auth\AuthException;
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\response\Json;
+use think\App;
 
-class OfficialAccountReplyController extends AbstractTenantCrudController
+class OfficialAccountReplyController extends BaseAdminController
 {
-    protected const CRUD_SERVICE = OfficialAccountReplyApplicationService::class;
+    use CrudTrait;
+
     protected const CRUD_VALIDATE = OfficialAccountReplyValidate::class;
     protected const CRUD_NOT_FOUND_MESSAGE = '自动回复不存在';
     protected const CRUD_DELETE_SUCCESS_MESSAGE = '删除成功';
     protected const CRUD_VALIDATE_LISTS = true;
     protected const CRUD_STATUS_FIELD = 'status';
 
-    protected function resolveCrudContext(): TenantContext
-    {
-        $context = MemberTenantContext::member();
-        if (!$context instanceof TenantContext) {
-            throw new AuthException('CONTEXT_TENANT_REQUIRED', 403);
-        }
-
-        return $context;
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly OfficialAccountReplyApplicationService $replies,
+    ) {
+        parent::__construct($app, $executionContext);
     }
 
-    protected function renderLists(PageResult|array|false $result): Json
+    protected function resolveCrudContext(): TenantContext
     {
-        return $this->data($result);
+        return $this->tenantAdminContext();
+    }
+
+    protected function crudService(): object
+    {
+        return $this->replies;
     }
 }

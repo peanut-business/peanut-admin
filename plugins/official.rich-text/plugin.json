@@ -1,0 +1,91 @@
+{
+    "schema_version": 1,
+    "key": "official.rich-text",
+    "version": "1.0.0",
+    "source": {
+        "type": "canonical-contents",
+        "reference": "canonical-plugin-contents-v1",
+        "sha256": "f47d8cfec327f081df5df1a14f9540d4438474520c1af15df5ce79662ac9888e"
+    },
+    "trust": {
+        "channel": "bundled",
+        "origin": {
+            "type": "repository-contents",
+            "reference": "canonical-plugin-contents-v1"
+        },
+        "archive": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "signature": {
+            "status": "not-issued",
+            "key_id": null
+        },
+        "sbom": {
+            "status": "not-issued",
+            "sha256": null
+        },
+        "license": {
+            "identifier": "Apache-2.0",
+            "status": "declared"
+        },
+        "qualification": {
+            "status": "bundled-locked",
+            "review": "not-reviewed",
+            "vulnerability_response": "not-configured",
+            "marketplace": "blocked"
+        },
+        "compatibility": {
+            "modules": [
+                {
+                    "key": "official.rich-text",
+                    "version": "1.0.0",
+                    "kernel_constraint": "^1.0",
+                    "dependencies": [],
+                    "permissions": {
+                        "path": "Resources/permissions.json",
+                        "sha256": "289640e0f2c43a3dee7d6557005a1ad72a01bf180c3492d5f0dbd08acb5fe2e1"
+                    },
+                    "migrations": {
+                        "reversibility": "verified-backup-required",
+                        "files": [
+                            {
+                                "key": "official.rich-text:20260903-create-rich-text-document",
+                                "sha256": "f9bd6105f0ba0a99e1a4dae86348561cb710d29d4216c5cb73ada3e488105f32"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "composer": [
+        {
+            "name": "peanut-business/official-rich-text",
+            "version": "1.0.0",
+            "sha256": "a8e9ea9f5ff57446932fb44d61d4d79bfb8740be4ccd31cb7ce71a224951c3a3"
+        }
+    ],
+    "npm": [
+        {
+            "name": "@peanut-admin/official-rich-text",
+            "version": "1.0.0",
+            "integrity": "sha256-fCmIcU4AkYatBgkdPza9UQUbyjy2kxCOtylGfN4KMoM="
+        }
+    ],
+    "frontend": [
+        {
+            "client_key": "admin-web",
+            "package": "@peanut-admin/official-rich-text",
+            "version": "1.0.0",
+            "entry": "web/src/modules/official-rich-text/contribution.ts",
+            "sha256": "fd2b648b21c7d6fbe58263ebfd079481adeff50ab3ff04a2daa2e42eff184c31"
+        }
+    ],
+    "modules": [
+        {
+            "key": "official.rich-text",
+            "root": "server/app/Modules/Official/RichText"
+        }
+    ]
+}

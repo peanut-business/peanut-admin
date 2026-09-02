@@ -17,7 +17,8 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) === 'adminapi') {
+Route::group(function (): void {
     Route::get('official.oauth.web-page.config', [WebPageController::class, 'getConfig']);
     Route::post('official.oauth.web-page.save', [WebPageController::class, 'setConfig']);
     Route::get('official.oauth.mini-program.config', [MiniProgramController::class, 'getConfig']);
@@ -39,15 +40,20 @@ Route::group('api/admin', function (): void {
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
+}
 
-Route::post('api/oauth/wechat/begin', [ApiOAuthController::class, 'begin']);
-Route::post('api/oauth/wechat/callback', [ApiOAuthController::class, 'callback']);
-Route::post('api/oauth/wechat/mini-program', [ApiOAuthController::class, 'miniProgram']);
-Route::post('api/oauth/wechat/complete', [ApiOAuthController::class, 'complete']);
-Route::get('api/oauth/wechat/redirect/pc', [ApiOAuthController::class, 'redirectPc']);
-Route::get('api/oauth/wechat/redirect/official-account', [ApiOAuthController::class, 'redirectOfficialAccount']);
-Route::post('api/oauth/wechat/bind', [ApiOAuthController::class, 'bind'])
+if (($peanutRouteApplication ?? null) !== 'api') {
+    return;
+}
+
+Route::post('oauth/wechat/begin', [ApiOAuthController::class, 'begin']);
+Route::post('oauth/wechat/callback', [ApiOAuthController::class, 'callback']);
+Route::post('oauth/wechat/mini-program', [ApiOAuthController::class, 'miniProgram']);
+Route::post('oauth/wechat/complete', [ApiOAuthController::class, 'complete']);
+Route::get('oauth/wechat/redirect/pc', [ApiOAuthController::class, 'redirectPc']);
+Route::get('oauth/wechat/redirect/official-account', [ApiOAuthController::class, 'redirectOfficialAccount']);
+Route::post('oauth/wechat/bind', [ApiOAuthController::class, 'bind'])
     ->middleware(CheckTokenMiddleware::class)
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member-bind');
-Route::get('api/wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'verify']);
-Route::post('api/wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'callback']);
+Route::get('wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'verify']);
+Route::post('wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'callback']);

@@ -4,13 +4,12 @@ declare(strict_types=1);
 namespace app\adminapi\http\middleware;
 
 use app\adminapi\service\OperationLogService;
-use app\common\service\audit\OperationLogDiagnostics;
-use app\common\service\audit\OperationLogTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\ApiProblemMapper;
 use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
+use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 
 /**
  * 操作日志中间件（原生 TP 风格）
@@ -24,12 +23,22 @@ class OperationLogMiddleware
     /** 不记录的动作后缀（避免日志模块自我刷屏） */
     protected array $except = ['log/clear'];
 
+    public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly OperationLogService $operationLogs,
+        private readonly ApiProblemMapper $problems,
+    ) {}
+
     public function handle($request, \Closure $next)
     {
         try {
-            $context = ExecutionContextAccess::tenantAdmin();
+            $context = $this->executionContext->tenantAdmin();
         } catch (\Throwable $exception) {
-            OperationalLog::warning('operation_log_tenant_context_unavailable', OperationLogDiagnostics::attributes(null));
+            OperationalLog::warning(
+                $this->executionContext,
+                'operation_log_tenant_context_unavailable',
+                TenantDiagnosticAttributes::fromTenantContext(null),
+            );
             throw $exception;
         }
         $outcome = AuditOutcome::Success;
@@ -48,7 +57,7 @@ class OperationLogMiddleware
             }
             return $response;
         } catch (\Throwable $exception) {
-            $problem = (new ApiProblemMapper())->map($exception);
+            $problem = $this->problems->map($exception);
             $httpStatus = $problem?->httpStatus ?? 500;
             $outcome = in_array($httpStatus, [401, 403], true)
                 ? AuditOutcome::Denied
@@ -77,10 +86,10 @@ class OperationLogMiddleware
             }
         }
 
-        $adminInfo = ExecutionContextAccess::principal();
+        $adminInfo = $this->executionContext->tenantAdminPrincipal();
 
         try {
-            OperationLogService::record(
+            $this->operationLogs->record(
                 $context,
                 (int)($adminInfo['id'] ?? 0),
                 (string)($adminInfo['username'] ?? ''),
@@ -93,9 +102,11 @@ class OperationLogMiddleware
                 $httpStatus,
             );
         } catch (\Throwable $exception) {
-            OperationalLog::error('operation_log_write_failed', OperationLogDiagnostics::attributes($context) + [
-                'exception' => $exception::class,
-            ]);
+            OperationalLog::error(
+                $this->executionContext,
+                'operation_log_write_failed',
+                TenantDiagnosticAttributes::fromTenantContext($context) + ['exception' => $exception::class],
+            );
             // 记录日志失败不得影响主流程
         }
     }

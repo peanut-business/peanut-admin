@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Task\OpsTask;
@@ -15,8 +16,10 @@ use Throwable;
 /** Application persistence adapter for Core operations tasks. */
 final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private AuditContractHost $audit,
+    ) {
     }
 
     public function dispatch(PlatformContext $context, OpsTaskSubmission $submission): OpsTask
@@ -196,13 +199,15 @@ SQL);
                 'operator_id' => $context->operatorId,
             ]);
 
-            AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+            $this->audit->recordPlatform(
                 $eventType,
                 $action,
                 $context->requestId,
                 $context->operatorId,
                 $context->accountId,
-                [...$auditMetadata, 'task_key' => $taskKey]
+                [...$auditMetadata, 'task_key' => $taskKey],
+                AuditOutcome::Success,
+                null,
             );
 
             $row = $this->one('SELECT * FROM pa_ops_task WHERE task_key = :task_key', ['task_key' => $taskKey]);

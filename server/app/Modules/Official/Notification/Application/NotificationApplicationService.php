@@ -10,26 +10,31 @@ use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
-use app\Modules\Official\Notification\Model\NoticeLog;
+use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\service\notice\NoticeChannelService;
-use app\common\service\notice\NoticeTenantContext;
-use app\common\service\notice\NoticeTenantRepository;
-use app\common\service\notice\VerificationCodeService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
+use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\support\PaginationInput;
 
 final class NotificationApplicationService implements NotificationCommands, NotificationQueries, VerificationCodeCommands
 {
+    public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly VerificationCodeService $verificationCodes,
+        private readonly NoticeChannelService $channels,
+    ) {
+    }
+
     public function saveChannel(string $section, array $input): void
     {
-        NoticeChannelService::save(NoticeTenantContext::member(), $section, $input);
+        $this->channels->save($this->executionContext, $this->executionContext->tenantAdmin(), $section, $input);
     }
 
     public function saveScene(array $params): void
     {
-        $scene = NoticeTenantRepository::scenes(NoticeTenantContext::member())
+        $scene = NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($scene->isEmpty()) {
@@ -44,12 +49,12 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function channelDetail(): array
     {
-        return NoticeChannelService::detail(NoticeTenantContext::member());
+        return $this->channels->detail($this->executionContext->tenantAdmin());
     }
 
     public function scenes(): array
     {
-        $list = NoticeTenantRepository::scenes(NoticeTenantContext::member())->field([
+        $list = NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
         ])->order('id', 'asc')->select()->toArray();
@@ -59,19 +64,19 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function sceneDetail(int $id): array
     {
-        return NoticeTenantRepository::scenes(NoticeTenantContext::member())->where('id', $id)->findOrEmpty()->toArray();
+        return NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->toArray();
     }
 
     public function sceneExists(int $id): bool
     {
-        return !NoticeTenantRepository::scenes(NoticeTenantContext::member())->where('id', $id)->findOrEmpty()->isEmpty();
+        return !NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->isEmpty();
     }
 
     public function logs(array $params): PageResult
     {
-        $query = NoticeLog::alias('l')
-            ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+        $query = NoticeTenantRepository::logQuery('l')
+            ->leftJoin('notice_template t', 't.id = l.template_id AND t.tenant_id = l.tenant_id')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id AND s.tenant_id = l.tenant_id')
             ->field([
                 'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
                 'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',
@@ -102,19 +107,17 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
         $pagination = PaginationInput::from($params);
         $pageResult = $pagination->result($query->order('l.id', 'desc'));
-        $list = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = NoticeTenantRepository::arrayPage($pageResult);
+        $list = $pageResult->items;
 
         return new PageResult($list, $pageResult->total, $pageResult->page, $pageResult->pageSize);
     }
 
     public function logDetail(int $id): array
     {
-        return NoticeLog::alias('l')
-            ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+        return NoticeTenantRepository::logQuery('l')
+            ->leftJoin('notice_template t', 't.id = l.template_id AND t.tenant_id = l.tenant_id')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id AND s.tenant_id = l.tenant_id')
             ->field([
                 'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
                 'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',
@@ -130,7 +133,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function sendCode(TenantContext|TenantSystemContext $context, string $sceneCode, string $mobile): DeliveryResult
     {
-        return (new VerificationCodeService())->send($context, $sceneCode, $mobile);
+        return $this->verificationCodes->send($context, $sceneCode, $mobile);
     }
 
     public function verifyCode(
@@ -139,6 +142,6 @@ final class NotificationApplicationService implements NotificationCommands, Noti
         string $mobile,
         string $code
     ): VerificationResult {
-        return (new VerificationCodeService())->verify($context, $sceneCode, $mobile, $code);
+        return $this->verificationCodes->verify($context, $sceneCode, $mobile, $code);
     }
 }

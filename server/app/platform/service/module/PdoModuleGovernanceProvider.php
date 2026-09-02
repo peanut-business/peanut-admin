@@ -11,8 +11,6 @@ use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLifecycleService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
-use PeanutAdmin\Kernel\Module\ModuleException;
-use think\facade\Config;
 
 /** Single Host assembly point for the Module Governance contracts. */
 final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
@@ -29,20 +27,6 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
         private readonly array $moduleConfig,
     ) {
         $this->registryFactory = new PluginModuleRegistryFactory($pdo, $serverRoot);
-    }
-
-    public static function forExecution(PDO $pdo): self
-    {
-        return new self($pdo, self::serverRoot(), []);
-    }
-
-    public static function forApplication(PDO $pdo): self
-    {
-        $config = Config::get('modules', []);
-        if (!is_array($config)) {
-            throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment metadata is invalid.');
-        }
-        return new self($pdo, self::serverRoot(), $config);
     }
 
     public function registry(): DeployedTenantModuleRegistry
@@ -96,8 +80,4 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
             : $this->serverRoot . '/' . ltrim($lockPath, '/');
     }
 
-    private static function serverRoot(): string
-    {
-        return dirname(__DIR__, 4);
-    }
 }

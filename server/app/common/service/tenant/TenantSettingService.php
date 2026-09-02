@@ -7,11 +7,9 @@ use app\common\contract\tenant\TenantSettingSnapshot;
 use app\common\contract\tenant\TenantSettingsCommands;
 use app\common\contract\tenant\TenantSettingsProvider;
 use app\common\contract\tenant\TenantSettingsQuery;
-use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\member\MemberTenantContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use think\facade\Db;
 
 final readonly class TenantSettingService implements TenantSettingsQuery, TenantSettingsCommands
 {
@@ -24,7 +22,7 @@ final readonly class TenantSettingService implements TenantSettingsQuery, Tenant
         string $namespace,
         array $default = []
     ): TenantSettingSnapshot {
-        $tenantId = MemberTenantContext::tenantId($context);
+        $tenantId = $context->tenantId;
         TenantSettingsNamespace::assertValid($namespace);
         $snapshot = $this->provider->find($tenantId, $namespace);
         if ($snapshot === null) {
@@ -38,10 +36,8 @@ final readonly class TenantSettingService implements TenantSettingsQuery, Tenant
         string $namespace,
         array $document
     ): TenantSettingSnapshot {
-        $tenantId = MemberTenantContext::tenantId($context);
+        $tenantId = $context->tenantId;
         TenantSettingsNamespace::assertValid($namespace);
-        return Db::transaction(
-            fn(): TenantSettingSnapshot => $this->provider->replace($tenantId, $namespace, $document),
-        );
+        return $this->provider->replace($tenantId, $namespace, $document);
     }
 }

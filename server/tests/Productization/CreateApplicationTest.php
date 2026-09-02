@@ -261,8 +261,8 @@ try {
         'Standalone artifact must omit the multi-tenant admin and Platform bundles'
     );
     createApplicationExpect(
-        !str_contains((string)file_get_contents($standalone . '/server/route/app.php'), "require __DIR__ . '/platform.php';")
-            && str_contains((string)file_get_contents($first . '/server/route/app.php'), "require __DIR__ . '/platform.php';")
+        !str_contains((string)file_get_contents($standalone . '/server/config/app.php'), "'platformapi' => 'platform'")
+            && str_contains((string)file_get_contents($first . '/server/config/app.php'), "'platformapi' => 'platform'")
             && str_contains((string)file_get_contents($standalone . '/server/.env.example'), 'DEPLOYMENT_MODE=standalone')
             && str_contains((string)file_get_contents($first . '/server/.env.example'), 'DEPLOYMENT_MODE=multi-tenant'),
         'Edition route and environment composition changed outside the selected profile'

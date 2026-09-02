@@ -62,15 +62,20 @@ namespace {
     );
     expectFileMedia(($storageEvidence['configuration_restored'] ?? false) === true, 'S01 configuration must be restored');
 
+    $fileService = (new ReflectionClass(\app\common\service\FileService::class))->newInstanceWithoutConstructor();
     expectFileMedia(
-        \app\common\service\FileService::getFileUrl('https://cdn.example.test/a.png')
-            === 'https://cdn.example.test/a.png',
+        $fileService->getFileUrl('https://cdn.example.test/a.png') === 'https://cdn.example.test/a.png',
         'absolute URL must remain unchanged'
     );
 
     $ownedFiles = [
         'app/common/service/FileService.php',
-        'app/common/service/UploadService.php',
+        'app/Modules/Official/File/Application/FileUploadService.php',
+        'app/Modules/Official/File/Contracts/FileUploads.php',
+        'app/Modules/Official/File/Contracts/Dto/UploadFile.php',
+        'app/Modules/Official/File/ModuleProvider.php',
+        'app/api/controller/UploadController.php',
+        'app/Modules/Official/File/Http/Controller/UploadController.php',
         'app/Modules/Official/File/Model/File.php',
         'app/Modules/Official/File/Application/FileAdministrationService.php',
         'app/Modules/Official/File/Contracts/FileAdministration.php',
@@ -88,16 +93,38 @@ namespace {
         !str_contains($sources['app/Modules/Official/File/Model/File.php'], 'getUrlAttr')
             && str_contains(
                 $sources['app/Modules/Official/File/Application/FileAdministrationService.php'],
-                "FileService::getFileUrl((string) (\$item['file_key'] ?? ''))",
+                "\$this->files->getFileUrl((string) (\$item['file_key'] ?? ''))",
             ),
         'File presentation URL must be resolved by the application boundary from the canonical object key'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/UploadService.php'], 'StorageService::fromDefaultConnection()'),
-        'upload must use the unified storage service'
+        !is_file($serverRoot . '/app/common/service/UploadService.php')
+            && str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], '$this->storage->storePath(')
+            && str_contains($sources['app/Modules/Official/File/ModuleProvider.php'], 'FileUploads::class'),
+        'upload must be owned and explicitly bound by the File Module'
     );
     expectFileMedia(
-        str_contains($sources['app/Modules/Official/File/Application/FileAdministrationService.php'], 'StorageService::fromDefaultConnection()->delete'),
+        !str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'request()->file')
+            && !str_contains($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'think\\file\\UploadedFile')
+            && !str_contains($sources['app/Modules/Official/File/Contracts/FileUploads.php'], 'think\\file\\UploadedFile')
+            && substr_count($sources['app/Modules/Official/File/Application/FileUploadService.php'], 'UploadFile $uploaded') === 4,
+        'FileUploadService must receive the framework-neutral upload value'
+    );
+    foreach ([
+        'app/api/controller/UploadController.php',
+        'app/Modules/Official/File/Http/Controller/UploadController.php',
+    ] as $controller) {
+        expectFileMedia(
+            str_contains($sources[$controller], "\$this->request->file('file')")
+                && str_contains($sources[$controller], 'instanceof UploadedFile')
+                && str_contains($sources[$controller], 'new UploadFile(')
+                && str_contains($sources[$controller], 'FileUploads $uploads')
+                && !str_contains($sources[$controller], 'catch ('),
+            $controller . ' must adapt its UploadedFile at the HTTP boundary'
+        );
+    }
+    expectFileMedia(
+        str_contains($sources['app/Modules/Official/File/Application/FileAdministrationService.php'], '$this->storage->delete'),
         'delete must use the unified storage service'
     );
     expectFileMedia(

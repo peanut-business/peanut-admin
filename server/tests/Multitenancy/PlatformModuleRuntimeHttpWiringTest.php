@@ -61,12 +61,12 @@ $webRouteSource = (string)file_get_contents(dirname($serverRoot) . '/web/src/rou
 $webApiSource = (string)file_get_contents(dirname($serverRoot) . '/web/src/api/dev-tools/modules.ts');
 
 $routes = [
-    ['get', 'api/platform/instance-tools/modules', 'lists', 'platform.module.read'],
-    ['post', 'api/platform/instance-tools/modules/create', 'create', 'platform.module.create'],
-    ['post', 'api/platform/instance-tools/modules/install', 'install', 'platform.module.install'],
-    ['post', 'api/platform/instance-tools/modules/uninstall', 'uninstall', 'platform.module.uninstall'],
-    ['post', 'api/platform/instance-tools/modules/disable', 'disable', 'platform.module.disable'],
-    ['post', 'api/platform/instance-tools/modules/sync', 'sync', 'platform.module.sync'],
+    ['get', 'instance-tools/modules', 'lists', 'platform.module.read'],
+    ['post', 'instance-tools/modules/create', 'create', 'platform.module.create'],
+    ['post', 'instance-tools/modules/install', 'install', 'platform.module.install'],
+    ['post', 'instance-tools/modules/uninstall', 'uninstall', 'platform.module.uninstall'],
+    ['post', 'instance-tools/modules/disable', 'disable', 'platform.module.disable'],
+    ['post', 'instance-tools/modules/sync', 'sync', 'platform.module.sync'],
 ];
 $permissionKeys = [];
 foreach ($routes as [$method, $path, $action, $permission]) {
@@ -86,7 +86,7 @@ foreach ($routes as [$method, $path, $action, $permission]) {
 }
 sort($permissionKeys, SORT_STRING);
 platformModuleHttpExpect(
-    !str_contains($routeSource, "api/admin/core.module")
+    !str_contains($routeSource, "core.module")
         && !str_contains($controllerSource . $serviceSource, 'AdminPermissionService')
         && !str_contains($controllerSource . $serviceSource, 'TenantAuthorizationEvaluator')
         && !str_contains($controllerSource . $serviceSource, 'TenantContext'),
@@ -104,7 +104,7 @@ platformModuleHttpExpect(
     str_contains($webRouteSource, "path: 'modules'")
         && str_contains($webRouteSource, "instanceTool: true")
         && str_contains($webApiSource, "const PLATFORM_TOKEN_KEY = 'peanut-platform-token'")
-        && str_contains($webApiSource, "client.post('/api/platform/instance-tools/modules/create'")
+        && str_contains($webApiSource, "client.post('/platformapi/instance-tools/modules/create'")
         && str_contains($serviceSource, 'new ModuleScaffoldGenerator(dirname($this->serverRoot))')
         && !str_contains($webApiSource, 'peanut-admin-token'),
     'Admin Web module page lost its existing /dev-tools plane, shared generator, or independent Platform token',
@@ -161,7 +161,13 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
     );
     platformModuleHttpExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'Platform Module HTTP test database must start empty');
-    $identity = initializeCoreIdentity($pdo, 'module-http-owner@example.test', 'ModuleHttpOwnerPassword2026', null);
+    $identity = initializeCoreIdentity(
+        $pdo,
+        'module-http-owner@example.test',
+        'ModuleHttpOwnerPassword2026',
+        null,
+        new \app\common\service\DemoAccountPolicy($pdo, false, []),
+    );
     executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
     (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
 

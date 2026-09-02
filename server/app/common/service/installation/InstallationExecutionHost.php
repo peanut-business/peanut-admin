@@ -290,8 +290,10 @@ final class InstallationExecutionHost
         }
         $profile = (new ProductTenantModuleProfileService(
             $pdo,
-            $this->serverRoot,
-            $config,
+            new \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager($pdo),
+            new \PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository($pdo, true),
+            new PdoModuleGovernanceProvider($pdo, $this->serverRoot, $config),
+            \app\common\service\audit\AuditContractHost::fromPdo($pdo),
         ))->applyInstallationSelection($moduleKeys);
         return ['operations' => $operations, 'profile' => $profile];
     }

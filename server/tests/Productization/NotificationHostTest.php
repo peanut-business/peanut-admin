@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
-use app\common\service\notice\VerificationCodeSecret;
+use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -26,7 +26,7 @@ $channelService = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/NoticeChannelService.php'
 );
 foreach ([
-    'new AliyunSms', 'new TencentSms', 'ExternalChannelBindingService::mutate', 'safeReceipt', 'sanitizeError',
+    'new AliyunSms', 'new TencentSms', '$this->bindings->mutate(', 'safeReceipt', 'sanitizeError',
     "private const BINDING_PROVIDER = 'notice.sms'",
 ] as $marker) {
     expectNotificationHost(str_contains($channelService, $marker), 'SMS Host invariant missing: ' . $marker);
@@ -38,14 +38,59 @@ expectNotificationHost(
 $applicationService = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Notification/Application/NotificationApplicationService.php'
 );
+$notificationProvider = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/ModuleProvider.php'
+);
+$sceneValidator = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/Validation/NoticeSceneValidate.php'
+);
+$readinessHost = (string)file_get_contents(
+    $serverRoot . '/app/common/service/readiness/FirstRunReadinessHost.php'
+);
+$readinessController = (string)file_get_contents(
+    $serverRoot . '/app/adminapi/controller/config/ReadinessController.php'
+);
 expectNotificationHost(
-    str_contains($applicationService, "NoticeLog::alias('l')")
+    str_contains($notificationProvider, 'VerificationCodeCommands::class =>'),
+    'verification command contract is not bound at startup'
+);
+expectNotificationHost(
+    str_contains($sceneValidator, 'private readonly NotificationQueries $queries')
+        && str_contains($sceneValidator, '$this->queries->sceneExists(')
+        && !str_contains($sceneValidator, 'new ModuleProvider'),
+    'scene validation bypasses the Notification query contract binding'
+);
+expectNotificationHost(
+    str_contains($readinessHost, 'private readonly NotificationQueries $notifications')
+        && str_contains($readinessHost, '$this->notifications->channelDetail()')
+        && !str_contains($readinessHost, 'NotificationModuleProvider')
+        && str_contains($readinessController, 'private readonly FirstRunReadinessHost $readiness')
+        && str_contains($readinessController, '$this->readiness->checklist(')
+        && !str_contains($readinessController, 'new FirstRunReadinessHost'),
+    'readiness projection bypasses its container-owned Notification dependency'
+);
+foreach ([
+    'Login' => '/app/api/application/LoginApplicationService.php',
+    'OAuth' => '/app/Modules/Official/Oauth/Application/OAuthCommandService.php',
+    'Sms' => '/app/api/application/SmsApplicationService.php',
+    'User' => '/app/api/application/UserApplicationService.php',
+] as $application => $path) {
+    $consumer = (string)file_get_contents($serverRoot . $path);
+    expectNotificationHost(
+        str_contains($consumer, 'VerificationCodeCommands')
+            && str_contains($consumer, '$this->verificationCodes->')
+            && !str_contains($consumer, '(new ModuleProvider())->verification()'),
+        $application . ' consumer bypasses the Notification contract binding'
+    );
+}
+expectNotificationHost(
+    str_contains($applicationService, "NoticeTenantRepository::logQuery('l')")
         && !str_contains($applicationService, "where('l.tenant_id'"),
     'notification log reads do not rely on the global Tenant model scope'
 );
 
 $verificationService = (string)file_get_contents(
-    $serverRoot . '/app/common/service/notice/VerificationCodeService.php'
+    $serverRoot . '/app/Modules/Official/Notification/Application/VerificationCodeService.php'
 );
 foreach (['$this->sender->send', "['code' => '****']", 'verify_code_hash', 'NoticeTenantRepository::createLog'] as $marker) {
     expectNotificationHost(str_contains($verificationService, $marker), 'verification boundary missing: ' . $marker);
@@ -53,18 +98,24 @@ foreach (['$this->sender->send', "['code' => '****']", 'verify_code_hash', 'Noti
 $applicationSender = (string)file_get_contents(
     $serverRoot . '/app/common/service/notice/ApplicationNoticeSmsSender.php'
 );
+$notificationProvider = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Notification/ModuleProvider.php'
+);
 expectNotificationHost(
-    str_contains($applicationSender, 'NoticeChannelService::sendSms'),
+    str_contains($applicationSender, '$this->channels->sendSms('),
     'tenant-owned notification flow does not delegate to the application credential Host'
 );
 expectNotificationHost(
-    str_contains($applicationSender, "getenv('APP_ENV') ?: ''")
-        && str_contains($applicationSender, "'delivery' => 'simulated'"),
+    str_contains($notificationProvider, "env('APP_ENV', '') === 'development'")
+        && str_contains($applicationSender, 'private readonly bool $developmentMode')
+        && str_contains($applicationSender, "'delivery' => 'simulated'")
+        && !str_contains($applicationSender, 'getenv('),
     'development SMS delivery is not simulated before the External Channel Host'
 );
 expectNotificationHost(
-    str_contains($verificationService, "? '1234'")
-        && str_contains($verificationService, "getenv('APP_ENV') ?: ''"),
+    str_contains($verificationService, 'private readonly bool $developmentMode')
+        && str_contains($verificationService, "? '1234'")
+        && !str_contains($verificationService, 'getenv('),
     'development verification code is not fixed to 1234'
 );
 expectNotificationHost(
@@ -76,11 +127,11 @@ expectNotificationHost(
     'verification flow does not pass its trusted Tenant context to the SMS Host'
 );
 expectNotificationHost(
-    !str_contains($verificationService, "->where('is_verified', NoticeLog::VERIFIED_NO)"),
+    !str_contains($verificationService, "->where('is_verified', NoticeTenantRepository::LOG_VERIFIED_NO)"),
     'verification can fall back to an older code after the latest code is consumed'
 );
 expectNotificationHost(
-    str_contains($verificationService, '(int)$log->is_verified === NoticeLog::VERIFIED_YES'),
+    str_contains($verificationService, '(int)$log->is_verified === NoticeTenantRepository::LOG_VERIFIED_YES'),
     'latest successful verification record is not checked for prior consumption'
 );
 foreach (['ConfigService::get', 'new AliyunSms', 'new TencentSms', "'verify_code' => \$code"] as $forbidden) {
@@ -152,12 +203,16 @@ foreach ([
 }
 
 $tenantSources = [$channelService, $verificationService, $applicationService, (string)file_get_contents(
-    $serverRoot . '/app/common/service/notice/NoticeTenantRepository.php'
+    $serverRoot . '/app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php'
 )];
 foreach ($tenantSources as $source) {
     $withoutAllowedContextTypes = str_replace([
         'PeanutAdmin\\Kernel\\Auth\\TenantContext',
+        'PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext',
         'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+        'PeanutAdmin\\Kernel\\Persistence\\TransactionManager',
+        'PeanutAdmin\\NotificationSms\\Application\\VerificationCodeSecret',
+        'PeanutAdmin\\NotificationSms\\Sms\\NoticeSmsSender',
     ], '', $source);
     expectNotificationHost(
         !str_contains($withoutAllowedContextTypes, 'PeanutAdmin\\'),

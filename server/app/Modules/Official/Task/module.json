@@ -3,6 +3,6 @@
   "php_package":"peanut-business/official-task","web_package":"@peanut-admin/official-task","dependencies":[],
   "backend":{"provider":"app\\Modules\\Official\\Task\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend":{"entry":"web/src/modules/official-task/contribution.ts"},
-  "database":{"owned_tables":["pa_crontab","pa_task_job","pa_task_job_attempt","pa_task_job_event"]},"contracts":{"exports":["app\\Modules\\Official\\Task\\Contracts\\TaskScheduler","app\\Modules\\Official\\Task\\Contracts\\TaskJobRuntime","app\\Modules\\Official\\Task\\Contracts\\TaskWorkerDefinition"],"events":[]},
+  "database":{"owned_tables":["pa_crontab","pa_task_job","pa_task_job_attempt","pa_task_job_event"]},"contracts":{"exports":["app\\Modules\\Official\\Task\\Contracts\\TaskBootstrapCommands","app\\Modules\\Official\\Task\\Contracts\\TaskScheduler","app\\Modules\\Official\\Task\\Contracts\\TaskJobRuntime","app\\Modules\\Official\\Task\\Contracts\\TaskWorkerDefinition"],"events":[]},
   "tenant":{"enableable":true,"disable_behavior":"reject_new_operations","requires":[]}
 }

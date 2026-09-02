@@ -45,35 +45,35 @@ export interface ExpressionItem {
 }
 
 export function getCrontabList(params: CrontabListParams) {
-  return axios.get<ListRes<CrontabRecord>>('/api/admin/official.task.list', {
+  return axios.get<ListRes<CrontabRecord>>('/adminapi/official.task.list', {
     params,
   });
 }
 
 export function getCrontabDetail(id: number) {
-  return axios.get<CrontabRecord>('/api/admin/official.task.detail', {
+  return axios.get<CrontabRecord>('/adminapi/official.task.detail', {
     params: { id },
   });
 }
 
 export function getCrontabExpression(expression: string) {
-  return axios.get<ExpressionItem[]>('/api/admin/official.task.expression', {
+  return axios.get<ExpressionItem[]>('/adminapi/official.task.expression', {
     params: { expression },
   });
 }
 
 export function addCrontab(data: CrontabForm) {
-  return axios.post('/api/admin/official.task.add', data);
+  return axios.post('/adminapi/official.task.add', data);
 }
 
 export function editCrontab(data: CrontabForm) {
-  return axios.post('/api/admin/official.task.edit', data);
+  return axios.post('/adminapi/official.task.edit', data);
 }
 
 export function deleteCrontab(id: number) {
-  return axios.post('/api/admin/official.task.delete', { id });
+  return axios.post('/adminapi/official.task.delete', { id });
 }
 
 export function operateCrontab(id: number, operate: 'start' | 'stop') {
-  return axios.post('/api/admin/official.task.operate', { id, operate });
+  return axios.post('/adminapi/official.task.operate', { id, operate });
 }

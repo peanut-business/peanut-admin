@@ -94,45 +94,45 @@ export interface EditSelfForm {
 }
 
 export function getAdminList(params: AdminListParams = {}) {
-  return axios.get<AdminListResult>('/api/admin/admin/lists', { params });
+  return axios.get<AdminListResult>('/adminapi/admin/lists', { params });
 }
 
 export function getAdminExportInfo(params: AdminListParams) {
-  return axios.get<AdminExportInfo>('/api/admin/admin/lists', {
+  return axios.get<AdminExportInfo>('/adminapi/admin/lists', {
     params: { ...params, export: 1 },
   });
 }
 
 export function exportAdmins(params: AdminListParams) {
-  return axios.get<AdminExportResult>('/api/admin/admin/lists', {
+  return axios.get<AdminExportResult>('/adminapi/admin/lists', {
     params: { ...params, export: 2 },
   });
 }
 
 export function getAdminSelf() {
-  return axios.get<AdminDetail>('/api/admin/admin/self');
+  return axios.get<AdminDetail>('/adminapi/admin/self');
 }
 
 export function editAdminSelf(data: EditSelfForm) {
-  return axios.post('/api/admin/admin/editSelf', data);
+  return axios.post('/adminapi/admin/editSelf', data);
 }
 
 export function getAdminDetail(id: number) {
-  return axios.get<AdminDetail>('/api/admin/admin/detail', { params: { id } });
+  return axios.get<AdminDetail>('/adminapi/admin/detail', { params: { id } });
 }
 
 export function addAdmin(data: AdminForm) {
-  return axios.post('/api/admin/admin/add', data);
+  return axios.post('/adminapi/admin/add', data);
 }
 
 export function editAdmin(data: AdminForm) {
-  return axios.post('/api/admin/admin/edit', data);
+  return axios.post('/adminapi/admin/edit', data);
 }
 
 export function deleteAdmin(id: number) {
-  return axios.post('/api/admin/admin/delete', { id });
+  return axios.post('/adminapi/admin/delete', { id });
 }
 
 export function updateAdminStatus(id: number, disable: number) {
-  return axios.post('/api/admin/admin/status', { id, disable });
+  return axios.post('/adminapi/admin/status', { id, disable });
 }

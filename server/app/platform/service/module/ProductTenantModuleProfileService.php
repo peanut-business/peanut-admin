@@ -7,6 +7,7 @@ use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
@@ -27,6 +28,7 @@ final readonly class ProductTenantModuleProfileService
                 'official.payment',
                 'official.oauth',
                 'official.import-export',
+                'official.rich-text',
             ],
         ],
         'demo' => [
@@ -38,8 +40,10 @@ final readonly class ProductTenantModuleProfileService
     /** @param array<string,mixed> $deploymentConfig */
     public function __construct(
         private PDO $pdo,
-        private string $serverRoot,
-        private array $deploymentConfig
+        private PdoTransactionManager $transactions,
+        private PdoModuleRuntimeRepository $moduleRuntime,
+        private PdoModuleGovernanceProvider $moduleGovernance,
+        private AuditContractHost $audit,
     ) {
     }
 
@@ -78,7 +82,7 @@ final readonly class ProductTenantModuleProfileService
         $registry = $this->registry();
         $moduleKeys = $this->dependencyOrder($registry, $definition['modules']);
         $repository = new VerifiedTenantModuleRepository(
-            new PdoModuleRuntimeRepository($this->pdo, true),
+            $this->moduleRuntime,
             $registry
         );
         $manager = new TenantModuleManager(
@@ -86,15 +90,13 @@ final readonly class ProductTenantModuleProfileService
             $repository,
             new OpisTenantModuleConfigValidator()
         );
-        $audit = AuditContractHost::fromPdo($this->pdo);
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
-        return (new PdoTransactionManager($this->pdo))->run(function () use (
+        return $this->transactions->run(function () use (
             $profile,
             $definition,
             $repository,
             $manager,
-            $audit,
             $now,
             $moduleKeys
         ): array {
@@ -110,12 +112,14 @@ final readonly class ProductTenantModuleProfileService
                         'product_profile'
                     );
                     if ($before === null || !$before->isEffective($now)) {
-                        $audit->appendTenantSystem(
+                        $this->audit->recordTenantSystem(
                             (int)$tenant['id'],
                             'tenant-module.profile-enabled',
                             'tenant.module.apply-product-profile',
                             'product-profile:' . $profile . ':' . $tenant['code'] . ':' . $moduleKey,
-                            ['profile' => $profile, 'module_key' => $moduleKey]
+                            ['profile' => $profile, 'module_key' => $moduleKey],
+                            AuditOutcome::Success,
+                            null,
                         );
                     }
                 }
@@ -190,11 +194,7 @@ final readonly class ProductTenantModuleProfileService
 
     private function registry(): DeployedTenantModuleRegistry
     {
-        return (new PdoModuleGovernanceProvider(
-            $this->pdo,
-            $this->serverRoot,
-            $this->deploymentConfig
-        ))->registry();
+        return $this->moduleGovernance->registry();
     }
 
     /** @param list<string> $tenantCodes @return list<array{id:int,code:string}> */

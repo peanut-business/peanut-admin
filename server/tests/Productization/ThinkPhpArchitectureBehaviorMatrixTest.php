@@ -3,23 +3,28 @@ declare(strict_types=1);
 
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblemMapper;
 use app\common\http\PageResult;
+use app\common\validate\InputValidator;
 use app\common\model\TenantOwnedModel;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
+use app\common\tenancy\PlatformTenantDataGateway;
 use app\common\tenancy\StandaloneDataScopePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use think\Container;
 use think\DbManager;
+use think\Model;
 use think\db\BaseQuery;
 use think\db\connector\Mysql;
 use think\paginator\driver\Bootstrap;
+use think\App;
+use think\exception\ValidateException;
+use think\Validate;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/vendor/topthink/framework/src/helper.php';
@@ -132,6 +137,18 @@ final class Tpq51Child extends Tpq51TenantModel
     }
 }
 
+final class Tpq51SceneValidate extends Validate
+{
+    protected $rule = [
+        'narrow' => 'require',
+        'default_only' => 'require',
+    ];
+
+    protected $scene = [
+        'narrow' => ['narrow'],
+    ];
+}
+
 final class Tpq51UnconnectedPdo extends PDO
 {
     public function __construct()
@@ -158,6 +175,15 @@ function tpq51SqlCount(string $sql, string $needle): int
     return substr_count(strtolower($sql), strtolower($needle));
 }
 
+function tpq51InstallDataScopePolicy(DataScopePolicy $policy): void
+{
+    Model::maker(static function (Model $model) use ($policy): void {
+        if ($model instanceof TenantOwnedModel) {
+            $model->setDataScopePolicy($policy);
+        }
+    });
+}
+
 $container = new Container();
 Container::setInstance($container);
 
@@ -182,9 +208,17 @@ $database->setConfig([
 $connection = $database->connect();
 expectTpq51($connection instanceof Tpq51RecordingMysql, 'TPQ51 recording connector was not selected');
 
+$missingPolicyRejected = false;
+try {
+    Tpq51Child::where('id', '>', 0)->select();
+} catch (LogicException $exception) {
+    $missingPolicyRejected = $exception->getMessage() === 'DATA_SCOPE_POLICY_UNAVAILABLE';
+}
+expectTpq51($missingPolicyRejected, 'Tenant Model did not fail closed without an injected data-scope policy');
+
 $tenantContext = tpq51TenantContext(101);
-$execution = ExecutionContext::tenantAdmin($tenantContext, 'tpq51.behavior');
-$container->instance(DataScopePolicy::class, new MultiTenantDataScopePolicy($current));
+$execution = new \app\common\execution\AdminExecutionContext($tenantContext, 'tpq51.behavior');
+tpq51InstallDataScopePolicy(new MultiTenantDataScopePolicy($current));
 
 $connection->resetStatements();
 $children = $store->run(
@@ -261,22 +295,51 @@ foreach ($connection->statements as $statement) {
     );
 }
 
-$container->instance(DataScopePolicy::class, new StandaloneDataScopePolicy());
+$differentTenantRejected = false;
+try {
+    $store->run($execution, static fn() => $store->run(
+        new \app\common\execution\AdminExecutionContext(tpq51TenantContext(202), 'tpq51.different-tenant'),
+        static fn() => null,
+    ));
+} catch (DomainException $exception) {
+    $differentTenantRejected = $exception->getMessage() === 'EXECUTION_TENANT_CONTEXT_MISMATCH';
+}
+expectTpq51($differentTenantRejected, 'nested execution context changed the authoritative Tenant');
+expectTpq51($store->isEmpty(), 'rejected Tenant context leaked onto the execution stack');
+
+$connection->resetStatements();
+(new PlatformTenantDataGateway($current))
+    ->query(Tpq51Child::class, 'platform-test', 'tpq51.cross-tenant-read')
+    ->select();
+expectTpq51(
+    tpq51SqlCount($connection->statements[0]['sql'] ?? '', 'tenant_id') === 0,
+    'explicit Platform Tenant gateway did not preserve its audited scope bypass',
+);
+
+tpq51InstallDataScopePolicy(new StandaloneDataScopePolicy($current));
 $connection->resetStatements();
 $standalone = new Tpq51Child([
     'id' => 5,
-    'tenant_id' => 999,
     'parent_id' => 7,
     'name' => 'standalone',
 ]);
-expectTpq51($standalone->save(), 'Standalone Model save did not reach ThinkORM');
-Tpq51Child::alias('child')->where('child.id', '>', 0)->select();
-foreach ($connection->statements as $statement) {
-    expectTpq51(
-        tpq51SqlCount($statement['sql'], 'tenant_id') === 0,
-        'Standalone SQL unexpectedly references tenant_id: ' . $statement['sql'],
-    );
-}
+expectTpq51(
+    $store->run($execution, static fn() => $standalone->save()),
+    'Standalone Model save did not reach ThinkORM',
+);
+$store->run(
+    $execution,
+    static fn() => Tpq51Child::alias('child')->where('child.id', '>', 0)->select(),
+);
+expectTpq51(
+    (int)$standalone->getData('tenant_id') === 101
+        && tpq51SqlCount($connection->statements[0]['sql'] ?? '', 'tenant_id') === 1,
+    'Standalone write did not preserve canonical Tenant ownership',
+);
+expectTpq51(
+    tpq51SqlCount($connection->statements[1]['sql'] ?? '', 'tenant_id') === 0,
+    'Standalone read unexpectedly added a Tenant predicate',
+);
 
 $paginator = new Bootstrap([
     ['id' => 41],
@@ -308,6 +371,125 @@ expectTpq51(
 );
 expectTpq51($mapper->map(new RuntimeException('unknown')) === null, 'unknown exception was exposed as a public problem');
 
+$applicationRoot = dirname(__DIR__, 2) . '/app/adminapi/application';
+foreach ([
+    $applicationRoot . '/generator/GeneratorApplicationService.php',
+    $applicationRoot . '/dept/JobsApplicationService.php',
+] as $applicationFile) {
+    $applicationSource = (string)file_get_contents($applicationFile);
+    expectTpq51(
+        preg_match('/^\s*use\s+app\\\\[^;]+\\\\model\\\\/mi', $applicationSource) !== 1,
+        basename($applicationFile) . ' imports a persistence Model',
+    );
+}
+$jobsApplicationSource = (string)file_get_contents($applicationRoot . '/dept/JobsApplicationService.php');
+expectTpq51(
+    preg_match('/catch\s*\(\\\\Throwable[^)]*\)\s*\{\s*throw\s+\$[A-Za-z_][A-Za-z0-9_]*\s*;\s*\}/s', $jobsApplicationSource) !== 1,
+    'JobsApplicationService retained a no-op catch/rethrow block',
+);
+
+$scannerProbe = <<<'PY'
+import importlib.machinery
+import importlib.util
+import json
+import pathlib
+import sys
+
+scanner_path = pathlib.Path(sys.argv[1])
+loader = importlib.machinery.SourceFileLoader("tpq_architecture_scanner", str(scanner_path))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+scanner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(scanner)
+cases = {
+    "host_application": (
+        "server/app/adminapi/application/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Application\\CrontabApplicationService;\n",
+    ),
+    "platform_adapter_model": (
+        "server/app/platform/infrastructure/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Model\\Crontab;\n",
+    ),
+    "host_contract": (
+        "server/app/api/application/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Contracts\\TaskJobRuntime;\n",
+    ),
+    "module_internal": (
+        "server/app/Modules/Official/Task/Application/Probe.php",
+        "<?php\nuse app\\Modules\\Official\\Task\\Infrastructure\\Runtime\\PdoTaskJobRuntime;\n",
+    ),
+    "application_console": (
+        "server/app/adminapi/application/ConsoleProbe.php",
+        "<?php\nuse think\\Console;\n",
+    ),
+    "application_transport": (
+        "server/app/Modules/Official/Oauth/Application/TransportProbe.php",
+        "<?php\nfinal class TransportProbe { public function run(): void { new WechatOAuthTransport(); } }\n",
+    ),
+    "tenant_join_missing": (
+        "server/app/Modules/Official/Article/Application/JoinProbe.php",
+        "<?php\n$query->join('article a', 'a.id = c.article_id');\n",
+    ),
+    "tenant_join_scoped": (
+        "server/app/Modules/Official/Article/Application/ScopedJoinProbe.php",
+        "<?php\n$query->leftJoin('article a', 'a.tenant_id = c.tenant_id AND a.id = c.article_id');\n",
+    ),
+    "tenant_join_global": (
+        "server/app/common/service/authorization/GlobalJoinProbe.php",
+        "<?php\n$query->join('permission p', 'p.key = m.perms');\n",
+    ),
+}
+print(json.dumps({
+    name: [hit[0] for hit in scanner.hits_for(scanner.ROOT / path, source)]
+    for name, (path, source) in cases.items()
+}))
+PY;
+$scannerPath = dirname(__DIR__, 3) . '/scripts/check-thinkphp-architecture';
+$probeOutput = [];
+$probeStatus = 0;
+exec(
+    'python3 -c ' . escapeshellarg($scannerProbe) . ' ' . escapeshellarg($scannerPath),
+    $probeOutput,
+    $probeStatus,
+);
+$probeHits = json_decode(implode("\n", $probeOutput), true, 32, JSON_THROW_ON_ERROR);
+expectTpq51($probeStatus === 0, 'architecture scanner probe did not execute');
+expectTpq51(
+    in_array('host_module_internal_dependency', $probeHits['host_application'] ?? [], true),
+    'Host Application import of a Module Application implementation was not rejected',
+);
+expectTpq51(
+    in_array('host_module_internal_dependency', $probeHits['platform_adapter_model'] ?? [], true),
+    'Platform infrastructure adapter import of a Module Model was incorrectly exempted',
+);
+expectTpq51(
+    !in_array('host_module_internal_dependency', $probeHits['host_contract'] ?? [], true),
+    'Host import of a Module Contract was rejected',
+);
+expectTpq51(
+    !in_array('host_module_internal_dependency', $probeHits['module_internal'] ?? [], true),
+    'Module-internal implementation import was treated as a Host dependency',
+);
+expectTpq51(
+    in_array('application_framework_model', $probeHits['application_console'] ?? [], true),
+    'Application import of ThinkPHP Console was not rejected',
+);
+expectTpq51(
+    in_array('application_composition_root', $probeHits['application_transport'] ?? [], true),
+    'Application construction of a transport dependency was not rejected',
+);
+expectTpq51(
+    in_array('tenant_join_missing', $probeHits['tenant_join_missing'] ?? [], true),
+    'Tenant JOIN without a tenant_id equality was not rejected',
+);
+expectTpq51(
+    !in_array('tenant_join_missing', $probeHits['tenant_join_scoped'] ?? [], true),
+    'Tenant-scoped JOIN was incorrectly rejected',
+);
+expectTpq51(
+    !in_array('tenant_join_missing', $probeHits['tenant_join_global'] ?? [], true),
+    'Global system-table JOIN was incorrectly rejected',
+);
+
 $contextFailure = false;
 try {
     (new ModuleExecutionBoundary(new Tpq51UnconnectedPdo(), $current))->assertWorker('official.article');
@@ -315,6 +497,19 @@ try {
     $contextFailure = $exception->getMessage() === 'EXECUTION_CONTEXT_REQUIRED';
 }
 expectTpq51($contextFailure, 'Module execution boundary did not fail closed without trusted context');
+
+$sceneValidator = 'app\\test\\Tpq51SceneValidate';
+class_alias(Tpq51SceneValidate::class, $sceneValidator);
+$inputValidator = new InputValidator(new App(dirname(__DIR__, 2)), $current);
+$inputValidator->validate(['narrow' => 'accepted'], $sceneValidator . '.narrow');
+$unknownSceneRejected = false;
+try {
+    $inputValidator->validate(['narrow' => 'accepted'], $sceneValidator . '.unknown');
+} catch (ValidateException $exception) {
+    $unknownSceneRejected = $exception->getMessage() === '验证场景不存在'
+        && $mapper->map($exception)?->apiCode() === 40000;
+}
+expectTpq51($unknownSceneRejected, 'unknown validation scene fell back to default rules or escaped the input error envelope');
 
 try {
     $store->run($execution, static function (): void {

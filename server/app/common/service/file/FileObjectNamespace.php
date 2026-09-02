@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\file;
 
 use app\common\enum\FileEnum;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\FileMedia\Storage\TenantObjectNamespace;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
@@ -16,14 +16,14 @@ final class FileObjectNamespace
             throw new \InvalidArgumentException('文件类型无效');
         }
         return TenantObjectNamespace::directory(
-            FileTenantContext::tenantId($context),
+            $context->tenantId,
             FileEnum::SAVE_DIR[$type],
         );
     }
 
     public static function ownsUri(AuthenticatedMemberContext|TenantContext $context, string $uri): bool
     {
-        return TenantObjectNamespace::ownsUri(FileTenantContext::tenantId($context), $uri);
+        return TenantObjectNamespace::ownsUri($context->tenantId, $uri);
     }
 
     public static function ownsTenantUri(int $tenantId, string $uri): bool

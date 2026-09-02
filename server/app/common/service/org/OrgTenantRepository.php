@@ -3,8 +3,13 @@ declare(strict_types=1);
 
 namespace app\common\service\org;
 
+use app\common\persistence\ConvertsModelPage;
+use app\common\model\dept\Jobs;
+
 final class OrgTenantRepository
 {
+    use ConvertsModelPage;
+
     public static function query(string $modelClass)
     {
         return $modelClass::where([]);
@@ -15,6 +20,17 @@ final class OrgTenantRepository
     {
         unset($values['tenant_id']);
         return $modelClass::create($values);
+    }
+
+    public static function jobs()
+    {
+        return self::query(Jobs::class);
+    }
+
+    /** @param array<string,mixed> $values */
+    public static function createJob(array $values): Jobs
+    {
+        return self::create(Jobs::class, $values);
     }
 
     /** @param int[] $ids */
