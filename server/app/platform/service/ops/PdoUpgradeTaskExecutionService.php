@@ -45,6 +45,8 @@ final readonly class PdoUpgradeTaskExecutionService
     public function __construct(
         private PDO $pdo,
         private AuditContractHost $audit,
+        private PdoOpsTaskDispatcher $tasks,
+        private PdoMaintenanceWindowStore $maintenance,
         private string $projectRoot,
         private BackupRestoreProviderRegistry $backupProviders,
         private ApplicationRuntimeStatusProvider $runtimeStatus,
@@ -225,12 +227,11 @@ SQL);
             $pointerJson = $this->canonicalJson($pointer);
             $pointerSha = hash('sha256', $pointerJson);
 
-            $store = new PdoMaintenanceWindowStore($this->pdo, $this->audit);
             $maintenanceKey = (string)$lockedExecution['maintenance_key'];
             $maintenanceRevision = (int)$lockedExecution['maintenance_revision'];
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-close');
             $requestDigest = hash('sha256', $maintenanceKey . ':' . $maintenanceRevision);
-            $store->close(
+            $this->maintenance->close(
                 $context,
                 $maintenanceKey,
                 $maintenanceRevision,
@@ -374,7 +375,7 @@ SQL);
                 'platform.ops.backup.submitted',
                 'backup.submit',
             );
-            $child = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))->dispatch($context, $submission);
+            $child = $this->tasks->dispatch($context, $submission);
             $this->succeedStep(
                 (string)$task['task_key'],
                 'preflight',
@@ -442,7 +443,7 @@ SQL);
                 'platform.ops.restore.submitted',
                 'restore.submit',
             );
-            $restore = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))->dispatch($context, $submission);
+            $restore = $this->tasks->dispatch($context, $submission);
             $this->succeedStep((string)$task['task_key'], 'backup', (string)$evidence['manifest_sha256']);
             $this->startStep((string)$task['task_key'], 'restore_verification');
             $update = $this->pdo->prepare(<<<'SQL'
@@ -539,7 +540,7 @@ SQL);
             );
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-open');
             $requestDigest = hash('sha256', $maintenanceKey . ':' . $window->startsAt . ':' . $window->endsAt);
-            $created = (new PdoMaintenanceWindowStore($this->pdo, $this->audit))->schedule(
+            $created = $this->maintenance->schedule(
                 $context,
                 $window,
                 0,

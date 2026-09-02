@@ -15,6 +15,10 @@ use app\platform\service\PlatformRuntimeFactory;
 use app\platform\service\TenantApplicationBootstrapPersistence;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use PDO;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use think\facade\Config;
 
 final class PlatformInvitationRuntimeFactory
@@ -40,6 +44,9 @@ final class PlatformInvitationRuntimeFactory
     {
         return $this->invitations ??= new TenantOwnerInvitationAdminService(
             $this->pdo,
+            new PdoTransactionManager($this->pdo),
+            new PdoTenantRepository($this->pdo),
+            new PdoMembershipRepository($this->pdo),
             $this->platform->sessions(),
             new UnavailableOwnerInvitationDeliveryPort(),
             OwnerInvitationRuntimePolicy::fromEnvironment(
@@ -54,6 +61,9 @@ final class PlatformInvitationRuntimeFactory
     {
         return $this->publicInvitations ??= new TenantOwnerInvitationPublicService(
             $this->pdo,
+            new PdoTransactionManager($this->pdo),
+            new PdoIdentityRepository($this->pdo),
+            new PdoMembershipRepository($this->pdo),
             new ApplicationTenantBootstrapService(
                 $this->pdo,
                 $this->notifications,

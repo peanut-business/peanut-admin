@@ -7,7 +7,6 @@ use app\common\execution\CurrentExecutionContext;
 use app\platform\http\PlatformRequest;
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\validate\PlatformLoginValidate;
-use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\PlatformRefreshCookie;
 use think\App;
 
@@ -40,20 +39,12 @@ final class PlatformSessionController extends BasePlatformController
     public function refresh()
     {
         $token = PlatformRequest::refreshToken($this->request);
-        try {
-            $authentication = $this->sessions->refresh(
-                $token,
-                $this->request->ip(),
-                $this->request->header('User-Agent'),
-                $this->requestId()
-            );
-        } catch (AuthException) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                'Platform refresh credential is invalid.',
-                ['error_code' => 'PLATFORM_REFRESH_CREDENTIAL_INVALID'],
-                40100,
-            )->withHeaders(['Set-Cookie' => PlatformRefreshCookie::clear()]);
-        }
+        $authentication = $this->sessions->refresh(
+            $token,
+            $this->request->ip(),
+            $this->request->header('User-Agent'),
+            $this->requestId()
+        );
 
         return $this->data($authentication->responseData())
             ->header(['Set-Cookie' => PlatformRefreshCookie::issue($authentication->tokens->refresh)]);

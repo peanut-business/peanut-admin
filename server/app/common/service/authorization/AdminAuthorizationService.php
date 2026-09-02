@@ -10,7 +10,6 @@ use app\common\contract\AdminPermissionPolicy;
 use app\common\dto\authorization\AdminAccessData;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
-use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
@@ -22,7 +21,7 @@ use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 final class AdminAuthorizationService implements AdminAuthorizationQuery, AuthorizedOperationFactory
 {
     public function __construct(
-        private readonly PDO $pdo,
+        private readonly NativeAdminPrincipalRepository $principals,
         private readonly CoreTenantModuleAdminBridge $moduleAdmin,
         private readonly AdminMenuPersistence $menus,
         private readonly AdminPermissionPolicy $permissionPolicy,
@@ -31,7 +30,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
 
     public function principal(TenantContext $tenantContext): AdminPrincipal
     {
-        return (new NativeAdminPrincipalRepository($this->pdo))->require($tenantContext);
+        return $this->principals->require($tenantContext);
     }
 
     public function accessData(TenantContext $tenantContext, AdminPrincipal $admin): AdminAccessData

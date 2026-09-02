@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
-use app\common\service\audit\AuditContractHost;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -19,7 +18,7 @@ final readonly class PlatformUpgradeExecutionService
 
     public function __construct(
         private PDO $pdo,
-        private AuditContractHost $audit,
+        private PdoOpsTaskDispatcher $tasks,
         private string $projectRoot,
         private ApplicationRuntimeStatusProvider $runtimeStatus,
     ) {
@@ -63,7 +62,7 @@ final readonly class PlatformUpgradeExecutionService
             'target_descriptor_sha256' => $this->sha256($target['descriptor_sha256'] ?? null),
         ];
 
-        $row = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))
+        $row = $this->tasks
             ->dispatchUpgrade($context, $payload, $idempotencyKey);
         return $this->taskProjection($row);
     }

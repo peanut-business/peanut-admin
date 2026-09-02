@@ -34,7 +34,11 @@ class OperationLogMiddleware
         try {
             $context = $this->contextAccess->tenantAdmin();
         } catch (\Throwable $exception) {
-            OperationalLog::warning('operation_log_tenant_context_unavailable', OperationLogDiagnostics::attributes(null));
+            OperationalLog::warning(
+                $this->contextAccess,
+                'operation_log_tenant_context_unavailable',
+                OperationLogDiagnostics::attributes(null),
+            );
             throw $exception;
         }
         $outcome = AuditOutcome::Success;
@@ -98,9 +102,11 @@ class OperationLogMiddleware
                 $httpStatus,
             );
         } catch (\Throwable $exception) {
-            OperationalLog::error('operation_log_write_failed', OperationLogDiagnostics::attributes($context) + [
-                'exception' => $exception::class,
-            ]);
+            OperationalLog::error(
+                $this->contextAccess,
+                'operation_log_write_failed',
+                OperationLogDiagnostics::attributes($context) + ['exception' => $exception::class],
+            );
             // 记录日志失败不得影响主流程
         }
     }

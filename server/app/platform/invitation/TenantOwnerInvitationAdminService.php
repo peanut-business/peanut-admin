@@ -24,19 +24,16 @@ final class TenantOwnerInvitationAdminService
     private const CREATE_PERMISSION = 'platform.tenant.create';
     private const INVITE_PERMISSION = 'platform.tenant.provision-owner';
 
-    private PdoTransactionManager $transactions;
-    private PdoTenantRepository $tenants;
-    private MembershipRepository $memberships;
     public function __construct(
         private readonly PDO $pdo,
+        private readonly PdoTransactionManager $transactions,
+        private readonly PdoTenantRepository $tenants,
+        private readonly MembershipRepository $memberships,
         private readonly PlatformOperatorSessionService $sessions,
         private readonly OwnerInvitationDeliveryPort $delivery,
         private readonly OwnerInvitationRuntimePolicy $runtimePolicy,
         private readonly AuditContractHost $audit,
     ) {
-        $this->transactions = new PdoTransactionManager($pdo);
-        $this->tenants = new PdoTenantRepository($pdo);
-        $this->memberships = new PdoMembershipRepository($pdo);
     }
 
     /** @return array<string,mixed> */

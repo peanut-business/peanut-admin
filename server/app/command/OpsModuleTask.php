@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\service\audit\AuditContractHost;
-use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
@@ -42,16 +41,7 @@ final class OpsModuleTask extends DatabaseContextualCommand
                 $config,
                 $trustedKeys,
             );
-            $service = new PdoModuleOperationTaskExecutionService(
-                $pdo,
-                $audit,
-                dirname(__DIR__, 3),
-                $config,
-                $trustedKeys,
-                null,
-                $runtime->backupProviders(),
-                $runtime->runtimeStatusProvider(),
-            );
+            $service = $runtime->moduleTaskExecution();
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
                 'claim' => $service->claim(),

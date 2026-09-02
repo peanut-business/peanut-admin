@@ -8,11 +8,14 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 use app\platform\service\ops\DeploymentModuleRequestService;
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\PdoMaintenanceWindowStore;
+use app\platform\service\ops\PdoOpsTaskDispatcher;
 use app\platform\service\ops\PairedBackupProvider;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use app\platform\service\ops\PlatformModuleOperationExecutionService;
 use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 
@@ -190,7 +193,14 @@ try {
     $v2Path = $packageDirectory . '/' . $v2['sha256'] . '.tar';
     rename($v2Temporary, $v2Path);
 
-    $requests = new DeploymentModuleRequestService($pdo, $target, $config, [], $registryPath);
+    $requests = new DeploymentModuleRequestService(
+        $pdo,
+        $target,
+        $config,
+        [],
+        new PluginRuntimeGovernanceService($pdo, $target . '/server', $config),
+        $registryPath,
+    );
     $preview = $requests->preview(
         'fixture-module-delivery', 'fixture-target', 'update', 'official-content-bundle', $v2['sha256'], null,
     );
@@ -218,17 +228,18 @@ try {
         'repository_clean' => true,
     ];
     $audit = AuditContractHost::fromPdo($pdo);
-    $platform = new PlatformModuleOperationExecutionService($pdo, $audit, $target, $config, [], $registryPath, $runtime);
+    $tasks = new PdoOpsTaskDispatcher($pdo, $audit);
+    $maintenance = new PdoMaintenanceWindowStore($pdo, $audit);
+    $platform = new PlatformModuleOperationExecutionService($pdo, $tasks, $requests, $runtime);
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
 
     $executor = new PdoModuleOperationTaskExecutionService(
         $pdo,
         $audit,
-        $target,
-        $config,
-        [],
-        $registryPath,
+        $tasks,
+        $maintenance,
+        $requests,
         new BackupRestoreProviderRegistry([new PairedBackupProvider()]),
         $runtime,
     );

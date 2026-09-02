@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
-use app\common\service\audit\AuditContractHost;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -19,14 +18,10 @@ final readonly class PlatformModuleOperationExecutionService
     public const CONCURRENCY_KEY = 'ops.module.execute.production';
     public const PERMISSION = 'platform.ops.module.manage';
 
-    /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private PDO $pdo,
-        private AuditContractHost $audit,
-        private string $projectRoot,
-        private array $moduleConfig,
-        private array $trustedKeys,
-        private ?string $registryPath,
+        private PdoOpsTaskDispatcher $tasks,
+        private DeploymentModuleRequestService $requests,
         private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
     ) {
     }
@@ -68,7 +63,7 @@ final readonly class PlatformModuleOperationExecutionService
                 'source_commit' => $runtime['commit'],
                 'source_tree' => $runtime['tree'],
             ];
-            $row = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))
+            $row = $this->tasks
                 ->dispatchModuleOperation($context, $payload, $idempotencyKey);
             $claim = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_ops_module_request
@@ -158,13 +153,7 @@ SQL);
 
     private function requestStore(): DeploymentModuleRequestService
     {
-        return new DeploymentModuleRequestService(
-            $this->pdo,
-            $this->projectRoot,
-            $this->moduleConfig,
-            $this->trustedKeys,
-            $this->registryPath,
-        );
+        return $this->requests;
     }
 
     /** @return array{commit:string,tree:string,health:string,repository_clean:bool} */

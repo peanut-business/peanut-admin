@@ -6,15 +6,13 @@ namespace app\platform\service\ops;
 use app\common\service\instance\DeploymentMode;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use Composer\InstalledVersions;
+use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
-use PeanutAdmin\OpsConsole\Logs\RuntimeLogProviderRegistry;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogQuery;
-use PeanutAdmin\OpsConsole\Logs\RuntimeLogService;
-use PeanutAdmin\OpsConsole\Logs\SafeLogMessageCatalog;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 
@@ -26,6 +24,8 @@ final readonly class PlatformDiagnosticBundleService
 
     public function __construct(
         private PDO $pdo,
+        private PlatformOpsPermissionChecker $permissions,
+        private Closure $runtimeLogs,
         private OpsStatusService $status,
         private PdoModuleGovernanceProvider $moduleGovernance,
         private string $deploymentMode,
@@ -40,9 +40,8 @@ final readonly class PlatformDiagnosticBundleService
             throw new \InvalidArgumentException('OPS_DIAGNOSTIC_WINDOW_INVALID');
         }
 
-        $permissions = new PlatformOpsPermissionChecker($this->pdo);
-        if (!$permissions->allows($context, Package::READ_PERMISSION)
-            || !$permissions->allows($context, Package::LOGS_PERMISSION)) {
+        if (!$this->permissions->allows($context, Package::READ_PERMISSION)
+            || !$this->permissions->allows($context, Package::LOGS_PERMISSION)) {
             throw OpsConsoleException::denied();
         }
 
@@ -62,13 +61,9 @@ final readonly class PlatformDiagnosticBundleService
             throw new \RuntimeException('OPS_DIAGNOSTIC_MODULE_LIMIT_EXCEEDED');
         }
 
-        $logs = (new RuntimeLogService(
-            $permissions,
-            new RuntimeLogProviderRegistry([
-                new PlatformAuditRuntimeLogProvider($this->pdo, $this->databaseInstant($since)),
-            ]),
-            new SafeLogMessageCatalog([]),
-        ))->read($context, new RuntimeLogQuery('platform.audit', 'info', null, 100))->toPublicArray();
+        $logs = ($this->runtimeLogs)($since)
+            ->read($context, new RuntimeLogQuery('platform.audit', 'info', null, 100))
+            ->toPublicArray();
 
         $mode = DeploymentMode::fromConfiguredValue($this->deploymentMode);
         $payload = [

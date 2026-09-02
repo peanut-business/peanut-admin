@@ -16,6 +16,7 @@ final readonly class DeploymentModuleRequestService
         private string $projectRoot,
         private array $moduleConfig,
         private array $trustedKeys,
+        private PluginRuntimeGovernanceService $governance,
         private ?string $registryPath = null,
     ) {
     }
@@ -56,11 +57,7 @@ final readonly class DeploymentModuleRequestService
             ];
         }
 
-        $plan = (new PluginRuntimeGovernanceService(
-            $this->pdo,
-            $this->projectRoot . '/server',
-            $this->moduleConfig,
-        ))->preview($packageKey, $operation === 'purge');
+        $plan = $this->governance->preview($packageKey, $operation === 'purge');
         if (($plan['blockers'] ?? []) !== []) {
             throw new \RuntimeException('OPS_MODULE_PREFLIGHT_BLOCKED');
         }
@@ -218,11 +215,7 @@ SQL);
         if (!is_array($plan) || array_is_list($plan)) {
             throw new \RuntimeException('OPS_MODULE_CONFIRM_PLAN_INVALID');
         }
-        return (new PluginRuntimeGovernanceService(
-            $this->pdo,
-            $this->projectRoot . '/server',
-            $this->moduleConfig,
-        ))->uninstall(
+        return $this->governance->uninstall(
             (string)$request['package_key'],
             (string)$request['operation'] === 'purge',
             $plan,

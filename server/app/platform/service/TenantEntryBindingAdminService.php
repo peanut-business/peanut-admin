@@ -9,12 +9,13 @@ use app\common\service\tenant\TenantEntryBindingResolver;
 use app\platform\context\PlatformOperatorContext;
 use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 final readonly class TenantEntryBindingAdminService
 {
     public function __construct(
         private PDO $pdo,
+        private TransactionManager $transactions,
         private PlatformOperatorSessionService $sessions,
         private AuditContractHost $audit,
     ) {
@@ -64,7 +65,7 @@ SQL);
             );
         }
 
-        return (new PdoTransactionManager($this->pdo))->run(function () use (
+        return $this->transactions->run(function () use (
             $context,
             $tenantId,
             $host,
@@ -152,7 +153,7 @@ SQL);
             );
         }
 
-        return (new PdoTransactionManager($this->pdo))->run(function () use (
+        return $this->transactions->run(function () use (
             $context,
             $bindingId,
             $changeReason

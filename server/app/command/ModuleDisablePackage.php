@@ -6,6 +6,8 @@ namespace app\command;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginLifecycleException;
+use app\platform\service\plugin\PluginCatalogSyncService;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
@@ -35,7 +37,15 @@ final class ModuleDisablePackage extends DatabaseContextualCommand
                 throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module registry is unavailable.');
             }
             $moduleKey = trim((string)$input->getArgument('module_key'));
-            $result = (new PlatformModuleRuntimeService($pdo, dirname(__DIR__, 2), $config, []))
+            $serverRoot = dirname(__DIR__, 2);
+            $result = (new PlatformModuleRuntimeService(
+                $pdo,
+                $serverRoot,
+                $config,
+                [],
+                new PluginRuntimeGovernanceService($pdo, $serverRoot, $config),
+                new PluginCatalogSyncService($pdo, $serverRoot, $config),
+            ))
                 ->disable($moduleKey);
             $output->writeln((string)json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
             return 0;

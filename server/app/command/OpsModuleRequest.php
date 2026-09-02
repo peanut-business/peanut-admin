@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\DeploymentModuleRequestService;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
@@ -40,6 +41,7 @@ final class OpsModuleRequest extends DatabaseContextualCommand
                 dirname(__DIR__, 3),
                 $config,
                 $this->trustedKeys(),
+                new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config),
             );
             $arguments = [
                 trim((string)$input->getOption('delivery-resource-id')),

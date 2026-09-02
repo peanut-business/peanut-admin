@@ -9,9 +9,11 @@ use app\common\service\installation\InstallationExecutionException;
 use app\common\service\http\OutboundHttpException;
 use app\common\service\storage\StorageProviderException;
 use app\platform\invitation\TenantOwnerInvitationException;
+use app\platform\service\PlatformRefreshCredentialException;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageException;
 use PeanutAdmin\Kernel\Auth\AuthException;
+use PeanutAdmin\Kernel\Auth\PlatformRefreshCookie;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -52,6 +54,11 @@ final class ApiProblemMapper
                 $exception->httpStatus,
                 $exception->getMessage(),
             ),
+            $exception instanceof PlatformRefreshCredentialException => ApiProblem::fromEnvelope(
+                PlatformRefreshCredentialException::MESSAGE,
+                ['error_code' => PlatformRefreshCredentialException::ERROR_CODE],
+                40100,
+            )->withHeaders(['Set-Cookie' => PlatformRefreshCookie::clear()]),
             $exception instanceof AdminAccessException => new ApiProblem(
                 $exception->errorCode,
                 $exception->httpStatus,

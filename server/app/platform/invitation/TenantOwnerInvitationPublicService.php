@@ -23,18 +23,15 @@ final class TenantOwnerInvitationPublicService
 {
     private const OWNER_ROLE = 'core.tenant-owner';
 
-    private PdoTransactionManager $transactions;
-    private PdoIdentityRepository $identity;
-    private MembershipRepository $memberships;
     public function __construct(
         private readonly PDO $pdo,
+        private readonly PdoTransactionManager $transactions,
+        private readonly PdoIdentityRepository $identity,
+        private readonly MembershipRepository $memberships,
         private readonly ApplicationTenantBootstrapService $applicationBootstrap,
         private readonly AuditContractHost $audit,
         private readonly PasswordHasher $passwords,
     ) {
-        $this->transactions = new PdoTransactionManager($pdo);
-        $this->identity = new PdoIdentityRepository($pdo);
-        $this->memberships = new PdoMembershipRepository($pdo);
     }
 
     /** @return array<string,mixed> */

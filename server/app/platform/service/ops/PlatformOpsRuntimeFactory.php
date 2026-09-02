@@ -5,6 +5,8 @@ namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use DateTimeImmutable;
 use app\platform\service\provider\NotificationQualificationContributor;
 use app\platform\service\provider\OauthQualificationContributor;
 use app\platform\service\provider\PaymentQualificationContributor;
@@ -14,6 +16,9 @@ use app\platform\service\provider\StorageQualificationContributor;
 use PDO;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
+use PeanutAdmin\OpsConsole\Logs\RuntimeLogProviderRegistry;
+use PeanutAdmin\OpsConsole\Logs\RuntimeLogService;
+use PeanutAdmin\OpsConsole\Logs\SafeLogMessageCatalog;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use PeanutAdmin\OpsConsole\Task\OpsTaskService;
@@ -58,7 +63,7 @@ final class PlatformOpsRuntimeFactory
                 'security-maintenance',
                 'module-lifecycle',
             ]),
-            new PdoMaintenanceWindowStore($this->pdo, $this->audit),
+            $this->maintenanceStore(),
         );
     }
 
@@ -72,7 +77,7 @@ final class PlatformOpsRuntimeFactory
         return new OpsTaskService(
             new PlatformOpsPermissionChecker($this->pdo),
             $this->backupProviders(),
-            new PdoOpsTaskDispatcher($this->pdo, $this->audit),
+            $this->taskDispatcher(),
         );
     }
 
@@ -80,7 +85,7 @@ final class PlatformOpsRuntimeFactory
     {
         return new PlatformUpgradeExecutionService(
             $this->pdo,
-            $this->audit,
+            $this->taskDispatcher(),
             $this->projectRoot,
             $this->runtimeStatusProvider(),
         );
@@ -90,11 +95,8 @@ final class PlatformOpsRuntimeFactory
     {
         return new PlatformModuleOperationExecutionService(
             $this->pdo,
-            $this->audit,
-            $this->projectRoot,
-            $this->moduleConfig,
-            $this->trustedKeys,
-            null,
+            $this->taskDispatcher(),
+            $this->moduleRequests(),
             $this->runtimeStatusProvider(),
         );
     }
@@ -145,12 +147,72 @@ final class PlatformOpsRuntimeFactory
 
     public function diagnostics(string $deploymentMode, bool $debugEnabled): PlatformDiagnosticBundleService
     {
+        $permissions = new PlatformOpsPermissionChecker($this->pdo);
         return new PlatformDiagnosticBundleService(
             $this->pdo,
+            $permissions,
+            fn(DateTimeImmutable $since): RuntimeLogService => new RuntimeLogService(
+                $permissions,
+                new RuntimeLogProviderRegistry([
+                    new PlatformAuditRuntimeLogProvider($this->pdo, $since->format('Y-m-d H:i:s.v')),
+                ]),
+                new SafeLogMessageCatalog([]),
+            ),
             $this->status(),
             $this->moduleGovernance(),
             $deploymentMode,
             $debugEnabled,
+        );
+    }
+
+    public function upgradeTaskExecution(): PdoUpgradeTaskExecutionService
+    {
+        return new PdoUpgradeTaskExecutionService(
+            $this->pdo,
+            $this->audit,
+            $this->taskDispatcher(),
+            $this->maintenanceStore(),
+            $this->projectRoot,
+            $this->backupProviders(),
+            $this->runtimeStatusProvider(),
+        );
+    }
+
+    public function moduleTaskExecution(): PdoModuleOperationTaskExecutionService
+    {
+        return new PdoModuleOperationTaskExecutionService(
+            $this->pdo,
+            $this->audit,
+            $this->taskDispatcher(),
+            $this->maintenanceStore(),
+            $this->moduleRequests(),
+            $this->backupProviders(),
+            $this->runtimeStatusProvider(),
+        );
+    }
+
+    private function taskDispatcher(): PdoOpsTaskDispatcher
+    {
+        return new PdoOpsTaskDispatcher($this->pdo, $this->audit);
+    }
+
+    private function maintenanceStore(): PdoMaintenanceWindowStore
+    {
+        return new PdoMaintenanceWindowStore($this->pdo, $this->audit);
+    }
+
+    private function moduleRequests(): DeploymentModuleRequestService
+    {
+        return new DeploymentModuleRequestService(
+            $this->pdo,
+            $this->projectRoot,
+            $this->moduleConfig,
+            $this->trustedKeys,
+            new PluginRuntimeGovernanceService(
+                $this->pdo,
+                $this->projectRoot . '/server',
+                $this->moduleConfig,
+            ),
         );
     }
 }

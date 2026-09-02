@@ -33,14 +33,12 @@ final readonly class PdoModuleOperationTaskExecutionService
         'OPS_MODULE_WORKER_FAILED',
     ];
 
-    /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private PDO $pdo,
         private AuditContractHost $audit,
-        private string $projectRoot,
-        private array $moduleConfig,
-        private array $trustedKeys,
-        private ?string $registryPath,
+        private PdoOpsTaskDispatcher $tasks,
+        private PdoMaintenanceWindowStore $maintenance,
+        private DeploymentModuleRequestService $requests,
         private BackupRestoreProviderRegistry $backupProviders,
         private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
     ) {
@@ -180,7 +178,7 @@ SQL);
             $context = $this->context($task);
             $maintenanceKey = (string)$current['maintenance_key'];
             $maintenanceRevision = (int)$current['maintenance_revision'];
-            (new PdoMaintenanceWindowStore($this->pdo, $this->audit))->close(
+            $this->maintenance->close(
                 $context,
                 $maintenanceKey,
                 $maintenanceRevision,
@@ -335,7 +333,7 @@ SQL);
             }
             $context = $this->context($task);
             $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
-            $child = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))->dispatch($context, $this->childSubmission(
+            $child = $this->tasks->dispatch($context, $this->childSubmission(
                 Package::BACKUP_TASK_TYPE,
                 $provider->backupHandlerKey,
                 ['provider_key' => $provider->key],
@@ -380,7 +378,7 @@ SQL);
                 throw new \RuntimeException('OPS_MODULE_BACKUP_FAILED');
             }
             $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
-            $restore = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))->dispatch($this->context($task), $this->childSubmission(
+            $restore = $this->tasks->dispatch($this->context($task), $this->childSubmission(
                 Package::RESTORE_TASK_TYPE,
                 $provider->restoreHandlerKey,
                 [
@@ -473,7 +471,7 @@ SQL);
             );
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-open');
             $requestDigest = hash('sha256', $key . ':' . $window->startsAt . ':' . $window->endsAt);
-            $created = (new PdoMaintenanceWindowStore($this->pdo, $this->audit))->schedule(
+            $created = $this->maintenance->schedule(
                 $context,
                 $window,
                 0,
@@ -580,13 +578,7 @@ SQL);
 
     private function requestStore(): DeploymentModuleRequestService
     {
-        return new DeploymentModuleRequestService(
-            $this->pdo,
-            $this->projectRoot,
-            $this->moduleConfig,
-            $this->trustedKeys,
-            $this->registryPath,
-        );
+        return $this->requests;
     }
 
     /** @return array{commit:string,tree:string,health:string,repository_clean:bool} */

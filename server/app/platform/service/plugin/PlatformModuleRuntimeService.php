@@ -18,6 +18,8 @@ final readonly class PlatformModuleRuntimeService
         private string $serverRoot,
         private array $moduleConfig,
         private array $trustedPublicKeys,
+        private PluginRuntimeGovernanceService $governance,
+        private PluginCatalogSyncService $catalog,
     ) {
     }
 
@@ -123,13 +125,13 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
     /** @return array<string,mixed> */
     public function uninstallPreview(string $key, bool $purge): array
     {
-        return (new PluginRuntimeGovernanceService($this->pdo, $this->serverRoot, $this->moduleConfig))->preview($key, $purge);
+        return $this->governance->preview($key, $purge);
     }
 
     /** @param array<string,mixed> $plan @return array<string,mixed> */
     public function uninstall(string $key, bool $purge, array $plan, string $digest): array
     {
-        $result = (new PluginRuntimeGovernanceService($this->pdo, $this->serverRoot, $this->moduleConfig))->uninstall($key, $purge, $plan, $digest);
+        $result = $this->governance->uninstall($key, $purge, $plan, $digest);
         $moduleKeys = array_values(array_map(static fn(array $module): string => (string)$module['module_key'], $result['affected_modules'] ?? []));
         $catalog = $this->catalog();
         $catalog->invalidateTenantAuthorization($moduleKeys);
@@ -218,7 +220,7 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
 
     private function catalog(): PluginCatalogSyncService
     {
-        return new PluginCatalogSyncService($this->pdo, $this->serverRoot, $this->moduleConfig);
+        return $this->catalog;
     }
 
     /** @return array{package_key:string,manifests:array<string,\PeanutAdmin\Kernel\Module\ManifestDocument>} */

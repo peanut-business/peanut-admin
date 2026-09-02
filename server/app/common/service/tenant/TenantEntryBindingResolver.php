@@ -47,7 +47,11 @@ final readonly class TenantEntryBindingResolver
         string $operation,
         string $operationId,
     ): TenantSystemContext {
-        return $this->delegate->system($request, $clientKey, $actor, $operation, $operationId);
+        try {
+            return $this->delegate->system($request, $clientKey, $actor, $operation, $operationId);
+        } catch (\DomainException|\InvalidArgumentException|\PDOException $exception) {
+            throw new TenantEntryResolutionException($exception);
+        }
     }
 
     public static function normalizeHost(string $value): string

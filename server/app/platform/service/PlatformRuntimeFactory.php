@@ -15,6 +15,8 @@ use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\module\VerifiedTenantModuleRepository;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
+use app\platform\service\plugin\PluginCatalogSyncService;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -112,6 +114,7 @@ final class PlatformRuntimeFactory
     {
         return $this->tenantEntryBindings ??= new TenantEntryBindingAdminService(
             $this->pdo,
+            new PdoTransactionManager($this->pdo),
             $this->sessions(),
             $this->audit,
         );
@@ -213,6 +216,8 @@ final class PlatformRuntimeFactory
             dirname(__DIR__, 3),
             $this->moduleConfig,
             $trusted,
+            new PluginRuntimeGovernanceService($this->pdo, dirname(__DIR__, 3), $this->moduleConfig),
+            new PluginCatalogSyncService($this->pdo, dirname(__DIR__, 3), $this->moduleConfig),
         );
     }
 

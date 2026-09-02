@@ -11,6 +11,7 @@ use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
+use app\platform\service\plugin\PluginCatalogSyncService;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 
@@ -490,7 +491,14 @@ try {
         );
     }
 
-    $moduleRuntime = new PlatformModuleRuntimeService($pdo, $target . '/server', $moduleConfig, []);
+    $moduleRuntime = new PlatformModuleRuntimeService(
+        $pdo,
+        $target . '/server',
+        $moduleConfig,
+        [],
+        $governance,
+        new PluginCatalogSyncService($pdo, $target . '/server', $moduleConfig),
+    );
     $runtimeProjection = $moduleRuntime->modules(1, 100, 'official.task');
     $runtimeTask = $runtimeProjection['items'][0] ?? null;
     moduleBundleExpect(is_array($runtimeTask), 'runtime Module projection lost the Task member');

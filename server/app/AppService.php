@@ -43,6 +43,7 @@ use app\common\service\DemoAccountPolicy;
 use app\common\service\FileService;
 use app\common\service\ProductAssetReferenceService;
 use app\common\service\authorization\MenuPermissionUsageQuery;
+use app\common\service\authorization\NativeAdminPrincipalRepository;
 use app\common\service\authorization\RoleAdministrationRuntime;
 use app\common\service\authorization\ThinkPhpAdminMenuPersistence;
 use app\common\service\org\AdminDirectoryQuery;
@@ -143,8 +144,9 @@ class AppService extends Service
         $this->app->bind(TenantAuthEndpoint::class, fn(): TenantAuthEndpoint => new TenantAuthEndpoint(
             $this->app->make(TenantAuthService::class),
         ));
-        $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => AuditContractHost::fromPdo(
+        $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => new AuditContractHost(
             $this->app->make(PDO::class),
+            $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(OperationLogService::class, fn(): OperationLogService => new OperationLogService(
             $this->app->make(AuditContractHost::class),
@@ -161,7 +163,7 @@ class AppService extends Service
             fn(): InstallationExecutionHost => new InstallationExecutionHost(dirname(__DIR__)),
         );
         $this->app->bind(AdminAuthorizationService::class, fn(): AdminAuthorizationService => new AdminAuthorizationService(
-            $this->app->make(PDO::class),
+            new NativeAdminPrincipalRepository($this->app->make(PDO::class)),
             $this->app->make(CoreTenantModuleAdminBridge::class),
             $this->app->make(AdminMenuPersistence::class),
             $this->app->make(AdminPermissionPolicy::class),
