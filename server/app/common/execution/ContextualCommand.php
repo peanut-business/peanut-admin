@@ -23,13 +23,19 @@ abstract class ContextualCommand extends Command
             return $this->handle($input, $output);
         }
 
-        return $this->contexts->run(
-            new InstanceExecutionContext(
-                'console.' . $this->getName(),
-                'cli-' . getmypid() . '-' . bin2hex(random_bytes(8)),
-            ),
-            fn(): int => $this->handle($input, $output),
-        );
+        try {
+            return $this->contexts->run(
+                new InstanceExecutionContext(
+                    'console.' . $this->getName(),
+                    'cli-' . getmypid() . '-' . bin2hex(random_bytes(8)),
+                ),
+                fn(): int => $this->handle($input, $output),
+            );
+        } finally {
+            if (!$this->contexts->isEmpty()) {
+                error_log('[ContextualCommand] execution context stack not empty after ' . $this->getName());
+            }
+        }
     }
 
     final protected function executionContext(): CurrentExecutionContext

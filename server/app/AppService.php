@@ -95,6 +95,17 @@ class AppService extends Service
 {
     public function register(): void
     {
+        $this->registerExecutionContext();
+        $this->registerAuthentication();
+        $this->registerAuthorization();
+        $this->registerStorage();
+        $this->registerPlatform();
+        $this->registerApplicationServices();
+        $this->registerModules();
+    }
+
+    private function registerExecutionContext(): void
+    {
         $contexts = new ExecutionContextStore();
         $current = new CurrentExecutionContext($contexts);
         $this->app->instance(ExecutionContextStore::class, $contexts);
@@ -102,6 +113,37 @@ class AppService extends Service
         $configuredOverrides = Config::get('peanut.overrides', []);
         CoreServiceOverrides::configure(is_array($configuredOverrides) ? $configuredOverrides : []);
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
+        $this->app->bind(TransactionManager::class, fn(): TransactionManager => new PdoTransactionManager(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport(
+            $this->app->make(CurrentExecutionContext::class),
+        ));
+        $this->app->bind(InputValidator::class, fn(): InputValidator => new InputValidator(
+            $this->app,
+            $this->app->make(CurrentExecutionContext::class),
+        ));
+        $this->app->bind(
+            InstallationExecutionHost::class,
+            fn(): InstallationExecutionHost => new InstallationExecutionHost(dirname(__DIR__)),
+        );
+        $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => new AuditContractHost(
+            $this->app->make(PDO::class),
+            $this->app->make(CurrentExecutionContext::class),
+        ));
+        $this->app->bind(OperationLogService::class, fn(): OperationLogService => new OperationLogService(
+            $this->app->make(AuditContractHost::class),
+        ));
+        $this->app->bind(ExternalTenantAudit::class, fn(): ExternalTenantAudit => new ThinkPhpExternalTenantAudit(
+            $this->app->make(AuditContractHost::class),
+        ));
+    }
+
+    private function registerAuthentication(): void
+    {
         $this->app->bind(DemoAccountPolicy::class, fn(): DemoAccountPolicy => new DemoAccountPolicy(
             $this->app->make(PDO::class),
             (string)(getenv('PEANUT_DEMO_MODE') ?: '') === 'enabled',
@@ -112,18 +154,6 @@ class AppService extends Service
                 (string)(getenv('PEANUT_DEMO_TENANT_B_EMAIL') ?: ''),
             ], static fn(string $email): bool => trim($email) !== '')),
         ));
-        $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
-            CoreServiceOverrides::adminPermissionPolicy());
-        $this->app->bind(AdminMenuPersistence::class, ThinkPhpAdminMenuPersistence::class);
-        $this->app->bind(
-            TenantApplicationBootstrapPersistence::class,
-            ThinkPhpTenantApplicationBootstrapPersistence::class,
-        );
-        $this->app->bind(TransactionManager::class, fn(): TransactionManager => new PdoTransactionManager(
-            $this->app->make(PDO::class),
-        ));
-        $this->app->bind(TenantSettingsBootstrapCommands::class, fn(): TenantSettingsBootstrapCommands =>
-            TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->app->make(PDO::class)));
         $this->app->bind(TenantAuthService::class, function (): TenantAuthService {
             $key = trim((string)Config::get('tenant_auth.identifier_hmac_key', ''));
             if (strlen($key) < 32) {
@@ -142,24 +172,21 @@ class AppService extends Service
         $this->app->bind(TenantAuthEndpoint::class, fn(): TenantAuthEndpoint => new TenantAuthEndpoint(
             $this->app->make(TenantAuthService::class),
         ));
-        $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => new AuditContractHost(
-            $this->app->make(PDO::class),
-            $this->app->make(CurrentExecutionContext::class),
+        $this->app->bind(AdminLoginAttemptService::class, fn(): AdminLoginAttemptService => new AdminLoginAttemptService(
+            (int)Config::get('admin_auth.password_error_times', 5),
+            (int)Config::get('admin_auth.lock_minutes', 30),
         ));
-        $this->app->bind(OperationLogService::class, fn(): OperationLogService => new OperationLogService(
-            $this->app->make(AuditContractHost::class),
+        $this->app->bind(UserTokenService::class, fn(): UserTokenService => new UserTokenService(
+            (string)Config::get('jwt.secret', ''),
+            (int)Config::get('jwt.expire', 0),
         ));
-        $this->app->bind(ExternalTenantAudit::class, fn(): ExternalTenantAudit => new ThinkPhpExternalTenantAudit(
-            $this->app->make(AuditContractHost::class),
-        ));
-        $this->app->bind(InputValidator::class, fn(): InputValidator => new InputValidator(
-            $this->app,
-            $this->app->make(CurrentExecutionContext::class),
-        ));
-        $this->app->bind(
-            InstallationExecutionHost::class,
-            fn(): InstallationExecutionHost => new InstallationExecutionHost(dirname(__DIR__)),
-        );
+    }
+
+    private function registerAuthorization(): void
+    {
+        $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
+            CoreServiceOverrides::adminPermissionPolicy());
+        $this->app->bind(AdminMenuPersistence::class, ThinkPhpAdminMenuPersistence::class);
         $this->app->bind(AdminAuthorizationService::class, fn(): AdminAuthorizationService => new AdminAuthorizationService(
             new NativeAdminPrincipalRepository($this->app->make(PDO::class)),
             $this->app->make(CoreTenantModuleAdminBridge::class),
@@ -167,12 +194,42 @@ class AppService extends Service
             $this->app->make(AdminPermissionPolicy::class),
         ));
         $this->app->bind(AdminAuthorizationQuery::class, fn(): AdminAuthorizationQuery => $this->app->make(AdminAuthorizationService::class));
-        $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
+        $this->app->bind(CoreTenantModuleAdminBridge::class, fn(): CoreTenantModuleAdminBridge => new CoreTenantModuleAdminBridge(
+            $this->app->make(PDO::class),
+            $this->app->make(PdoModuleGovernanceProvider::class),
+            $this->app->make(AdminMenuPersistence::class),
+        ));
+        $this->app->bind(RoleAdministrationRuntime::class, fn(): RoleAdministrationRuntime => new RoleAdministrationRuntime(
+            $this->app->make(PDO::class),
+            new RoleAdminService($this->app->make(PDO::class)),
+            $this->app->make(AdminAuthorizationService::class),
+            $this->app->make(AdminMenuPersistence::class),
+        ));
+        $this->app->bind(MenuPermissionUsageQuery::class, fn(): MenuPermissionUsageQuery => new MenuPermissionUsageQuery(
             $this->app->make(PDO::class),
         ));
-        $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport(
+        $this->app->bind(AdminDirectoryQuery::class, fn(): AdminDirectoryQuery => new AdminDirectoryQuery(
+            $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
         ));
+        $this->app->bind(DepartmentAdministrationRuntime::class, fn(): DepartmentAdministrationRuntime => new DepartmentAdministrationRuntime(
+            $this->app->make(PDO::class),
+            $this->app->make(CurrentExecutionContext::class),
+        ));
+        $this->app->bind(TenantAdminRuntime::class, fn(): TenantAdminRuntime => new TenantAdminRuntime(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(AdminApiAccessRegistry::class, function (): AdminApiAccessRegistry {
+            $routes = Config::get('admin_api_access', []);
+            return new AdminApiAccessRegistry(
+                (int)Config::get('admin_api_access.version', 0),
+                is_array($routes) ? $routes : [],
+            );
+        });
+    }
+
+    private function registerStorage(): void
+    {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
         $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
             $this->app->make(PDO::class),
@@ -203,35 +260,16 @@ class AppService extends Service
             $this->app->make(StorageRepository::class),
             $this->app->make(AuditContractHost::class),
         ));
-        $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
-            return new ModuleExecutionBoundary(
-                $this->app->make(PDO::class),
-                $this->app->make(CurrentExecutionContext::class),
-            );
-        });
-        $this->app->bind(AdminDirectoryQuery::class, fn(): AdminDirectoryQuery => new AdminDirectoryQuery(
-            $this->app->make(PDO::class),
-            $this->app->make(CurrentExecutionContext::class),
-        ));
-        $this->app->bind(DepartmentAdministrationRuntime::class, fn(): DepartmentAdministrationRuntime => new DepartmentAdministrationRuntime(
-            $this->app->make(PDO::class),
-            $this->app->make(CurrentExecutionContext::class),
-        ));
-        $this->app->bind(TenantAdminRuntime::class, fn(): TenantAdminRuntime => new TenantAdminRuntime(
-            $this->app->make(PDO::class),
-        ));
-        $this->app->bind(MenuPermissionUsageQuery::class, fn(): MenuPermissionUsageQuery => new MenuPermissionUsageQuery(
-            $this->app->make(PDO::class),
-        ));
-        $this->app->bind(RoleAdministrationRuntime::class, fn(): RoleAdministrationRuntime => new RoleAdministrationRuntime(
-            $this->app->make(PDO::class),
-            new RoleAdminService($this->app->make(PDO::class)),
-            $this->app->make(AdminAuthorizationService::class),
-            $this->app->make(AdminMenuPersistence::class),
-        ));
-        $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
-            $this->app->make(PDO::class),
-        ));
+    }
+
+    private function registerPlatform(): void
+    {
+        $this->app->bind(TenantSettingsBootstrapCommands::class, fn(): TenantSettingsBootstrapCommands =>
+            TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->app->make(PDO::class)));
+        $this->app->bind(
+            TenantApplicationBootstrapPersistence::class,
+            ThinkPhpTenantApplicationBootstrapPersistence::class,
+        );
         $this->app->bind(DefaultTenantContextResolver::class, fn(): DefaultTenantContextResolver => new DefaultTenantContextResolver(
             $this->app->make(PDO::class),
         ));
@@ -251,6 +289,27 @@ class AppService extends Service
             self::hostList((string)Config::get('deployment.tenant_admin_hosts', '')),
             $this->app->make(TenantEntryBindingResolver::class),
         ));
+        $this->app->bind(DataScopePolicy::class, function (): DataScopePolicy {
+            $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
+            return match ($mode) {
+                DeploymentMode::MultiTenant => new MultiTenantDataScopePolicy(
+                    $this->app->make(CurrentExecutionContext::class),
+                ),
+                DeploymentMode::Standalone => new StandaloneDataScopePolicy(
+                    $this->app->make(CurrentExecutionContext::class),
+                ),
+                default => throw new \RuntimeException('DEPLOYMENT_MODE_UNCONFIGURED'),
+            };
+        });
+        $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
+            return new ModuleExecutionBoundary(
+                $this->app->make(PDO::class),
+                $this->app->make(CurrentExecutionContext::class),
+            );
+        });
         $this->app->bind(PlatformRuntimeFactory::class, function (): PlatformRuntimeFactory {
             $moduleConfig = Config::get('modules', []);
             if (!is_array($moduleConfig)) {
@@ -297,11 +356,6 @@ class AppService extends Service
         $this->app->bind(PdoModuleGovernanceProvider::class, fn(): PdoModuleGovernanceProvider => $this->app
             ->make(PlatformOpsRuntimeFactory::class)
             ->moduleGovernance());
-        $this->app->bind(CoreTenantModuleAdminBridge::class, fn(): CoreTenantModuleAdminBridge => new CoreTenantModuleAdminBridge(
-            $this->app->make(PDO::class),
-            $this->app->make(PdoModuleGovernanceProvider::class),
-            $this->app->make(AdminMenuPersistence::class),
-        ));
         $this->app->bind(ApplicationRuntimeStatusProvider::class, fn(): ApplicationRuntimeStatusProvider => $this->app
             ->make(PlatformOpsRuntimeFactory::class)
             ->runtimeStatusProvider());
@@ -329,18 +383,6 @@ class AppService extends Service
                 $runtime->backups(),
             );
         });
-        $this->app->bind(DataScopePolicy::class, function (): DataScopePolicy {
-            $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
-            return match ($mode) {
-                DeploymentMode::MultiTenant => new MultiTenantDataScopePolicy(
-                    $this->app->make(CurrentExecutionContext::class),
-                ),
-                DeploymentMode::Standalone => new StandaloneDataScopePolicy(
-                    $this->app->make(CurrentExecutionContext::class),
-                ),
-                default => throw new \RuntimeException('DEPLOYMENT_MODE_UNCONFIGURED'),
-            };
-        });
         $this->app->bind(\app\common\service\dict\DictionaryRuntime::class, function (): \app\common\service\dict\DictionaryRuntime {
             $tenant = new \app\common\service\dict\ThinkPhpTenantDictionaryProvider();
             $system = new \app\common\service\dict\ThinkPhpSystemDictionaryProvider();
@@ -359,21 +401,10 @@ class AppService extends Service
             (array)Config::get('console.commands', []),
             (array)Config::get('console.module_commands', []),
         ));
-        $this->app->bind(AdminApiAccessRegistry::class, function (): AdminApiAccessRegistry {
-            $routes = Config::get('admin_api_access', []);
-            return new AdminApiAccessRegistry(
-                (int)Config::get('admin_api_access.version', 0),
-                is_array($routes) ? $routes : [],
-            );
-        });
-        $this->app->bind(AdminLoginAttemptService::class, fn(): AdminLoginAttemptService => new AdminLoginAttemptService(
-            (int)Config::get('admin_auth.password_error_times', 5),
-            (int)Config::get('admin_auth.lock_minutes', 30),
-        ));
-        $this->app->bind(UserTokenService::class, fn(): UserTokenService => new UserTokenService(
-            (string)Config::get('jwt.secret', ''),
-            (int)Config::get('jwt.expire', 0),
-        ));
+    }
+
+    private function registerApplicationServices(): void
+    {
         $this->app->bind(WorkbenchApplicationService::class, fn(): WorkbenchApplicationService => new WorkbenchApplicationService(
             $this->app->make(AdminAuthorizationService::class),
             $this->app->make(FileService::class),
@@ -422,7 +453,6 @@ class AppService extends Service
             $this->app->make(UserTokenService::class),
             (string)Config::get('project.default_image.user_avatar', ''),
         ));
-        $this->registerModules();
     }
 
     public function boot(): void
