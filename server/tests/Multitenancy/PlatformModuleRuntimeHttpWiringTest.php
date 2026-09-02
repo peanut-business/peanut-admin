@@ -161,7 +161,13 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
     );
     platformModuleHttpExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'Platform Module HTTP test database must start empty');
-    $identity = initializeCoreIdentity($pdo, 'module-http-owner@example.test', 'ModuleHttpOwnerPassword2026', null);
+    $identity = initializeCoreIdentity(
+        $pdo,
+        'module-http-owner@example.test',
+        'ModuleHttpOwnerPassword2026',
+        null,
+        new \app\common\service\DemoAccountPolicy($pdo, false, []),
+    );
     executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
     (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
 

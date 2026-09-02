@@ -227,7 +227,13 @@ moduleBundleExpect(
     ),
     'callback failure did not release the advisory lock',
 );
-initializeCoreIdentity($pdo, 'module-bundle@example.test', 'module-bundle-test-password', null);
+initializeCoreIdentity(
+    $pdo,
+    'module-bundle@example.test',
+    'module-bundle-test-password',
+    null,
+    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+);
 $serverRoot = dirname(__DIR__, 2);
 $lockSqlOwners = [];
 $applicationFiles = new RecursiveIteratorIterator(

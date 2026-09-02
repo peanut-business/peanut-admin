@@ -31,7 +31,13 @@ $pdo = new PDO(
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
 );
 moduleCatalogExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'catalog test database must start empty');
-initializeCoreIdentity($pdo, 'module-catalog@example.test', 'module-catalog-test-password', null);
+initializeCoreIdentity(
+    $pdo,
+    'module-catalog@example.test',
+    'module-catalog-test-password',
+    null,
+    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+);
 executeSqlFiles($pdo, [dirname(__DIR__, 2) . '/database/init.sql']);
 
 $serverRoot = dirname(__DIR__, 2);

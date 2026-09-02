@@ -113,7 +113,13 @@ $pdo = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
 );
-$identity = initializeCoreIdentity($pdo, 'module-delivery@example.test', 'module-delivery-password', null);
+$identity = initializeCoreIdentity(
+    $pdo,
+    'module-delivery@example.test',
+    'module-delivery-password',
+    null,
+    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+);
 $serverRoot = dirname(__DIR__, 2);
 executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
 $migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
