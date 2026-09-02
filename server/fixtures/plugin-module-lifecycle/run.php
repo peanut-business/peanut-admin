@@ -2,6 +2,10 @@
 declare(strict_types=1);
 
 use app\Modules\Fixture\DeliveryRecord\ModuleProvider;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\service\module\ModuleExecutionBoundary;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLifecycleService;
 use app\platform\service\plugin\PluginLockResolver;
@@ -285,7 +289,17 @@ SQL)->fetch();
         new DateTimeImmutable('now', new DateTimeZone('UTC')),
         1
     ), 'plugin-module-fixture');
-    $commands = (new ModuleProvider())->commands($pdo);
+    $executionContexts = new ExecutionContextStore();
+    $executionContext = new CurrentExecutionContext($executionContexts);
+    $commands = (new ModuleProvider())->commands($pdo, $executionContext);
+    $modules = new ModuleExecutionBoundary($pdo, $executionContext);
+    $record = static fn(string $reference): array => $executionContexts->run(
+        new AdminExecutionContext($context, 'fixture.delivery-record.record'),
+        static function () use ($modules, $commands, $reference): array {
+            $modules->assertHttp('fixture.delivery-record', 'fixture.delivery-record.record');
+            return $commands->record($reference);
+        },
+    );
     foreach (['not-enabled', 'not-authorized'] as $phase) {
         if ($phase === 'not-authorized') {
             $now = gmdate('Y-m-d H:i:s.v');
@@ -298,7 +312,7 @@ SQL);
             $enable->execute(['tenant_id' => (int)$member['tenant_id'], 'now' => $now]);
         }
         try {
-            $commands->record($context, $phase);
+            $record($phase);
             throw new RuntimeException("{$phase} write was accepted");
         } catch (ModuleException $exception) {
             $expectedCode = $phase === 'not-enabled'
@@ -319,7 +333,7 @@ SQL);
         'member_id' => (int)$member['member_id'],
         'now' => gmdate('Y-m-d H:i:s.v'),
     ]);
-    pluginLifecycleExpect($commands->record($context, 'authorized')['status'] === 'recorded', 'authorized write failed');
+    pluginLifecycleExpect($record('authorized')['status'] === 'recorded', 'authorized write failed');
     try {
         $service->uninstall('fixture.delivery-record');
         throw new RuntimeException('uninstall ignored an enabled TenantModule');
@@ -328,7 +342,7 @@ SQL);
     }
     $pdo->exec("UPDATE pa_tenant_module SET status='disabled',disabled_at=UTC_TIMESTAMP(3),disabled_reason='fixture-test' WHERE module_key='fixture.delivery-record'");
     try {
-        $commands->record($context, 'disabled-after-grant');
+        $record('disabled-after-grant');
         throw new RuntimeException('disabled Module accepted a command after permission grant');
     } catch (ModuleException $exception) {
         pluginLifecycleExpect(
