@@ -109,6 +109,7 @@ const provider = new HocuspocusProvider({
     });
   },
 });
+provider.attach();
 void websocketProvider.connect();
 refreshCollaborationStatus();
 
