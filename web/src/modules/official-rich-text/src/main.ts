@@ -67,6 +67,7 @@ const refreshCollaborationStatus = () => {
 
 const websocketProvider = new HocuspocusProviderWebsocket({
   url: COLLABORATION_URL,
+  autoConnect: false,
   delay: 20,
   minDelay: 20,
   maxDelay: 20,
@@ -108,6 +109,7 @@ const provider = new HocuspocusProvider({
     });
   },
 });
+void websocketProvider.connect();
 refreshCollaborationStatus();
 
 const renderAnchor = () => {
