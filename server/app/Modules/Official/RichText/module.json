@@ -13,13 +13,17 @@
     "protected": false
   },
   "backend": {
-    "provider": "app\\Modules\\Official\\RichText\\ModuleProvider"
+    "provider": "app\\Modules\\Official\\RichText\\ModuleProvider",
+    "routes": "Http/routes.php",
+    "migrations": "Database/Migrations",
+    "menus": "Resources/menus.json",
+    "permissions": "Resources/permissions.json"
   },
   "frontend": {
     "entry": "web/src/modules/official-rich-text/contribution.ts"
   },
   "database": {
-    "owned_tables": []
+    "owned_tables": ["pa_rich_text_document"]
   },
   "contracts": {
     "exports": [],
