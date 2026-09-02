@@ -3,13 +3,17 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller;
 
-use app\common\controller\BaseLikeAdminController;
+use app\BaseController;
+use app\common\traits\ApiResponseTrait;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\AdminExecutionContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\App;
 
-class BaseAdminController extends BaseLikeAdminController
+abstract class BaseAdminController extends BaseController
 {
+    use ApiResponseTrait;
+
     protected int   $adminId   = 0;
     protected array $adminInfo = [];
 
@@ -25,7 +29,7 @@ class BaseAdminController extends BaseLikeAdminController
         $current = $this->executionContext;
         if ($current->current() instanceof AdminExecutionContext) {
             $this->adminInfo = $current->tenantAdminPrincipal();
-            $this->adminId = (int)$this->adminInfo['id'];
+            $this->adminId = (int)($this->adminInfo['id'] ?? 0);
         }
     }
 
@@ -34,7 +38,7 @@ class BaseAdminController extends BaseLikeAdminController
         return $this->executionContext;
     }
 
-    protected function tenantAdminContext(): \PeanutAdmin\Kernel\Auth\TenantContext
+    protected function tenantAdminContext(): TenantContext
     {
         return $this->executionContext->tenantAdmin();
     }

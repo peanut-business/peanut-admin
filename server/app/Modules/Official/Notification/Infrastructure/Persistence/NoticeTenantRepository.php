@@ -10,7 +10,6 @@ use app\common\execution\ExecutionContextAccess;
 use app\common\service\notice\NoticeTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use think\facade\Db;
 use app\common\persistence\ConvertsModelPage;
 
 final class NoticeTenantRepository
@@ -32,11 +31,6 @@ final class NoticeTenantRepository
     {
         self::tenantId($contexts, $context, $operation);
         return NoticeScene::where([]);
-    }
-
-    public static function templates(ExecutionContextAccess $contexts, TenantContext $context)
-    {
-        return Db::name('notice_template')->where('tenant_id', NoticeTenantContext::tenantId($contexts, $context));
     }
 
     public static function logs(

@@ -47,15 +47,19 @@ final class ThinkPhpExternalTenantBindingRepository implements ExternalTenantBin
         );
     }
 
-    public function byTenant(string $provider, int $tenantId): array
+    public function byTenant(string $provider, int $tenantId, bool $lock = false): array
     {
+        $query = Db::name('external_channel_binding')->alias('b')
+            ->field($this->bindingFields())
+            ->join('tenant t', 't.id = b.tenant_id')
+            ->where('b.provider', $provider)
+            ->where('b.tenant_id', $tenantId)
+            ->limit(2);
+        if ($lock) {
+            $query->lock(true);
+        }
         return $this->bindings(
-            Db::name('external_channel_binding')->alias('b')
-                ->field($this->bindingFields())
-                ->join('tenant t', 't.id = b.tenant_id')
-                ->where('b.provider', $provider)
-                ->where('b.tenant_id', $tenantId)
-                ->limit(2)->select()->toArray()
+            $query->select()->toArray()
         );
     }
 
@@ -121,6 +125,9 @@ final class ThinkPhpExternalTenantBindingRepository implements ExternalTenantBin
     {
         return array_map(static function (array $row): ExternalTenantBinding {
             $config = json_decode((string)($row['config_json'] ?? ''), true);
+            if (!is_array($config)) {
+                throw new \RuntimeException('外部渠道配置无效');
+            }
             return new ExternalTenantBinding(
                 (int)($row['id'] ?? 0),
                 (int)($row['tenant_id'] ?? 0),
@@ -128,7 +135,7 @@ final class ThinkPhpExternalTenantBindingRepository implements ExternalTenantBin
                 (string)($row['callback_key'] ?? ''),
                 (string)($row['identity_hash'] ?? ''),
                 (string)($row['identity_hint'] ?? ''),
-                is_array($config) ? $config : [],
+                $config,
                 (int)($row['status'] ?? 0) === 1,
                 (string)($row['tenant_status'] ?? '') === 'active',
             );

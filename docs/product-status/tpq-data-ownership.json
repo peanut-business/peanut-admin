@@ -30,6 +30,7 @@
     {"model": "app\\Modules\\Official\\Oauth\\Model\\OAuthPrincipal", "table": "pa_oauth_principal", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Oauth\\Model\\OfficialAccountReply", "table": "pa_official_account_reply", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Payment\\Model\\RechargeOrder", "table": "pa_recharge_order", "owner": "tenant-orm"},
+    {"model": "app\\Modules\\Official\\Payment\\Model\\PaymentTenantChannelGrant", "table": "pa_payment_tenant_channel_grant", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Payment\\Model\\RefundLog", "table": "pa_refund_log", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Payment\\Model\\RefundRecord", "table": "pa_refund_record", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Task\\Model\\Crontab", "table": "pa_crontab", "owner": "tenant-orm"},
@@ -94,15 +95,15 @@
     {"table": "pa_setting_target_value", "owner": "tenant-gateway", "access_entry": "app\\platform\\service\\plugin\\ModuleCatalogMutationRepository"},
     {"table": "pa_refund_log", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Payment\\Model\\RefundLog"},
     {"table": "pa_oauth_completion_ticket", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Oauth\\Model\\OAuthCompletionTicket"},
-    {"table": "pa_payment_tenant_channel_grant", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Official\\Payment\\Infrastructure\\ThinkPhpPaymentChannelGrantCommands"},
+    {"table": "pa_payment_tenant_channel_grant", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Payment\\Model\\PaymentTenantChannelGrant"},
     {"table": "pa_provider_qualification_evidence", "owner": "tenant-gateway", "access_entry": "app\\platform\\service\\provider\\PdoProviderQualificationEvidenceRepository"},
     {"table": "pa_fixture_delivery_record", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Fixture\\DeliveryRecord\\Infrastructure\\Persistence\\PdoDeliveryRecordRepository"}
   ],
   "counts": {
-    "concrete_models": 35,
-    "tenant_models": 29,
+    "concrete_models": 36,
+    "tenant_models": 30,
     "non_tenant_models": 6,
     "tenant_tables": 47,
-    "tenant_tables_without_model": 18
+    "tenant_tables_without_model": 17
   }
 }

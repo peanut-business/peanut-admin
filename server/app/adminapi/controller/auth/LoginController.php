@@ -17,7 +17,6 @@ use app\common\execution\CurrentExecutionContext;
 
 class LoginController extends BaseAdminController
 {
-    public array $notNeedLogin = ['login', 'logout'];
 
     public function __construct(
         App $app,

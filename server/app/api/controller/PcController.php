@@ -25,7 +25,6 @@ class PcController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['config', 'index', 'infoCenter', 'articleDetail'];
 
     /** PC 配置 */
     public function config()

@@ -22,7 +22,6 @@ class ArticleController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['lists', 'cate', 'detail'];
 
     /** 文章列表 */
     public function lists()

@@ -55,6 +55,6 @@ class TransactionSettingsController extends BaseAdminController
             $this->tenantAdminContext(),
             $post
         );
-        return $this->success('操作成功', [], 1, 1);
+        return $this->success('操作成功');
     }
 }

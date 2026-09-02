@@ -29,7 +29,6 @@ class OfficialAccountController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['verify', 'callback'];
 
     public function verify()
     {

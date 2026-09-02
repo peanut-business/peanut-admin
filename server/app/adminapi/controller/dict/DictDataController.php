@@ -6,19 +6,33 @@ namespace app\adminapi\controller\dict;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\adminapi\controller\AbstractTenantCrudController;
+use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\dict\DictDataApplicationService;
 use app\adminapi\validate\dict\DictDataValidate;
+use app\common\traits\CrudTrait;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\response\Json;
 
-class DictDataController extends AbstractTenantCrudController
+class DictDataController extends BaseAdminController
 {
+    use CrudTrait;
+
     public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly DictDataApplicationService $dictionaryData)
     {
-        parent::__construct($app, $executionContext, $dictionaryData);
+        parent::__construct($app, $executionContext);
     }
     protected const CRUD_VALIDATE = DictDataValidate::class;
     protected const CRUD_NOT_FOUND_MESSAGE = '字典数据不存在';
+
+    protected function resolveCrudContext(): TenantContext
+    {
+        return $this->tenantAdminContext();
+    }
+
+    protected function crudService(): object
+    {
+        return $this->dictionaryData;
+    }
 
     /** 按类型标识取启用数据项（业务前端用） */
     public function byType(): Json

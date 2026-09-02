@@ -222,7 +222,6 @@ officialArticleExpect(
 );
 
 $moduleFiles = [
-    'Http/Controller/AbstractArticleCrudController.php',
     'Http/Controller/ArticleCateController.php',
     'Http/Controller/ArticleController.php',
     'Application/ArticleAdministrationService.php',

@@ -1,17 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\controller;
+namespace app\common\traits;
 
-use app\BaseController;
 use app\common\http\PageResult;
 use app\common\service\JsonService;
 use think\response\Json;
 
-class BaseLikeAdminController extends BaseController
+trait ApiResponseTrait
 {
-    public array $notNeedLogin = [];
-
     protected function success(string $msg = 'success', mixed $data = []): Json
     {
         return JsonService::success($msg, $data);
@@ -30,11 +27,5 @@ class BaseLikeAdminController extends BaseController
     protected function dataLists(PageResult $page): Json
     {
         return JsonService::dataLists($page);
-    }
-
-    public function isNotNeedLogin(): bool
-    {
-        if (empty($this->notNeedLogin)) return false;
-        return in_array($this->request->action(), $this->notNeedLogin);
     }
 }

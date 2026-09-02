@@ -41,7 +41,7 @@ final class ExternalFixtureRepository implements ExternalTenantBindingRepository
         return $this->matching($provider, static fn(): bool => true);
     }
 
-    public function byTenant(string $provider, int $tenantId): array
+    public function byTenant(string $provider, int $tenantId, bool $lock = false): array
     {
         return $this->matching($provider, static fn(ExternalTenantBinding $binding): bool =>
             $binding->tenantId === $tenantId);

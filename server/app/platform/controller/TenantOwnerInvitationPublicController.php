@@ -3,13 +3,16 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
-use app\common\controller\BaseLikeAdminController;
+use app\BaseController;
+use app\common\traits\ApiResponseTrait;
 use app\platform\invitation\TenantOwnerInvitationPublicService;
 use app\platform\validate\TenantOwnerInvitationValidate;
 use think\App;
 
-final class TenantOwnerInvitationPublicController extends BaseLikeAdminController
+final class TenantOwnerInvitationPublicController extends BaseController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         App $app,
         private readonly TenantOwnerInvitationPublicService $invitations,

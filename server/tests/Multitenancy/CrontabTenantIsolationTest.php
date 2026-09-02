@@ -194,7 +194,7 @@ SQL);
     $dispatch = static function (string $command, array $params) use (&$dispatches, &$taskTraces): void {
         $scope = ScheduledTenantContext::require();
         $dispatches[] = [$command, $scope->tenantId(), $scope->contextIdentity(), $params];
-        $current = ExecutionContextAccess::current();
+        $current = app(ExecutionContextAccess::class)->current();
         $metadata = $current instanceof SystemExecutionContext ? $current->metadata : null;
         $taskTraces[] = [
             'job_key' => $metadata?->jobKey,

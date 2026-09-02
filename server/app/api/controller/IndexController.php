@@ -20,7 +20,6 @@ class IndexController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['index', 'config', 'policy'];
 
     /** 首页数据 */
     public function index()

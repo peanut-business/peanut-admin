@@ -77,8 +77,8 @@ final class NotificationApplicationService implements NotificationCommands, Noti
     public function logs(array $params): PageResult
     {
         $query = NoticeTenantRepository::logQuery('l')
-            ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+            ->leftJoin('notice_template t', 't.id = l.template_id AND t.tenant_id = l.tenant_id')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id AND s.tenant_id = l.tenant_id')
             ->field([
                 'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
                 'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',
@@ -118,8 +118,8 @@ final class NotificationApplicationService implements NotificationCommands, Noti
     public function logDetail(int $id): array
     {
         return NoticeTenantRepository::logQuery('l')
-            ->leftJoin('notice_template t', 't.id = l.template_id')
-            ->leftJoin('notice_scene s', 's.id = l.scene_id')
+            ->leftJoin('notice_template t', 't.id = l.template_id AND t.tenant_id = l.tenant_id')
+            ->leftJoin('notice_scene s', 's.id = l.scene_id AND s.tenant_id = l.tenant_id')
             ->field([
                 'l.id', 'l.template_id', 'l.scene_id', 'l.channel', 'l.provider',
                 'l.receiver', 'l.title', 'l.content', 'l.is_verified', 'l.check_count',

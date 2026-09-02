@@ -15,7 +15,6 @@ class SearchController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['hotLists'];
 
     /** 热门搜索 */
     public function hotLists()

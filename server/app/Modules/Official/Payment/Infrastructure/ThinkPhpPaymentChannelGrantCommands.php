@@ -4,13 +4,22 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment\Infrastructure;
 
 use app\Modules\Official\Payment\Model\PaymentScene;
+use app\Modules\Official\Payment\Model\PaymentTenantChannelGrant;
+use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantContext;
+use app\common\service\external\ExternalTenantBindingRepository;
 use app\common\service\external\ExternalTenantResolver;
+use app\common\tenancy\PlatformTenantDataGateway;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
 use think\facade\Db;
 
 final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCommands
 {
+    public function __construct(
+        private readonly ExternalTenantBindingRepository $bindings,
+        private readonly PlatformTenantDataGateway $tenantData,
+    ) {}
+
     public function providerForPayWay(int $payWay): string
     {
         return match ($payWay) {
@@ -40,18 +49,10 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
     private function findActiveGrant(object $context, string $provider, bool $lock = false): ?array
     {
         $tenantId = ExternalTenantContext::tenantId($context);
-        $query = Db::name('payment_tenant_channel_grant')->alias('g')
-            ->field('g.id,g.tenant_id,g.provider,g.external_binding_id,g.merchant_account_ref,'
-                . 'g.merchant_group_ref,b.callback_key,b.identity_hash,b.identity_hint,b.config_json')
-            ->join('external_channel_binding b', 'b.id = g.external_binding_id')
-            ->join('tenant t', 't.id = g.tenant_id')
-            ->where('g.tenant_id', $tenantId)
-            ->where('g.provider', $provider)
-            ->where('g.status', 1)
-            ->whereNull('g.revoked_at')
-            ->where('b.provider', $provider)
-            ->where('b.status', 1)
-            ->where('t.status', 'active')
+        $query = PaymentTenantChannelGrant::where('provider', $provider)
+            ->where('status', 1)
+            ->whereNull('revoked_at')
+            ->field('id,tenant_id,provider,external_binding_id,merchant_account_ref,merchant_group_ref')
             ->limit(2);
         if ($lock) {
             $query->lock(true);
@@ -64,12 +65,19 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
             throw new \RuntimeException('支付渠道授权状态冲突');
         }
         $row = $rows[0];
-        $config = json_decode((string)($row['config_json'] ?? ''), true);
-        if (!is_array($config)) {
-            throw new \RuntimeException('支付渠道配置无效');
+        $binding = $this->bindingForTenant(
+            $provider,
+            $tenantId,
+            (int)$row['external_binding_id'],
+            $lock,
+        );
+        if ($binding === null || !$binding->active || !$binding->tenantActive) {
+            return null;
         }
-        $row['config'] = $config;
-        unset($row['config_json']);
+        $row['callback_key'] = $binding->callbackKey;
+        $row['identity_hash'] = $binding->identityHash;
+        $row['identity_hint'] = $binding->identityHint;
+        $row['config'] = $binding->config;
         return $row;
     }
 
@@ -87,18 +95,15 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
     public function ensureSelfGrant(object $context, string $provider): void
     {
         $tenantId = ExternalTenantContext::tenantId($context);
-        $binding = Db::name('external_channel_binding')
-            ->where('tenant_id', $tenantId)
-            ->where('provider', $provider)
-            ->find();
-        if (!is_array($binding)) {
+        $binding = $this->bindingForTenant($provider, $tenantId);
+        if ($binding === null) {
             return;
         }
         $this->grantTenantChannel(
             $tenantId,
             $provider,
-            (int)$binding['id'],
-            (string)($binding['identity_hash'] ?? ''),
+            $binding->id,
+            $binding->identityHash,
             ''
         );
     }
@@ -121,17 +126,17 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
             $merchantAccountRef,
             $merchantGroupRef
         ): int {
-            $this->assertActiveTenant($tenantId, true);
-            $binding = Db::name('external_channel_binding')
-                ->where('id', $externalBindingId)
+            $this->grantQuery('grant.lock')
+                ->where('tenant_id', $tenantId)
                 ->where('provider', $provider)
                 ->lock(true)
-                ->find();
-            if (!is_array($binding)) {
-                throw new \RuntimeException('支付渠道账户不存在');
+                ->select();
+            $binding = $this->bindingForTenant($provider, $tenantId, $externalBindingId, true);
+            if ($binding === null || !$binding->tenantActive) {
+                throw new \RuntimeException('支付渠道账户不存在或不属于当前租户');
             }
             $now = time();
-            Db::name('payment_tenant_channel_grant')
+            $this->grantQuery('grant.revoke-others')
                 ->where('tenant_id', $tenantId)
                 ->where('provider', $provider)
                 ->where('external_binding_id', '<>', $externalBindingId)
@@ -142,28 +147,28 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
                     'revoked_at' => $now,
                     'update_time' => $now,
                 ]);
-            $existing = Db::name('payment_tenant_channel_grant')
+            $existing = $this->grantQuery('grant.find')
                 ->where('tenant_id', $tenantId)
                 ->where('provider', $provider)
                 ->where('external_binding_id', $externalBindingId)
-                ->lock(true)
                 ->find();
             $data = [
                 'merchant_account_ref' => $merchantAccountRef !== ''
                     ? $merchantAccountRef
-                    : (string)($binding['identity_hash'] ?? ''),
+                    : $binding->identityHash,
                 'merchant_group_ref' => $merchantGroupRef,
                 'status' => 1,
                 'revoked_at' => null,
                 'update_time' => $now,
             ];
-            if (is_array($existing)) {
-                Db::name('payment_tenant_channel_grant')
-                    ->where('id', (int)$existing['id'])
+            if ($existing instanceof PaymentTenantChannelGrant) {
+                $existingId = (int)$existing['id'];
+                $this->grantQuery('grant.update')
+                    ->where('id', $existingId)
                     ->update($data);
-                return (int)$existing['id'];
+                return $existingId;
             }
-            return (int)Db::name('payment_tenant_channel_grant')->insertGetId([
+            return (int)$this->grantQuery('grant.insert')->insertGetId([
                 'tenant_id' => $tenantId,
                 'provider' => $provider,
                 'external_binding_id' => $externalBindingId,
@@ -178,7 +183,7 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
         if ($tenantId < 1 || trim($provider) === '' || $externalBindingId < 1) {
             throw new \RuntimeException('支付渠道授权参数无效');
         }
-        Db::name('payment_tenant_channel_grant')
+        $this->grantQuery('revoke')
             ->where('tenant_id', $tenantId)
             ->where('provider', trim($provider))
             ->where('external_binding_id', $externalBindingId)
@@ -189,14 +194,27 @@ final class ThinkPhpPaymentChannelGrantCommands implements PaymentChannelGrantCo
             ]);
     }
 
-    private function assertActiveTenant(int $tenantId, bool $lock = false): void
+    private function grantQuery(string $operation): \think\db\BaseQuery
     {
-        $query = Db::name('tenant')->where('id', $tenantId);
-        if ($lock) {
-            $query->lock(true);
+        return $this->tenantData->query(
+            PaymentTenantChannelGrant::class,
+            'payment.channel-grant',
+            $operation,
+        );
+    }
+
+    private function bindingForTenant(
+        string $provider,
+        int $tenantId,
+        ?int $bindingId = null,
+        bool $lock = false,
+    ): ?ExternalTenantBinding
+    {
+        foreach ($this->bindings->byTenant($provider, $tenantId, $lock) as $binding) {
+            if ($bindingId === null || $binding->id === $bindingId) {
+                return $binding;
+            }
         }
-        if ((string)$query->value('status') !== 'active') {
-            throw new \RuntimeException('租户不可用');
-        }
+        return null;
     }
 }

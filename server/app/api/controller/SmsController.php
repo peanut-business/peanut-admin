@@ -16,7 +16,6 @@ class SmsController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['sendCode'];
 
     public function sendCode()
     {

@@ -3,16 +3,18 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Http\Controller;
 
-use app\adminapi\controller\AbstractTenantCrudController;
-use app\common\http\PageResult;
+use app\adminapi\controller\BaseAdminController;
+use app\common\traits\CrudTrait;
 use app\Modules\Official\Oauth\Application\OfficialAccountReplyApplicationService;
 use app\Modules\Official\Oauth\Validation\OfficialAccountReplyValidate;
-use think\response\Json;
 use app\common\execution\CurrentExecutionContext;
+use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\App;
 
-class OfficialAccountReplyController extends AbstractTenantCrudController
+class OfficialAccountReplyController extends BaseAdminController
 {
+    use CrudTrait;
+
     protected const CRUD_VALIDATE = OfficialAccountReplyValidate::class;
     protected const CRUD_NOT_FOUND_MESSAGE = '自动回复不存在';
     protected const CRUD_DELETE_SUCCESS_MESSAGE = '删除成功';
@@ -22,13 +24,18 @@ class OfficialAccountReplyController extends AbstractTenantCrudController
     public function __construct(
         App $app,
         CurrentExecutionContext $executionContext,
-        OfficialAccountReplyApplicationService $replies,
+        private readonly OfficialAccountReplyApplicationService $replies,
     ) {
-        parent::__construct($app, $executionContext, $replies);
+        parent::__construct($app, $executionContext);
     }
 
-    protected function renderLists(PageResult|array $result): Json
+    protected function resolveCrudContext(): TenantContext
     {
-        return $this->data($result);
+        return $this->tenantAdminContext();
+    }
+
+    protected function crudService(): object
+    {
+        return $this->replies;
     }
 }

@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace app\installation\controller;
 
-use app\common\controller\BaseLikeAdminController;
+use app\BaseController;
+use app\common\traits\ApiResponseTrait;
 use app\common\service\installation\InstallationExecutionHost;
 use think\App;
 
-final class InstallationController extends BaseLikeAdminController
+final class InstallationController extends BaseController
 {
+    use ApiResponseTrait;
+
     public function __construct(App $app, private readonly InstallationExecutionHost $host)
     {
         parent::__construct($app);

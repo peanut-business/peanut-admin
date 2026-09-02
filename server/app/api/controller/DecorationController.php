@@ -19,7 +19,6 @@ class DecorationController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['mobilePage', 'tabbar', 'pcPage'];
 
     public function mobilePage()
     {

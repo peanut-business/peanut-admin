@@ -16,7 +16,6 @@ class LoginController extends BaseApiController
         parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['register', 'account', 'mobile', 'resetPassword', 'logout'];
 
     /** 注册账号 */
     public function register()

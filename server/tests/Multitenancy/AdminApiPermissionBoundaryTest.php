@@ -4,7 +4,17 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
 use app\adminapi\http\middleware\AuthMiddleware;
+use app\adminapi\service\AdminApiAccessRegistry;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextAccess;
+use app\common\execution\ExecutionContextStore;
+use app\common\http\ApiProblem;
+use app\common\service\authorization\AdminAuthorizationService;
+use app\common\service\DemoAccountPolicy;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -16,17 +26,19 @@ function expectAdminApiBoundary(bool $condition, string $message): void
     }
 }
 
-function responsePayload(mixed $response): array
+function problemPayload(callable $operation): array
 {
-    $payload = json_decode((string)$response->getContent(), true);
-    if (!is_array($payload)) {
-        throw new RuntimeException('middleware response is not JSON');
+    try {
+        $operation();
+    } catch (ApiProblem $problem) {
+        return [
+            'code' => $problem->apiCode(),
+            'msg' => $problem->getMessage(),
+            'data' => $problem->data(),
+        ];
     }
-    return $payload;
+    throw new RuntimeException('middleware denial did not throw ApiProblem');
 }
-
-$app = new think\App();
-$app->initialize();
 
 $policy = new RegisteredAdminPermissionPolicy();
 $registered = ['official.article.list', 'admin/status'];
@@ -37,7 +49,31 @@ expectAdminApiBoundary($policy->canAccess(true, 'admin/status', $registered, [])
 expectAdminApiBoundary(!$policy->canAccess(true, 'admin/edit', $registered, []), 'root must not bypass route registration');
 expectAdminApiBoundary(!$policy->canAccess(false, 'admin/status', ['admin/edit'], ['admin/edit']), 'status route must not inherit through a runtime alias');
 
-$middleware = new AuthMiddleware();
+$executionContexts = new ExecutionContextStore();
+$accessConfig = require dirname(__DIR__, 2) . '/config/admin_api_access.php';
+$middleware = new AuthMiddleware(
+    new ExecutionContextAccess(new CurrentExecutionContext($executionContexts)),
+    (new ReflectionClass(AdminAuthorizationService::class))->newInstanceWithoutConstructor(),
+    new AdminApiAccessRegistry((int)$accessConfig['version'], $accessConfig),
+    (new ReflectionClass(DemoAccountPolicy::class))->newInstanceWithoutConstructor(),
+);
+$tenant = TenantContext::fromValidatedSession(new ValidatedTenantSession(
+    7,
+    'admin-api-permission-session',
+    101,
+    7007,
+    7,
+    'admin-web',
+    new DateTimeImmutable('2031-01-01T00:00:00Z'),
+    1,
+), 'admin-api-permission-request');
+$execution = new AdminExecutionContext($tenant, 'test.admin-api-permission', [
+    'id' => 7,
+    'tenant_id' => 202,
+    'account_id' => 7007,
+    'authorization_revision' => 1,
+    'root' => 0,
+]);
 $nextCalls = 0;
 $next = static function ($request) use (&$nextCalls): string {
     $nextCalls++;
@@ -48,7 +84,7 @@ $anonymous = new class {
     public function pathinfo(): string { return 'admin/self'; }
     public function method(): string { return 'GET'; }
 };
-$anonymousDenial = responsePayload($middleware->handle($anonymous, $next));
+$anonymousDenial = problemPayload(static fn() => $middleware->handle($anonymous, $next));
 expectAdminApiBoundary($anonymousDenial === ['code' => 40100, 'msg' => '请先登录', 'data' => null], 'anonymous denial shape changed');
 
 $authenticated = new class {
@@ -58,7 +94,10 @@ $authenticated = new class {
     public function pathinfo(): string { return 'admin/self'; }
     public function method(): string { return 'GET'; }
 };
-expectAdminApiBoundary($middleware->handle($authenticated, $next) === 'allowed', 'authenticated-only route must pass after login');
+expectAdminApiBoundary(
+    $executionContexts->run($execution, static fn() => $middleware->handle($authenticated, $next)) === 'allowed',
+    'authenticated-only route must pass after login',
+);
 expectAdminApiBoundary($nextCalls === 1, 'authenticated-only route did not reach its controller exactly once');
 
 $authenticatedWrongMethod = new class {
@@ -68,7 +107,10 @@ $authenticatedWrongMethod = new class {
     public function pathinfo(): string { return 'admin/self'; }
     public function method(): string { return 'POST'; }
 };
-$wrongMethodDenial = responsePayload($middleware->handle($authenticatedWrongMethod, $next));
+$wrongMethodDenial = problemPayload(static fn() => $executionContexts->run(
+    $execution,
+    static fn() => $middleware->handle($authenticatedWrongMethod, $next),
+));
 expectAdminApiBoundary($wrongMethodDenial === ['code' => 40300, 'msg' => '暂无访问权限', 'data' => null], 'wrong-method denial must keep the generic permission shape');
 
 $routeSource = peanut_route_registry_source(dirname(__DIR__, 2));

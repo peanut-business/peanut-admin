@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace app\adminapi\controller\auth;
 
 use app\adminapi\application\auth\TenantSessionApplicationService;
-use app\common\controller\BaseLikeAdminController;
+use app\BaseController;
 use PeanutAdmin\Kernel\Http\TenantAuthResponse;
 use think\App;
 
-final class TenantSessionController extends BaseLikeAdminController
+final class TenantSessionController extends BaseController
 {
     public function __construct(
         App $app,

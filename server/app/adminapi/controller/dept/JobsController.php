@@ -5,14 +5,52 @@ namespace app\adminapi\controller\dept;
 
 use think\App;
 use app\common\execution\CurrentExecutionContext;
-
+use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\dept\JobsApplicationService;
+use app\common\traits\CrudTrait;
+use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\response\Json;
 
-class JobsController extends AbstractOrgCrudController
+class JobsController extends BaseAdminController
 {
+    use CrudTrait;
+
+    protected const CRUD_STATUS_FIELD = 'status';
+
     public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly JobsApplicationService $jobs)
     {
-        parent::__construct($app, $executionContext, $jobs);
+        parent::__construct($app, $executionContext);
+    }
+
+    protected function resolveCrudContext(): TenantContext
+    {
+        return $this->tenantAdminContext();
+    }
+
+    protected function crudService(): object
+    {
+        return $this->jobs;
+    }
+
+    protected function validatedInput(mixed $_context, string $scene, array $params): array
+    {
+        $params = $this->jobs->normalizeInput($params);
+        $rules = $this->jobs->validationRules($scene);
+        if (in_array($scene, ['detail', 'delete'], true)) {
+            $rules = ['id' => $rules['id'] ?? 'require|integer|gt:0'];
+        } elseif ($scene === 'status') {
+            $rules = [
+                'id' => $rules['id'] ?? 'require|integer|gt:0',
+                'status' => $rules['status'] ?? 'require|in:0,1',
+            ];
+        }
+        $this->validate($params, $rules);
+        return $params;
+    }
+
+    protected function renderDetail(array $result): Json
+    {
+        return $this->data($result);
     }
 
     public function all()

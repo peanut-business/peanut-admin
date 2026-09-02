@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment;
 
 use app\common\composition\ModuleBindingContributor;
+use app\common\service\external\ExternalTenantBindingRepository;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\payment\PaymentServiceFactory;
+use app\common\tenancy\PlatformTenantDataGateway;
 use app\Modules\Official\Payment\Application\RechargeApplicationService;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
 use app\Modules\Official\Payment\Contracts\RechargeCommands;
@@ -23,15 +25,18 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return 'official.payment';
     }
 
-    public function channelGrantCommands(): PaymentChannelGrantCommands
+    public function channelGrantCommands(App $app): PaymentChannelGrantCommands
     {
-        return new ThinkPhpPaymentChannelGrantCommands();
+        return new ThinkPhpPaymentChannelGrantCommands(
+            $app->make(ExternalTenantBindingRepository::class),
+            $app->make(PlatformTenantDataGateway::class),
+        );
     }
 
     public function bindings(): array
     {
         return [
-            PaymentChannelGrantCommands::class => fn(): PaymentChannelGrantCommands => $this->channelGrantCommands(),
+            PaymentChannelGrantCommands::class => fn(App $app): PaymentChannelGrantCommands => $this->channelGrantCommands($app),
             PaymentServiceFactory::class => fn(App $app): PaymentServiceFactory => new PaymentServiceFactory(
                 $app->make(ExternalTenantResolver::class),
             ),

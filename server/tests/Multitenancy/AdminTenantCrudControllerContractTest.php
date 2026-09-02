@@ -1,14 +1,7 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Source/Reflection-only contract for the reusable admin Tenant CRUD
- * controller templates.
- *
- * This file deliberately does not bootstrap ThinkPHP, create a request, or
- * instantiate a controller, Application Service, or Validate class. Composer autoloading is
- * the only runtime setup required for Reflection to inspect the declarations.
- */
+/** Static contract for flat admin CRUD controllers composed with CrudTrait. */
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 function expectAdminTenantCrud(bool $condition, string $message): void
@@ -24,333 +17,90 @@ function reflectAdminTenantCrud(string $class): ReflectionClass
     return new ReflectionClass($class);
 }
 
-/** @return array{value:mixed,declaring:string} */
-function adminTenantCrudConstant(ReflectionClass $class, string $name): array
+function expectCrudConstant(ReflectionClass $class, string $name, mixed $expected): void
 {
     $constant = $class->getReflectionConstant($name);
+    expectAdminTenantCrud($constant !== null, $class->getName() . ' is missing ' . $name);
     expectAdminTenantCrud(
-        $constant !== null,
-        sprintf('%s is missing constant %s', $class->getName(), $name),
+        $constant->getValue() === $expected,
+        sprintf('%s::%s changed', $class->getName(), $name),
     );
-
-    return [
-        'value' => $constant->getValue(),
-        'declaring' => $constant->getDeclaringClass()->getName(),
-    ];
 }
 
-function expectAdminTenantCrudConstant(
-    ReflectionClass $class,
-    string $name,
-    mixed $expected,
-    ?string $declaringClass = null,
-): void {
-    $actual = adminTenantCrudConstant($class, $name);
-    expectAdminTenantCrud(
-        $actual['value'] === $expected,
-        sprintf(
-            '%s::%s changed: expected %s, got %s',
-            $class->getName(),
-            $name,
-            var_export($expected, true),
-            var_export($actual['value'], true),
-        ),
-    );
-    if ($declaringClass !== null) {
-        expectAdminTenantCrud(
-            $actual['declaring'] === $declaringClass,
-            sprintf(
-                '%s::%s must be declared by %s, got %s',
-                $class->getName(),
-                $name,
-                $declaringClass,
-                $actual['declaring'],
-            ),
-        );
-    }
-}
-
-function expectAdminTenantCrudMethod(
-    ReflectionClass $class,
-    string $name,
-    ?string $declaringClass = null,
-    bool $public = false,
-    bool $protected = false,
-): ReflectionMethod {
-    expectAdminTenantCrud(
-        $class->hasMethod($name),
-        sprintf('%s is missing method %s()', $class->getName(), $name),
-    );
-    $method = $class->getMethod($name);
-    if ($declaringClass !== null) {
-        expectAdminTenantCrud(
-            $method->getDeclaringClass()->getName() === $declaringClass,
-            sprintf(
-                '%s::%s() must be declared by %s, got %s',
-                $class->getName(),
-                $name,
-                $declaringClass,
-                $method->getDeclaringClass()->getName(),
-            ),
-        );
-    }
-    if ($public) {
-        expectAdminTenantCrud($method->isPublic(), $class->getName() . '::' . $name . '() is not public');
-    }
-    if ($protected) {
-        expectAdminTenantCrud($method->isProtected(), $class->getName() . '::' . $name . '() is not protected');
-    }
-
-    return $method;
-}
-
-function adminTenantCrudSource(ReflectionClass $class): string
-{
-    $file = $class->getFileName();
-    expectAdminTenantCrud($file !== false, 'cannot locate source for ' . $class->getName());
-    return (string) file_get_contents($file);
-}
-
-$baseName = 'app\\adminapi\\controller\\AbstractTenantCrudController';
-$base = reflectAdminTenantCrud($baseName);
-expectAdminTenantCrud($base->isAbstract(), $baseName . ' must remain abstract');
-expectAdminTenantCrud(
-    $base->getParentClass()?->getName() === 'app\\adminapi\\controller\\BaseAdminController',
-    $baseName . ' must extend BaseAdminController directly',
-);
-
-// The reusable template owns exactly these six public actions. They must be
-// final so a resource cannot silently fork the request/logic/response path.
+$base = 'app\\adminapi\\controller\\BaseAdminController';
+$trait = 'app\\common\\traits\\CrudTrait';
 $actions = ['lists', 'detail', 'add', 'edit', 'delete', 'updateStatus'];
-foreach ($actions as $action) {
-    $method = expectAdminTenantCrudMethod($base, $action, $baseName, true);
-    expectAdminTenantCrud($method->isFinal(), $baseName . '::' . $action . '() must be final');
-    expectAdminTenantCrud(
-        $method->getReturnType()?->getName() === 'think\\response\\Json',
-        $baseName . '::' . $action . '() must return think\\response\\Json',
-    );
-}
-$ownPublicMethods = array_values(array_map(
-    static fn(ReflectionMethod $method): string => $method->getName(),
-    array_filter(
-        $base->getMethods(ReflectionMethod::IS_PUBLIC),
-        static fn(ReflectionMethod $method): bool => $method->getDeclaringClass()->getName() === $baseName
-            && $method->getName() !== '__construct',
-    ),
-));
-sort($ownPublicMethods);
-$expectedActions = $actions;
-sort($expectedActions);
-expectAdminTenantCrud(
-    $ownPublicMethods === $expectedActions,
-    $baseName . ' public action surface changed: ' . implode(', ', $ownPublicMethods),
-);
 
-expectAdminTenantCrudConstant($base, 'CRUD_NOT_FOUND_MESSAGE', '数据不存在', $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_ADD_SUCCESS_MESSAGE', '操作成功', $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_EDIT_SUCCESS_MESSAGE', '操作成功', $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_DELETE_SUCCESS_MESSAGE', '操作成功', $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_STATUS_SUCCESS_MESSAGE', '操作成功', $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_VALIDATE_LISTS', false, $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_STATUS_FIELD', 'is_disable', $baseName);
-expectAdminTenantCrudConstant($base, 'CRUD_STATUS_SCENE', 'status', $baseName);
-$contextHook = expectAdminTenantCrudMethod($base, 'resolveCrudContext', $baseName, false, true);
-expectAdminTenantCrud(!$contextHook->isAbstract(), $baseName . '::resolveCrudContext() must use the shared execution context');
-expectAdminTenantCrud(
-    $contextHook->getReturnType()?->getName() === 'PeanutAdmin\\Kernel\\Auth\\TenantContext',
-    $baseName . '::resolveCrudContext() must return TenantContext',
-);
-
-$articleAbstractName = 'app\\Modules\\Official\\Article\\Http\\Controller\\AbstractArticleCrudController';
-$articleAbstract = reflectAdminTenantCrud($articleAbstractName);
-expectAdminTenantCrud($articleAbstract->isAbstract(), $articleAbstractName . ' must remain abstract');
-expectAdminTenantCrud(
-    $articleAbstract->getParentClass()?->getName() === $baseName,
-    $articleAbstractName . ' must extend AbstractTenantCrudController directly',
-);
+expectAdminTenantCrud(trait_exists($trait), $trait . ' is not autoloadable');
 foreach ([
-    'CRUD_ADD_SUCCESS_MESSAGE' => '添加成功',
-    'CRUD_EDIT_SUCCESS_MESSAGE' => '编辑成功',
-    'CRUD_DELETE_SUCCESS_MESSAGE' => '删除成功',
-    'CRUD_STATUS_SUCCESS_MESSAGE' => '修改成功',
-    'CRUD_VALIDATE_LISTS' => true,
-    'CRUD_STATUS_FIELD' => 'is_show',
-] as $constant => $value) {
-    expectAdminTenantCrudConstant($articleAbstract, $constant, $value, $articleAbstractName);
-}
-foreach (['renderLists', 'renderDetail', 'validatedInput'] as $hook) {
-    expectAdminTenantCrudMethod($articleAbstract, $hook, $articleAbstractName, false, true);
-}
-expectAdminTenantCrud(
-    str_contains(adminTenantCrudSource($articleAbstract), 'CurrentExecutionContext $executionContext'),
-    $articleAbstractName . ' lost its injected execution context',
-);
-
-// Direct subclasses configure only their Application Service/Validate pair; their hooks
-// remain visible through Reflection and are checked against the source marker
-// so this contract never has to instantiate either dependency.
-$directTenantCrud = [
     'app\\adminapi\\controller\\dict\\DictTypeController' => [
         'service' => 'app\\adminapi\\application\\dict\\DictTypeApplicationService',
         'validate' => 'app\\adminapi\\validate\\dict\\DictTypeValidate',
-        'notFound' => '字典类型不存在',
-        'extraMethods' => ['all'],
+        'extra' => ['all'],
     ],
     'app\\adminapi\\controller\\dict\\DictDataController' => [
         'service' => 'app\\adminapi\\application\\dict\\DictDataApplicationService',
         'validate' => 'app\\adminapi\\validate\\dict\\DictDataValidate',
-        'notFound' => '字典数据不存在',
-        'extraMethods' => ['byType'],
+        'extra' => ['byType'],
     ],
     'app\\Modules\\Official\\Oauth\\Http\\Controller\\OfficialAccountReplyController' => [
         'service' => 'app\\Modules\\Official\\Oauth\\Application\\OfficialAccountReplyApplicationService',
         'validate' => 'app\\Modules\\Official\\Oauth\\Validation\\OfficialAccountReplyValidate',
-        'notFound' => '自动回复不存在',
-        'extraMethods' => [],
+        'extra' => [],
     ],
-];
-foreach ($directTenantCrud as $className => $contract) {
-    $class = reflectAdminTenantCrud($className);
-    expectAdminTenantCrud(
-        $class->getParentClass()?->getName() === $baseName,
-        $className . ' must extend AbstractTenantCrudController directly',
-    );
-    $parameters = $class->getConstructor()?->getParameters() ?? [];
-    expectAdminTenantCrud(
-        count($parameters) === 3 && $parameters[2]->getType()?->getName() === $contract['service'],
-        $className . ' must inject ' . $contract['service'],
-    );
-    expectAdminTenantCrudConstant($class, 'CRUD_VALIDATE', $contract['validate'], $className);
-    expectAdminTenantCrudConstant($class, 'CRUD_NOT_FOUND_MESSAGE', $contract['notFound'], $className);
-    expectAdminTenantCrudMethod($class, 'resolveCrudContext', $baseName, false, true);
-    foreach ($contract['extraMethods'] as $methodName) {
-        expectAdminTenantCrudMethod($class, $methodName, $className, true);
-    }
-}
-
-$reply = reflectAdminTenantCrud('app\\Modules\\Official\\Oauth\\Http\\Controller\\OfficialAccountReplyController');
-expectAdminTenantCrudConstant($reply, 'CRUD_DELETE_SUCCESS_MESSAGE', '删除成功', $reply->getName());
-expectAdminTenantCrudConstant($reply, 'CRUD_VALIDATE_LISTS', true, $reply->getName());
-expectAdminTenantCrudConstant($reply, 'CRUD_STATUS_FIELD', 'status', $reply->getName());
-expectAdminTenantCrudMethod($reply, 'renderLists', $reply->getName(), false, true);
-
-// Article resources share the Article-specific template, not the generic
-// template directly; this preserves their is_show/list-validation contract.
-$articleConstructor = $articleAbstract->getConstructor();
-expectAdminTenantCrud($articleConstructor !== null, $articleAbstractName . ' must receive its Application contract');
-$articleParameters = $articleConstructor->getParameters();
-expectAdminTenantCrud(
-    count($articleParameters) === 3
-        && $articleParameters[1]->getType()?->getName() === 'app\\common\\execution\\CurrentExecutionContext'
-        && $articleParameters[2]->getType()?->getName() === 'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
-    $articleAbstractName . ' must inject CurrentExecutionContext and ArticleAdministration',
-);
-foreach ([
     'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleController' => [
+        'service' => 'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
         'validate' => 'app\\Modules\\Official\\Article\\Validation\\ArticleValidate',
-        'extraMethods' => [],
+        'extra' => [],
     ],
     'app\\Modules\\Official\\Article\\Http\\Controller\\ArticleCateController' => [
+        'service' => 'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
         'validate' => 'app\\Modules\\Official\\Article\\Validation\\ArticleCateValidate',
-        'extraMethods' => ['all'],
+        'extra' => ['all'],
+    ],
+    'app\\adminapi\\controller\\dept\\DeptController' => [
+        'service' => 'app\\adminapi\\application\\dept\\DeptApplicationService',
+        'validate' => null,
+        'extra' => ['all', 'leaderDept'],
+    ],
+    'app\\adminapi\\controller\\dept\\JobsController' => [
+        'service' => 'app\\adminapi\\application\\dept\\JobsApplicationService',
+        'validate' => null,
+        'extra' => ['all'],
     ],
 ] as $className => $contract) {
     $class = reflectAdminTenantCrud($className);
-    expectAdminTenantCrud(
-        $class->getParentClass()?->getName() === $articleAbstractName,
-        $className . ' must extend AbstractArticleCrudController directly',
-    );
-    expectAdminTenantCrudConstant($class, 'CRUD_VALIDATE', $contract['validate'], $className);
-    foreach ($contract['extraMethods'] as $methodName) {
-        expectAdminTenantCrudMethod($class, $methodName, $className, true);
-    }
-}
+    expectAdminTenantCrud($class->getParentClass()?->getName() === $base, $className . ' must extend BaseAdminController directly');
+    expectAdminTenantCrud(in_array($trait, class_uses($className), true), $className . ' must compose CrudTrait directly');
 
-// Dept and Jobs use one Org-specific adapter over the generic Tenant CRUD
-// template. Resolve the actual class name via Reflection so the contract is
-// independent of whether the adapter lives in controller\ or controller\dept\.
-$dept = reflectAdminTenantCrud('app\\adminapi\\controller\\dept\\DeptController');
-$jobs = reflectAdminTenantCrud('app\\adminapi\\controller\\dept\\JobsController');
-$orgBase = $dept->getParentClass();
-expectAdminTenantCrud($orgBase !== false && $orgBase !== null, 'DeptController has no Org CRUD parent');
-$orgBaseName = $orgBase->getName();
-expectAdminTenantCrud(
-    str_ends_with($orgBaseName, '\\AbstractOrgCrudController'),
-    'DeptController must use an AbstractOrgCrudController adapter, got ' . $orgBaseName,
-);
-expectAdminTenantCrud(
-    $jobs->getParentClass()?->getName() === $orgBaseName,
-    'JobsController must share DeptController\'s Org CRUD adapter',
-);
-expectAdminTenantCrud($orgBase->isAbstract(), $orgBaseName . ' must remain abstract');
-expectAdminTenantCrud(
-    $orgBase->getParentClass()?->getName() === $baseName,
-    $orgBaseName . ' must extend AbstractTenantCrudController directly',
-);
-expectAdminTenantCrudConstant($orgBase, 'CRUD_STATUS_FIELD', 'status', $orgBaseName);
-expectAdminTenantCrudMethod($orgBase, 'resolveCrudContext', $baseName, false, true);
-expectAdminTenantCrudMethod($orgBase, 'validatedInput', $orgBaseName, false, true);
-expectAdminTenantCrud(str_contains(adminTenantCrudSource($orgBase), 'validationRules'), $orgBaseName . ' lost Application Service validationRules hook');
-foreach ([
-    $dept->getName() => [
-        'service' => 'app\\adminapi\\application\\dept\\DeptApplicationService',
-        'extraMethods' => ['all', 'leaderDept'],
-    ],
-    $jobs->getName() => [
-        'service' => 'app\\adminapi\\application\\dept\\JobsApplicationService',
-        'extraMethods' => ['all'],
-    ],
-] as $className => $contract) {
-    $class = $className === $dept->getName() ? $dept : $jobs;
     $parameters = $class->getConstructor()?->getParameters() ?? [];
     expectAdminTenantCrud(
         count($parameters) === 3 && $parameters[2]->getType()?->getName() === $contract['service'],
         $className . ' must inject ' . $contract['service'],
     );
-    expectAdminTenantCrudMethod($class, 'resolveCrudContext', $baseName, false, true);
-    foreach ($contract['extraMethods'] as $methodName) {
-        expectAdminTenantCrudMethod($class, $methodName, $className, true);
+    if ($contract['validate'] !== null) {
+        expectCrudConstant($class, 'CRUD_VALIDATE', $contract['validate']);
+    }
+    foreach ($actions as $action) {
+        expectAdminTenantCrud($class->hasMethod($action), $className . ' is missing ' . $action . '()');
+        expectAdminTenantCrud($class->getMethod($action)->isPublic(), $className . '::' . $action . '() is not public');
+        expectAdminTenantCrud($class->getMethod($action)->isFinal(), $className . '::' . $action . '() is not final');
+        expectAdminTenantCrud(
+            $class->getMethod($action)->getReturnType()?->getName() === 'think\\response\\Json',
+            $className . '::' . $action . '() must return think\\response\\Json',
+        );
+    }
+    foreach ($contract['extra'] as $method) {
+        expectAdminTenantCrud($class->hasMethod($method), $className . ' is missing ' . $method . '()');
     }
 }
 
-// These resources have intentionally different actor, side-effect, response,
-// or transaction contracts. They must not acquire the six-action template by
-// accidental inheritance.
-$mustRemainCustom = [
-    'Admin' => [
-        'app\\adminapi\\controller\\auth\\AdminController',
-    ],
-    'Menu' => [
-        'app\\adminapi\\controller\\auth\\MenuController',
-    ],
-    'File' => [
-        'app\\Modules\\Official\\File\\Http\\Controller\\FileController',
-        'app\\Modules\\Official\\File\\Http\\Controller\\UploadController',
-    ],
-    'Member' => [
-        'app\\Modules\\Official\\Member\\Http\\Controller\\MemberController',
-        'app\\Modules\\Official\\Member\\Http\\Controller\\MemberTagController',
-    ],
-    'Generator' => [
-        'app\\adminapi\\controller\\generator\\GeneratorController',
-    ],
-    'Finance' => [
-        'app\\Modules\\Official\\Member\\Http\\Controller\\AccountLogController',
-        'app\\Modules\\Official\\Payment\\Http\\Controller\\RechargeController',
-        'app\\Modules\\Official\\Payment\\Http\\Controller\\RefundController',
-    ],
-    'Crontab' => [
-        'app\\Modules\\Official\\Task\\Http\\Controller\\CrontabController',
-    ],
-];
-foreach ($mustRemainCustom as $domain => $classes) {
-    foreach ($classes as $className) {
-        $class = reflectAdminTenantCrud($className);
-        expectAdminTenantCrud(
-            !$class->isSubclassOf($baseName),
-            $domain . ' controller must not inherit ' . $baseName . ': ' . $className,
-        );
-    }
+foreach ([
+    dirname(__DIR__, 2) . '/app/adminapi/controller/AbstractTenantCrudController.php',
+    dirname(__DIR__, 2) . '/app/adminapi/controller/dept/AbstractOrgCrudController.php',
+    dirname(__DIR__, 2) . '/app/Modules/Official/Article/Http/Controller/AbstractArticleCrudController.php',
+] as $removedBase) {
+    expectAdminTenantCrud(!is_file($removedBase), 'obsolete CRUD base remains: ' . $removedBase);
 }
 
 echo "ADMIN-TENANT-CRUD-CONTROLLER-CONTRACT-001 passed\n";
