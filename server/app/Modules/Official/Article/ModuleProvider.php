@@ -29,21 +29,11 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return 'official.article';
     }
 
-    public function access(PDO $pdo): ArticleModuleAccess
-    {
-        return new PdoArticleModuleAccess($pdo);
-    }
-
-    public function collectionSummary(): ArticleCollectionSummary
-    {
-        return new ArticleCollectionSummaryService();
-    }
-
     public function bindings(): array
     {
         return [
-            ArticleModuleAccess::class => fn(App $app): ArticleModuleAccess => $this->access($app->make(PDO::class)),
-            ArticleCollectionSummary::class => fn(): ArticleCollectionSummary => $this->collectionSummary(),
+            ArticleModuleAccess::class => fn(App $app): ArticleModuleAccess => new PdoArticleModuleAccess($app->make(PDO::class)),
+            ArticleCollectionSummary::class => fn(): ArticleCollectionSummary => new ArticleCollectionSummaryService(),
             ArticleQueries::class => fn(): ArticleQueries => new ArticleQueryService(),
             PublicArticleService::class => fn(App $app): PublicArticleService => new PublicArticleService(
                 $app->make(ProductAssetReferenceService::class),

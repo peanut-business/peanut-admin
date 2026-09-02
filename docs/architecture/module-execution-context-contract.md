@@ -22,6 +22,24 @@ Module 不重新认证账号，也不从请求参数推断租户。应用入口�
 Platform 控制面需要跨 Tenant 发现数据时，只能走会留下操作记录的
 `PlatformTenantDataGateway`；这个显式 gateway 不改变普通 Module/ORM 的 Tenant scope。
 
+## 应用执行上下文
+
+应用入口按受众建立且只建立一种上下文；这些类型不是可互换的 DTO：
+
+| 类型 | 适用入口 | Tenant |
+|---|---|---|
+| `AdminExecutionContext` | 已选择 Tenant 的管理端请求 | 必须有 |
+| `ConsumerExecutionContext` | 会员、站点公开访问或明确的匿名访问 | 可有 |
+| `PlatformExecutionContext` | 平台运营控制面 | 无；目标 Tenant 只是命令参数 |
+| `SystemExecutionContext` | 已验签回调、worker、定时任务 | 必须有 |
+| `InstallationExecutionContext` | 一次性安装流程 | 无 |
+| `InstanceExecutionContext` | 实例级 CLI 和维护任务 | 无 |
+
+`ExecutionContextStore` 只负责在入口建立上下文，并在 `finally` 中恢复；未明确允许的受众切换
+或 Tenant 不匹配时 fail-closed。业务代码通过 `CurrentExecutionContext` 取得强类型上下文，类型
+不匹配立即失败。只需要读取身份的基础设施依赖 `ExecutionContextAccess`，避免获得建立或切换
+上下文的能力。新增子目录或别名不会强化这个边界，因此这些类保持同目录，由上述职责区分。
+
 ## 四种入口
 
 | 入口 | 上下文工厂 | 是否检查成员 RBAC |
