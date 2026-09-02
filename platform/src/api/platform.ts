@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosResponse } from 'axios';
 import type {
   MaintenanceScheduleInput,
   OpsConsoleTransport,
@@ -314,7 +315,7 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-client.interceptors.response.use(async (response) => {
+const handleResponse = async (response: AxiosResponse<Envelope<unknown>>) => {
   const envelope = response.data as Envelope<unknown>;
   const config = response.config as typeof response.config & {
     platformRefreshRetried?: boolean;
@@ -322,14 +323,14 @@ client.interceptors.response.use(async (response) => {
   if (
     envelope?.code === 40100 &&
     !config.platformRefreshRetried &&
-    config.url !== '/api/platform/session/login' &&
-    config.url !== '/api/platform/session/refresh' &&
-    config.url !== '/api/platform/session/logout'
+    config.url !== '/platformapi/session/login' &&
+    config.url !== '/platformapi/session/refresh' &&
+    config.url !== '/platformapi/session/logout'
   ) {
     config.platformRefreshRetried = true;
     try {
       platformRefreshRequest ||= client
-        .post<Envelope<Session>>('/api/platform/session/refresh')
+        .post<Envelope<Session>>('/platformapi/session/refresh')
         .then((result) => {
           if (result.data.code !== 20000) throw new Error(result.data.msg);
           localStorage.setItem(tokenKey, result.data.data.access_token);
@@ -347,7 +348,19 @@ client.interceptors.response.use(async (response) => {
     }
   }
   return response;
-});
+};
+
+client.interceptors.response.use(
+  handleResponse,
+  (error) => {
+    const response = axios.isAxiosError(error)
+      ? error.response as AxiosResponse<Envelope<unknown>> | undefined
+      : undefined;
+    return response?.data && typeof response.data.code === 'number'
+      ? handleResponse(response)
+      : Promise.reject(error);
+  }
+);
 
 async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
   const result = await request;
@@ -387,42 +400,42 @@ export function hasPlatformSession(): boolean {
 export const api = {
   async login(email: string, password: string) {
     const session = await unwrap<Session>(
-      client.post('/api/platform/session/login', { email, password })
+      client.post('/platformapi/session/login', { email, password })
     );
     localStorage.setItem(tokenKey, session.access_token);
     return session;
   },
   async logout() {
     try {
-      await unwrap(client.post('/api/platform/session/logout'));
+      await unwrap(client.post('/platformapi/session/logout'));
     } finally {
       localStorage.removeItem(tokenKey);
     }
   },
-  sessionInfo: () => unwrap<SessionInfo>(client.get('/api/platform/session/info')),
+  sessionInfo: () => unwrap<SessionInfo>(client.get('/platformapi/session/info')),
   tenants: (page = 1, pageSize = 100) =>
     unwrap<Page<Tenant>>(
-      client.get('/api/platform/tenants', {
+      client.get('/platformapi/tenants', {
         params: { page, page_size: pageSize },
       })
     ),
   tenantDetail: (id: number) =>
     unwrap<Record<string, unknown>>(
-      client.get('/api/platform/tenants/detail', { params: { id } })
+      client.get('/platformapi/tenants/detail', { params: { id } })
     ),
   tenantOwner: (tenantId: number) =>
     unwrap<TenantOwner>(
-      client.get('/api/platform/tenants/owner', { params: { tenant_id: tenantId } })
+      client.get('/platformapi/tenants/owner', { params: { tenant_id: tenantId } })
     ),
   provision: (payload: Record<string, string | number>) =>
-    unwrap<Invitation>(client.post('/api/platform/tenants/provision', payload)),
+    unwrap<Invitation>(client.post('/platformapi/tenants/provision', payload)),
   transition: (
     action: 'activate' | 'suspend' | 'close',
     tenant: Tenant,
     changeReason: string
   ) =>
     unwrap(
-      client.post(`/api/platform/tenants/${action}`, {
+      client.post(`/platformapi/tenants/${action}`, {
         tenant_id: tenant.id,
         expected_revision: tenant.revision,
         change_reason: changeReason,
@@ -430,56 +443,56 @@ export const api = {
     ),
   invitations: (tenantId: number) =>
     unwrap<Page<Invitation>>(
-      client.get('/api/platform/tenants/invitations', {
+      client.get('/platformapi/tenants/invitations', {
         params: { tenant_id: tenantId, page: 1, page_size: 100 },
       })
     ),
   inviteOwner: (payload: Record<string, string | number>) =>
-    unwrap<Invitation>(client.post('/api/platform/tenants/invitations', payload)),
+    unwrap<Invitation>(client.post('/platformapi/tenants/invitations', payload)),
   resendInvitation: (invitationId: number) =>
     unwrap<Invitation>(
-      client.post('/api/platform/tenants/invitations/resend', {
+      client.post('/platformapi/tenants/invitations/resend', {
         invitation_id: invitationId,
         expires_in_hours: 72,
       })
     ),
   revokeInvitation: (invitationId: number) =>
     unwrap(
-      client.post('/api/platform/tenants/invitations/revoke', {
+      client.post('/platformapi/tenants/invitations/revoke', {
         invitation_id: invitationId,
       })
     ),
   inspectInvitation: (token: string) =>
     unwrap<InvitationInspection>(
-      client.get('/api/tenant/owner-invitations/inspect', { params: { token } })
+      client.get('/adminapi/tenant/owner-invitations/inspect', { params: { token } })
     ),
   acceptInvitation: (token: string, newAccountPassword?: string) =>
     unwrap<Record<string, unknown>>(
-      client.post('/api/tenant/owner-invitations/accept', {
+      client.post('/adminapi/tenant/owner-invitations/accept', {
         token,
         new_account_password: newAccountPassword || '',
       })
     ),
   entryBindings: (tenantId?: number) =>
     unwrap<EntryBinding[]>(
-      client.get('/api/platform/tenant-entry-bindings', {
+      client.get('/platformapi/tenant-entry-bindings', {
         params: tenantId ? { tenant_id: tenantId } : {},
       })
     ),
   enableEntryBinding: (payload: Record<string, string | number>) =>
     unwrap<EntryBinding>(
-      client.post('/api/platform/tenant-entry-bindings/enable', payload)
+      client.post('/platformapi/tenant-entry-bindings/enable', payload)
     ),
   disableEntryBinding: (bindingId: number, changeReason: string) =>
     unwrap(
-      client.post('/api/platform/tenant-entry-bindings/disable', {
+      client.post('/platformapi/tenant-entry-bindings/disable', {
         binding_id: bindingId,
         change_reason: changeReason,
       })
     ),
   moduleStates: (tenantId: number) =>
     unwrap<Page<ModuleState>>(
-      client.get('/api/platform/tenants/modules', {
+      client.get('/platformapi/tenants/modules', {
         params: { tenant_id: tenantId, page: 1, page_size: 100 },
       })
     ),
@@ -491,7 +504,7 @@ export const api = {
   ) =>
     unwrap(
       client.post(
-        `/api/platform/tenants/modules/${enabled ? 'enable' : 'disable'}`,
+        `/platformapi/tenants/modules/${enabled ? 'enable' : 'disable'}`,
         {
           tenant_id: tenantId,
           module_key: moduleKey,
@@ -502,15 +515,15 @@ export const api = {
     ),
   operators: () =>
     unwrap<Page<Operator>>(
-      client.get('/api/platform/operators', {
+      client.get('/platformapi/operators', {
         params: { page: 1, page_size: 100 },
       })
     ),
   createOperator: (payload: Record<string, string>) =>
-    unwrap(client.post('/api/platform/operators/create', payload)),
+    unwrap(client.post('/platformapi/operators/create', payload)),
   updateOperator: (operator: Operator, displayName: string, changeReason: string) =>
     unwrap(
-      client.post('/api/platform/operators/update', {
+      client.post('/platformapi/operators/update', {
         operator_id: operator.id,
         expected_revision: operator.security_revision,
         display_name: displayName,
@@ -523,7 +536,7 @@ export const api = {
     changeReason: string
   ) =>
     unwrap(
-      client.post(`/api/platform/operators/${action}`, {
+      client.post(`/platformapi/operators/${action}`, {
         operator_id: operator.id,
         expected_revision: operator.security_revision,
         change_reason: changeReason,
@@ -535,7 +548,7 @@ export const api = {
     changeReason: string
   ) =>
     unwrap(
-      client.post('/api/platform/operators/roles/replace', {
+      client.post('/platformapi/operators/roles/replace', {
         operator_id: operator.id,
         role_ids: roleIds,
         expected_revision: operator.security_revision,
@@ -544,18 +557,18 @@ export const api = {
     ),
   roles: () =>
     unwrap<Page<PlatformRole>>(
-      client.get('/api/platform/roles', {
+      client.get('/platformapi/roles', {
         params: { page: 1, page_size: 100 },
       })
     ),
   permissions: () =>
     unwrap<Page<Permission>>(
-      client.get('/api/platform/permissions', {
+      client.get('/platformapi/permissions', {
         params: { page: 1, page_size: 100 },
       })
     ),
   createRole: (payload: Record<string, string>) =>
-    unwrap(client.post('/api/platform/roles/create', payload)),
+    unwrap(client.post('/platformapi/roles/create', payload)),
   updateRole: (
     role: PlatformRole,
     name: string,
@@ -563,7 +576,7 @@ export const api = {
     changeReason: string
   ) =>
     unwrap(
-      client.post('/api/platform/roles/update', {
+      client.post('/platformapi/roles/update', {
         role_id: role.id,
         expected_revision: role.revision,
         name,
@@ -573,7 +586,7 @@ export const api = {
     ),
   archiveRole: (role: PlatformRole, changeReason: string) =>
     unwrap(
-      client.post('/api/platform/roles/archive', {
+      client.post('/platformapi/roles/archive', {
         role_id: role.id,
         expected_revision: role.revision,
         change_reason: changeReason,
@@ -585,49 +598,49 @@ export const api = {
     changeReason: string
   ) =>
     unwrap(
-      client.post('/api/platform/roles/permissions/replace', {
+      client.post('/platformapi/roles/permissions/replace', {
         role_id: role.id,
         permission_keys: permissionKeys,
         expected_revision: role.revision,
         change_reason: changeReason,
       })
     ),
-  storageSnapshot: () => unwrap<StorageSnapshot>(client.get('/api/platform/infrastructure/storage')),
-  createStorageAccount: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/account',payload)),
-  updateStorageAccount: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/account/update',payload)),
-  createStorageSpace: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/space',payload)),
-  updateStorageSpace: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/space/update',payload)),
-  setStorageRoute: (payload:Record<string,unknown>) => unwrap(client.post('/api/platform/infrastructure/storage/route',payload)),
+  storageSnapshot: () => unwrap<StorageSnapshot>(client.get('/platformapi/infrastructure/storage')),
+  createStorageAccount: (payload:Record<string,unknown>) => unwrap(client.post('/platformapi/infrastructure/storage/account',payload)),
+  updateStorageAccount: (payload:Record<string,unknown>) => unwrap(client.post('/platformapi/infrastructure/storage/account/update',payload)),
+  createStorageSpace: (payload:Record<string,unknown>) => unwrap(client.post('/platformapi/infrastructure/storage/space',payload)),
+  updateStorageSpace: (payload:Record<string,unknown>) => unwrap(client.post('/platformapi/infrastructure/storage/space/update',payload)),
+  setStorageRoute: (payload:Record<string,unknown>) => unwrap(client.post('/platformapi/infrastructure/storage/route',payload)),
   audit: () =>
     unwrap<Page<AuditEvent>>(
-      client.get('/api/platform/audit', {
+      client.get('/platformapi/audit', {
         params: { page: 1, page_size: 100 },
       })
     ),
   backupCenter: () =>
     unwrap<OpsBackupCenterSnapshot>(
-      client.get('/api/platform/v1/ops/backups')
+      client.get('/platformapi/v1/ops/backups')
     ),
   upgradeReadiness: () =>
     unwrap<OpsUpgradeReadinessSnapshot>(
-      client.get('/api/platform/v1/ops/upgrade-readiness')
+      client.get('/platformapi/v1/ops/upgrade-readiness')
     ),
   upgradeCenter: () =>
     unwrap<OpsUpgradeCenterSnapshot>(
-      client.get('/api/platform/v1/ops/upgrades')
+      client.get('/platformapi/v1/ops/upgrades')
     ),
   submitUpgrade: () =>
     unwrap<OpsUpgradeTask>(
-      client.post('/api/platform/v1/ops/tasks/upgrade', {}, {
+      client.post('/platformapi/v1/ops/tasks/upgrade', {}, {
         headers: { 'Idempotency-Key': `platform-upgrade-${crypto.randomUUID()}` },
       })
     ),
   providerQualifications: () =>
     unwrap<ProviderQualificationSnapshot>(
-      client.get('/api/platform/v1/ops/providers')
+      client.get('/platformapi/v1/ops/providers')
     ),
   async downloadDiagnostics(windowMinutes: 60 | 360 | 1440 = 60): Promise<DiagnosticDownload> {
-    const result = await client.get<ArrayBuffer>('/api/platform/v1/ops/diagnostics', {
+    const result = await client.get<ArrayBuffer>('/platformapi/v1/ops/diagnostics', {
       params: { window_minutes: windowMinutes },
       responseType: 'arraybuffer',
     });
@@ -702,7 +715,7 @@ async function opsSubmitBackup(
   signal: AbortSignal
 ): Promise<OpsTransportResult> {
   const result = await client.post<Envelope<unknown>>(
-    '/api/platform/v1/ops/tasks/backup',
+    '/platformapi/v1/ops/tasks/backup',
     { provider_key: providerKey },
     { headers: { 'Idempotency-Key': idempotencyKey }, signal }
   );
@@ -734,7 +747,7 @@ async function opsSubmitRestore(
   signal: AbortSignal
 ): Promise<OpsTransportResult> {
   const result = await client.post<Envelope<unknown>>(
-    '/api/platform/v1/ops/tasks/restore',
+    '/platformapi/v1/ops/tasks/restore',
     {
       provider_key: providerKey,
       backup_reference_key: backupReferenceKey,
@@ -769,7 +782,7 @@ async function opsScheduleMaintenance(
   signal: AbortSignal
 ): Promise<OpsTransportResult> {
   const result = await client.put<Envelope<unknown>>(
-    '/api/platform/v1/ops/maintenance',
+    '/platformapi/v1/ops/maintenance',
     {
       reason_key: input.reasonKey,
       starts_at: input.startsAt,
@@ -793,7 +806,7 @@ async function opsCloseMaintenance(
   signal: AbortSignal
 ): Promise<OpsTransportResult> {
   const result = await client.post<Envelope<unknown>>(
-    `/api/platform/v1/ops/maintenance/${encodeURIComponent(maintenanceKey)}/close`,
+    `/platformapi/v1/ops/maintenance/${encodeURIComponent(maintenanceKey)}/close`,
     {},
     {
       headers: {
@@ -838,9 +851,9 @@ function unavailable(code: string): Promise<OpsTransportResult> {
 /** Platform Ops transport: maintenance state and its control writes share one Host. */
 export function createPlatformOpsTransport(): OpsConsoleTransport {
   return {
-    overview: (signal) => opsRead('/api/platform/v1/ops/status', signal),
+    overview: (signal) => opsRead('/platformapi/v1/ops/status', signal),
     maintenance: (signal) =>
-      opsRead('/api/platform/v1/ops/maintenance', signal),
+      opsRead('/platformapi/v1/ops/maintenance', signal),
     submitBackup: (providerKey, idempotencyKey, signal) =>
       opsSubmitBackup(providerKey, idempotencyKey, signal),
     submitRestore: (
@@ -858,7 +871,7 @@ export function createPlatformOpsTransport(): OpsConsoleTransport {
         signal
       ),
     task: (taskKey, signal) =>
-      opsRead(`/api/platform/v1/ops/tasks/${encodeURIComponent(taskKey)}`, signal),
+      opsRead(`/platformapi/v1/ops/tasks/${encodeURIComponent(taskKey)}`, signal),
     scheduleMaintenance: opsScheduleMaintenance,
     closeMaintenance: opsCloseMaintenance,
     logs: () => unavailable('OPS_LOGS_UNAVAILABLE'),

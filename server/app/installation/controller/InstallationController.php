@@ -3,24 +3,23 @@ declare(strict_types=1);
 
 namespace app\installation\controller;
 
-use app\common\controller\BaseLikeAdminController;
-use app\common\service\installation\InstallationExecutionException;
+use app\BaseController;
+use app\common\traits\ApiResponseTrait;
 use app\common\service\installation\InstallationExecutionHost;
-use app\common\service\JsonService;
+use think\App;
 
-final class InstallationController extends BaseLikeAdminController
+final class InstallationController extends BaseController
 {
+    use ApiResponseTrait;
+
+    public function __construct(App $app, private readonly InstallationExecutionHost $host)
+    {
+        parent::__construct($app);
+    }
+
     public function status()
     {
-        try {
-            return $this->data($this->host()->status());
-        } catch (\Throwable) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                '安装状态不可用。',
-                ['error_code' => 'INSTALL_STATUS_UNAVAILABLE'],
-                50300,
-            );
-        }
+        return $this->data($this->host->status());
     }
 
     public function execute()
@@ -36,26 +35,7 @@ final class InstallationController extends BaseLikeAdminController
         $token = str_starts_with($authorization, 'Bearer ')
             ? trim(substr($authorization, strlen('Bearer ')))
             : '';
-        try {
-            return $this->data($this->host()->executeGuided($token, $this->request->post()));
-        } catch (InstallationExecutionException $exception) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                $exception->getMessage(),
-                ['error_code' => $exception->errorCode],
-                $exception->httpStatus * 100,
-            );
-        } catch (\Throwable) {
-            throw \app\common\http\ApiProblem::fromEnvelope(
-                '安装执行失败。',
-                ['error_code' => 'INSTALL_EXECUTION_FAILED'],
-                40900,
-            );
-        }
-    }
-
-    private function host(): InstallationExecutionHost
-    {
-        return new InstallationExecutionHost(dirname(__DIR__, 3));
+        return $this->data($this->host->executeGuided($token, $this->request->post()));
     }
 
     private function sameOriginRequest(): bool

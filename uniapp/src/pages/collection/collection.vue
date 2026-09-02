@@ -7,14 +7,14 @@
       v-for="item in articles"
       :key="item.id"
       class="article-item"
-      @click="goDetail(item.article_id)"
+      @click="goDetail(item.id)"
     >
       <image :src="item.image" class="article-img" mode="aspectFill" />
       <view class="article-info">
         <view class="article-title">{{ item.title }}</view>
         <view class="article-meta">
           <text>{{ item.author }}</text>
-          <text>{{ item.click_num }} 次浏览</text>
+          <text>{{ item.click }} 次浏览</text>
         </view>
       </view>
     </view>
@@ -24,11 +24,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getCollectLists } from '@/api/news'
-import type { CollectListResult } from '@/api/news'
+import type { ArticleCollection } from '@/api/news'
 
-type CollectItem = CollectListResult['lists'][number]
-
-const articles = ref<CollectItem[]>([])
+const articles = ref<ArticleCollection[]>([])
 
 onMounted(async () => {
   try {

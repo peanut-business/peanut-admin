@@ -5,17 +5,25 @@ namespace app\Modules\Official\File\Application;
 
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\service\FileService;
-use app\common\service\file\FileTenantRepository;
+use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\service\storage\StorageService;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 /** Application use cases for File media and categories. */
 final class FileAdministrationService implements FileAdministration
 {
+    public function __construct(
+        private readonly TransactionManager $transactions,
+        private readonly StorageService $storage,
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly FileService $files,
+    ) {}
+
     /** 分页列表：按 type / 分类子树 / source / name 组合过滤，追加 url。 */
     public function lists(array $params): PageResult
     {
@@ -51,12 +59,10 @@ final class FileAdministrationService implements FileAdministration
         }
 
         $pageResult = $pagination->result($query->order(['id' => 'desc']));
-        $lists = array_map(
-            static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item,
-            $pageResult->items,
-        );
+        $pageResult = FileTenantRepository::arrayPage($pageResult);
+        $lists = $pageResult->items;
         foreach ($lists as &$item) {
-            $item['url'] = FileService::getFileUrl((string) ($item['file_key'] ?? ''));
+            $item['url'] = $this->files->getFileUrl((string) ($item['file_key'] ?? ''));
         }
         unset($item);
 
@@ -124,13 +130,13 @@ final class FileAdministrationService implements FileAdministration
             throw new \RuntimeException('素材记录删除失败');
         }
 
-        $tenantId = FileTenantRepository::tenantId();
+        $tenantId = $this->executionContext->tenantId();
         $storageDeleted = 0;
         foreach ($rows as $row) {
             $fileId = (int) $row['id'];
             $fileKey = (string) $row['file_key'];
             try {
-                StorageService::fromDefaultConnection()->delete($tenantId, $fileKey);
+                $this->storage->delete($tenantId, $fileKey);
                 $storageDeleted++;
             } catch (\Throwable $e) {
                 throw new \RuntimeException('素材 ' . $fileId . ' 删除失败：' . $e->getMessage(), 0, $e);
@@ -222,7 +228,7 @@ final class FileAdministrationService implements FileAdministration
             ? ['files_deleted' => 0, 'storage_deleted' => 0]
             : $this->delete($fileIds);
 
-        Db::transaction(function () use ($categoryIds): void {
+        $this->transactions->run(function () use ($categoryIds): void {
             $query = FileTenantRepository::categories()->whereIn('id', $categoryIds);
             if ($query->count() !== count($categoryIds)) {
                 throw new \RuntimeException('分类记录删除不完整');

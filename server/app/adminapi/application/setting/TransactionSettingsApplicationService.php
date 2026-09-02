@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\setting;
 
-use app\common\application\ApplicationService;
 use app\common\service\transaction\TransactionSettingTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
@@ -16,7 +15,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
  *   verification_orders        0关/1开：自动核销订单
  *   verification_orders_times  自动核销时间（小时）
  */
-class TransactionSettingsApplicationService extends ApplicationService
+class TransactionSettingsApplicationService
 {
     private const DEFAULTS = [
         'cancel_unpaid_orders' => 1,

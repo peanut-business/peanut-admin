@@ -31,6 +31,15 @@ officialArticleExpect(
     'official Article table ownership changed'
 );
 officialArticleExpect(
+    ($manifest['contracts']['exports'] ?? null) === [
+        'app\\Modules\\Official\\Article\\Contracts\\ArticleModuleAccess',
+        'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
+        'app\\Modules\\Official\\Article\\Contracts\\ArticleQueries',
+        'app\\Modules\\Official\\Article\\Contracts\\PublicArticleQueries',
+    ],
+    'official Article public contracts did not converge to four interfaces',
+);
+officialArticleExpect(
     ($manifest['backend']['migrations'] ?? null) === 'Database/Migrations'
         && ($manifest['backend']['setting_definitions'] ?? null) === 'Resources/setting-definitions.json',
     'official Article manifest does not declare its migrations and setting definitions'
@@ -82,10 +91,17 @@ officialArticleExpect(
 
 $routes = (string)file_get_contents($moduleRoot . '/Http/routes.php');
 $hostRoutes = peanut_route_registry_source($serverRoot);
-$repository = (string)file_get_contents($serverRoot . '/app/common/service/article/ArticleTenantRepository.php');
-$capability = (string)file_get_contents($serverRoot . '/app/common/service/capability/ArticleCapabilityAuthorization.php');
-$publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicArticleTenantMiddleware.php');
+$legacyHostRoutes = implode('', array_map(
+    static fn(string $file): string => (string)file_get_contents($serverRoot . '/route/' . $file),
+    ['app.php', 'platform.php', 'tenant.php', 'admin.php', 'public_api.php'],
+));
+$repository = (string)file_get_contents($moduleRoot . '/Infrastructure/Persistence/ArticleTenantRepository.php');
+$capability = (string)file_get_contents($moduleRoot . '/Application/ArticleCapabilityAuthorization.php');
+$publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicTenantModuleMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
+$publicArticles = (string)file_get_contents($moduleRoot . '/Application/PublicArticleService.php');
+$publicContract = (string)file_get_contents($moduleRoot . '/Contracts/PublicArticleQueries.php');
+$provider = (string)file_get_contents($moduleRoot . '/ModuleProvider.php');
 $categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/application/auth/MenuApplicationService.php');
 $permissionService = (string)file_get_contents($serverRoot . '/app/common/service/authorization/AdminAuthorizationService.php');
@@ -114,8 +130,8 @@ officialArticleExpect(
     !is_file($moduleRoot . '/Http/ArticleModuleMiddleware.php'),
     'Article-specific Module middleware was reintroduced',
 );
-officialArticleExpect(!str_contains($hostRoutes, "Route::get('official.article."), 'Article Admin routes remain Host-owned');
-officialArticleExpect(!str_contains($hostRoutes, "Route::post('official.article."), 'Article Admin writes remain Host-owned');
+officialArticleExpect(!str_contains($legacyHostRoutes, "Route::get('official.article."), 'Article Admin routes remain Host-owned');
+officialArticleExpect(!str_contains($legacyHostRoutes, "Route::post('official.article."), 'Article Admin writes remain Host-owned');
 officialArticleExpect(
     str_contains($menuLogic, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths')
         && str_contains($permissionService, 'CoreTenantModuleAdminBridge::officialModuleMenuPaths'),
@@ -125,48 +141,66 @@ officialArticleExpect(
 // Every public Article/PC entry must fail closed when the Tenant Module is disabled.
 $publicRoutes = $hostRoutes;
 foreach ([
-    "Route::get('api/index/index'",
-    "Route::get('api/article/cate'",
-    "Route::get('api/article/lists'",
-    "Route::get('api/article/detail'",
-    "Route::get('api/pc/index'",
-    "Route::get('api/pc/infoCenter'",
-    "Route::get('api/pc/articleDetail'",
+    "Route::get('index/index'",
+    "Route::get('article/cate'",
+    "Route::get('article/lists'",
+    "Route::get('article/detail'",
+    "Route::get('pc/index'",
+    "Route::get('pc/infoCenter'",
+    "Route::get('pc/articleDetail'",
 ] as $entry) {
     officialArticleExpect(substr_count($publicRoutes, $entry) === 1, 'missing public Article entry: ' . $entry);
 }
 officialArticleExpect(
-    substr_count($publicRoutes, '->middleware(PublicArticleTenantMiddleware::class') === 7,
+    substr_count($publicRoutes, "->middleware(PublicTenantModuleMiddleware::class, 'peanut.article.public-read', 'official.article'") === 7,
     'public Article and PC aggregation entries are not uniformly Module guarded'
 );
 
 $pcController = (string)file_get_contents($serverRoot . '/app/api/controller/PcController.php');
+$articleController = (string)file_get_contents($serverRoot . '/app/api/controller/ArticleController.php');
 $pcApplication = (string)file_get_contents($serverRoot . '/app/api/application/PcApplicationService.php');
-$articleApplication = (string)file_get_contents($serverRoot . '/app/api/application/ArticleApplicationService.php');
+$indexApplication = (string)file_get_contents($serverRoot . '/app/api/application/IndexApplicationService.php');
 $userApplication = (string)file_get_contents($serverRoot . '/app/api/application/UserApplicationService.php');
 officialArticleExpect(
-    substr_count($pcController, 'ArticleTenantContext::read(') >= 3,
-    'PC article/detail aggregation lost Article Tenant context'
+    str_contains($pcController, "publicTenantContext('article.pc-index')")
+        && str_contains($pcController, "publicTenantContext('article.info-center')")
+        && str_contains($pcController, "publicTenantContext('article.pc-detail')"),
+    'PC article/detail aggregation lost the injected public Tenant context'
 );
 officialArticleExpect(
-    str_contains($pcApplication, 'private readonly ArticleApplicationService $articles')
+    str_contains($pcApplication, 'private readonly PublicArticleQueries $articles')
         && substr_count($pcApplication, '$this->articles->limitArticles(') === 3
-        && !str_contains($pcApplication, 'app(ArticleApplicationService::class)')
-        && str_contains($pcApplication, 'DecorationReadService::pageByType('),
+        && str_contains($pcApplication, 'pageByType('),
     'PC aggregation no longer routes Article and decoration reads through guarded services'
 );
 officialArticleExpect(
-    substr_count($articleApplication, 'ArticleTenantRepository::collections(') >= 4,
-    'member collection path lost Article-owned storage boundary'
+    !is_file($serverRoot . '/app/api/application/ArticleApplicationService.php')
+        && substr_count($publicArticles, 'ArticleTenantRepository::collections(') >= 4
+        && str_contains($publicArticles, 'implements PublicArticleQueries')
+        && str_contains($provider, 'PublicArticleQueries::class =>')
+        && str_contains($articleController, 'private readonly PublicArticleQueries $articles')
+        && str_contains($articleController, '$this->articles->add(')
+        && str_contains($articleController, '$this->articles->cancel(')
+        && str_contains($pcController, 'private readonly PublicArticleQueries $articles')
+        && str_contains($indexApplication, 'private readonly PublicArticleQueries $articles')
+        && str_contains($indexApplication, '$this->articles->homeArticles(20)')
+        && !str_contains($articleController . $pcController . $pcApplication . $indexApplication, 'ArticleTenantRepository')
+        && !str_contains($articleController . $pcController . $pcApplication . $indexApplication, 'Modules\\Official\\Article\\Application'),
+    'public Article Host bypasses Module contracts or lost Article-owned storage'
 );
 officialArticleExpect(
-    str_contains($userApplication, 'collectionSummary()')
+    str_contains($publicContract, 'countForMember(AuthenticatedMemberContext $context, int $memberId): int')
+        && str_contains($publicContract, 'add(int $articleId, int $memberId): void')
+        && str_contains($publicContract, 'cancel(int $articleId, int $memberId): void')
+        && str_contains($userApplication, 'private readonly PublicArticleQueries $articleCollections')
+        && str_contains($userApplication, '$this->articleCollections->countForMember(')
+        && !str_contains($userApplication, 'ArticleModuleProvider')
         && str_contains($userApplication, 'catch (ModuleException)')
         && !str_contains($userApplication, 'ArticleCollect::'),
     'member center bypasses the public Article collection summary contract'
 );
 officialArticleExpect(
-    str_contains($publicMiddleware, "ApiProblem::fromEnvelope('文章模块当前不可用'")
+    str_contains($publicMiddleware, "'文章模块当前不可用'")
         && str_contains($publicMiddleware, '\'error_code\' => $exception->errorCode'),
     'public Article disable refusal is not fail-closed with a stable error code'
 );
@@ -180,8 +214,9 @@ officialArticleExpect(
 );
 officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed target lost TenantModule enforcement');
 officialArticleExpect(
-    str_contains($publicMiddleware, 'TenantEntryBindingResolver::production()->system(')
-        && str_contains($publicMiddleware, "assertHttp('official.article')")
+    str_contains($publicMiddleware, '$this->entryBindings->system(')
+        && str_contains($publicMiddleware, 'assertHttp($moduleKey, $operation)')
+        && str_contains($publicRoutes, "'peanut.article.public-read', 'official.article'")
         && str_contains($publicMiddleware, 'ModuleExecutionBoundary'),
     'public Article entry is not Host-bound and Module guarded'
 );
@@ -199,11 +234,12 @@ officialArticleExpect(
 );
 
 $moduleFiles = [
-    'Http/Controller/AbstractArticleCrudController.php',
     'Http/Controller/ArticleCateController.php',
     'Http/Controller/ArticleController.php',
     'Application/ArticleAdministrationService.php',
+    'Application/PublicArticleService.php',
     'Contracts/ArticleAdministration.php',
+    'Contracts/PublicArticleQueries.php',
     'Validation/ArticleCateValidate.php',
     'Validation/ArticleValidate.php',
     'Model/Article.php',

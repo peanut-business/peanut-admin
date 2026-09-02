@@ -4,18 +4,17 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\platform\service\ops\DeploymentModuleRequestService;
-use PDO;
-use app\common\execution\ContextualCommand;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 use Throwable;
 
 /** Deployment-only preparation of an opaque Module operation request. */
-final class OpsModuleRequest extends ContextualCommand
+final class OpsModuleRequest extends DatabaseContextualCommand
 {
     protected function configure(): void
     {
@@ -34,8 +33,7 @@ final class OpsModuleRequest extends ContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) throw new \RuntimeException('OPS_MODULE_DATABASE_UNAVAILABLE');
+            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
             $service = new DeploymentModuleRequestService(
@@ -43,6 +41,7 @@ final class OpsModuleRequest extends ContextualCommand
                 dirname(__DIR__, 3),
                 $config,
                 $this->trustedKeys(),
+                new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config),
             );
             $arguments = [
                 trim((string)$input->getOption('delivery-resource-id')),

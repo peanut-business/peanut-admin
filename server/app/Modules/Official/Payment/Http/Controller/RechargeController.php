@@ -4,29 +4,26 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment\Http\Controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\Modules\Official\Payment\Application\RechargeAdministrationService;
 use app\Modules\Official\Payment\Validation\RechargeValidate;
 use app\common\service\JsonService;
-use app\common\service\finance\FinanceTenantContext;
 
 class RechargeController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly RechargeAdministrationService $recharges)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly RechargeAdministrationService $recharges)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()
     {
         $params = $this->request->get();
-        $context = FinanceTenantContext::member();
+        $context = $this->tenantAdminContext();
         $this->validate($params, RechargeValidate::class . '.lists');
         $result = $this->recharges->lists($context, $params);
-        if ($result === false) {
-            return $this->fail($this->recharges->getError());
-        }
         if ((int)($params['export'] ?? 0) === 2) {
             return JsonService::success('', $result, 2);
         }
@@ -36,24 +33,24 @@ class RechargeController extends BaseAdminController
     public function refund()
     {
         $params = $this->request->post();
-        $context = FinanceTenantContext::member();
+        $context = $this->tenantAdminContext();
         $this->validate($params, RechargeValidate::class . '.refund');
-        [$flag, $message] = $this->recharges->refund(
+        $message = $this->recharges->refund(
             $context,
             $params,
             $this->adminId,
             trim((string)$this->request->header('Idempotency-Key', '')),
         );
-        return $flag ? $this->success($message) : $this->fail($message);
+        return $this->success($message);
     }
 
     public function refundAgain()
     {
         $params = $this->request->post();
-        $context = FinanceTenantContext::member();
+        $context = $this->tenantAdminContext();
         $this->validate($params, RechargeValidate::class . '.again');
-        [$flag, $message] = $this->recharges->refundAgain($context, $params, $this->adminId);
-        return $flag ? $this->success($message) : $this->fail($message);
+        $message = $this->recharges->refundAgain($context, $params, $this->adminId);
+        return $this->success($message);
     }
 
 }

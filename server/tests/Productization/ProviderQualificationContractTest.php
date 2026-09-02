@@ -181,8 +181,8 @@ expectProviderQualification(array_keys($recorderRepository->rows[0]) === [
 
 $routes = peanut_route_registry_source(dirname(__DIR__, 2));
 expectProviderQualification(
-    str_contains($routes, "Route::get('api/platform/v1/ops/providers'")
-        && !str_contains($routes, "Route::post('api/platform/v1/ops/providers'"),
+    str_contains($routes, "Route::get('v1/ops/providers'")
+        && !str_contains($routes, "Route::post('v1/ops/providers'"),
     'Provider qualification HTTP boundary must remain read-only',
 );
 foreach ([

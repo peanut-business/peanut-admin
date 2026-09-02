@@ -4,14 +4,23 @@ declare(strict_types=1);
 namespace app\adminapi\application;
 
 use app\common\service\authorization\AdminAuthorizationService;
-use app\common\application\ApplicationService;
 use app\common\service\FileService;
-use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class WorkbenchApplicationService extends ApplicationService
+class WorkbenchApplicationService
 {
+    public function __construct(
+        private readonly AdminAuthorizationService $authorization,
+        private readonly FileService $files,
+        private readonly WebsiteConfigService $website,
+        private readonly string $projectVersion,
+        private readonly string $projectBased,
+        private readonly array $defaultImages,
+    )
+    {
+    }
+
     public function index(TenantContext $context): array
     {
         return [
@@ -26,29 +35,17 @@ class WorkbenchApplicationService extends ApplicationService
 
     public function versionInfo(TenantContext $context): array
     {
-        $website = self::websiteService($context)->get();
+        $website = $this->website->get($context);
         return [
-            'version' => (string) config('project.version'),
+            'version' => $this->projectVersion,
             'website' => $website['official_url'],
             'name'    => $website['name'],
-            'based'   => (string) config(
-                'project.based',
-                'Vue 3.x、Element Plus、ThinkPHP 8、MySQL'
-            ),
+            'based'   => $this->projectBased,
             'channel' => [
                 'website' => $website['official_url'],
                 'github'  => $website['github_url'],
             ],
         ];
-    }
-
-    private static function websiteService(TenantContext $context): WebsiteConfigService
-    {
-        return new WebsiteConfigService(
-            new TenantSettingWebsiteStore($context),
-            static fn(string $value): string => FileService::getFileUrl($value),
-            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
-        );
     }
 
     public function today(): array
@@ -78,16 +75,16 @@ class WorkbenchApplicationService extends ApplicationService
             ['name' => '菜单权限', 'image' => 'menu_auth', 'url' => '/system/menu'],
             ['name' => '网站信息', 'image' => 'menu_web', 'url' => '/app-setting/website'],
         ];
-        $moduleMenus = (new AdminAuthorizationService())->moduleMenuRecords($context);
+        $moduleMenus = $this->authorization->moduleMenuRecords($context);
         $items = array_values(array_filter(
             $items,
             static fn(array $item): bool => $item['url'] !== '/system/file'
                 || self::menuContainsPath($moduleMenus, '/system/file')
         ));
 
-        return array_map(static function (array $item): array {
-            $item['image'] = FileService::getFileUrl(
-                (string) config('project.default_image.' . $item['image'], '')
+        return array_map(function (array $item): array {
+            $item['image'] = $this->files->getFileUrl(
+                (string)($this->defaultImages[$item['image']] ?? '')
             );
             return $item;
         }, $items);
@@ -142,19 +139,19 @@ class WorkbenchApplicationService extends ApplicationService
 
     public function support(TenantContext $context): array
     {
-        $website = self::websiteService($context)->get();
+        $website = $this->website->get($context);
         return [
             [
-                'image' => FileService::getFileUrl(
-                    (string) config('project.default_image.project_docs', '')
+                'image' => $this->files->getFileUrl(
+                    (string)($this->defaultImages['project_docs'] ?? '')
                 ),
                 'title' => '项目文档',
                 'desc'  => '查看 Peanut Admin 使用与开发文档',
                 'url'   => (string) $website['official_url'],
             ],
             [
-                'image' => FileService::getFileUrl(
-                    (string) config('project.default_image.technical_support', '')
+                'image' => $this->files->getFileUrl(
+                    (string)($this->defaultImages['technical_support'] ?? '')
                 ),
                 'title' => '技术支持',
                 'desc'  => '获取 Peanut Admin 技术支持',

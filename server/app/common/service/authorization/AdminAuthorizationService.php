@@ -4,13 +4,12 @@ declare(strict_types=1);
 namespace app\common\service\authorization;
 
 use app\common\contract\authorization\AdminAuthorizationQuery;
+use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\authorization\AuthorizedOperationFactory;
+use app\common\contract\AdminPermissionPolicy;
 use app\common\dto\authorization\AdminAccessData;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
-use app\common\model\auth\SystemMenu;
-use app\common\service\CoreServiceOverrides;
-use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
@@ -21,13 +20,17 @@ use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 /** Tenant Admin identity, RBAC and access projection service. */
 final class AdminAuthorizationService implements AdminAuthorizationQuery, AuthorizedOperationFactory
 {
-    public function __construct(private readonly ?PDO $pdo = null)
-    {
+    public function __construct(
+        private readonly NativeAdminPrincipalRepository $principals,
+        private readonly CoreTenantModuleAdminBridge $moduleAdmin,
+        private readonly AdminMenuPersistence $menus,
+        private readonly AdminPermissionPolicy $permissionPolicy,
+    ) {
     }
 
     public function principal(TenantContext $tenantContext): AdminPrincipal
     {
-        return (new NativeAdminPrincipalRepository($this->pdo))->require($tenantContext);
+        return $this->principals->require($tenantContext);
     }
 
     public function accessData(TenantContext $tenantContext, AdminPrincipal $admin): AdminAccessData
@@ -36,7 +39,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
         if (!$admin instanceof AdminPrincipal) {
             return new AdminAccessData([], []);
         }
-        $bridge = new CoreTenantModuleAdminBridge($this->pdo);
+        $bridge = $this->moduleAdmin;
         $native = $bridge->accessData($tenantContext);
         $permissions = $native['permissions'];
 
@@ -90,7 +93,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             return PermissionDecision::deny($accessUri, 'PLATFORM_ROUTE_FORBIDDEN');
         }
 
-        $bridge = new CoreTenantModuleAdminBridge($this->pdo);
+        $bridge = $this->moduleAdmin;
         $registered = [
             ...$bridge->registeredSystemMenuPermissions($tenantContext->tenantId),
         ];
@@ -99,7 +102,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             InstanceControlPlanePolicy::tenantAdminPermissions()
         ));
         $owned = $bridge->accessData($tenantContext)['permissions'];
-        $allowed = CoreServiceOverrides::adminPermissionPolicy()->canAccess(
+        $allowed = $this->permissionPolicy->canAccess(
             $admin->root,
             $accessUri,
             $registered,
@@ -169,13 +172,13 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
     /** @return list<array<string,mixed>> */
     public function assignableMenuRecordsForTenant(int $tenantId): array
     {
-        return (new CoreTenantModuleAdminBridge($this->pdo))->assignableMenuRecords($tenantId);
+        return $this->moduleAdmin->assignableMenuRecords($tenantId);
     }
 
     /** @return list<array<string,mixed>> */
     public function moduleMenuRecords(TenantContext $tenantContext): array
     {
-        return (new CoreTenantModuleAdminBridge($this->pdo))->accessData($tenantContext)['menu'];
+        return $this->moduleAdmin->accessData($tenantContext)['menu'];
     }
 
     /** @param list<string> $permissions */
@@ -188,26 +191,21 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             return [];
         }
 
-        $query = SystemMenu::where('type', 'in', ['M', 'C'])
-            ->where('is_disable', 0)
-            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
-            ->whereNotIn('paths', InstanceControlPlanePolicy::tenantAdminPaths());
-        $query->whereNotIn('paths', [
-            '/article',
-            '/article/cate',
-            '/article/list',
-            ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
-        ]);
-        $registered = (new CoreTenantModuleAdminBridge($this->pdo))
-            ->registeredSystemMenuPermissions($tenantContext->tenantId);
+        $registered = $this->moduleAdmin->registeredSystemMenuPermissions($tenantContext->tenantId);
         $visiblePermissions = $admin->root
             ? $registered
             : array_values(array_intersect($permissions, $registered));
-        $query->where(static function ($query) use ($visiblePermissions): void {
-            $query->where('perms', '')->whereOr('perms', 'in', $visiblePermissions ?: ['__none__']);
-        });
-
-        return linear_to_tree($query->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray());
+        return linear_to_tree($this->menus->compatibilityRecords(
+            InstanceControlPlanePolicy::tenantAdminPermissions(),
+            [
+                ...InstanceControlPlanePolicy::tenantAdminPaths(),
+                '/article',
+                '/article/cate',
+                '/article/list',
+                ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
+            ],
+            $visiblePermissions,
+        ));
     }
 
     private function validContext(?TenantContext $context, AdminPrincipal $admin): bool

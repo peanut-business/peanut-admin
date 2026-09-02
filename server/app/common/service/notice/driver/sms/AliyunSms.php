@@ -5,7 +5,6 @@ namespace app\common\service\notice\driver\sms;
 
 use app\common\service\http\OutboundHttpRequest;
 use app\common\service\http\OutboundHttpTransport;
-use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
 
 /**
  * 阿里云短信驱动（RPC 查询字符串签名 v1.0）
@@ -14,7 +13,7 @@ use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
  * 配置由当前 Tenant 的 notice.sms external binding 提供：
  *   access_key_id, access_key_secret, sign_name
  */
-final class AliyunSms extends TemplateSmsDriver
+final class AliyunSms implements SmsDriver
 {
     private string $accessKeyId;
     private string $accessKeySecret;
@@ -27,7 +26,7 @@ final class AliyunSms extends TemplateSmsDriver
         $this->signName        = (string) ($config['sign_name']         ?? '');
     }
 
-    public function send(string $mobile, string $templateCode, array $vars): bool
+    public function send(string $mobile, string $templateCode, array $vars): SmsDriverResult
     {
         $params = [
             'AccessKeyId'      => $this->accessKeyId,
@@ -69,12 +68,11 @@ final class AliyunSms extends TemplateSmsDriver
         $resp = $response->body;
 
         $data = json_decode((string) $resp, true);
-        $this->result = is_array($data) ? $data : ['raw' => (string) $resp];
+        $receipt = is_array($data) ? $data : ['raw' => (string)$resp];
         if (!is_array($data) || ($data['Code'] ?? '') !== 'OK') {
-            $this->error = $data['Message'] ?? $resp;
-            return false;
+            return new SmsDriverResult(false, (string)($data['Message'] ?? $resp), $receipt);
         }
 
-        return true;
+        return new SmsDriverResult(true, '', $receipt);
     }
 }

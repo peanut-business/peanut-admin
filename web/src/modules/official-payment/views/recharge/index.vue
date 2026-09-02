@@ -311,9 +311,8 @@
     try {
       const { data } = await getRechargeList(listParams(pageNo));
       renderData.value = data.lists;
-      pagination.current = data.page_no ?? data.pageNo ?? pageNo;
-      pagination.pageSize =
-        data.page_size ?? data.pageSize ?? pagination.pageSize;
+      pagination.current = data.pageNo;
+      pagination.pageSize = data.pageSize;
       pagination.total = data.count;
     } finally {
       setLoading(false);

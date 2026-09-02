@@ -8,25 +8,34 @@ use app\common\execution\CurrentExecutionContext;
 
 final class OperationLogProjection
 {
+    public function __construct(
+        private readonly ?CurrentExecutionContext $execution,
+    ) {
+    }
+
     public function append(AuditEvent $event): void
     {
         if ($event->projection !== AuditEvent::OPERATION_LOG || $event->tenantId === null) {
             throw new \InvalidArgumentException('AUDIT_OPERATION_LOG_EVENT_INVALID');
         }
-        $current = app(CurrentExecutionContext::class);
-        if ($current->tenantId() !== $event->tenantId
-            || !hash_equals($current->requestId(), $event->trace->requestId)) {
+        if ($this->execution === null
+            || $this->execution->tenantId() !== $event->tenantId
+            || !hash_equals($this->execution->requestId(), $event->trace->requestId)) {
             throw new \DomainException('AUDIT_OPERATION_LOG_CONTEXT_MISMATCH');
         }
         $metadata = RedactionPolicy::sanitize($event->metadata);
         $params = $metadata['params'] ?? [];
-        OperationLogTenantRepository::create([
-            'admin_id' => (int)($metadata['admin_id'] ?? 0),
-            'username' => (string)($metadata['username'] ?? ''),
-            'ip' => (string)($metadata['ip'] ?? $event->trace->ipAddress ?? ''),
-            'uri' => strtolower(trim((string)($metadata['uri'] ?? ''), '/')),
-            'method' => strtoupper((string)($metadata['method'] ?? '')),
-            'params' => RedactionPolicy::encode($params),
-        ]);
+        OperationLogTenantRepository::createForTenant(
+            $event->tenantId,
+            $event->trace->requestId,
+            [
+                'admin_id' => (int)($metadata['admin_id'] ?? 0),
+                'username' => (string)($metadata['username'] ?? ''),
+                'ip' => (string)($metadata['ip'] ?? $event->trace->ipAddress ?? ''),
+                'uri' => strtolower(trim((string)($metadata['uri'] ?? ''), '/')),
+                'method' => strtoupper((string)($metadata['method'] ?? '')),
+                'params' => RedactionPolicy::encode($params),
+            ],
+        );
     }
 }

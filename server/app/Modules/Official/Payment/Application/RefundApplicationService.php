@@ -3,21 +3,21 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Application;
 
-use app\common\enum\RefundEnum;
 use app\common\http\PageResult;
-use app\common\application\ApplicationService;
-use app\Modules\Official\Payment\Model\RefundLog;
-use app\Modules\Official\Payment\Model\RefundRecord;
+use app\common\application\BusinessException;
 use app\common\service\FileService;
-use app\common\service\finance\FinanceTenantContext;
-use app\common\service\finance\FinanceTenantRepository;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** 退款统计、记录和操作日志查询。 */
-class RefundApplicationService extends ApplicationService
+class RefundApplicationService
 {
     private const PAGE_SIZE_MAX = 25000;
+
+    public function __construct(private readonly FileService $files)
+    {
+    }
 
     /** Peanut 按实际退款金额汇总；当前全额退款时与参考订单金额口径一致。 */
     public function stat(TenantContext $context): array
@@ -38,14 +38,13 @@ class RefundApplicationService extends ApplicationService
     }
 
     /**
-     * @return PageResult|false
+     * @return PageResult
      */
-    public function lists(TenantContext $context, array $params): PageResult|false
+    public function lists(TenantContext $context, array $params): PageResult
     {
-        try {
-            if (in_array((int)($params['export'] ?? 0), [1, 2], true)) {
-                throw new \RuntimeException('该列表不支持导出');
-            }
+        if (in_array((int)($params['export'] ?? 0), [1, 2], true)) {
+            throw BusinessException::invalid('REFUND_EXPORT_UNSUPPORTED', '该列表不支持导出');
+        }
 
             $extendQuery = self::buildBaseQuery($context, $params, false);
             $extendRows = $extendQuery->fieldRaw(
@@ -74,7 +73,8 @@ class RefundApplicationService extends ApplicationService
                     'var_page' => 'page_no',
                 ]), $pageNo)
                 : $pagination->result($query->field('r.*,u.nickname,u.avatar')->order('r.id', 'desc'));
-            $lists = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
+            $pageResult = FinanceTenantRepository::arrayPage($pageResult);
+            $lists = $pageResult->items;
 
             foreach ($lists as &$item) {
                 $item['id'] = (int)$item['id'];
@@ -86,13 +86,13 @@ class RefundApplicationService extends ApplicationService
                 $item['refund_type_text'] = RefundEnum::getTypeDesc($item['refund_type']);
                 $item['refund_status_text'] = RefundEnum::getStatusDesc($item['refund_status']);
                 $item['refund_way_text'] = RefundEnum::getWayDesc($item['refund_way']);
-                $item['avatar'] = FileService::getFileUrl((string)($item['avatar'] ?? ''));
+                $item['avatar'] = $this->files->getFileUrl((string)($item['avatar'] ?? ''));
                 $item['create_time'] = self::formatTime($item['create_time'] ?? 0);
                 unset($item['refund_msg']);
             }
             unset($item);
 
-            return new PageResult(
+        return new PageResult(
                 $lists,
                 $pageResult->total,
                 $pageResult->page,
@@ -103,11 +103,7 @@ class RefundApplicationService extends ApplicationService
                     'success' => (int)($extend['success'] ?? 0),
                     'error' => (int)($extend['error'] ?? 0),
                 ]],
-            );
-        } catch (\Throwable $e) {
-            self::setError($e->getMessage());
-            return false;
-        }
+        );
     }
 
     /** 最新日志在前；支付渠道原始报文不对管理页面暴露。 */
@@ -141,7 +137,6 @@ class RefundApplicationService extends ApplicationService
 
     private static function buildBaseQuery(TenantContext $context, array $params, bool $withStatus)
     {
-        FinanceTenantContext::tenantId($context);
         $query = FinanceTenantRepository::records($context, 'r')
             ->join('member u', 'u.tenant_id = r.tenant_id AND u.id = r.user_id');
 

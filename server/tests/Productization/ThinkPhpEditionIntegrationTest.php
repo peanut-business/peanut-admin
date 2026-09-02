@@ -4,7 +4,6 @@ declare(strict_types=1);
 use app\Modules\Official\Article\Model\Article;
 use app\Modules\Official\Article\Model\ArticleCate;
 use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\support\PaginationInput;
@@ -232,8 +231,8 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
 {
     $store = app(ExecutionContextStore::class);
     expectTpq52($store instanceof ExecutionContextStore, 'Execution context store is unavailable');
-    $alpha = ExecutionContext::tenantAdmin(tpq52TenantContext(101, 1001, 501), 'tpq52.alpha');
-    $beta = ExecutionContext::tenantAdmin(tpq52TenantContext(202, 2002, 502), 'tpq52.beta');
+    $alpha = new \app\common\execution\AdminExecutionContext(tpq52TenantContext(101, 1001, 501), 'tpq52.alpha');
+    $beta = new \app\common\execution\AdminExecutionContext(tpq52TenantContext(202, 2002, 502), 'tpq52.beta');
 
     $payloadRejected = false;
     try {
@@ -324,13 +323,13 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
 
     $boundary = new ModuleExecutionBoundary($pdo, app(CurrentExecutionContext::class));
     $store->run(
-        ExecutionContext::system(new TenantSystemContext(101, 'callback', 'tpq52.callback', 'alpha-callback')),
+        new \app\common\execution\SystemExecutionContext(new TenantSystemContext(101, 'callback', 'tpq52.callback', 'alpha-callback')),
         static fn() => $boundary->assertExternalCallback('official.article'),
     );
     $disabled = false;
     try {
         $store->run(
-            ExecutionContext::system(new TenantSystemContext(202, 'callback', 'tpq52.callback', 'beta-callback')),
+            new \app\common\execution\SystemExecutionContext(new TenantSystemContext(202, 'callback', 'tpq52.callback', 'beta-callback')),
             static fn() => $boundary->assertExternalCallback('official.article'),
         );
     } catch (ModuleException $exception) {

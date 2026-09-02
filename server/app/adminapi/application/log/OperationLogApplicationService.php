@@ -5,23 +5,24 @@ namespace app\adminapi\application\log;
 
 use app\common\http\PageResult;
 use app\adminapi\service\OperationLogService;
-use app\common\application\ApplicationService;
 use app\common\service\FileService;
 use app\common\service\XlsxExportService;
 use app\common\service\audit\OperationLogTenantRepository;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
+use app\common\persistence\TransactionalExecution;
 
-class OperationLogApplicationService extends ApplicationService
+class OperationLogApplicationService
 {
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '操作日志';
 
-    public function __construct(private readonly XlsxExportService $xlsxExport)
-    {
-    }
+    public function __construct(
+        private readonly XlsxExportService $xlsxExport,
+        private readonly TransactionalExecution $transactions,
+        private readonly OperationLogService $operationLogs,
+    ) {}
 
     /** 分页列表，支持按 用户名/URI/方法 过滤 */
     public function lists(TenantContext $context, array $params): PageResult|array
@@ -121,10 +122,10 @@ class OperationLogApplicationService extends ApplicationService
     /** 清空旧日志并原子保留本次清理审计；审计写入失败时删除整体回滚。 */
     public function clear(TenantContext $context, int $adminId, string $username, string $ip): int
     {
-        return Db::transaction(function () use ($context, $adminId, $username, $ip): int {
+        return $this->transactions->run(function () use ($context, $adminId, $username, $ip): int {
             $count = (int)OperationLogTenantRepository::query()->count();
             OperationLogTenantRepository::query()->delete();
-            OperationLogService::record(
+            $this->operationLogs->record(
                 $context,
                 $adminId,
                 $username,

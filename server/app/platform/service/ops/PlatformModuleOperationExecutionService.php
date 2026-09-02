@@ -18,14 +18,11 @@ final readonly class PlatformModuleOperationExecutionService
     public const CONCURRENCY_KEY = 'ops.module.execute.production';
     public const PERMISSION = 'platform.ops.module.manage';
 
-    /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private PDO $pdo,
-        private string $projectRoot,
-        private array $moduleConfig,
-        private array $trustedKeys,
-        private ?string $registryPath = null,
-        private ?Closure $runtimeIdentity = null,
+        private PdoOpsTaskDispatcher $tasks,
+        private DeploymentModuleRequestService $requests,
+        private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
     ) {
     }
 
@@ -66,7 +63,7 @@ final readonly class PlatformModuleOperationExecutionService
                 'source_commit' => $runtime['commit'],
                 'source_tree' => $runtime['tree'],
             ];
-            $row = (new PdoOpsTaskDispatcher($this->pdo))
+            $row = $this->tasks
                 ->dispatchModuleOperation($context, $payload, $idempotencyKey);
             $claim = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_ops_module_request
@@ -156,23 +153,17 @@ SQL);
 
     private function requestStore(): DeploymentModuleRequestService
     {
-        return new DeploymentModuleRequestService(
-            $this->pdo,
-            $this->projectRoot,
-            $this->moduleConfig,
-            $this->trustedKeys,
-            $this->registryPath,
-        );
+        return $this->requests;
     }
 
     /** @return array{commit:string,tree:string,health:string,repository_clean:bool} */
     private function runtime(PlatformContext $context): array
     {
-        if ($this->runtimeIdentity instanceof Closure) {
-            $identity = ($this->runtimeIdentity)($context);
+        if ($this->runtimeStatus instanceof Closure) {
+            $identity = ($this->runtimeStatus)($context);
             if (is_array($identity)) return $identity;
         }
-        $snapshot = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))->snapshot($context);
+        $snapshot = $this->runtimeStatus->snapshot($context);
         return [
             'commit' => $snapshot->commit,
             'tree' => $snapshot->tree,

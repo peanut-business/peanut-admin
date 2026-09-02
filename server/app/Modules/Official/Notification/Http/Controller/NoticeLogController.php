@@ -4,14 +4,15 @@ declare(strict_types=1);
 namespace app\Modules\Official\Notification\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
+use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use think\App;
 
 class NoticeLogController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly NotificationQueries $queries)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly NotificationQueries $queries)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()

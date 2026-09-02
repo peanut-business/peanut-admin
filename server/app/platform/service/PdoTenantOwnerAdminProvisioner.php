@@ -8,8 +8,10 @@ use PDO;
 /** Verifies that Core already provisioned the first owner and returns its member ID. */
 final readonly class PdoTenantOwnerAdminProvisioner implements TenantOwnerAdminProvisioner
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private ApplicationTenantBootstrapService $applicationBootstrap,
+    ) {
     }
 
     public function provision(
@@ -56,7 +58,7 @@ SQL);
             throw new \DomainException('TENANT_OWNER_ADMIN_PRINCIPAL_INVALID');
         }
 
-        (new ApplicationTenantBootstrapService($this->pdo))->provision(
+        $this->applicationBootstrap->provision(
             $tenantId,
             $memberId,
             $coreRoleId,

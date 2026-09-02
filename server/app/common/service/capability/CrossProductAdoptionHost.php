@@ -6,6 +6,7 @@ namespace app\common\service\capability;
 use PeanutAdmin\ArtifactRevision\Application\ArtifactRevisionService;
 use PeanutAdmin\Collaboration\Application\CollaborationService;
 use PeanutAdmin\EntitlementQuota\Application\EntitlementQuotaService;
+use PeanutAdmin\Kernel\Api\ApiException;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Workflow\Application\WorkflowRuntime;
@@ -14,7 +15,7 @@ use Throwable;
 /** Thin CAP06 composition over the four Alpha.5 public runtimes. */
 final class CrossProductAdoptionHost
 {
-    private const ARTIFACT_TYPE = ArticleCapabilityAuthorization::RESOURCE_KEY;
+    private const ARTIFACT_TYPE = 'article';
     private const ENGINE_NAME = 'peanut.article';
     private const ENGINE_VERSION = 'v1.0.0';
     private const METER_KEY = 'article.adoption';
@@ -63,7 +64,7 @@ final class CrossProductAdoptionHost
                 'cap06-finalize-' . $digest,
             );
             if ($base->canonicalEnvelopeSha256 === null) {
-                throw ArticleCapabilityAuthorization::denied();
+                throw self::denied();
             }
 
             $opened = $this->collaboration->openSession(
@@ -84,7 +85,7 @@ final class CrossProductAdoptionHost
                 'cap06-collaboration-join-' . $digest,
             );
             if ($joined->leaseKey === null) {
-                throw ArticleCapabilityAuthorization::denied();
+                throw self::denied();
             }
             $snapshot = 'article:' . $articleKey;
             $stateVector = 'article-state:' . $articleKey;
@@ -105,7 +106,7 @@ final class CrossProductAdoptionHost
                 'cap06-publish-' . $digest,
             );
             if ($published->publishedRevisionKey === null || $published->publishedRevisionSha256 === null) {
-                throw ArticleCapabilityAuthorization::denied();
+                throw self::denied();
             }
 
             $reserved = $this->quota->reserve(
@@ -130,7 +131,7 @@ final class CrossProductAdoptionHost
             if ($started->instanceKey === null
                 || $started->instanceRevision === null
                 || $started->instanceStatus === null) {
-                throw ArticleCapabilityAuthorization::denied();
+                throw self::denied();
             }
             $approved = $started->instanceStatus === 'completed'
                 ? $started
@@ -186,7 +187,7 @@ final class CrossProductAdoptionHost
                     'Article capability is unavailable.',
                 );
             }
-            throw ArticleCapabilityAuthorization::denied();
+            throw self::denied();
         }
     }
 
@@ -218,7 +219,12 @@ final class CrossProductAdoptionHost
             || !hash_equals(self::ARTIFACT_TYPE, $target->targetResourceKey)
             || count($target->targetIds) !== 1
             || !hash_equals($articleKey, $target->targetIds[0])) {
-            throw ArticleCapabilityAuthorization::denied();
+            throw self::denied();
         }
+    }
+
+    private static function denied(): ApiException
+    {
+        return new ApiException('ARTICLE_CAPABILITY_DENIED', 404, 'Article capability is unavailable.');
     }
 }

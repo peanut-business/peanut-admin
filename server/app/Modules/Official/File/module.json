@@ -13,6 +13,6 @@
   "backend": {"provider":"app\\Modules\\Official\\File\\ModuleProvider","routes":"Http/routes.php","migrations":"Database/Migrations","menus":"Resources/menus.json","permissions":"Resources/permissions.json","setting_definitions":"Resources/setting-definitions.json"},
   "frontend": {"entry":"web/src/modules/official-file/contribution.ts"},
   "database": {"owned_tables":["pa_file","pa_file_cate","pa_file_object"]},
-  "contracts": {"exports":["app\\Modules\\Official\\File\\Contracts\\FileAdministration"],"events":[]},
+  "contracts": {"exports":["app\\Modules\\Official\\File\\Contracts\\FileAdministration","app\\Modules\\Official\\File\\Contracts\\FileUploads","app\\Modules\\Official\\File\\Contracts\\Dto\\UploadFile"],"events":[]},
   "tenant": {"enableable":true,"disable_behavior":"reject_new_operations","requires":[]}
 }

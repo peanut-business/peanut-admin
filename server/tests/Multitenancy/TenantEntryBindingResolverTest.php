@@ -277,7 +277,10 @@ entryBindingExpect(
 );
 
 $sessionController = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/app/tenant/controller/TenantSessionController.php'
+    dirname(__DIR__, 2) . '/app/adminapi/controller/auth/TenantSessionController.php'
+);
+$sessionApplication = (string)file_get_contents(
+    dirname(__DIR__, 2) . '/app/adminapi/application/auth/TenantSessionApplicationService.php'
 );
 $loginMiddleware = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/adminapi/http/middleware/LoginMiddleware.php'
@@ -292,8 +295,9 @@ $routes = peanut_route_registry_source(dirname(__DIR__, 2));
 $productionNginx = (string)file_get_contents(dirname(__DIR__, 3) . '/deploy/nginx/peanut-admin.conf');
 $developmentNginx = (string)file_get_contents(dirname(__DIR__, 3) . '/deploy/nginx/development.conf');
 entryBindingExpect(
-    str_contains($sessionController, 'TENANT_SWITCH_BOUND_ENTRY')
-        && str_contains($sessionController, 'assertTenantAccess('),
+    str_contains($sessionController, 'TenantSessionApplicationService')
+        && str_contains($sessionApplication, 'TENANT_SWITCH_BOUND_ENTRY')
+        && str_contains($sessionApplication, 'assertTenantAccess('),
     'Tenant challenge selection or switch lost the continuous Host boundary',
 );
 entryBindingExpect(

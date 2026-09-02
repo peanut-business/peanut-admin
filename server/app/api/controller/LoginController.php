@@ -4,19 +4,18 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\LoginApplicationService;
-use app\common\service\member\MemberTenantContext;
-use app\common\service\notice\NoticeTenantContext;
+use app\common\application\BusinessException;
 
 class LoginController extends BaseApiController
 {
-    public function __construct(App $app, private readonly LoginApplicationService $login)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly LoginApplicationService $login)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['register', 'account', 'mobile', 'resetPassword', 'logout'];
 
     /** 注册账号 */
     public function register()
@@ -27,14 +26,10 @@ class LoginController extends BaseApiController
         ];
 
         if (empty($params['account']) || empty($params['password'])) {
-            return $this->fail('账号和密码不能为空');
+            throw BusinessException::invalid('MEMBER_CREDENTIALS_REQUIRED', '账号和密码不能为空');
         }
 
-        $result = $this->login->register(MemberTenantContext::system('member.register'), $params);
-        if ($result === false) {
-            return $this->fail($this->login->getError());
-        }
-
+        $this->login->register($this->publicTenantContext('member.register'), $params);
         return $this->success('注册成功');
     }
 
@@ -48,15 +43,14 @@ class LoginController extends BaseApiController
         ];
 
         if (empty($params['account']) || empty($params['password'])) {
-            return $this->fail('账号和密码不能为空');
+            throw BusinessException::invalid('MEMBER_CREDENTIALS_REQUIRED', '账号和密码不能为空');
         }
 
-        $result = $this->login->login(MemberTenantContext::system('member.login'), $params);
-        if ($result === false) {
-            return $this->fail($this->login->getError());
-        }
-
-        return $this->data($result);
+        return $this->data($this->login->login(
+            $this->publicTenantContext('member.login'),
+            $params,
+            $this->request->ip(),
+        ));
     }
 
     /** 手机号验证码登录 */
@@ -67,16 +61,14 @@ class LoginController extends BaseApiController
             'code'   => $this->request->post('code/s', ''),
         ];
         if (!preg_match('/^1[3-9]\d{9}$/', $params['mobile']) || $params['code'] === '') {
-            return $this->fail('手机号或验证码格式不正确');
+            throw BusinessException::invalid('MEMBER_MOBILE_LOGIN_INVALID', '手机号或验证码格式不正确');
         }
 
-        $result = $this->login->mobileLogin(
-            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
-            $params
-        );
-        return $result === false
-            ? $this->fail($this->login->getError())
-            : $this->data($result);
+        return $this->data($this->login->mobileLogin(
+            $this->publicTenantContext('notice.verification.verify'),
+            $params,
+            $this->request->ip(),
+        ));
     }
 
     /** 手机号验证码找回密码 */
@@ -89,15 +81,14 @@ class LoginController extends BaseApiController
         ];
         if (!preg_match('/^1[3-9]\d{9}$/', $params['mobile'])
             || $params['code'] === '' || strlen($params['password']) < 6) {
-            return $this->fail('手机号、验证码或新密码格式不正确');
+            throw BusinessException::invalid('MEMBER_PASSWORD_RESET_INVALID', '手机号、验证码或新密码格式不正确');
         }
 
-        return $this->login->resetPassword(
-            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+        $this->login->resetPassword(
+            $this->publicTenantContext('notice.verification.verify'),
             $params
-        )
-            ? $this->success('密码已重置')
-            : $this->fail($this->login->getError());
+        );
+        return $this->success('密码已重置');
     }
 
     /** 退出登录 */

@@ -14,7 +14,7 @@
         <div class="flex items-center justify-between text-sm text-gray-400 mb-8 pb-6 border-b">
           <span>{{ article.author }}</span>
           <div class="flex items-center gap-4">
-            <span>{{ article.click_num }} 次浏览</span>
+            <span>{{ article.click }} 次浏览</span>
             <el-button
               :type="article.collect ? 'primary' : 'default'"
               size="small"
@@ -34,36 +34,26 @@
 
 <script setup lang="ts">
 import sanitizeRichText from '~/utils/sanitize-rich-text'
+import {
+  addArticleCollect,
+  cancelArticleCollect,
+  getArticleDetail,
+} from '~/api/article'
 
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const id = Number(route.params.id)
-const apiBase = useRuntimeConfig().public.apiBase
 const userStore = useUserStore()
-
-interface ArticleDetail {
-  id: number; cate_id: number; cate_name: string; title: string
-  image: string; desc: string; content: string; author: string
-  click_num: number; collect_num: number; create_time: string; collect: boolean
-}
-
-const { data } = await useFetch<{ code: number; data: ArticleDetail }>(
-  `${apiBase}/api/article/detail?id=${id}`,
-  { headers: userStore.token ? { Authorization: `Bearer ${userStore.token}` } : {} }
-)
-const article = ref(data.value?.data || null)
+const request = useRequest()
+const article = ref(await getArticleDetail(request, id).catch(() => null))
 const safeArticleContent = computed(() => sanitizeRichText(article.value?.content))
 
 async function toggleCollect() {
   if (!userStore.isLoggedIn) return navigateTo('/login')
   if (!article.value) return
-  const endpoint = article.value.collect ? 'cancelCollect' : 'addCollect'
-  await $fetch(`${apiBase}/api/article/${endpoint}`, {
-    method: 'POST',
-    body: { article_id: article.value.id },
-    headers: { Authorization: `Bearer ${userStore.token}` },
-  })
+  const updateCollect = article.value.collect ? cancelArticleCollect : addArticleCollect
+  await updateCollect(request, article.value.id)
   article.value.collect = !article.value.collect
 }
 </script>

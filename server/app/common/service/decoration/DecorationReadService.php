@@ -8,9 +8,11 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** 管理端与各客户端共享的只读消费 DTO。 */
-class DecorationReadService
+final readonly class DecorationReadService
 {
-    public static function pageByType(
+    public function __construct(private DecorationSchemaService $schema) {}
+
+    public function pageByType(
         TenantContext|TenantSystemContext $context,
         int $type,
         string $operation = ''
@@ -21,10 +23,10 @@ class DecorationReadService
         if ($page->isEmpty()) {
             throw new \RuntimeException('装修页面不存在');
         }
-        return self::formatPage($page->toArray());
+        return $this->formatPage($page->toArray());
     }
 
-    public static function tabbar(
+    public function tabbar(
         TenantContext|TenantSystemContext $context,
         bool $visibleOnly = false,
         string $operation = ''
@@ -38,18 +40,18 @@ class DecorationReadService
                 continue;
             }
             $item['link'] = json_decode((string)$item['link'], true) ?: [];
-            $list[] = DecorationSchemaService::resourcesForRead($item);
+            $list[] = $this->schema->resourcesForRead($item);
         }
         return ['style' => $style, 'list' => $list];
     }
 
-    public static function formatPage(array $page): array
+    public function formatPage(array $page): array
     {
         $data = json_decode((string)$page['data'], true, 512, JSON_THROW_ON_ERROR);
         $meta = trim((string)($page['meta'] ?? '')) === ''
             ? [] : json_decode((string)$page['meta'], true, 512, JSON_THROW_ON_ERROR);
-        $page['data'] = DecorationSchemaService::resourcesForRead($data);
-        $page['meta'] = DecorationSchemaService::resourcesForRead($meta);
+        $page['data'] = $this->schema->resourcesForRead($data);
+        $page['meta'] = $this->schema->resourcesForRead($meta);
         return $page;
     }
 }

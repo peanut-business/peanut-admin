@@ -15,7 +15,8 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) === 'adminapi') {
+Route::group(function (): void {
     Route::get('official.payment.settings.detail', [PayConfigController::class, 'getConfig']);
     Route::post('official.payment.settings.save', [PayConfigController::class, 'setConfig']);
     Route::get('official.payment.recharge-settings.detail', [RechargeSettingController::class, 'config']);
@@ -30,11 +31,16 @@ Route::group('api/admin', function (): void {
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
+}
 
-Route::post('api/payment/notify/wechat/:binding', [ApiPaymentNotifyController::class, 'wechat']);
-Route::post('api/payment/notify/alipay/:binding', [ApiPaymentNotifyController::class, 'alipay']);
+if (($peanutRouteApplication ?? null) !== 'api') {
+    return;
+}
 
-Route::group('api', function (): void {
+Route::post('payment/notify/wechat/:binding', [ApiPaymentNotifyController::class, 'wechat']);
+Route::post('payment/notify/alipay/:binding', [ApiPaymentNotifyController::class, 'alipay']);
+
+Route::group(function (): void {
     Route::get('recharge/config', [ApiRechargeController::class, 'config']);
     Route::post('recharge/create', [ApiRechargeController::class, 'create']);
     Route::post('recharge/prepay', [ApiRechargeController::class, 'prepay']);

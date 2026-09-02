@@ -8,16 +8,12 @@ use app\platform\service\plugin\PluginLifecycleException;
 use PDO;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 
 trait PluginCommandSupport
 {
     private function pluginLifecycle(): \app\common\contract\module\PluginLifecycleCommands
     {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            throw new PluginLifecycleException('PLATFORM_DATABASE_CONNECTION_UNAVAILABLE', 'Database is unavailable.');
-        }
+        $pdo = $this->database();
         $serverRoot = dirname(__DIR__, 2);
         $config = Config::get('modules', []);
         if (!is_array($config)) {

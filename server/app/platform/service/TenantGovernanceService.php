@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
+use app\common\application\BusinessException;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use DateTimeImmutable;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
@@ -37,42 +38,49 @@ final readonly class TenantGovernanceService
         string $ownerDisplayName,
         string $requestId
     ): array {
-        $operator = $this->identities->requireActive($operatorCredential);
-        return $this->transactions->run(function () use (
-            $operator,
-            $tenantCode,
-            $tenantName,
-            $ownerEmail,
-            $initialPassword,
-            $ownerDisplayName,
-            $requestId
-        ): array {
-            $candidate = $this->bootstrap->provisionTenantOwnerCandidate(
-                $operator->operatorId,
+        try {
+            $operator = $this->identities->requireActive($operatorCredential);
+            return $this->transactions->run(function () use (
+                $operator,
                 $tenantCode,
                 $tenantName,
                 $ownerEmail,
                 $initialPassword,
                 $ownerDisplayName,
                 $requestId
-            );
-            $this->bootstrap->activateTenantOwner(
-                $operator->operatorId,
-                $candidate->tenantId,
-                $candidate->memberId,
-                $requestId . ':owner-activation'
-            );
-            $this->ownerAdmins->provision(
-                $candidate->tenantId,
-                $candidate->accountId,
-                $candidate->memberId,
-                $candidate->roleId,
-                $tenantCode,
-                $ownerDisplayName
-            );
+            ): array {
+                $candidate = $this->bootstrap->provisionTenantOwnerCandidate(
+                    $operator->operatorId,
+                    $tenantCode,
+                    $tenantName,
+                    $ownerEmail,
+                    $initialPassword,
+                    $ownerDisplayName,
+                    $requestId
+                );
+                $this->bootstrap->activateTenantOwner(
+                    $operator->operatorId,
+                    $candidate->tenantId,
+                    $candidate->memberId,
+                    $requestId . ':owner-activation'
+                );
+                $this->ownerAdmins->provision(
+                    $candidate->tenantId,
+                    $candidate->accountId,
+                    $candidate->memberId,
+                    $candidate->roleId,
+                    $tenantCode,
+                    $ownerDisplayName
+                );
 
-            return $candidate->toArray();
-        });
+                return $candidate->toArray();
+            });
+        } catch (\DomainException|\InvalidArgumentException) {
+            throw BusinessException::conflict(
+                'TENANT_PROVISION_REJECTED',
+                'Tenant provisioning was rejected.',
+            );
+        }
     }
 
     /** @return array<string,mixed> */
@@ -84,17 +92,26 @@ final readonly class TenantGovernanceService
         string $changeReason,
         string $requestId
     ): array {
-        $operator = $this->identities->requireActive($operatorCredential);
-
-        return $this->administration->transitionTenant(
-            $operator->operatorId,
-            $operator->accountId,
-            $tenantId,
-            $expectedRevision,
-            $next,
-            $changeReason,
-            $requestId
-        );
+        try {
+            $operator = $this->identities->requireActive($operatorCredential);
+            return $this->administration->transitionTenant(
+                $operator->operatorId,
+                $operator->accountId,
+                $tenantId,
+                $expectedRevision,
+                $next,
+                $changeReason,
+                $requestId
+            );
+        } catch (\DomainException|\InvalidArgumentException) {
+            [$errorCode, $message] = match ($next) {
+                TenantStatus::Active => ['TENANT_ACTIVATION_REJECTED', 'Tenant activation was rejected.'],
+                TenantStatus::Suspended => ['TENANT_SUSPENSION_REJECTED', 'Tenant suspension was rejected.'],
+                TenantStatus::Closed => ['TENANT_CLOSURE_REJECTED', 'Tenant closure was rejected.'],
+                default => ['TENANT_TRANSITION_REJECTED', 'Tenant transition was rejected.'],
+            };
+            throw BusinessException::conflict($errorCode, $message);
+        }
     }
 
     /** @param array<string,mixed> $config @return array<string,mixed> */

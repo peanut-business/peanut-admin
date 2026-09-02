@@ -10,13 +10,13 @@ final readonly class LocalStorageDriver implements StorageDriver
 {
     private string $root;
 
-    public function __construct(private array $space)
+    public function __construct(private array $space, string $applicationRoot)
     {
         $relative = (string)($space['local_path'] ?? '');
         if (!in_array($relative, ['public/storage', 'private/storage'], true)) {
             throw new \RuntimeException('本地存储空间配置无效');
         }
-        $this->root = rtrim(app()->getRootPath(), DIRECTORY_SEPARATOR)
+        $this->root = rtrim($applicationRoot, DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
     }
 

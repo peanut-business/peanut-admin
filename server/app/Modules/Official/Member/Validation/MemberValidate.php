@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Validation;
 
 use app\common\enum\AccountLogEnum;
-use app\common\service\member\MemberTenantRepository;
+use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\validate\TenantContextValidate;
 
 class MemberValidate extends TenantContextValidate

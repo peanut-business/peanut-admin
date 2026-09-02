@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace app\common\service\async;
 
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\SystemExecutionContext;
+use app\common\execution\SystemExecutionMetadata;
 use app\common\service\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
+use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\TaskJob\Execution\JobExecution;
 use PeanutAdmin\TaskJob\Execution\TaskHandler;
 
@@ -32,7 +34,15 @@ final readonly class ModuleAwareTaskHandler implements TaskHandler
     public function handle(AuthorizedOperationContext $context, JobExecution $execution): void
     {
         $this->executionContexts->run(
-            ExecutionContext::tenantAdmin($context->tenantContext, 'async.worker'),
+            new SystemExecutionContext(
+                new TenantSystemContext(
+                    $context->tenantContext->tenantId,
+                    'task-worker',
+                    'async.worker',
+                    $execution->jobKey,
+                ),
+                new SystemExecutionMetadata($execution->jobKey, $execution->attemptNumber, $this->key()),
+            ),
             function () use ($context, $execution): void {
                 $this->modules->assertWorker('official.task');
                 $this->modules->assertWorker($this->moduleKey);

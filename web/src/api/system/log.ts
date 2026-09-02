@@ -51,21 +51,21 @@ export interface OperationLogExportResult {
 }
 
 export function getOperationLogList(params: OperationLogParams) {
-  return axios.get<OperationLogListRes>('/api/admin/log/lists', { params });
+  return axios.get<OperationLogListRes>('/adminapi/log/lists', { params });
 }
 
 export function getOperationLogExportInfo(params: OperationLogParams) {
-  return axios.get<OperationLogExportInfo>('/api/admin/log/lists', {
+  return axios.get<OperationLogExportInfo>('/adminapi/log/lists', {
     params: { ...params, export: 1 },
   });
 }
 
 export function exportOperationLog(params: OperationLogParams) {
-  return axios.get<OperationLogExportResult>('/api/admin/log/lists', {
+  return axios.get<OperationLogExportResult>('/adminapi/log/lists', {
     params: { ...params, export: 2 },
   });
 }
 
 export function clearOperationLog() {
-  return axios.post('/api/admin/log/clear', {});
+  return axios.post('/adminapi/log/clear', {});
 }

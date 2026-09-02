@@ -126,7 +126,7 @@
     },
     {
       "id": "architecture-boundary",
-      "paths": ["resources/service-registry.json", "docs/architecture/*.md", "docs/design/**/*.md", "server/app/Modules/**/module.json", "server/vendor/peanut-admin/core/**/*", "web/node_modules/@peanut-admin/admin/**/*"],
+      "paths": ["resources/service-registry.json", "docs/architecture/**/*.md", "docs/design/**/*.md", "server/app/Modules/**/module.json", "server/vendor/peanut-admin/core/**/*", "web/node_modules/@peanut-admin/admin/**/*"],
       "classifications": ["architecture-decision", "technical", "developer-site"],
       "upstream": ["accepted ADR or architecture contract", "service registry", "module manifests", "fixed Core dependency identity"],
       "technical_docs": ["docs/architecture/clean-native-multitenancy-baseline.md", "docs/architecture/module-execution-context-contract.md"],

@@ -3,17 +3,19 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\ProductTenantModuleProfileService;
-use PDO;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use app\common\execution\ContextualCommand;
+use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 
-final class TenantModuleProfile extends ContextualCommand
+final class TenantModuleProfile extends DatabaseContextualCommand
 {
     protected function configure()
     {
@@ -25,18 +27,17 @@ final class TenantModuleProfile extends ContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) {
-                throw new \RuntimeException('TENANT_DATABASE_CONNECTION_UNAVAILABLE');
-            }
+            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) {
                 throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
             }
             $result = (new ProductTenantModuleProfileService(
                 $pdo,
-                dirname(__DIR__, 2),
-                $config
+                new PdoTransactionManager($pdo),
+                new PdoModuleRuntimeRepository($pdo, true),
+                new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 2), $config),
+                AuditContractHost::fromPdo($pdo),
             ))->apply(trim((string)$input->getArgument('profile')));
             $output->writeln((string)json_encode(
                 $result,

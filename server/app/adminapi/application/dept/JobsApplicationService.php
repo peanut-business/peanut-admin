@@ -4,31 +4,29 @@ declare(strict_types=1);
 namespace app\adminapi\application\dept;
 
 use app\common\http\PageResult;
-use app\common\application\ApplicationService;
-use app\common\model\dept\Jobs;
+use app\common\application\BusinessException;
 use app\common\persistence\TransactionalExecution;
-use app\common\service\FileService;
 use app\common\service\XlsxExportService;
-use app\common\service\org\OrgTenantContext;
+use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 use app\common\service\org\OrgTenantRepository;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class JobsApplicationService extends ApplicationService
+class JobsApplicationService
 {
     private const EXPORT_MAX_ROWS = 25000;
     private const EXPORT_DEFAULT_NAME = '岗位列表';
 
-    public function __construct(private readonly XlsxExportService $xlsxExport)
-    {
-    }
+    public function __construct(
+        private readonly XlsxExportService $xlsxExport,
+        private readonly TransactionalExecution $transactions,
+    ) {}
 
     /** 将 Peanut 旧版 is_disable 请求转换为 LikeAdmin status 契约。 */
     public function normalizeInput(array $params): array
     {
-        self::clearError();
-        $params = OrgTenantContext::withoutPayloadTenant($params);
+        $params = TenantContextRequirement::withoutTenantId($params);
         if (!array_key_exists('status', $params) && array_key_exists('is_disable', $params)) {
             $params['status'] = (int)$params['is_disable'] === 0 ? 1 : 0;
         }
@@ -37,7 +35,6 @@ class JobsApplicationService extends ApplicationService
 
     public function validationRules(string $scene): array
     {
-        self::clearError();
         $rules = [
             'id' => 'require|integer|gt:0', 'name' => 'require|length:1,50',
             'code' => 'require|max:64', 'sort' => 'integer|egt:0',
@@ -52,43 +49,38 @@ class JobsApplicationService extends ApplicationService
     /**
      * 岗位分页列表；export=1 返回导出信息，export=2 生成 XLSX 并返回 URL。
      *
-     * @return PageResult|array|false
+     * @return PageResult|array
      */
-    public function lists(TenantContext $context, array $params): PageResult|array|false
+    public function lists(TenantContext $context, array $params): PageResult|array
     {
-        self::clearError();
         $params = self::normalizeInput($params);
-        try {
-            $count = self::buildListQuery($context, $params)->count();
-            $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
-            $pageSize = max(1, min(100, $pageSize));
+        $count = self::buildListQuery($context, $params)->count();
+        $pageSize = (int)($params['page_size'] ?? $params['limit'] ?? 15);
+        $pageSize = max(1, min(100, $pageSize));
 
-            if ((int)($params['export'] ?? 0) === 1) {
-                return self::exportInfo($count, $pageSize);
-            }
-            if ((int)($params['export'] ?? 0) === 2) {
-                return $this->export($context, $params, $count, $pageSize);
-            }
-
-            $pagination = PaginationInput::from($params);
-            $pageResult = PaginationInput::from($params)->result(self::buildListQuery($context, $params));
-            $rows = array_map(static fn($item): array => $item instanceof \think\Model ? $item->toArray() : (array) $item, $pageResult->items);
-
-            return new PageResult(
-                self::formatRows($rows),
-                $pageResult->total,
-                $pageResult->page,
-                $pageResult->pageSize,
-            );
-        } catch (\Throwable $e) {
-            return self::fail($e);
+        if ((int)($params['export'] ?? 0) === 1) {
+            return self::exportInfo($count, $pageSize);
         }
+        if ((int)($params['export'] ?? 0) === 2) {
+            return $this->export($context, $params, $count, $pageSize);
+        }
+
+        $pagination = PaginationInput::from($params);
+        $pageResult = $pagination->result(self::buildListQuery($context, $params));
+        $pageResult = OrgTenantRepository::arrayPage($pageResult);
+        $rows = $pageResult->items;
+
+        return new PageResult(
+            self::formatRows($rows),
+            $pageResult->total,
+            $pageResult->page,
+            $pageResult->pageSize,
+        );
     }
 
     /** 全部正常岗位（供选择器使用）。 */
     public function all(TenantContext $context): array
     {
-        self::clearError();
         return self::jobs($context)->where('status', 1)
             ->field('id,name,code,status,is_disable')
             ->order(['sort' => 'desc', 'id' => 'desc'])
@@ -98,7 +90,6 @@ class JobsApplicationService extends ApplicationService
 
     public function detail(TenantContext $context, int $id): array
     {
-        self::clearError();
         $jobs = self::jobs($context)->where('id', $id)->findOrEmpty();
         if ($jobs->isEmpty()) {
             return [];
@@ -108,90 +99,70 @@ class JobsApplicationService extends ApplicationService
 
     public function add(TenantContext $context, array $params): bool
     {
-        self::clearError();
         $params = self::normalizeInput($params);
-        try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $params): bool {
-                self::assertUnique($context, (string)$params['name'], (string)$params['code']);
-                $status = (int)$params['status'];
-                OrgTenantRepository::create(Jobs::class, [
-                    'name'       => trim((string)$params['name']),
-                    'code'       => trim((string)$params['code']),
-                    'sort'       => (int)($params['sort'] ?? 0),
-                    'status'     => $status,
-                    'is_disable' => $status === 1 ? 0 : 1,
-                    'remark'     => (string)($params['remark'] ?? ''),
-                ]);
-                return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return $this->transactions->run(function () use ($context, $params): bool {
+            self::assertUnique($context, (string)$params['name'], (string)$params['code']);
+            $status = (int)$params['status'];
+            OrgTenantRepository::createJob([
+                'name'       => trim((string)$params['name']),
+                'code'       => trim((string)$params['code']),
+                'sort'       => (int)($params['sort'] ?? 0),
+                'status'     => $status,
+                'is_disable' => $status === 1 ? 0 : 1,
+                'remark'     => (string)($params['remark'] ?? ''),
+            ]);
+            return true;
+        });
     }
 
     public function edit(TenantContext $context, array $params): bool
     {
-        self::clearError();
         $params = self::normalizeInput($params);
-        try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $params): bool {
-                $id = (int)$params['id'];
-                $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
-                if ($jobs->isEmpty()) {
-                    throw new \RuntimeException('岗位不存在');
-                }
-                self::assertUnique($context, (string)$params['name'], (string)$params['code'], $id);
-                $status = (int)$params['status'];
-                $jobs->save([
-                    'name'       => trim((string)$params['name']),
-                    'code'       => trim((string)$params['code']),
-                    'sort'       => (int)($params['sort'] ?? 0),
-                    'status'     => $status,
-                    'is_disable' => $status === 1 ? 0 : 1,
-                    'remark'     => (string)($params['remark'] ?? ''),
-                ]);
-                return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return $this->transactions->run(function () use ($context, $params): bool {
+            $id = (int)$params['id'];
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
+            if ($jobs->isEmpty()) {
+                throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
+            }
+            self::assertUnique($context, (string)$params['name'], (string)$params['code'], $id);
+            $status = (int)$params['status'];
+            $jobs->save([
+                'name'       => trim((string)$params['name']),
+                'code'       => trim((string)$params['code']),
+                'sort'       => (int)($params['sort'] ?? 0),
+                'status'     => $status,
+                'is_disable' => $status === 1 ? 0 : 1,
+                'remark'     => (string)($params['remark'] ?? ''),
+            ]);
+            return true;
+        });
     }
 
     public function delete(TenantContext $context, int $id): bool
     {
-        self::clearError();
-        try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $id): bool {
-                $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
-                if ($jobs->isEmpty()) {
-                    throw new \RuntimeException('岗位不存在');
-                }
-                $jobs->delete();
-                return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return $this->transactions->run(function () use ($context, $id): bool {
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
+            if ($jobs->isEmpty()) {
+                throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
+            }
+            $jobs->delete();
+            return true;
+        });
     }
 
     public function updateStatus(TenantContext $context, int $id, int $status): bool
     {
-        self::clearError();
-        try {
-            return app(TransactionalExecution::class)->run(function () use ($context, $id, $status): bool {
-                $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
-                if ($jobs->isEmpty()) {
-                    throw new \RuntimeException('岗位不存在');
-                }
-                $jobs->save([
-                    'status' => $status,
-                    'is_disable' => $status === 1 ? 0 : 1,
-                ]);
-                return true;
-            });
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+        return $this->transactions->run(function () use ($context, $id, $status): bool {
+            $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
+            if ($jobs->isEmpty()) {
+                throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
+            }
+            $jobs->save([
+                'status' => $status,
+                'is_disable' => $status === 1 ? 0 : 1,
+            ]);
+            return true;
+        });
     }
 
     private static function buildListQuery(TenantContext $context, array $params)
@@ -218,10 +189,10 @@ class JobsApplicationService extends ApplicationService
             $codeQuery->where('id', '<>', $exceptId);
         }
         if ($nameQuery->count() > 0) {
-            throw new \RuntimeException('岗位名称已存在');
+            throw BusinessException::conflict('ADMIN_JOB_NAME_EXISTS', '岗位名称已存在');
         }
         if ($codeQuery->count() > 0) {
-            throw new \RuntimeException('岗位编码已存在');
+            throw BusinessException::conflict('ADMIN_JOB_CODE_EXISTS', '岗位编码已存在');
         }
     }
 
@@ -298,7 +269,7 @@ class JobsApplicationService extends ApplicationService
 
     private static function jobs(TenantContext $context)
     {
-        return OrgTenantRepository::query(Jobs::class);
+        return OrgTenantRepository::jobs();
     }
 
     private static function formatTime($value): string

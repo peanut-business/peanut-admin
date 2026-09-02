@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
-use app\common\execution\ExecutionContext;
+use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\file\FileObjectNamespace;
-use app\common\service\file\FileTenantContext;
-use app\common\service\file\FileTenantRepository;
+use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -118,7 +117,7 @@ try {
     $alpha = fileTenantContext(101, 501, 'mt03-file-alpha-' . $runId);
     $beta = fileTenantContext(202, 502, 'mt03-file-beta-' . $runId);
     try {
-        FileTenantContext::member();
+        app(CurrentExecutionContext::class)->tenantAdmin();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectFileTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
@@ -130,24 +129,24 @@ try {
     );
     expectFileTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.file.category.add.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.file.category.add.alpha'),
             fn() => $files->addCategory(['tenant_id' => 202, 'pid' => 0, 'type' => 10, 'name' => 'Same category']),
         ),
         'Alpha category was not created',
     );
     expectFileTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.file.category.add.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.file.category.add.beta'),
             fn() => $files->addCategory(['tenant_id' => 101, 'pid' => 0, 'type' => 10, 'name' => 'Same category']),
         ),
         'Beta category was not created',
     );
     $alphaCategory = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.file.category.query.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.file.category.query.alpha'),
         fn() => FileTenantRepository::categories()->where('name', 'Same category')->value('id'),
     );
     $betaCategory = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.file.category.query.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.file.category.query.beta'),
         fn() => FileTenantRepository::categories()->where('name', 'Same category')->value('id'),
     );
     expectFileTenant($alphaCategory > 0 && $betaCategory > 0, 'same-name Tenant categories were not created');
@@ -161,53 +160,53 @@ try {
     file_put_contents($alphaObject, 'alpha');
     file_put_contents($betaObject, 'beta');
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.file.create.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.file.create.alpha'),
         fn() => FileTenantRepository::createFile([
             'tenant_id' => 202, 'cid' => $alphaCategory, 'source_id' => 501, 'source' => 0,
             'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/101/uploads/images/' . $objectName, 'storage' => 'local',
         ]),
     );
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.file.create.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.file.create.beta'),
         fn() => FileTenantRepository::createFile([
             'tenant_id' => 101, 'cid' => $betaCategory, 'source_id' => 502, 'source' => 0,
             'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/202/uploads/images/' . $objectName, 'storage' => 'local',
         ]),
     );
     $alphaFile = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.file.query.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.file.query.alpha'),
         fn() => FileTenantRepository::files()->where('name', 'same.png')->value('id'),
     );
     $betaFile = (int)app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.file.query.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.file.query.beta'),
         fn() => FileTenantRepository::files()->where('name', 'same.png')->value('id'),
     );
     expectFileTenant($alphaFile > 0 && $betaFile > 0, 'same-name Tenant files were not created');
 
     expectFileTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.file.list.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.file.list.alpha'),
             fn() => $files->lists(['type' => 10, 'name' => 'same.png']),
         )->items) === 1,
         'Alpha file list leaked or lost same-name files',
     );
     expectFileTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.file.list.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.file.list.beta'),
             fn() => $files->lists(['type' => 10, 'name' => 'same.png']),
         )->items) === 1,
         'Beta file list leaked or lost same-name files',
     );
     expectFileTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.file.category.list.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.file.category.list.alpha'),
             fn() => $files->categoryLists(10),
         )) === 2,
         'Alpha category tree leaked or lost categories',
     );
     expectFileTenant(
         count(app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.file.category.list.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.file.category.list.beta'),
             fn() => $files->categoryLists(10),
         )) === 1,
         'Beta category tree leaked or lost categories',
@@ -216,7 +215,7 @@ try {
     foreach ([$betaCategory, 999999] as $target) {
         try {
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.file.category.delete.denied'),
+                new \app\common\execution\AdminExecutionContext($alpha, 'test.file.category.delete.denied'),
                 fn() => $files->deleteCategory($target),
             );
             throw new RuntimeException('cross/missing category delete unexpectedly succeeded');
@@ -227,7 +226,7 @@ try {
     foreach ([$betaFile, 999999] as $target) {
         try {
             app(ExecutionContextStore::class)->run(
-                ExecutionContext::tenantAdmin($alpha, 'test.file.delete.denied'),
+                new \app\common\execution\AdminExecutionContext($alpha, 'test.file.delete.denied'),
                 fn() => $files->delete([$target]),
             );
             throw new RuntimeException('cross/missing file delete unexpectedly succeeded');
@@ -237,7 +236,7 @@ try {
     }
     try {
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.file.create.foreign-namespace'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.file.create.foreign-namespace'),
             fn() => FileTenantRepository::createFile([
                 'tenant_id' => 101, 'cid' => 0, 'source_id' => 501, 'source' => 0, 'type' => 10,
                 'name' => 'forged.png', 'uri' => 'storage/tenants/v1/202/uploads/images/forged.png', 'storage' => 'local',
@@ -249,7 +248,7 @@ try {
     }
 
     $result = app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($alpha, 'test.file.category.delete.alpha'),
+        new \app\common\execution\AdminExecutionContext($alpha, 'test.file.category.delete.alpha'),
         fn() => $files->deleteCategory($alphaCategory),
     );
     expectFileTenant($result === ['categories_deleted' => 1, 'files_deleted' => 1, 'storage_deleted' => 1], 'Alpha category cleanup result changed');
@@ -257,14 +256,14 @@ try {
     expectFileTenant(file_exists($betaObject) && file_get_contents($betaObject) === 'beta', 'Alpha cleanup touched Beta object');
     expectFileTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.file.category.query.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.file.category.query.beta'),
             fn() => FileTenantRepository::findCategory($betaCategory) !== null,
         ),
         'Alpha cleanup deleted Beta category',
     );
     expectFileTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.file.query.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.file.query.beta'),
             fn() => FileTenantRepository::findFile($betaFile) !== null,
         ),
         'Alpha cleanup deleted Beta file row',

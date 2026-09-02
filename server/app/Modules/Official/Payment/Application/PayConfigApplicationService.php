@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Application;
 
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\payment\PaymentChannelGrantService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
 
 /**
  * 支付配置 Logic
@@ -16,9 +16,16 @@ use think\facade\Db;
  * type = pay
  * 字段：微信支付（wx_*）+ 支付宝（ali_*）
  */
-class PayConfigApplicationService extends ApplicationService
+class PayConfigApplicationService
 {
     protected const CONFIG_TYPE = 'pay';
+
+    public function __construct(
+        private readonly TransactionManager $transactions,
+        private readonly PaymentChannelGrantCommands $channelGrants,
+        private readonly ExternalChannelBindingService $bindings,
+    ) {
+    }
 
     /** @var array<string,mixed> 字段白名单 => 默认值 */
     protected const FIELDS = [
@@ -40,10 +47,9 @@ class PayConfigApplicationService extends ApplicationService
 
     public function getConfig(TenantContext $context): array
     {
-        self::clearError();
         $stored = [
-            ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
-            ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
+            ...$this->bindings->config($context, ExternalTenantResolver::WECHAT_PAYMENT),
+            ...$this->bindings->config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
         ];
         $result = [];
         foreach (self::FIELDS as $field => $default) {
@@ -64,11 +70,9 @@ class PayConfigApplicationService extends ApplicationService
 
     public function setConfig(TenantContext $context, array $params): bool
     {
-        self::clearError();
-        try {
-            $stored = [
-                ...ExternalChannelBindingService::config($context, ExternalTenantResolver::WECHAT_PAYMENT),
-                ...ExternalChannelBindingService::config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
+        $stored = [
+                ...$this->bindings->config($context, ExternalTenantResolver::WECHAT_PAYMENT),
+                ...$this->bindings->config($context, ExternalTenantResolver::ALIPAY_PAYMENT),
             ];
             $data = [];
             foreach (self::FIELDS as $field => $default) {
@@ -84,29 +88,26 @@ class PayConfigApplicationService extends ApplicationService
                     $data[$field] = $incoming;
                 }
             }
-            self::assertUsable($data);
-            Db::transaction(function () use ($context, $data): void {
-                ExternalChannelBindingService::update(
+        self::assertUsable($data);
+        $this->transactions->run(function () use ($context, $data): void {
+                $this->bindings->update(
                     $context,
                     ExternalTenantResolver::WECHAT_PAYMENT,
                     $data,
                     trim((string)$data['wx_pay_appid']) !== '' && trim((string)$data['wx_pay_mch_id']) !== ''
                         ? (string)$data['wx_pay_appid'] . ':' . (string)$data['wx_pay_mch_id'] : '',
                 );
-                PaymentChannelGrantService::ensureSelfGrant($context, ExternalTenantResolver::WECHAT_PAYMENT);
-                ExternalChannelBindingService::update(
+                $this->channelGrants->ensureSelfGrant($context, ExternalTenantResolver::WECHAT_PAYMENT);
+                $this->bindings->update(
                     $context,
                     ExternalTenantResolver::ALIPAY_PAYMENT,
                     $data,
                     trim((string)$data['ali_pay_app_id']) !== '' && trim((string)$data['ali_pay_seller_id']) !== ''
                         ? (string)$data['ali_pay_app_id'] . ':' . (string)$data['ali_pay_seller_id'] : '',
                 );
-                PaymentChannelGrantService::ensureSelfGrant($context, ExternalTenantResolver::ALIPAY_PAYMENT);
-            });
-            return true;
-        } catch (\Throwable $e) {
-            return self::fail($e);
-        }
+                $this->channelGrants->ensureSelfGrant($context, ExternalTenantResolver::ALIPAY_PAYMENT);
+        });
+        return true;
     }
 
     private static function assertUsable(array $data): void
@@ -114,17 +115,17 @@ class PayConfigApplicationService extends ApplicationService
         if ((int)$data['wx_pay_status'] === 1) {
             foreach (['wx_pay_appid', 'wx_pay_mch_id', 'wx_pay_secret', 'wx_pay_cert_path', 'wx_pay_cert_key_path', 'wx_pay_platform_cert_path'] as $field) {
                 if (trim((string)$data[$field]) === '') {
-                    throw new \RuntimeException('启用微信支付前请完整填写 AppID、商户号、密钥和证书');
+                    throw BusinessException::invalid('PAYMENT_WECHAT_CONFIG_INCOMPLETE', '启用微信支付前请完整填写 AppID、商户号、密钥和证书');
                 }
             }
             if (strlen((string)$data['wx_pay_secret']) !== 32) {
-                throw new \RuntimeException('微信支付 APIv3 密钥必须为 32 字节');
+                throw BusinessException::invalid('PAYMENT_WECHAT_SECRET_INVALID', '微信支付 APIv3 密钥必须为 32 字节');
             }
         }
         if ((int)$data['ali_pay_status'] === 1) {
             foreach (['ali_pay_app_id', 'ali_pay_private_key', 'ali_pay_public_key', 'ali_pay_seller_id'] as $field) {
                 if (trim((string)$data[$field]) === '') {
-                    throw new \RuntimeException('启用支付宝前请完整填写应用和密钥配置');
+                    throw BusinessException::invalid('PAYMENT_ALIPAY_CONFIG_INCOMPLETE', '启用支付宝前请完整填写应用和密钥配置');
                 }
             }
         }

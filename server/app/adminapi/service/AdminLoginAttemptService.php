@@ -4,34 +4,38 @@ declare(strict_types=1);
 namespace app\adminapi\service;
 
 use app\common\service\runtime\ApplicationCache;
-use think\facade\Config;
 
 class AdminLoginAttemptService
 {
-    public static function isLocked(string $ip): bool
+    public function __construct(
+        private readonly int $configuredMaxAttempts,
+        private readonly int $configuredLockMinutes,
+    ) {}
+
+    public function isLocked(string $ip): bool
     {
-        return (int)ApplicationCache::get(self::cacheKey($ip), 0) >= self::maxAttempts();
+        return (int)ApplicationCache::get(self::cacheKey($ip), 0) >= $this->maxAttempts();
     }
 
-    public static function recordFailure(string $ip): int
+    public function recordFailure(string $ip): int
     {
         $key   = self::cacheKey($ip);
         $count = (int)ApplicationCache::get($key, 0) + 1;
-        ApplicationCache::set($key, $count, self::lockSeconds());
+        ApplicationCache::set($key, $count, $this->lockSeconds());
         return $count;
     }
 
-    public static function clear(string $ip): void
+    public function clear(string $ip): void
     {
         ApplicationCache::delete(self::cacheKey($ip));
     }
 
-    public static function lockedMessage(): string
+    public function lockedMessage(): string
     {
         return sprintf(
             '密码连续%d次输入错误，请%d分钟后重试',
-            self::maxAttempts(),
-            self::lockMinutes()
+            $this->maxAttempts(),
+            $this->lockMinutes()
         );
     }
 
@@ -40,18 +44,18 @@ class AdminLoginAttemptService
         return 'admin_login_fail_' . sha1($ip);
     }
 
-    private static function maxAttempts(): int
+    private function maxAttempts(): int
     {
-        return max(1, (int)Config::get('admin_auth.password_error_times', 5));
+        return max(1, $this->configuredMaxAttempts);
     }
 
-    private static function lockMinutes(): int
+    private function lockMinutes(): int
     {
-        return max(1, (int)Config::get('admin_auth.lock_minutes', 30));
+        return max(1, $this->configuredLockMinutes);
     }
 
-    private static function lockSeconds(): int
+    private function lockSeconds(): int
     {
-        return self::lockMinutes() * 60;
+        return $this->lockMinutes() * 60;
     }
 }

@@ -73,7 +73,7 @@ expectOpsHost(
     'oversized payload must fail closed to bounded metadata'
 );
 
-$info = app(SystemApplicationService::class)->getInfo();
+$info = app(SystemApplicationService::class)->getInfo('test-server');
 expectOpsHost(array_keys($info) === ['server', 'env', 'auth'], 'maintenance probe shape changed');
 expectOpsHost(($info['env'][0]['require'] ?? null) === '8.3版本以上', 'PHP requirement must match Composer');
 foreach ($info['auth'] as $directory) {
@@ -86,8 +86,8 @@ $encodedInfo = json_encode($info, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 expectOpsHost(!str_contains($encodedInfo, root_path()), 'maintenance probe must not expose absolute paths');
 
 $systemSource = (string)file_get_contents($serverRoot . '/app/adminapi/application/system/SystemApplicationService.php');
-$probeStart = strpos($systemSource, 'public static function getInfo');
-$probeEnd = strpos($systemSource, 'public static function clearCache');
+$probeStart = strpos($systemSource, 'public function getInfo');
+$probeEnd = strpos($systemSource, 'public function clearCache');
 expectOpsHost($probeStart !== false && $probeEnd !== false, 'maintenance probe source was not found');
 $probeSource = substr($systemSource, $probeStart, $probeEnd - $probeStart);
 foreach (['check_dir_write', 'file_put_contents', 'touch(', 'mkdir(', 'unlink(', 'del_target_dir', 'Cache::'] as $mutation) {
@@ -101,6 +101,8 @@ $logicSource = (string)file_get_contents($serverRoot . '/app/adminapi/applicatio
 $serviceSource = (string)file_get_contents($serverRoot . '/app/adminapi/service/OperationLogService.php');
 $auditHostSource = (string)file_get_contents($serverRoot . '/app/common/service/audit/AuditContractHost.php');
 $projectionSource = (string)file_get_contents($serverRoot . '/app/common/service/audit/OperationLogProjection.php');
+$repositorySource = (string)file_get_contents($serverRoot . '/app/common/service/audit/OperationLogTenantRepository.php');
+$diagnosticSource = (string)file_get_contents($serverRoot . '/app/platform/service/ops/PlatformDiagnosticBundleService.php');
 expectOpsHost(!str_contains($middlewareSource, 'OperationLog::create'), 'middleware must use the unique log service');
 expectOpsHost(!str_contains($logicSource, 'OperationLog::create'), 'clear must use the unique log service');
 expectOpsHost(str_contains($serviceSource, 'AuditContractHost'), 'log service must use the unified audit host');
@@ -109,7 +111,38 @@ expectOpsHost(
     substr_count($projectionSource, 'OperationLogTenantRepository::createForTenant') === 1,
     'operation log projection must be the unique OperationLog writer'
 );
-expectOpsHost(str_contains($logicSource, 'Db::transaction'), 'log clear must be transactional');
+expectOpsHost(
+    str_contains($auditHostSource, 'beginTransaction()')
+        && str_contains($auditHostSource, 'commit()')
+        && str_contains($auditHostSource, 'rollBack()'),
+    'Operation Log projections must share one transaction boundary',
+);
+expectOpsHost(
+    substr_count($repositorySource, 'OperationLog::create') === 1
+        && !str_contains($projectionSource, 'OperationLog::create'),
+    'Operation Log owner contract must keep one production writer',
+);
+expectOpsHost(
+    str_contains($diagnosticSource, 'Package::READ_PERMISSION')
+        && str_contains($diagnosticSource, 'Package::LOGS_PERMISSION'),
+    'diagnostic Operation Log evidence bypassed existing Platform permissions',
+);
+$evidenceStart = strpos($diagnosticSource, 'private function operationLogEvidence');
+$evidenceEnd = strpos($diagnosticSource, 'private function instant', (int)$evidenceStart);
+expectOpsHost($evidenceStart !== false && $evidenceEnd !== false, 'diagnostic Operation Log evidence source was not found');
+$evidenceSource = substr($diagnosticSource, $evidenceStart, $evidenceEnd - $evidenceStart);
+foreach (['tenant_id', 'request_id', 'operation_id', 'action', 'outcome', 'reason_code', 'target_resource_id', 'occurred_at'] as $field) {
+    expectOpsHost(str_contains($evidenceSource, $field), 'diagnostic Operation Log evidence lost: ' . $field);
+}
+foreach (['metadata_json', 'params', 'username', 'admin_id', 'ip_address', 'actor_'] as $field) {
+    expectOpsHost(!str_contains($evidenceSource, $field), 'diagnostic Operation Log evidence exposes: ' . $field);
+}
+expectOpsHost(
+    str_contains($diagnosticSource, "'operation_logs' => [")
+        && str_contains($diagnosticSource, "'items' => \$this->operationLogEvidence(\$since)"),
+    'diagnostic bundle does not include Operation Log evidence',
+);
+expectOpsHost(str_contains($logicSource, '$this->transactions->run('), 'log clear must be transactional');
 expectOpsHost(str_contains($logicSource, "'log/clear'"), 'log clear must retain an audit tombstone');
 expectOpsHost(!str_contains($serviceSource, 'PeanutAdmin\\OpsConsole'), 'application log owner must not deep import core');
 

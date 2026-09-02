@@ -9,8 +9,8 @@ use app\common\dto\authorization\PermissionDecision;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use app\common\service\DemoAccountPolicy;
-use app\common\execution\ExecutionContext;
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\AdminExecutionContext;
+use app\common\execution\CurrentExecutionContext;
 
 /**
  * 权限中间件（原生 TP 风格）
@@ -21,27 +21,34 @@ use app\common\execution\ExecutionContextAccess;
  */
 class AuthMiddleware
 {
+    public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
+        private readonly AdminAuthorizationService $authorization,
+        private readonly AdminApiAccessRegistry $accessRegistry,
+        private readonly DemoAccountPolicy $demoAccounts,
+    ) {}
+
     public function handle($request, \Closure $next)
     {
-        $current = ExecutionContextAccess::current();
-        $adminInfo = $current?->actorType === ExecutionContext::TENANT_ADMIN
-            ? ExecutionContextAccess::principal()
+        $current = $this->executionContext->current();
+        $adminInfo = $current instanceof AdminExecutionContext
+            ? $this->executionContext->tenantAdminPrincipal()
             : null;
         if (empty($adminInfo)) {
             throw \app\common\http\ApiProblem::fromEnvelope('请先登录', null, 40100);
         }
 
-        $path = strtolower(trim($request->pathinfo(), '/'));
-        if (AdminApiAccessRegistry::isAuthenticatedOnly((string)$request->method(), $path)) {
+        $path = 'adminapi/' . strtolower(trim($request->pathinfo(), '/'));
+        if ($this->accessRegistry->isAuthenticatedOnly((string)$request->method(), $path)) {
             return $next($request);
         }
 
-        // 权限字符使用 api/admin/ 之后的精确路径，不做 URI alias 展开。
-        $accessUri = preg_replace('#^api/admin/#', '', $path);
+        // 权限字符使用 adminapi/ 之后的精确路径，不做 URI alias 展开。
+        $accessUri = substr($path, strlen('adminapi/'));
 
-        $tenantContext = $current?->scope;
+        $tenantContext = $current instanceof AdminExecutionContext ? $current->tenant : null;
         $decision = $tenantContext instanceof \PeanutAdmin\Kernel\Auth\TenantContext
-            ? (new AdminAuthorizationService())->decide(
+            ? $this->authorization->decide(
                 $tenantContext,
                 AdminPrincipal::fromArray($adminInfo),
                 $accessUri,
@@ -52,7 +59,7 @@ class AuthMiddleware
         }
 
         if (in_array(strtoupper((string)$request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)
-            && DemoAccountPolicy::mutationLocked($adminInfo, $accessUri)) {
+            && $this->demoAccounts->mutationLocked($adminInfo, $accessUri)) {
             throw \app\common\http\ApiProblem::fromEnvelope('演示账号已锁定关键配置和权限操作', null, 40300);
         }
 

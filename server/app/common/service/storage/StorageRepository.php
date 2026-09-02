@@ -3,18 +3,10 @@ declare(strict_types=1);
 namespace app\common\service\storage;
 
 use PDO;
-use think\facade\Db;
 
 final readonly class StorageRepository
 {
     public function __construct(private PDO $pdo) {}
-
-    public static function fromDefaultConnection(): self
-    {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) throw new \RuntimeException('存储数据库不可用');
-        return new self($pdo);
-    }
 
     public function pdo(): PDO { return $this->pdo; }
 

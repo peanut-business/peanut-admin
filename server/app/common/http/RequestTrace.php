@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http;
 
-use app\common\execution\ExecutionContextAccess;
+use app\common\execution\CurrentExecutionContext;
 
 /** One stable request ID without mutating the framework Request object. */
 final class RequestTrace
@@ -11,7 +11,11 @@ final class RequestTrace
     /** @var \WeakMap<object,string>|null */
     private static ?\WeakMap $requestIds = null;
 
-    public static function id(object $request, string $prefix = 'http'): string
+    public static function id(
+        CurrentExecutionContext $executionContext,
+        object $request,
+        string $prefix = 'http',
+    ): string
     {
         $candidate = method_exists($request, 'header')
             ? trim((string)$request->header('X-Request-Id', ''))
@@ -21,12 +25,12 @@ final class RequestTrace
         }
 
         try {
-            $current = ExecutionContextAccess::current();
+            $current = $executionContext->current();
         } catch (\Throwable) {
             $current = null;
         }
         if ($current !== null) {
-            return self::remember($request, $current->requestId);
+            return self::remember($request, $current->requestId());
         }
 
         $known = self::map()[$request] ?? null;

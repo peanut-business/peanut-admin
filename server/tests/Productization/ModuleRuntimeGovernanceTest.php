@@ -81,7 +81,13 @@ $password = getenv('DB_PASS') ?: '';
 moduleGovernanceExpect($host !== '' && $port !== '' && $database !== '' && $user !== '', 'registered database environment is required');
 $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false]);
 moduleGovernanceExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'governance test database must start empty');
-initializeCoreIdentity($pdo, 'module-governance@example.test', 'module-governance-test-password', null);
+initializeCoreIdentity(
+    $pdo,
+    'module-governance@example.test',
+    'module-governance-test-password',
+    null,
+    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+);
 executeSqlFiles($pdo, [dirname(__DIR__, 2) . '/database/init.sql']);
 
 $sourceRoot = dirname(__DIR__, 3);

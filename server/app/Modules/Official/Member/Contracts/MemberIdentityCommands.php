@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Contracts;
 
-use app\Modules\Official\Member\Model\Member;
-use app\common\service\member\AuthenticatedMemberContext;
+use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -13,14 +13,14 @@ interface MemberIdentityCommands
     public function register(TenantSystemContext $context, string $account, string $password, string $avatar): void;
 
     /** @throws \RuntimeException when the identity is absent, disabled, or the password is invalid. */
-    public function login(TenantSystemContext $context, string $identifier, string $password, string $loginIp): Member;
+    public function login(TenantSystemContext $context, string $identifier, string $password, string $loginIp): MemberIdentitySnapshot;
 
     public function loginByVerifiedMobile(
         TenantContext|TenantSystemContext $context,
         string $mobile,
         string $avatar,
         string $loginIp,
-    ): Member;
+    ): MemberIdentitySnapshot;
 
     public function resetPasswordByVerifiedMobile(
         TenantContext|TenantSystemContext $context,
@@ -43,7 +43,7 @@ interface MemberIdentityCommands
     public function bindVerifiedMobile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, int $memberId, string $mobile): void;
 
     /** Creates a passwordless OAuth identity. The OAuth caller owns its outer transaction. */
-    public function createOAuthMember(TenantContext|TenantSystemContext $context, array $profile): Member;
+    public function createOAuthMember(TenantContext|TenantSystemContext $context, array $profile): MemberIdentitySnapshot;
 
     /** The OAuth caller owns its outer transaction. */
     public function recordLogin(TenantContext|TenantSystemContext $context, int $memberId, string $loginIp): void;

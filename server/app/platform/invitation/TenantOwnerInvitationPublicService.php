@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
-use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Identity\AccountStatus;
 use PeanutAdmin\Kernel\Identity\CredentialStatus;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
@@ -23,19 +23,15 @@ final class TenantOwnerInvitationPublicService
 {
     private const OWNER_ROLE = 'core.tenant-owner';
 
-    private PdoTransactionManager $transactions;
-    private PdoIdentityRepository $identity;
-    private MembershipRepository $memberships;
-    private AuditContractHost $audit;
-    private PasswordHasher $passwords;
-
-    public function __construct(private readonly PDO $pdo)
-    {
-        $this->transactions = new PdoTransactionManager($pdo);
-        $this->identity = new PdoIdentityRepository($pdo);
-        $this->memberships = new PdoMembershipRepository($pdo);
-        $this->audit = AuditContractHost::fromPdo($pdo);
-        $this->passwords = ApplicationPasswordPolicy::hasher();
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly PdoTransactionManager $transactions,
+        private readonly PdoIdentityRepository $identity,
+        private readonly MembershipRepository $memberships,
+        private readonly ApplicationTenantBootstrapService $applicationBootstrap,
+        private readonly AuditContractHost $audit,
+        private readonly PasswordHasher $passwords,
+    ) {
     }
 
     /** @return array<string,mixed> */
@@ -148,7 +144,7 @@ final class TenantOwnerInvitationPublicService
                 return ['_error' => 'TENANT_MEMBER_INACTIVE'];
             }
             $this->memberships->assignRole($tenantId, $member->id, $role->id);
-            (new ApplicationTenantBootstrapService($this->pdo))->provision(
+            $this->applicationBootstrap->provision(
                 $tenantId,
                 $member->id,
                 $role->id,
@@ -177,12 +173,14 @@ SQL);
                     'Invitation acceptance lost its concurrency guard.'
                 );
             }
-            $this->audit->appendTenantSystem(
+            $this->audit->recordTenantSystem(
                 $tenantId,
                 'tenant.owner-invitation.accepted',
                 'platform.tenant.provision-owner',
                 'owner-invitation:' . (int)$invitation['id'],
-                ['invitation_id' => (int)$invitation['id'], 'member_id' => $member->id]
+                ['invitation_id' => (int)$invitation['id'], 'member_id' => $member->id],
+                AuditOutcome::Success,
+                null,
             );
 
             return [

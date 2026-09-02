@@ -33,7 +33,7 @@
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
 const userStore = useUserStore()
-const apiBase = useRuntimeConfig().public.apiBase
+const request = useRequest()
 const loading = ref(false)
 
 interface UserInfo {
@@ -41,31 +41,24 @@ interface UserInfo {
   birthday: string; email: string; mobile: string
 }
 
-const { data } = await useFetch<{ code: number; data: UserInfo }>(
-  `${apiBase}/api/user/info`,
-  { headers: { Authorization: `Bearer ${userStore.token}` } }
-)
+const data = await request.get<UserInfo>('api/user/info')
 
 const form = ref({
-  nickname: data.value?.data?.nickname || '',
-  avatar: data.value?.data?.avatar || '',
-  sex: data.value?.data?.sex || 0,
-  birthday: data.value?.data?.birthday || '',
-  email: data.value?.data?.email || '',
+  nickname: data?.nickname || '',
+  avatar: data?.avatar || '',
+  sex: data?.sex || 0,
+  birthday: data?.birthday || '',
+  email: data?.email || '',
 })
 
 async function handleSave() {
   loading.value = true
   try {
-    await $fetch(`${apiBase}/api/user/setInfo`, {
-      method: 'POST',
-      body: { ...form.value },
-      headers: { Authorization: `Bearer ${userStore.token}` },
-    })
+    await request.post('api/user/setInfo', { ...form.value })
     userStore.setUserInfo({ nickname: form.value.nickname, avatar: form.value.avatar })
     ElMessage.success('保存成功')
   } catch {
-    ElMessage.error('保存失败')
+    // useRequest already reports the server message.
   } finally {
     loading.value = false
   }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 $serverDir = dirname(__DIR__, 2);
 $runtimeFiles = [
     'app/adminapi',
+    'app/common/service/authorization',
+    'app/common/service/org/AdminDirectoryQuery.php',
     'app/platform/service/PdoTenantOwnerAdminProvisioner.php',
     'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
 ];

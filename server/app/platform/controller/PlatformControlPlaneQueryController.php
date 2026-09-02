@@ -3,14 +3,23 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
-use app\common\service\JsonService;
-use app\platform\invitation\PlatformInvitationRuntimeFactory;
+use app\platform\query\PlatformControlPlaneQueryService;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
+use think\App;
 
 final class PlatformControlPlaneQueryController extends BasePlatformController
 {
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $execution,
+        private readonly PlatformControlPlaneQueryService $queries,
+    ) {
+        parent::__construct($app, $execution);
+    }
+
     public function operators()
     {
         return $this->listQuery('operators');
@@ -41,14 +50,10 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
         if ($this->platformContext === null) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
-        try {
-            return $this->data(PlatformInvitationRuntimeFactory::queries()->owner(
-                $this->platformContext,
-                $this->positiveInteger($this->request->get('tenant_id'))
-            ));
-        } catch (AdminAccessException $exception) {
-            return $this->failure($exception);
-        }
+        return $this->data($this->queries->owner(
+            $this->platformContext,
+            $this->positiveInteger($this->request->get('tenant_id'))
+        ));
     }
 
     private function listQuery(string $method)
@@ -56,21 +61,17 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
         if ($this->platformContext === null) {
             throw \app\common\http\ApiProblem::fromEnvelope('Platform authentication is required.', null, 40100);
         }
-        try {
-            $page = $this->positiveInteger($this->request->get('page', 1));
-            $pageSize = $this->positiveInteger($this->request->get('page_size', 20));
-            if ($pageSize > 100) {
-                throw AdminAccessException::invalid('PAGE_SIZE_INVALID', 'Page size must be at most 100.');
-            }
-            $request = new PageRequest($page, $pageSize);
-            $query = PlatformInvitationRuntimeFactory::queries();
-            $result = $method === 'moduleStates'
-                ? $query->moduleStates($this->platformContext, $this->positiveInteger($this->request->get('tenant_id')), $request)
-                : $query->{$method}($this->platformContext, $request);
-            return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
-        } catch (AdminAccessException $exception) {
-            return $this->failure($exception);
+        $page = $this->positiveInteger($this->request->get('page', 1));
+        $pageSize = $this->positiveInteger($this->request->get('page_size', 20));
+        if ($pageSize > 100) {
+            throw AdminAccessException::invalid('PAGE_SIZE_INVALID', 'Page size must be at most 100.');
         }
+        $request = new PageRequest($page, $pageSize);
+        $query = $this->queries;
+        $result = $method === 'moduleStates'
+            ? $query->moduleStates($this->platformContext, $this->positiveInteger($this->request->get('tenant_id')), $request)
+            : $query->{$method}($this->platformContext, $request);
+        return $this->dataLists(new PageResult($result['items'], $result['total'], $page, $pageSize));
     }
 
     private function positiveInteger(mixed $value): int
@@ -82,12 +83,4 @@ final class PlatformControlPlaneQueryController extends BasePlatformController
         return (int)$candidate;
     }
 
-    private function failure(AdminAccessException $exception)
-    {
-        throw \app\common\http\ApiProblem::fromEnvelope(
-            $exception->getMessage(),
-            ['error_code' => $exception->errorCode],
-            $exception->httpStatus * 100
-        );
-    }
 }

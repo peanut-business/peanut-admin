@@ -117,6 +117,28 @@
         "cleanup_responsibility": "Spike owner removes only /private/tmp/peanut-admin-editor-spike-pnpm-store after verification"
       },
       {
+        "stable_resource_id": "peanut-admin-host-node24-npm-development",
+        "purpose": "locked Platform dependency installation and local static verification",
+        "environments": ["development"],
+        "owner": "Peanut Admin project",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/Users/xing/.nvm/versions/node/v24.13.0/bin",
+        "service_type": "Node.js and npm CLI",
+        "version": "Node 24.13.0; npm 11.6.2",
+        "node_command": "/Users/xing/.nvm/versions/node/v24.13.0/bin/node",
+        "npm_command": "/Users/xing/.nvm/versions/node/v24.13.0/bin/npm",
+        "credential_ref": null,
+        "data_source": "platform/package-lock.json and the public peanut-admin-npm-registry",
+        "freshness_requirement": "verify the exact binaries, then run npm ci from the Platform directory; a lock mismatch or registry failure blocks instead of reusing another worktree's node_modules",
+        "health_check": "/Users/xing/.nvm/versions/node/v24.13.0/bin/node --version reports v24.13.0 and /Users/xing/.nvm/versions/node/v24.13.0/bin/npm --version reports 11.6.2",
+        "fallback": "none",
+        "lifecycle": "persistent owner-managed toolchain; dependencies remain worktree-local",
+        "cleanup_responsibility": "the task owner removes only its worktree-local platform/node_modules when cleanup is required"
+      },
+      {
         "stable_resource_id": "peanut-admin-core-alpha11-pnpm-store",
         "purpose": "offline pnpm dependency content store for the fixed Peanut Admin Core Alpha.11 candidate",
         "environments": ["qualification"],

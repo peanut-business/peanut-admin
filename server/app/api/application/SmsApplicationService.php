@@ -3,33 +3,33 @@ declare(strict_types=1);
 
 namespace app\api\application;
 
-use app\Modules\Official\Notification\ModuleProvider;
-use app\Modules\Official\Member\ModuleProvider as MemberModuleProvider;
+use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
+use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\application\ApplicationService;
+use app\common\application\BusinessException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
-class SmsApplicationService extends ApplicationService
+class SmsApplicationService
 {
+    public function __construct(
+        private readonly MemberIdentityCommands $memberIdentities,
+        private readonly VerificationCodeCommands $verificationCodes,
+    ) {
+    }
+
     public function sendCode(TenantContext|TenantSystemContext $context, array $params): bool
     {
         $scene = (string) $params['scene'];
         $mobile = (string) $params['mobile'];
 
         if ($scene === NoticeSceneEnum::RESET_PASSWORD) {
-            try {
-                (new MemberModuleProvider())->identityCommands()->assertMobileBound($context, $mobile);
-            } catch (\Throwable $e) {
-                self::setError($e->getMessage());
-                return false;
-            }
+            $this->memberIdentities->assertMobileBound($context, $mobile);
         }
 
-        $result = (new ModuleProvider())->verification()->sendCode($context, $scene, $mobile);
+        $result = $this->verificationCodes->sendCode($context, $scene, $mobile);
         if (!$result->success) {
-            self::setError($result->error);
-            return false;
+            throw BusinessException::conflict('VERIFICATION_CODE_SEND_REJECTED', $result->error);
         }
         return true;
     }

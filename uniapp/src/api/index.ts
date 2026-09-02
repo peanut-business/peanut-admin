@@ -41,16 +41,15 @@ export interface PolicyData {
 
 export interface Article {
   id: number
-  cate_id: number
-  cate_name: string
+  cid: number
+  cate_name?: string
   title: string
   image: string
   desc: string
-  author: string
-  click_num: number
-  click?: number
-  collect_num: number
+  author?: string
+  click: number
   create_time: string
+  collect?: boolean
 }
 
 export interface IndexData {

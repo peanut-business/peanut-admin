@@ -22,14 +22,17 @@ final class PaymentServiceFactory
     private array $config;
     private PaymentTransportInterface $transport;
 
-    /** Tenant binding supplies config; tests may supply a fake transport. */
-    public function __construct(array $config, ?PaymentTransportInterface $transport = null)
+    public function __construct(
+        private readonly ExternalTenantResolver $externalTenants,
+        array $config = [],
+        ?PaymentTransportInterface $transport = null,
+    )
     {
         $this->config = $config;
         $this->transport = $transport ?? new CurlPaymentTransport();
     }
 
-    public static function forTenant(
+    public function forTenant(
         object $context,
         string $channel,
         ?PaymentTransportInterface $transport = null,
@@ -39,8 +42,13 @@ final class PaymentServiceFactory
             'alipay' => ExternalTenantResolver::ALIPAY_PAYMENT,
             default => throw new \RuntimeException('支付渠道不受支持'),
         };
-        $binding = ExternalTenantResolver::production()->bindingForTenant($context, $provider);
-        return new self($binding->config, $transport);
+        $binding = $this->externalTenants->bindingForTenant($context, $provider);
+        return $this->forConfig($binding->config, $transport);
+    }
+
+    public function forConfig(array $config, ?PaymentTransportInterface $transport = null): self
+    {
+        return new self($this->externalTenants, $config, $transport);
     }
 
     public function prepay(string $channel): PrepayGatewayInterface

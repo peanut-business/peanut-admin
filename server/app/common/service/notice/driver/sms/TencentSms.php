@@ -5,7 +5,6 @@ namespace app\common\service\notice\driver\sms;
 
 use app\common\service\http\OutboundHttpRequest;
 use app\common\service\http\OutboundHttpTransport;
-use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
 
 /**
  * 腾讯云短信驱动（TC3-HMAC-SHA256 签名）
@@ -14,7 +13,7 @@ use PeanutAdmin\NotificationSms\Sms\TemplateSmsDriver;
  * 配置由当前 Tenant 的 notice.sms external binding 提供：
  *   secret_id, secret_key, sdk_app_id, sign_name, region
  */
-final class TencentSms extends TemplateSmsDriver
+final class TencentSms implements SmsDriver
 {
     private string $secretId;
     private string $secretKey;
@@ -31,7 +30,7 @@ final class TencentSms extends TemplateSmsDriver
         $this->region    = (string) ($config['region']     ?? 'ap-guangzhou');
     }
 
-    public function send(string $mobile, string $templateCode, array $vars): bool
+    public function send(string $mobile, string $templateCode, array $vars): SmsDriverResult
     {
         $service   = 'sms';
         $host      = 'sms.tencentcloudapi.com';
@@ -92,21 +91,23 @@ final class TencentSms extends TemplateSmsDriver
         $resp = $response->body;
 
         $data = json_decode((string) $resp, true);
-        $this->result = is_array($data) ? $data : ['raw' => (string) $resp];
+        $receipt = is_array($data) ? $data : ['raw' => (string)$resp];
         $result = $data['Response'] ?? [];
         if (isset($result['Error'])) {
-            $this->error = ($result['Error']['Code'] ?? '') . ': ' . ($result['Error']['Message'] ?? '');
-            return false;
+            return new SmsDriverResult(
+                false,
+                (string)($result['Error']['Code'] ?? '') . ': ' . (string)($result['Error']['Message'] ?? ''),
+                $receipt,
+            );
         }
 
         $sendStatusSet = $result['SendStatusSet'] ?? [];
         foreach ($sendStatusSet as $status) {
             if (($status['Code'] ?? '') !== 'Ok') {
-                $this->error = $status['Message'] ?? '发送失败';
-                return false;
+                return new SmsDriverResult(false, (string)($status['Message'] ?? '发送失败'), $receipt);
             }
         }
 
-        return true;
+        return new SmsDriverResult(true, '', $receipt);
     }
 }

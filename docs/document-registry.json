@@ -822,6 +822,173 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-application-module-blueprint-index",
+      "path": "docs/architecture/application-module-blueprint/README.md",
+      "title": "Peanut Admin Application 与 Module 永久架构蓝图",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "index",
+      "authority": "accepted-target",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/route/app.php",
+        "server/app/AppService.php",
+        "server/app/Modules/",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "application-boundary",
+        "module-boundary"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-application-module-blueprint-reference-research",
+      "path": "docs/architecture/application-module-blueprint/reference-research.md",
+      "title": "主流后台脚手架源码研究与第一性原理",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "reference",
+      "authority": "pinned-source-research",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/app/",
+        "server/route/"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "application-boundary",
+        "module-boundary"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-application-module-blueprint-target-architecture",
+      "path": "docs/architecture/application-module-blueprint/target-architecture.md",
+      "title": "目标架构与完整执行流程",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "accepted-target",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/config/app.php",
+        "server/route/",
+        "server/app/AppService.php",
+        "server/app/Modules/",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "application-boundary",
+        "module-boundary",
+        "execution-context"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-application-module-blueprint-module-conventions",
+      "path": "docs/architecture/application-module-blueprint/module-conventions.md",
+      "title": "目录、调用与依赖规范",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "accepted-target",
+      "canonical_sources": [
+        "server/app/Modules/",
+        "server/app/AppService.php",
+        "server/composer.json",
+        "resources/service-registry.json"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "module-boundary",
+        "service-contracts",
+        "dependency-policy"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-application-module-blueprint-adoption-roadmap",
+      "path": "docs/architecture/application-module-blueprint/adoption-roadmap.md",
+      "title": "现状差距与一次收敛路线",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "accepted-target-plan",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/config/app.php",
+        "server/route/",
+        "server/app/AppService.php",
+        "server/app/Modules/",
+        "docs/document-impact-map.json"
+      ],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "application-boundary",
+        "module-boundary",
+        "migration-plan"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-consumer-module-lifecycle-contract",
       "path": "docs/architecture/consumer-module-lifecycle-contract.md",
       "title": "可消费 Module Package 生命周期合同",
@@ -903,7 +1070,7 @@
         "repo://peanut-admin-core/"
       ],
       "owner": "architecture",
-      "status": "planned",
+      "status": "deprecated",
       "scope": [
         "application"
       ],
@@ -914,7 +1081,7 @@
         "pa-docs-site-releases",
         "pa-docs-site-guide-deployment-upgrade"
       ],
-      "replaced_by": null,
+      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -965,7 +1132,7 @@
         "scripts/package-release.sh"
       ],
       "owner": "architecture",
-      "status": "planned",
+      "status": "deprecated",
       "scope": [
         "application"
       ],
@@ -975,7 +1142,7 @@
       "site_projections": [
         "pa-docs-site-guide-module-development"
       ],
-      "replaced_by": null,
+      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -993,7 +1160,7 @@
         "AGENTS.md"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "deprecated",
       "scope": [
         "application"
       ],
@@ -1004,7 +1171,7 @@
         "pa-docs-site-releases",
         "pa-docs-site-guide-deployment-upgrade"
       ],
-      "replaced_by": null,
+      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -1019,6 +1186,7 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
+        "server/app/common/execution/",
         "server/app/Modules/",
         "resources/service-registry.json",
         "repo://peanut-admin-core/packages/php/"
@@ -1138,7 +1306,7 @@
         "AGENTS.md"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "deprecated",
       "scope": [
         "application"
       ],
@@ -1146,7 +1314,7 @@
         "documentation"
       ],
       "site_projections": [],
-      "replaced_by": null,
+      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
       "validation": "./scripts/docs-governance check"
     },
     {

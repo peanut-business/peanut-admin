@@ -7,7 +7,7 @@
         v-for="item in articles"
         :key="item.id"
         class="flex gap-4 p-4 border border-gray-100 rounded-xl hover:border-primary/30 transition-colors cursor-pointer"
-        @click="$router.push(`/information/detail/${item.article_id}`)"
+        @click="$router.push(`/information/detail/${item.id}`)"
       >
         <img :src="item.image" class="w-24 h-20 rounded-lg object-cover shrink-0" />
         <div class="flex-1 min-w-0">
@@ -31,26 +31,25 @@
 </template>
 
 <script setup lang="ts">
+import {
+  getArticleCollections,
+  type ArticleCollectionItem,
+} from '~/api/article'
+
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
-const userStore = useUserStore()
-const apiBase = useRuntimeConfig().public.apiBase
+const request = useRequest()
 const pageNo = ref(1)
 const pageSize = 12
 
-interface CollectItem { id: number; article_id: number; title: string; image: string; desc: string }
-
-const articles = ref<CollectItem[]>([])
+const articles = ref<ArticleCollectionItem[]>([])
 const total = ref(0)
 
 await loadCollections()
 
 async function loadCollections() {
-  const res = await $fetch<{ code: number; data: { lists: CollectItem[]; count: number } }>(
-    `${apiBase}/api/article/collect?page_no=${pageNo.value}&page_size=${pageSize}`,
-    { headers: { Authorization: `Bearer ${userStore.token}` } }
-  )
-  articles.value = res.data?.lists || []
-  total.value = res.data?.count || 0
+  const data = await getArticleCollections(request, pageNo.value, pageSize)
+  articles.value = data?.lists || []
+  total.value = data?.count || 0
 }
 </script>

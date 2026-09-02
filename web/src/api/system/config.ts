@@ -26,11 +26,11 @@ export interface DemoLoginConfig {
 }
 
 export function getWebsiteConfig() {
-  return axios.get<WebsiteConfig>('/api/admin/config/website');
+  return axios.get<WebsiteConfig>('/adminapi/config/website');
 }
 
 export function saveWebsiteConfig(data: WebsiteConfig) {
-  return axios.post('/api/admin/config/website/save', data);
+  return axios.post('/adminapi/config/website/save', data);
 }
 
 export function getPublicBrandConfig() {

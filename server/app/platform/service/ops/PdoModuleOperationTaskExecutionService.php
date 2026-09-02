@@ -7,12 +7,14 @@ use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
+use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\OpsAuditEvent;
 use PeanutAdmin\OpsConsole\Task\OpsTaskSubmission;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use Throwable;
 use Closure;
 
@@ -31,14 +33,14 @@ final readonly class PdoModuleOperationTaskExecutionService
         'OPS_MODULE_WORKER_FAILED',
     ];
 
-    /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private PDO $pdo,
-        private string $projectRoot,
-        private array $moduleConfig,
-        private array $trustedKeys,
-        private ?string $registryPath = null,
-        private ?Closure $runtimeIdentity = null,
+        private AuditContractHost $audit,
+        private PdoOpsTaskDispatcher $tasks,
+        private PdoMaintenanceWindowStore $maintenance,
+        private DeploymentModuleRequestService $requests,
+        private BackupRestoreProviderRegistry $backupProviders,
+        private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
     ) {
     }
 
@@ -86,7 +88,7 @@ SQL);
                 'package_key' => $payload['package_key'],
                 'operation' => $payload['operation'],
                 'execution_revision' => $revision,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'execution_revision' => $revision,
@@ -176,7 +178,7 @@ SQL);
             $context = $this->context($task);
             $maintenanceKey = (string)$current['maintenance_key'];
             $maintenanceRevision = (int)$current['maintenance_revision'];
-            (new PdoMaintenanceWindowStore($this->pdo))->close(
+            $this->maintenance->close(
                 $context,
                 $maintenanceKey,
                 $maintenanceRevision,
@@ -217,7 +219,7 @@ SQL);
                 'package_key' => $payload['package_key'],
                 'operation' => $payload['operation'],
                 'recovery_pointer_sha256' => $pointerSha,
-            ]);
+            ], AuditOutcome::Success, null);
             return [
                 'task_key' => (string)$task['task_key'],
                 'status' => 'succeeded',
@@ -274,7 +276,7 @@ SQL);
                 'failed_step' => $execution['current_step'],
                 'error_code' => $errorCode,
                 'recovery_pointer_sha256' => $pointerSha,
-            ]);
+            ], AuditOutcome::Error, $errorCode);
             return [
                 'task_key' => $taskKey,
                 'status' => 'dead',
@@ -330,8 +332,8 @@ SQL);
                 throw new \RuntimeException('OPS_MODULE_STEP_INVALID');
             }
             $context = $this->context($task);
-            $provider = PlatformOpsRuntimeFactory::backupProviders()->require(PairedBackupProvider::PROVIDER_KEY);
-            $child = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($context, $this->childSubmission(
+            $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
+            $child = $this->tasks->dispatch($context, $this->childSubmission(
                 Package::BACKUP_TASK_TYPE,
                 $provider->backupHandlerKey,
                 ['provider_key' => $provider->key],
@@ -375,8 +377,8 @@ SQL);
             ) {
                 throw new \RuntimeException('OPS_MODULE_BACKUP_FAILED');
             }
-            $provider = PlatformOpsRuntimeFactory::backupProviders()->require(PairedBackupProvider::PROVIDER_KEY);
-            $restore = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($this->context($task), $this->childSubmission(
+            $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
+            $restore = $this->tasks->dispatch($this->context($task), $this->childSubmission(
                 Package::RESTORE_TASK_TYPE,
                 $provider->restoreHandlerKey,
                 [
@@ -469,7 +471,7 @@ SQL);
             );
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-open');
             $requestDigest = hash('sha256', $key . ':' . $window->startsAt . ':' . $window->endsAt);
-            $created = (new PdoMaintenanceWindowStore($this->pdo))->schedule(
+            $created = $this->maintenance->schedule(
                 $context,
                 $window,
                 0,
@@ -576,23 +578,17 @@ SQL);
 
     private function requestStore(): DeploymentModuleRequestService
     {
-        return new DeploymentModuleRequestService(
-            $this->pdo,
-            $this->projectRoot,
-            $this->moduleConfig,
-            $this->trustedKeys,
-            $this->registryPath,
-        );
+        return $this->requests;
     }
 
     /** @return array{commit:string,tree:string,health:string,repository_clean:bool} */
     private function runtime(PlatformContext $context): array
     {
-        if ($this->runtimeIdentity instanceof Closure) {
-            $identity = ($this->runtimeIdentity)($context);
+        if ($this->runtimeStatus instanceof Closure) {
+            $identity = ($this->runtimeStatus)($context);
             if (is_array($identity)) return $identity;
         }
-        $snapshot = (new ApplicationRuntimeStatusProvider($this->pdo, $this->projectRoot))->snapshot($context);
+        $snapshot = $this->runtimeStatus->snapshot($context);
         return [
             'commit' => $snapshot->commit,
             'tree' => $snapshot->tree,
@@ -600,6 +596,7 @@ SQL);
             'repository_clean' => $snapshot->repositoryClean,
         ];
     }
+
 
     private function failStaleRunningTasks(): void
     {
@@ -742,15 +739,24 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
     }
 
     /** @param array<string,mixed> $task @param array<string,mixed> $metadata */
-    private function audit(array $task, string $eventType, string $action, array $metadata): void
+    private function audit(
+        array $task,
+        string $eventType,
+        string $action,
+        array $metadata,
+        AuditOutcome $outcome,
+        ?string $reasonCode,
+    ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->appendPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             $action,
             'module-' . substr((string)$task['task_key'], 4),
             (int)$task['submitted_by_operator_id'],
             (int)$task['account_id'],
             $metadata,
+            $outcome,
+            $reasonCode,
         );
     }
 

@@ -5,7 +5,6 @@ namespace app\Modules\Official\ImportExport\Infrastructure\Authorization;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use app\common\service\authorization\AdminAuthorizationService;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Async\AsyncAuthorizationRevalidator;
@@ -18,7 +17,7 @@ use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 /** Revalidates queued Admin work through the native Tenant Admin authorization service. */
 final readonly class AdminAsyncAuthorization implements AsyncAuthorizationRevalidator
 {
-    public function __construct(private PDO $pdo)
+    public function __construct(private AdminAuthorizationService $authorization)
     {
     }
 
@@ -47,8 +46,7 @@ final readonly class AdminAsyncAuthorization implements AsyncAuthorizationRevali
                 new DateTimeImmutable('now', new DateTimeZone('UTC')),
                 1,
             ), $envelope->traceId);
-            $authorization = new AdminAuthorizationService($this->pdo);
-            $principal = $authorization->principal($context);
+            $principal = $this->authorization->principal($context);
             $context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
                 $envelope->memberId,
                 'async-' . hash('sha256', $envelope->operationId),
@@ -60,7 +58,7 @@ final readonly class AdminAsyncAuthorization implements AsyncAuthorizationRevali
                 $principal->authorizationRevision,
             ), $envelope->traceId);
 
-            return $authorization->authorizedOperation(
+            return $this->authorization->authorizedOperation(
                 $context,
                 $principal,
                 $envelope->resourceKey,

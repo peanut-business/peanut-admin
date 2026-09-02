@@ -154,7 +154,7 @@ SQL);
 
     $route = peanut_route_registry_source(dirname(__DIR__, 2));
     foreach (['login', 'select', 'switch', 'logout'] as $action) {
-        tenantHostExpect(str_contains($route, "api/tenant/session/{$action}"), "Tenant session {$action} route is missing");
+        tenantHostExpect(str_contains($route, "tenant/session/{$action}"), "Tenant session {$action} route is missing");
     }
 
     echo "MT04-TENANT-SESSION-HOST-001 passed\n";

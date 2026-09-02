@@ -18,6 +18,7 @@ This page answers “where must this fact be changed first?”. Explanations and
 | Consumer-ready delivery preflight policy | `resources/consumer-ready-control.json` and `scripts/consumer-ready-control` | `docs/operations/consumer-ready-control.md`; this internal control has no public-site projection |
 | Service ownership and maturity | `resources/service-registry.json` | `docs/architecture/service-layer-registry.md` |
 | Module identity, permissions and data owner | each Module's `module.json` | Module and architecture guides |
+| Target Application routing, source organization and cross-Module call rules | accepted architecture decision, `server/composer.json`, Application routes/providers and Module manifests | `docs/architecture/application-module-blueprint/`; its target status is not Runtime completion evidence |
 | Consumer Package lifecycle and delivery operation boundary | Package/Module manifests and locks, lifecycle services, maintenance/backup contracts and accepted consumer lifecycle decision | `docs/architecture/consumer-module-lifecycle-contract.md`; implementation status remains in `docs/plans/consumer-ready-product-plan.md` |
 | Schema and data shape | Core `KernelSchema`, `server/database/init.sql`, and additive migrations permitted by the current baseline | data and upgrade guides |
 | HTTP contract | route definitions and `docs/api/openapi.yaml` where covered | API reference and examples |

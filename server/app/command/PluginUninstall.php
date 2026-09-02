@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\execution\ContextualCommand;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 
-final class PluginUninstall extends ContextualCommand
+final class PluginUninstall extends DatabaseContextualCommand
 {
     use PluginCommandSupport;
 

@@ -250,8 +250,8 @@ SQL);
 
     $route = peanut_route_registry_source(dirname(__DIR__, 2));
     platformTenantReadExpect(
-        str_contains($route, "Route::get('api/platform/tenants'")
-            && str_contains($route, "Route::get('api/platform/tenants/detail'")
+        str_contains($route, "Route::get('tenants'")
+            && str_contains($route, "Route::get('tenants/detail'")
             && substr_count($route, "PlatformPermissionMiddleware::class, 'platform.tenant.read'") >= 3,
         'platform Tenant read routes are not guarded by the dedicated permission'
     );

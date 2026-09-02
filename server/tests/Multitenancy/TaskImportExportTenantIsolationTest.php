@@ -181,7 +181,7 @@ SQL);
     $alphaTenant = asyncTenantContext(101, 1001, 501, 'fresh-async-alpha-' . $runId);
     $betaTenant = asyncTenantContext(202, 1002, 502, 'fresh-async-beta-' . $runId);
     $noExportTenant = asyncTenantContext(101, 1003, 503, 'fresh-async-no-export-' . $runId);
-    $authorization = new AdminAuthorizationService($pdo);
+    $authorization = $app->make(AdminAuthorizationService::class);
     $alpha = $authorization->authorizedAsyncExport($alphaTenant, $authorization->principal($alphaTenant));
     $beta = $authorization->authorizedAsyncExport($betaTenant, $authorization->principal($betaTenant));
     try {
@@ -191,7 +191,7 @@ SQL);
         expectAsyncTenant($exception->getMessage() === 'ASYNC_EXPORT_PERMISSION_DENIED', 'native permission denial shape changed');
     }
 
-    $revalidator = new AdminAsyncAuthorization($pdo);
+    $revalidator = new AdminAsyncAuthorization($authorization);
     $validEnvelope = new VerifiedJobEnvelope(
         101,
         1001,
@@ -220,7 +220,17 @@ SQL);
 
     $runtime = new TaskImportExportRuntime(
         $pdo,
-        (new TaskModuleProvider())->jobs($pdo, $signingKey),
+        (new TaskModuleProvider())->jobs(
+            $pdo,
+            $signingKey,
+            app(\app\common\execution\ExecutionContextStore::class),
+            app(\app\common\execution\CurrentExecutionContext::class),
+            app(\app\common\service\org\AdminDirectoryQuery::class),
+            app(\app\common\service\module\ModuleExecutionBoundary::class),
+            app(\app\common\service\CrontabCommandService::class),
+            static fn(string $command, array $params): never => throw new LogicException('unexpected crontab dispatch'),
+            25,
+        ),
     );
     $taskDisabled = submitOperationLogExport($runtime, $alpha, 'task-disabled-' . $runId);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");

@@ -18,7 +18,9 @@ final readonly class PlatformUpgradeExecutionService
 
     public function __construct(
         private PDO $pdo,
+        private PdoOpsTaskDispatcher $tasks,
         private string $projectRoot,
+        private ApplicationRuntimeStatusProvider $runtimeStatus,
     ) {
     }
 
@@ -32,7 +34,7 @@ final readonly class PlatformUpgradeExecutionService
             throw OpsConsoleException::denied();
         }
 
-        $readiness = PlatformOpsRuntimeFactory::runtimeStatusProvider($this->pdo)
+        $readiness = $this->runtimeStatus
             ->upgradeReadiness($context);
         $sourceRuntime = is_array($readiness['source']['runtime'] ?? null)
             ? $readiness['source']['runtime']
@@ -60,7 +62,7 @@ final readonly class PlatformUpgradeExecutionService
             'target_descriptor_sha256' => $this->sha256($target['descriptor_sha256'] ?? null),
         ];
 
-        $row = (new PdoOpsTaskDispatcher($this->pdo))
+        $row = $this->tasks
             ->dispatchUpgrade($context, $payload, $idempotencyKey);
         return $this->taskProjection($row);
     }

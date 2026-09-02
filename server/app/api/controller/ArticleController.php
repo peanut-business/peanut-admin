@@ -4,19 +4,22 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use think\App;
+use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\ArticleApplicationService;
 use app\common\validate\ListsValidate;
-use app\common\service\article\ArticleTenantContext;
+use app\common\application\BusinessException;
+use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 
 class ArticleController extends BaseApiController
 {
-    public function __construct(App $app, private readonly ArticleApplicationService $articles)
-    {
-        parent::__construct($app);
+    public function __construct(
+        App $app,
+        CurrentExecutionContext $executionContext,
+        private readonly PublicArticleQueries $articles,
+    ) {
+        parent::__construct($app, $executionContext);
     }
 
-    public array $notNeedLogin = ['lists', 'cate', 'detail'];
 
     /** 文章列表 */
     public function lists()
@@ -30,7 +33,7 @@ class ArticleController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
 
-        ArticleTenantContext::read('article.lists');
+        $this->publicTenantContext('article.lists');
         $result = $this->articles->lists($params, $this->memberId);
         return $this->data($result);
     }
@@ -38,8 +41,8 @@ class ArticleController extends BaseApiController
     /** 文章分类 */
     public function cate()
     {
-        ArticleTenantContext::read('article.cate');
-        $result = $this->articles->cate();
+        $this->publicTenantContext('article.cate');
+        $result = $this->articles->categories();
         return $this->data($result);
     }
 
@@ -47,11 +50,11 @@ class ArticleController extends BaseApiController
     public function detail()
     {
         $id     = $this->request->get('id/d', 0);
-        ArticleTenantContext::read('article.detail');
+        $this->publicTenantContext('article.detail');
         $result = $this->articles->detail($id, $this->memberId);
 
         if ($result === []) {
-            return $this->fail('文章不存在或已下架');
+            throw BusinessException::notFound('ARTICLE_NOT_FOUND', '文章不存在或已下架');
         }
 
         return $this->data($result);
@@ -61,10 +64,8 @@ class ArticleController extends BaseApiController
     public function addCollect()
     {
         $id = $this->request->post('id/d', 0);
-        ArticleTenantContext::member();
-        if (!$this->articles->addCollect($id, $this->memberId)) {
-            return $this->fail($this->articles->getError());
-        }
+        $this->memberContext();
+        $this->articles->add($id, $this->memberId);
         return $this->success('操作成功');
     }
 
@@ -72,8 +73,8 @@ class ArticleController extends BaseApiController
     public function cancelCollect()
     {
         $id = $this->request->post('id/d', 0);
-        ArticleTenantContext::member();
-        $this->articles->cancelCollect($id, $this->memberId);
+        $this->memberContext();
+        $this->articles->cancel($id, $this->memberId);
         return $this->success('操作成功');
     }
 
@@ -86,8 +87,8 @@ class ArticleController extends BaseApiController
             'page_size' => $this->request->get('page_size/d', 15),
         ];
 
-        ArticleTenantContext::member();
-        $result = $this->articles->collectLists($this->memberId, $params);
+        $this->memberContext();
+        $result = $this->articles->collectionLists($this->memberId, $params);
         return $this->data($result);
     }
 }

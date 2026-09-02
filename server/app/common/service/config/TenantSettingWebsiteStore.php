@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\config;
 
 use app\common\contract\config\WebsiteConfigStore;
-use app\common\service\member\AuthenticatedMemberContext;
-use app\common\service\tenant\TenantSettingsRuntimeFactory;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
+use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Settings\Contract\WebsiteConfigStore as CoreWebsiteConfigStore;
@@ -14,12 +14,13 @@ final class TenantSettingWebsiteStore implements WebsiteConfigStore, CoreWebsite
 {
     public function __construct(
         private AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
+        private readonly TenantSettingService $settings,
     ) {
     }
 
     public function read(): array
     {
-        return TenantSettingsRuntimeFactory::service()->get(
+        return $this->settings->get(
             $this->context,
             'website',
             BrandDefaults::website(),
@@ -28,6 +29,6 @@ final class TenantSettingWebsiteStore implements WebsiteConfigStore, CoreWebsite
 
     public function replaceAtomically(array $values): void
     {
-        TenantSettingsRuntimeFactory::service()->replace($this->context, 'website', $values);
+        $this->settings->replace($this->context, 'website', $values);
     }
 }

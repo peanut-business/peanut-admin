@@ -3,19 +3,18 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
-use PDO;
-use app\common\execution\ContextualCommand;
+use app\common\service\audit\AuditContractHost;
+use app\platform\service\ops\PlatformOpsRuntimeFactory;
+use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use think\facade\Db;
 use Throwable;
 
 /** Deployment-control bridge for one fixed Module operation task. */
-final class OpsModuleTask extends ContextualCommand
+final class OpsModuleTask extends DatabaseContextualCommand
 {
     protected function configure(): void
     {
@@ -30,16 +29,19 @@ final class OpsModuleTask extends ContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = Db::connect()->connect();
-            if (!$pdo instanceof PDO) throw new \RuntimeException('OPS_MODULE_DATABASE_UNAVAILABLE');
+            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
-            $service = new PdoModuleOperationTaskExecutionService(
+            $trustedKeys = $this->trustedKeys();
+            $audit = AuditContractHost::fromPdo($pdo);
+            $runtime = new PlatformOpsRuntimeFactory(
                 $pdo,
+                $audit,
                 dirname(__DIR__, 3),
                 $config,
-                $this->trustedKeys(),
+                $trustedKeys,
             );
+            $service = $runtime->moduleTaskExecution();
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
                 'claim' => $service->claim(),

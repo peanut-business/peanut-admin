@@ -3,40 +3,38 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\config;
 
-use app\common\application\ApplicationService;
 use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\config\TenantSettingWebsiteStore;
 use app\common\service\config\WebsiteConfigService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
-class ConfigApplicationService extends ApplicationService
+class ConfigApplicationService
 {
+    public function __construct(
+        private readonly TenantApplicationSettingService $applicationSettings,
+        private readonly FileService $files,
+        private readonly RichTextResourceService $richText,
+        private readonly WebsiteConfigService $website,
+        private readonly string $defaultAvatar,
+    ) {
+    }
+
     public function getWebsite(AuthenticatedMemberContext|TenantContext $context): array
     {
-        return self::websiteService($context)->get();
+        return $this->website->get($context);
     }
 
     public function saveWebsite(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        self::websiteService($context)->save($params);
+        $this->website->save($context, $params);
         return true;
-    }
-
-    private static function websiteService(AuthenticatedMemberContext|TenantContext $context): WebsiteConfigService
-    {
-        return new WebsiteConfigService(
-            new TenantSettingWebsiteStore($context),
-            static fn(string $value): string => FileService::getFileUrl($value),
-            fn(string $value): string => FileService::setTenantFileUrl($context, $value),
-        );
     }
 
     public function getCopyright(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $value = TenantApplicationSettingService::copyright($context)['config'] ?? [];
+        $value = $this->applicationSettings->copyright($context)['config'] ?? [];
         if (is_array($value)) {
             return $value;
         }
@@ -45,18 +43,18 @@ class ConfigApplicationService extends ApplicationService
 
     public function saveCopyright(AuthenticatedMemberContext|TenantContext $context, array $params): bool
     {
-        TenantApplicationSettingService::replaceCopyright($context, ['config' => $params['config'] ?? []]);
+        $this->applicationSettings->replaceCopyright($context, ['config' => $params['config'] ?? []]);
         return true;
     }
 
     public function getAgreement(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $setting = TenantApplicationSettingService::agreement($context);
+        $setting = $this->applicationSettings->agreement($context);
         return [
             'service_title' => (string)$setting['service_title'],
-            'service_content' => RichTextResourceService::forRead((string)$setting['service_content']),
+            'service_content' => $this->richText->forRead((string)$setting['service_content']),
             'privacy_title' => (string)$setting['privacy_title'],
-            'privacy_content' => RichTextResourceService::forRead((string)$setting['privacy_content']),
+            'privacy_content' => $this->richText->forRead((string)$setting['privacy_content']),
         ];
     }
 
@@ -65,14 +63,14 @@ class ConfigApplicationService extends ApplicationService
         array $params,
     ): bool
     {
-        TenantApplicationSettingService::replaceAgreement($context, [
+        $this->applicationSettings->replaceAgreement($context, [
             'service_title' => trim((string)$params['service_title']),
-            'service_content' => RichTextResourceService::forStorage(
+            'service_content' => $this->richText->forStorage(
                 (string)$params['service_content'],
                 $context,
             ),
             'privacy_title' => trim((string)$params['privacy_title']),
-            'privacy_content' => RichTextResourceService::forStorage(
+            'privacy_content' => $this->richText->forStorage(
                 (string)$params['privacy_content'],
                 $context,
             ),
@@ -82,7 +80,7 @@ class ConfigApplicationService extends ApplicationService
 
     public function getStatistics(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $setting = TenantApplicationSettingService::statistics($context);
+        $setting = $this->applicationSettings->statistics($context);
         return ['clarity_code' => (string)$setting['clarity_code']];
     }
 
@@ -91,7 +89,7 @@ class ConfigApplicationService extends ApplicationService
         array $params,
     ): bool
     {
-        TenantApplicationSettingService::replaceStatistics($context, [
+        $this->applicationSettings->replaceStatistics($context, [
             'clarity_code' => trim((string)$params['clarity_code']),
         ]);
         return true;
@@ -99,11 +97,11 @@ class ConfigApplicationService extends ApplicationService
 
     public function getUser(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $setting = TenantApplicationSettingService::memberProfile($context);
+        $setting = $this->applicationSettings->memberProfile($context);
         $avatar = trim((string)$setting['user_avatar']);
         return [
-            'default_avatar' => FileService::getFileUrl(
-                $avatar !== '' ? $avatar : (string)config('project.default_image.user_avatar', '')
+            'default_avatar' => $this->files->getFileUrl(
+                $avatar !== '' ? $avatar : $this->defaultAvatar
             ),
         ];
     }
@@ -113,15 +111,15 @@ class ConfigApplicationService extends ApplicationService
         array $params,
     ): bool
     {
-        TenantApplicationSettingService::replaceMemberProfile($context, [
-            'user_avatar' => FileService::setTenantFileUrl($context, (string)$params['default_avatar']),
+        $this->applicationSettings->replaceMemberProfile($context, [
+            'user_avatar' => $this->files->setTenantFileUrl($context, (string)$params['default_avatar']),
         ]);
         return true;
     }
 
     public function getLogin(AuthenticatedMemberContext|TenantContext $context): array
     {
-        $setting = TenantApplicationSettingService::login($context);
+        $setting = $this->applicationSettings->login($context);
         return [
             'login_way' => $setting['login_way'],
             'coerce_mobile' => (int)$setting['coerce_mobile'],
@@ -138,7 +136,7 @@ class ConfigApplicationService extends ApplicationService
     {
         $loginWay = array_values(array_unique(array_map('intval', $params['login_way'])));
         sort($loginWay);
-        TenantApplicationSettingService::replaceLogin($context, [
+        $this->applicationSettings->replaceLogin($context, [
             'login_way' => $loginWay,
             'coerce_mobile' => (int)$params['coerce_mobile'],
             'login_agreement' => (int)$params['login_agreement'],

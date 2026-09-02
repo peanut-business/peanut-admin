@@ -41,13 +41,14 @@ Peanut Admin 的 HTTP API、两个公开运行包和 Host 覆盖共同构成扩�
 
 ## 路由前缀
 
-- `api/platform/*`：实例内 PlatformOperator 会话与 Tenant/Module 治理，使用独立 audience。
-- `api/tenant/session/*`：Core Tenant 会话登录、选择、切换和退出。
-- `api/admin/*`：管理端接口，统一经过登录、权限和操作日志中间件。
-- `api/*`：会员端公开接口和需要会员令牌的接口。
-- `api/payment/notify/*`、`api/wechat/official-account/callback`：第三方回调入口，进入后仍需按业务规则验签。
+- `/platformapi/*`：实例内 PlatformOperator 会话与 Tenant/Module 治理，使用独立 audience。
+- `/adminapi/tenant/session/*`：Core Tenant 会话登录、选择、切换和退出。
+- `/adminapi/*`：管理端接口，统一经过登录、权限和操作日志中间件。
+- `/installapi/*`：一次性安装状态与执行入口，安装完成后不承载日常业务。
+- `/api/*`：会员端公开接口和需要会员令牌的接口。
+- `/api/payment/notify/*`、`/api/wechat/official-account/callback`：第三方回调入口，进入后仍需按业务规则验签。
 
-登录路由不挂鉴权。管理端前端和其他客户端默认以 `/api` 作为后端前缀。
+登录路由不挂鉴权。各客户端直接使用对应 audience 前缀，不再把管理、Platform 或安装入口嵌在 `/api` 下。
 
 ## 认证
 
@@ -69,17 +70,17 @@ URL 或缓存自然过期。
 
 ## 权限标识
 
-管理端权限标识由请求路径去掉 `api/admin/` 得到。例如：
+管理端权限标识由请求路径去掉 `adminapi/` 得到。例如：
 
 ```text
-api/admin/menu/lists -> menu/lists
+adminapi/menu/lists -> menu/lists
 ```
 
 新增管理接口时，应同时登记路由、菜单和按钮/API 权限，并确认角色获得最小必要授权。权限不足时接口返回 `40300`，前端会隐藏没有权限的按钮。
 
 ### 首次运行准备清单
 
-`GET /api/admin/readiness/checklist` 是安装后生产准备清单的只读事实入口，对应权限
+`GET /adminapi/readiness/checklist` 是安装后生产准备清单的只读事实入口，对应权限
 `readiness/checklist`。它只返回品牌、通知、存储、备份、Worker、当前管理入口域名/TLS
 和账户安全的状态、影响、责任方与阻塞性，不返回主机、数据库地址或凭据。
 
@@ -89,14 +90,14 @@ api/admin/menu/lists -> menu/lists
 存在 pair 但尚未完成新目标恢复验证时仍返回未验证。它不会返回主机、路径、命令或凭据，也
 不会把备份文件存在冒充恢复成功。
 
-实例平台的 `GET /api/platform/v1/ops/backups` 返回唯一 Provider、最近 20 个备份任务和最新
-已验证 manifest 的安全摘要。`POST /api/platform/v1/ops/tasks/backup` 只接受固定
+实例平台的 `GET /platformapi/v1/ops/backups` 返回唯一 Provider、最近 20 个备份任务和最新
+已验证 manifest 的安全摘要。`POST /platformapi/v1/ops/tasks/backup` 只接受固定
 `provider_key=peanut.paired-db-files` 与 `Idempotency-Key`；任务状态通过
-`GET /api/platform/v1/ops/tasks/{task_key}` 读取。三者均要求 Platform 会话及对应 Ops 权限。
+`GET /platformapi/v1/ops/tasks/{task_key}` 读取。三者均要求 Platform 会话及对应 Ops 权限。
 
 ### Platform 升级就绪
 
-`GET /api/platform/v1/ops/upgrade-readiness` 返回只读的 source/target Release、migration、
+`GET /platformapi/v1/ops/upgrade-readiness` 返回只读的 source/target Release、migration、
 Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口检查。接口没有请求参数；
 目标只能来自 Deployment 放入固定 `.peanut/upgrade-target/` 的已验证 bundle，不能由浏览器
 提供路径、URL、命令、Release key、镜像或凭据。
@@ -108,10 +109,10 @@ Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口�
 不变，冲突原因不返回绝对路径或文件内容。
 
 具有 `platform.ops.upgrade.manage` 的 PlatformOperator 可以向
-`POST /api/platform/v1/ops/tasks/upgrade` 提交空 JSON 对象和 `Idempotency-Key`。服务器只消费
+`POST /platformapi/v1/ops/tasks/upgrade` 提交空 JSON 对象和 `Idempotency-Key`。服务器只消费
 当前 Runtime 与 Deployment 已固定的目标 descriptor，按静态预检、新备份、同一备份的隔离
 恢复验证、维护、部署、smoke 和恢复指针顺序执行；请求不能提供路径、URL、命令、Release、
-镜像、凭据或部署目标。`GET /api/platform/v1/ops/upgrades` 返回最近十个任务的安全步骤投影和
+镜像、凭据或部署目标。`GET /platformapi/v1/ops/upgrades` 返回最近十个任务的安全步骤投影和
 稳定停止码，不返回命令输出或环境细节。
 
 ### Platform Module 交付操作
@@ -119,19 +120,19 @@ Module、scaffold ownership/conflict、备份、恢复 evidence 和维护窗口�
 Deployment owner 先在服务器侧受限 inbox 中准备受信 Module archive，并用
 `ops-module:request preview/prepare` 固定登记 target、Package 身份和 retire/Purge 确认计划。
 具有 `platform.ops.module.manage` 的 PlatformOperator 只能向
-`POST /api/platform/v1/ops/tasks/module` 提交返回的 `modreq_*` opaque key 和
+`POST /platformapi/v1/ops/tasks/module` 提交返回的 `modreq_*` opaque key 和
 `Idempotency-Key`；HTTP 不接受 archive、路径、URL、命令、host、数据库、凭据、确认计划或
 目标地址。
 
 登记 worker 通过 `scripts/ops-module-worker --once` 串联新配对备份、隔离恢复验证、维护、
-update/retire/Purge、smoke、审计和 recovery pointer。`GET /api/platform/v1/ops/modules`
-返回最近十个任务的安全投影，单项继续从 `GET /api/platform/v1/ops/tasks/{task_key}` 读取。
+update/retire/Purge、smoke、审计和 recovery pointer。`GET /platformapi/v1/ops/modules`
+返回最近十个任务的安全投影，单项继续从 `GET /platformapi/v1/ops/tasks/{task_key}` 读取。
 任务失败时维护保持 active，应用 owner 必须先按 recovery pointer 恢复或确认安全退出；浏览器
 不能直接执行包、路径或远程命令。
 
 ### Platform Provider 生产资格
 
-`GET /api/platform/v1/ops/providers` 要求独立 Platform 会话和 `platform.ops.read`，返回 Payment、
+`GET /platformapi/v1/ops/providers` 要求独立 Platform 会话和 `platform.ops.read`，返回 Payment、
 Notification、OAuth 与 Storage 的只读生产资格投影。`configured` 只表示本地配置完整，
 `connected`、`callback_verified` 和 `qualified` 必须来自尚未过期且仍匹配当前配置的 evidence。
 
@@ -142,9 +143,9 @@ Tenant ID、配置摘要、秘密、收件人、订单/交易号或原始平台�
 
 ### Platform 维护窗口
 
-`GET /api/platform/v1/ops/maintenance` 读取当前维护窗口；具有
+`GET /platformapi/v1/ops/maintenance` 读取当前维护窗口；具有
 `platform.ops.maintenance.manage` 的 PlatformOperator 通过 `PUT` 计划窗口，并以
-`POST /api/platform/v1/ops/maintenance/{maintenance_key}/close` 关闭窗口。两个写接口均要求
+`POST /platformapi/v1/ops/maintenance/{maintenance_key}/close` 关闭窗口。两个写接口均要求
 `If-Match: "rev-<revision>"` 和 `Idempotency-Key`。
 
 窗口处于生效时间范围时，后端会拒绝其他 HTTP 写请求并返回
@@ -159,7 +160,7 @@ Tenant ID、配置摘要、秘密、收件人、订单/交易号或原始平台�
 | Controller/Validate | 只做输入、场景校验和响应转换 |
 | Application/Logic | 事务、状态和失败语义集中 |
 | Tenant | 只从可信 TenantContext 取 Tenant，不接受浏览器伪造 |
-| Permission | `perms` 与去掉 `api/admin/` 后的 URI 一致 |
+| Permission | `perms` 与去掉 `adminapi/` 后的 URI 一致 |
 | Menu/Button | 只是展示和操作入口，不承担安全边界 |
 | 测试 | 成功、无权限、错误 Tenant 和停用状态至少各一条 |
 

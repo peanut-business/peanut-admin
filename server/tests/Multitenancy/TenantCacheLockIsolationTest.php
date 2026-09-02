@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\tenant\TenantCache;
-use app\common\service\tenant\TenantCacheStore;
+use PeanutAdmin\Kernel\Tenancy\TenantCache;
+use PeanutAdmin\Kernel\Tenancy\TenantCacheStore;
 use PeanutAdmin\Kernel\Tenancy\TenantLockNamespace;
 use PeanutAdmin\Kernel\Tenancy\TenantNamespace;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;

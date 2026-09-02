@@ -215,12 +215,12 @@
             </el-avatar>
             <div>
               <el-upload
-                :action="uploadAction"
-                :headers="uploadHeaders"
+                :http-request="
+                  (options: UploadRequestOptions) => uploadFile(10, options)
+                "
                 :show-file-list="false"
                 accept="image/jpeg,image/png"
                 @success="onAvatarSuccess"
-                @error="onAvatarError"
               >
                 <template #trigger>
                   <el-button>
@@ -433,11 +433,11 @@
   import { computed, nextTick, reactive, ref } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { ElMessage } from 'element-plus';
-  import type { FormInstance } from 'element-plus';
+  import type { FormInstance, UploadRequestOptions } from 'element-plus';
   import { Download, Plus, Refresh, Search } from '@element-plus/icons-vue';
   import useLoading from '@/hooks/loading';
   import { useUserStore } from '@/store';
-  import { getToken } from '@/utils/auth';
+  import { uploadFile, type FileRecord } from '@/modules/official-file/api';
   import { getRoleAll } from '@/api/system/role';
   import { getDeptAll, type DeptRecord } from '@/api/system/dept';
   import { getJobsAll } from '@/api/system/jobs';
@@ -537,13 +537,6 @@
   const submitLoading = ref(false);
   const formRef = ref<FormInstance>();
   const avatarPreview = ref('');
-  const uploadAction = '/api/admin/official.file.upload.image';
-  const uploadHeaders = computed(() => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-  });
 
   const defaultForm = (): AdminForm => ({
     id: undefined,
@@ -715,19 +708,10 @@
     ElMessage.success(t('systemAdmin.tip.success'));
   };
 
-  const onAvatarSuccess = (response: any) => {
-    if (!response || response.code !== 20000) {
-      ElMessage.error(
-        response?.msg || t('systemAdmin.field.avatar.uploadFail')
-      );
-      return;
-    }
-    form.avatar = response.data.uri;
-    avatarPreview.value = response.data.url;
+  const onAvatarSuccess = (file: FileRecord) => {
+    form.avatar = file.uri;
+    avatarPreview.value = file.url;
     ElMessage.success(t('systemAdmin.field.avatar.uploadSuccess'));
-  };
-  const onAvatarError = () => {
-    ElMessage.error(t('systemAdmin.field.avatar.uploadFail'));
   };
 
   // ---- 两阶段导出 ----

@@ -59,18 +59,19 @@ $serverRoot = dirname(__DIR__, 2);
 $routes = peanut_route_registry_source($serverRoot);
 $factory = (string)file_get_contents($serverRoot . '/app/platform/service/PlatformRuntimeFactory.php');
 $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformAccessController.php');
+$problemMapper = (string)file_get_contents($serverRoot . '/app/common/http/ApiProblemMapper.php');
 
 $expectedRoutes = [
-    'api/platform/operators/create' => ['createOperator', 'platform.operator.create'],
-    'api/platform/operators/update' => ['updateOperator', 'platform.operator.update'],
-    'api/platform/operators/roles/replace' => ['replaceOperatorRoles', 'platform.operator.role.assign'],
-    'api/platform/operators/activate' => ['activateOperator', 'platform.operator.lifecycle'],
-    'api/platform/operators/suspend' => ['suspendOperator', 'platform.operator.lifecycle'],
-    'api/platform/operators/close' => ['closeOperator', 'platform.operator.lifecycle'],
-    'api/platform/roles/create' => ['createRole', 'platform.role.create'],
-    'api/platform/roles/update' => ['updateRole', 'platform.role.update'],
-    'api/platform/roles/archive' => ['archiveRole', 'platform.role.archive'],
-    'api/platform/roles/permissions/replace' => ['replaceRolePermissions', 'platform.role.permission.assign'],
+    'operators/create' => ['createOperator', 'platform.operator.create'],
+    'operators/update' => ['updateOperator', 'platform.operator.update'],
+    'operators/roles/replace' => ['replaceOperatorRoles', 'platform.operator.role.assign'],
+    'operators/activate' => ['activateOperator', 'platform.operator.lifecycle'],
+    'operators/suspend' => ['suspendOperator', 'platform.operator.lifecycle'],
+    'operators/close' => ['closeOperator', 'platform.operator.lifecycle'],
+    'roles/create' => ['createRole', 'platform.role.create'],
+    'roles/update' => ['updateRole', 'platform.role.update'],
+    'roles/archive' => ['archiveRole', 'platform.role.archive'],
+    'roles/permissions/replace' => ['replaceRolePermissions', 'platform.role.permission.assign'],
 ];
 foreach ($expectedRoutes as $path => [$action, $permission]) {
     $pattern = sprintf(
@@ -91,8 +92,9 @@ foreach ($expectedRoutes as $path => [$action, $permission]) {
     );
 }
 platformAccessHttpExpect(
-    str_contains($factory, 'public static function platformAccess(): PlatformAccessAdminService')
-        && str_contains($factory, 'new PlatformAccessAdminService(self::pdo())'),
+    str_contains($factory, 'public function platformAccess(): PlatformAccessAdminService')
+        && str_contains($factory, 'new PlatformAccessAdminService($this->pdo, ApplicationPasswordPolicy::hasher())')
+        && !str_contains($factory, 'public static function platformAccess()'),
     'PlatformAccessAdminService factory wiring is missing'
 );
 platformAccessHttpExpect(
@@ -100,8 +102,9 @@ platformAccessHttpExpect(
         && str_contains($controller, '$context->operatorId')
         && str_contains($controller, '$context->accountId')
         && str_contains($controller, '$context->requestId')
-        && str_contains($controller, 'catch (AdminAccessException $exception)')
-        && str_contains($controller, '$exception->httpStatus * 100'),
+        && !str_contains($controller, 'catch (')
+        && str_contains($problemMapper, '$exception instanceof AdminAccessException')
+        && str_contains($problemMapper, '$exception->httpStatus'),
     'controller lost trusted actor context or stable AdminAccessException mapping'
 );
 

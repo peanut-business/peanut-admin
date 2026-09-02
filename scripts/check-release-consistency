@@ -92,7 +92,10 @@ let scaffold = null
 let fixture = null
 let version = ''
 
-const show = (path) => execFileSync('git', ['show', `${reference}:${path}`], { encoding: 'utf8' })
+const show = (path) => execFileSync('git', ['show', `${reference}:${path}`], {
+  encoding: 'utf8',
+  maxBuffer: 64 * 1024 * 1024,
+})
 try {
   commit = git(['rev-parse', `${reference}^{commit}`])
   tree = git(['rev-parse', `${reference}^{tree}`])
@@ -128,6 +131,17 @@ if (versionContract && (!/^\d+\.\d+\.\d+$/.test(versionContract.product_release 
 if (!/^\d+\.\d+\.\d+$/.test(version)) failures.push(`metadata version is invalid: ${version || 'missing'}`)
 if (metadata && metadata.expected_tag !== expectedTag) failures.push(`metadata expected_tag does not match ${expectedTag}`)
 if (options.tag && options.tag !== expectedTag) failures.push(`tag ${options.tag} does not match embedded version ${version}`)
+for (const [path, expected] of Object.entries({
+  ...(metadata?.lockfiles ?? {}),
+  ...(metadata?.legal_files ?? {}),
+})) {
+  try {
+    const actual = sha256(show(path))
+    if (actual !== expected) failures.push(`${path} digest ${expected} does not match candidate ${actual}`)
+  } catch (error) {
+    failures.push(`${path} is unreadable: ${error.message}`)
+  }
+}
 
 if (scaffold && inventory && fixture) {
   const release = scaffold.release ?? {}
@@ -145,6 +159,32 @@ if (scaffold && inventory && fixture) {
   }
   for (const [key, value] of Object.entries(expectedFixture)) {
     if (target[key] !== value) failures.push(`P0-E fixture ${key}=${target[key] ?? 'missing'} does not match scaffold ${value}`)
+  }
+  if (!/^[0-9a-f]{40}$/.test(release.source_commit ?? '')) {
+    failures.push(`scaffold source commit is invalid: ${release.source_commit ?? 'missing'}`)
+  } else {
+    const sourceTree = gitOptional(['rev-parse', `${release.source_commit}^{tree}`])
+    if (sourceTree !== release.source_tree) {
+      failures.push(`scaffold source tree ${release.source_tree ?? 'missing'} does not match source commit tree ${sourceTree || 'missing'}`)
+    }
+    if (!gitSucceeds(['merge-base', '--is-ancestor', release.source_commit, commit])) {
+      failures.push(`scaffold source commit ${release.source_commit} is not an ancestor of candidate ${commit}`)
+    }
+    try {
+      const sealedInventory = execFileSync(
+        'git',
+        ['show', `${release.source_commit}:scaffold/application-template-inventory.json`],
+        { encoding: 'utf8' },
+      )
+      if (sha256(inventoryText) !== release.inventory_sha256) {
+        failures.push('candidate application inventory does not match the scaffold seal')
+      }
+      if (sha256(sealedInventory) !== release.inventory_sha256) {
+        failures.push('scaffold source inventory does not match the scaffold seal')
+      }
+    } catch (error) {
+      failures.push(`scaffold source inventory is unreadable: ${error.message}`)
+    }
   }
 }
 

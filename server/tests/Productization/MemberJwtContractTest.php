@@ -4,9 +4,6 @@ declare(strict_types=1);
 use app\api\middleware\CheckTokenMiddleware;
 use app\api\service\UserTokenService;
 use Firebase\JWT\JWT;
-use think\Config as ThinkConfig;
-use think\Container;
-use think\facade\Config;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -22,6 +19,16 @@ function jwtExpectThrows(callable $operation, string $message): void
     try {
         $operation();
     } catch (Throwable) {
+        return;
+    }
+    throw new RuntimeException($message);
+}
+
+function jwtExpectInvalidToken(callable $operation, string $message): void
+{
+    try {
+        $operation();
+    } catch (UnexpectedValueException) {
         return;
     }
     throw new RuntimeException($message);
@@ -48,32 +55,25 @@ function jwtToken(string $secret, array $overrides = [], string $algorithm = 'HS
     return JWT::encode($payload, $secret, $algorithm);
 }
 
-$container = new Container();
-Container::setInstance($container);
-$container->instance('config', new ThinkConfig());
-
-Config::set(['secret' => '', 'expire' => 7200], 'jwt');
 jwtExpectThrows(
-    static fn(): string => UserTokenService::createToken(17),
+    static fn(): UserTokenService => new UserTokenService('', 7200),
     'member JWT signing accepted a missing secret',
 );
-Config::set(['secret' => str_repeat('s', 31), 'expire' => 7200], 'jwt');
 jwtExpectThrows(
-    static fn(): string => UserTokenService::createToken(17),
+    static fn(): UserTokenService => new UserTokenService(str_repeat('s', 31), 7200),
     'member JWT signing accepted a secret shorter than 32 bytes',
 );
 
 $secret = str_repeat('s', 64);
-Config::set(['secret' => $secret, 'expire' => 0], 'jwt');
 jwtExpectThrows(
-    static fn(): string => UserTokenService::createToken(17),
+    static fn(): UserTokenService => new UserTokenService($secret, 0),
     'member JWT signing accepted an invalid expiry',
 );
-Config::set(['secret' => $secret, 'expire' => 7200], 'jwt');
-$issued = UserTokenService::createToken(17);
-jwtExpect(UserTokenService::parseToken($issued) === 17, 'member JWT round trip failed');
+$tokens = new UserTokenService($secret, 7200);
+$issued = $tokens->createToken(17);
+jwtExpect($tokens->parseToken($issued) === 17, 'member JWT round trip failed');
 jwtExpectThrows(
-    static fn(): string => UserTokenService::createToken(0),
+    static fn(): string => $tokens->createToken(0),
     'member JWT signing accepted an invalid member id',
 );
 
@@ -98,13 +98,13 @@ $invalidClaims = [
     'future' => ['iat' => time() + 60, 'nbf' => time() + 60, 'exp' => time() + 7260],
 ];
 foreach ($invalidClaims as $label => $claims) {
-    jwtExpect(
-        UserTokenService::parseToken(jwtToken($secret, $claims)) === false,
+    jwtExpectInvalidToken(
+        static fn(): int => $tokens->parseToken(jwtToken($secret, $claims)),
         'member JWT accepted invalid claims: ' . $label,
     );
 }
-jwtExpect(
-    UserTokenService::parseToken(jwtToken($secret, [], 'HS512')) === false,
+jwtExpectInvalidToken(
+    static fn(): int => $tokens->parseToken(jwtToken($secret, [], 'HS512')),
     'member JWT accepted a non-HS256 algorithm',
 );
 

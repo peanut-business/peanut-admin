@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\export;
 
-use PDO;
+use app\common\model\log\OperationLog;
 use PeanutAdmin\ImportExport\Application\ImportExportException;
 use PeanutAdmin\ImportExport\Contract\ColumnDefinition;
 use PeanutAdmin\ImportExport\Contract\DataProvider;
@@ -15,10 +15,6 @@ use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 final readonly class OperationLogExportProvider implements DataProvider
 {
     public const KEY = 'app.operation-log';
-
-    public function __construct(private PDO $pdo)
-    {
-    }
 
     public function key(): string
     {
@@ -62,20 +58,16 @@ final readonly class OperationLogExportProvider implements DataProvider
             $afterId = (int)$cursor;
         }
 
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT id, username, ip, uri, method, params, create_time
-FROM pa_operation_log
-WHERE tenant_id = :tenant_id AND id > :after_id
-ORDER BY id ASC
-LIMIT :limit
-SQL);
-        $statement->bindValue('tenant_id', $context->tenantContext->tenantId, PDO::PARAM_INT);
-        $statement->bindValue('after_id', $afterId, PDO::PARAM_INT);
-        $statement->bindValue('limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
+        $records = OperationLog::where([])
+            ->where('id', '>', $afterId)
+            ->field(['id', 'username', 'ip', 'uri', 'method', 'params', 'create_time'])
+            ->order('id')
+            ->limit($limit)
+            ->select();
         $rows = [];
         $lastId = null;
-        while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+        foreach ($records as $record) {
+            $row = $record->toArray();
             $lastId = (int)$row['id'];
             $rows[] = [
                 'id' => $lastId,

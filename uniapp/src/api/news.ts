@@ -18,22 +18,38 @@ export interface ArticleDetail extends Article {
 export interface ArticleListResult {
   lists: Article[]
   count: number
-  page_no: number
-  page_size: number
+  pageNo: number
+  pageSize: number
 }
 
 export interface ArticleListParams {
-  cate_id?: number
+  cid?: number
   keyword?: string
-  page_no?: number
-  page_size?: number
+  pageNo?: number
+  pageSize?: number
+}
+
+export interface ArticleCollection {
+  id: number
+  title: string
+  image: string
+  desc: string
+  author?: string
+  click: number
+  create_time: string
+  collect_time: string
 }
 
 export interface CollectListResult {
-  lists: Array<{ id: number; article_id: number; create_time: string } & Article>
+  lists: ArticleCollection[]
   count: number
-  page_no: number
-  page_size: number
+  pageNo: number
+  pageSize: number
+}
+
+interface ArticleCollectionWire extends Omit<ArticleCollection, 'id'> {
+  id: number
+  article_id: number
 }
 
 /** GET api/article/cate */
@@ -43,7 +59,12 @@ export function getArticleCate() {
 
 /** GET api/article/lists */
 export function getArticleLists(params: ArticleListParams = {}) {
-  return http.get<ArticleListResult>('api/article/lists', params as Record<string, unknown>, false)
+  return http.get<ArticleListResult>('api/article/lists', {
+    cid: params.cid,
+    keyword: params.keyword,
+    page_no: params.pageNo,
+    page_size: params.pageSize,
+  }, false)
 }
 
 /** GET api/article/detail?id=xxx */
@@ -52,18 +73,25 @@ export function getArticleDetail(id: number) {
 }
 
 /** POST api/article/addCollect */
-export function addCollect(article_id: number) {
-  return http.post('api/article/addCollect', { article_id })
+export function addCollect(id: number) {
+  return http.post('api/article/addCollect', { id })
 }
 
 /** POST api/article/cancelCollect */
-export function cancelCollect(article_id: number) {
-  return http.post('api/article/cancelCollect', { article_id })
+export function cancelCollect(id: number) {
+  return http.post('api/article/cancelCollect', { id })
 }
 
 /** GET api/article/collect */
-export function getCollectLists(params: { page_no?: number; page_size?: number } = {}) {
-  return http.get<CollectListResult>('api/article/collect', params as Record<string, unknown>)
+export async function getCollectLists(params: { pageNo?: number; pageSize?: number } = {}) {
+  const page = await http.get<Omit<CollectListResult, 'lists'> & { lists: ArticleCollectionWire[] }>(
+    'api/article/collect',
+    { page_no: params.pageNo, page_size: params.pageSize }
+  )
+  return {
+    ...page,
+    lists: page.lists.map(({ article_id: id, ...item }) => ({ ...item, id })),
+  }
 }
 
 /** GET api/search/hotLists */

@@ -190,7 +190,7 @@ SQL);
     $app = new think\App($serverRoot);
     $app->initialize();
 
-    $authorization = new AdminAuthorizationService($pdo);
+    $authorization = $app->make(AdminAuthorizationService::class);
     $alphaContext = rbacTenantContext(101, 1001, 501, 'native-rbac-alpha-' . $database);
     $betaContext = rbacTenantContext(202, 1002, 502, 'native-rbac-beta-' . $database);
     $alphaRootContext = rbacTenantContext(101, 1003, 503, 'native-rbac-alpha-root-' . $database);

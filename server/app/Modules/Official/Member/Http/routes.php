@@ -9,15 +9,15 @@ use app\api\controller\LoginController as ApiLoginController;
 use app\api\controller\UserController as ApiUserController;
 use app\api\controller\AccountLogController as ApiAccountLogController;
 use app\api\middleware\CheckTokenMiddleware;
-use app\api\middleware\PublicMemberTenantMiddleware;
-use app\api\middleware\PublicNoticeTenantMiddleware;
+use app\api\middleware\PublicTenantModuleMiddleware;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\common\service\module\OfficialModuleMiddleware;
 use think\facade\Route;
 
-Route::group('api/admin', function (): void {
+if (($peanutRouteApplication ?? null) === 'adminapi') {
+Route::group(function (): void {
     Route::get('official.member.list', [MemberController::class, 'lists']);
     Route::get('official.member.detail', [MemberController::class, 'detail']);
     Route::post('official.member.add', [MemberController::class, 'add']);
@@ -34,24 +34,26 @@ Route::group('api/admin', function (): void {
     ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
+}
 
-Route::post('api/login/register', [ApiLoginController::class, 'register'])
-    ->middleware(PublicMemberTenantMiddleware::class, 'member.register')
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.register');
-Route::post('api/login/account', [ApiLoginController::class, 'account'])
-    ->middleware(PublicMemberTenantMiddleware::class, 'member.login')
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.login');
+if (($peanutRouteApplication ?? null) !== 'api') {
+    return;
+}
+
+Route::post('login/register', [ApiLoginController::class, 'register'])
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.register');
+Route::post('login/account', [ApiLoginController::class, 'account'])
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.login');
 foreach ([
-    ['api/login/mobile', 'mobile', 'notice.verification.verify', 'http.mobile-login'],
-    ['api/login/resetPassword', 'resetPassword', 'notice.verification.verify', 'http.reset-password'],
+    ['login/mobile', 'mobile', 'notice.verification.verify', 'http.mobile-login'],
+    ['login/resetPassword', 'resetPassword', 'notice.verification.verify', 'http.reset-password'],
 ] as [$path, $action, $noticeOperation, $memberOperation]) {
     Route::post($path, [ApiLoginController::class, $action])
-        ->middleware(PublicNoticeTenantMiddleware::class, $noticeOperation)
-        ->middleware(OfficialModuleMiddleware::class, 'official.notification', $noticeOperation)
+        ->middleware(PublicTenantModuleMiddleware::class, 'peanut.notice.verification', 'official.notification', $noticeOperation)
         ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), $memberOperation);
 }
 
-Route::group('api', function (): void {
+Route::group(function (): void {
     Route::get('user/center', [ApiUserController::class, 'center']);
     Route::get('user/info', [ApiUserController::class, 'info']);
     Route::post('user/setInfo', [ApiUserController::class, 'setInfo']);

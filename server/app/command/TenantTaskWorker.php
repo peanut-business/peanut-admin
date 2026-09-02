@@ -3,16 +3,27 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\async\TaskImportExportRuntimeFactory;
+use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\service\runtime\OperationalLog;
+use app\common\execution\DatabaseContextualCommand;
 use PDO;
-use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
-use think\facade\Db;
 
-final class TenantTaskWorker extends ContextualCommand
+final class TenantTaskWorker extends DatabaseContextualCommand
 {
+    public function __construct(
+        ExecutionContextStore $contexts,
+        CurrentExecutionContext $executionContext,
+        PDO $pdo,
+        private readonly ImportExportWorkerRuntime $runtime,
+    ) {
+        parent::__construct($contexts, $executionContext, $pdo);
+    }
+
     protected function configure()
     {
         $this->setName('tenant-task:work')
@@ -27,21 +38,32 @@ final class TenantTaskWorker extends ContextualCommand
             $output->writeln('[tenant-task:work] invalid tenant');
             return 1;
         }
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
-            $output->writeln('[tenant-task:work] database unavailable');
-            return 1;
-        }
         try {
-            $processed = TaskImportExportRuntimeFactory::fromConfig($pdo)->runTenant(
+            $processed = $this->runtime->runTenant(
                 (int)$raw,
                 'tenant-worker-' . getmypid() . '-' . bin2hex(random_bytes(6)),
             );
             $output->writeln(sprintf('[tenant-task:work] tenant=%d processed=%d', (int)$raw, $processed));
             return 0;
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            OperationalLog::error($this->executionContext(), 'tenant_task_worker_startup_failed', [
+                'tenant_id' => (int)$raw,
+                'failure_code' => self::startupFailureCode($exception),
+            ]);
             $output->writeln('[tenant-task:work] failed');
             return 1;
         }
+    }
+
+    private static function startupFailureCode(\Throwable $exception): string
+    {
+        return in_array($exception->getMessage(), [
+            'ASYNC_SIGNING_KEY_INVALID',
+            'MODULE_CONTEXT_INVALID',
+            'TASK_AUTHORIZATION_DUPLICATE',
+            'TASK_AUTHORIZATION_INVALID',
+            'TASK_JOB_INVALID',
+            'TASK_WORKER_DEFINITION_REQUIRED',
+        ], true) ? $exception->getMessage() : 'TENANT_TASK_WORKER_STARTUP_FAILED';
     }
 }

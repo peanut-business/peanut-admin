@@ -2,13 +2,12 @@
 declare(strict_types=1);
 
 use app\adminapi\application\setting\TransactionSettingsApplicationService;
-use app\common\execution\ExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\transaction\TransactionSettingTenantContext;
 use app\common\service\transaction\TransactionSettingTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -135,7 +134,7 @@ SQL);
     $beta = transactionTenantContext(202, 22, 'fresh-transaction-beta');
 
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($beta, 'test.transaction-settings.set.beta'),
+        new \app\common\execution\AdminExecutionContext($beta, 'test.transaction-settings.set.beta'),
         fn() => app(TransactionSettingsApplicationService::class)->setConfig([
             'tenant_id' => 101,
             'cancel_unpaid_orders' => 1,
@@ -146,28 +145,28 @@ SQL);
     );
     expectTransactionTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.transaction-settings.get.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.transaction-settings.get.alpha'),
             fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
         )['cancel_unpaid_orders_times'] === 30,
         'Beta changed Alpha transaction policy',
     );
     expectTransactionTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.transaction-settings.get.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.transaction-settings.get.beta'),
             fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
         )['cancel_unpaid_orders_times'] === 60,
         'Beta transaction policy was not updated',
     );
     expectTransactionTenant(
         (int)app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($alpha, 'test.transaction-settings.query.alpha'),
+            new \app\common\execution\AdminExecutionContext($alpha, 'test.transaction-settings.query.alpha'),
             fn() => TransactionSettingTenantRepository::settings()->count(),
         ) === 1,
         'Alpha query crossed Tenant boundary',
     );
     expectTransactionTenant(
         (int)app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($beta, 'test.transaction-settings.query.beta'),
+            new \app\common\execution\AdminExecutionContext($beta, 'test.transaction-settings.query.beta'),
             fn() => TransactionSettingTenantRepository::settings()->count(),
         ) === 1,
         'Beta query crossed Tenant boundary',
@@ -182,7 +181,7 @@ SQL);
     $gamma = transactionTenantContext(303, 33, 'fresh-transaction-gamma');
     expectTransactionTenant(
         app(ExecutionContextStore::class)->run(
-            ExecutionContext::tenantAdmin($gamma, 'test.transaction-settings.get.gamma'),
+            new \app\common\execution\AdminExecutionContext($gamma, 'test.transaction-settings.get.gamma'),
             fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
         ) === [
             'cancel_unpaid_orders' => 1,
@@ -193,7 +192,7 @@ SQL);
         'new Tenant did not receive stable Runtime defaults',
     );
     app(ExecutionContextStore::class)->run(
-        ExecutionContext::tenantAdmin($gamma, 'test.transaction-settings.set.gamma'),
+        new \app\common\execution\AdminExecutionContext($gamma, 'test.transaction-settings.set.gamma'),
         fn() => app(TransactionSettingsApplicationService::class)->setConfig([
             'tenant_id' => 101,
             'cancel_unpaid_orders' => 0,
@@ -206,7 +205,7 @@ SQL);
     );
 
     try {
-        TransactionSettingTenantContext::tenantId([]);
+        TenantContextRequirement::tenantId([]);
         throw new RuntimeException('invalid Tenant context was accepted');
     } catch (Throwable $exception) {
         expectTransactionTenant($exception->getMessage() !== '', 'invalid Tenant context denial lost shape');

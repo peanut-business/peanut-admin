@@ -1,0 +1,29 @@
+<?php
+declare(strict_types=1);
+
+namespace app\common\service\external;
+
+interface ExternalChannelBindingStore
+{
+    public function tenantIsActive(int $tenantId): bool;
+
+    /** @param array<string, mixed> $config */
+    public function updateBinding(
+        int $tenantId,
+        string $provider,
+        array $config,
+        string $identity,
+        bool $enabled,
+    ): void;
+
+    /**
+     * @param callable(array<string, mixed>): array{config:array<string, mixed>,enabled:bool} $mutation
+     */
+    public function mutateBinding(
+        int $tenantId,
+        string $provider,
+        string $identity,
+        callable $mutation,
+        ?string $identityHint = null,
+    ): void;
+}

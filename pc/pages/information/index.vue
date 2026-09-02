@@ -38,31 +38,34 @@
 </template>
 
 <script setup lang="ts">
+import {
+  getArticleCategories,
+  getArticles,
+  type Article,
+  type ArticleCategory,
+} from '~/api/article'
+
 definePageMeta({ layout: 'default' })
 
-interface Article { id: number; cate_id: number; cate_name: string; title: string; image: string; desc: string; author: string; click_num: number; collect_num: number; create_time: string }
-interface ArticleCate { id: number; name: string; image: string; sort: number }
-
-const apiBase = useRuntimeConfig().public.apiBase
+const request = useRequest()
 const currentCate = ref<number | null>(null)
 const pageNo = ref(1)
 const pageSize = 12
 const articles = ref<Article[]>([])
 const total = ref(0)
 
-const { data: cateData } = await useFetch<{ code: number; data: ArticleCate[] }>(() => `${apiBase}/api/article/cate`)
-const categories = computed(() => cateData.value?.data || [])
+const categories = ref<ArticleCategory[]>(await getArticleCategories(request))
 
 await loadArticles()
 
 async function loadArticles() {
-  const params = new URLSearchParams({ page_no: String(pageNo.value), page_size: String(pageSize) })
-  if (currentCate.value) params.set('cate_id', String(currentCate.value))
-  const res = await $fetch<{ code: number; data: { lists: Article[]; count: number } }>(
-    `${apiBase}/api/article/lists?${params}`
-  )
-  articles.value = res.data?.lists || []
-  total.value = res.data?.count || 0
+  const data = await getArticles(request, {
+    cid: currentCate.value || undefined,
+    pageNo: pageNo.value,
+    pageSize,
+  })
+  articles.value = data?.lists || []
+  total.value = data?.count || 0
 }
 
 function switchCate(id: number | null) {

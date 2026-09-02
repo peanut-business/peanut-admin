@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Validation;
 
-use app\common\enum\RefundEnum;
+use app\Modules\Official\Payment\Application\RefundEnum;
 use app\common\validate\PageSizeRule;
 use app\Modules\Official\Payment\Model\RechargeOrder;
-use app\common\service\finance\FinanceTenantRepository;
+use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\validate\TenantContextValidate;
 
 /** 充值列表、部分退款和失败重试参数验证。 */

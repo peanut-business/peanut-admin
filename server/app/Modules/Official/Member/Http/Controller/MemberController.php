@@ -4,15 +4,16 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Http\Controller;
 
 use app\adminapi\controller\BaseAdminController;
+use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\Member\Contracts\MemberAdministration;
 use app\Modules\Official\Member\Validation\MemberValidate;
 use think\App;
 
 class MemberController extends BaseAdminController
 {
-    public function __construct(App $app, private readonly MemberAdministration $members)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly MemberAdministration $members)
     {
-        parent::__construct($app);
+        parent::__construct($app, $executionContext);
     }
 
     public function lists()
