@@ -150,7 +150,7 @@ qualificationExpect(
 );
 qualificationExpect(
     str_contains($sources['default_context'], 'new CoreDefaultTenantContextResolver($pdo)')
-        && str_contains($sources['default_context'], 'RequestTrace::id($contexts, $request, \'public\')')
+        && str_contains($sources['default_context'], 'RequestTrace::id($executionContext, $request, \'public\')')
         && str_contains($sources['default_context_core'], "code = 'default'")
         && str_contains($sources['default_context_core'], "status = 'active'")
         && str_contains($sources['default_context_core'], 'LIMIT 2')
