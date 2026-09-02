@@ -6,11 +6,11 @@ use app\adminapi\application\log\OperationLogApplicationService;
 use app\adminapi\service\OperationLogService;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\audit\OperationLogDiagnostics;
 use app\platform\service\ops\PlatformDiagnosticBundleService;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -131,13 +131,13 @@ try {
         expectOperationTenant($exception->getMessage() !== '', 'missing context denial lost its shape');
     }
     expectOperationTenant(
-        OperationLogDiagnostics::attributes(null) === [
+        TenantDiagnosticAttributes::fromTenantContext(null) === [
             'scope' => 'unavailable', 'tenant_id' => null, 'request_id' => '',
         ],
         'unavailable diagnostics were attributed to a default Tenant'
     );
     expectOperationTenant(
-        OperationLogDiagnostics::attributes($alpha)['tenant_id'] === 101,
+        TenantDiagnosticAttributes::fromTenantContext($alpha)['tenant_id'] === 101,
         'trusted diagnostics lost Tenant attribution'
     );
 

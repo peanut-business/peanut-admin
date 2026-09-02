@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace app\adminapi\http\middleware;
 
 use app\adminapi\service\OperationLogService;
-use app\common\service\audit\OperationLogDiagnostics;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\ApiProblemMapper;
 use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
+use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 
 /**
  * 操作日志中间件（原生 TP 风格）
@@ -37,7 +37,7 @@ class OperationLogMiddleware
             OperationalLog::warning(
                 $this->executionContext,
                 'operation_log_tenant_context_unavailable',
-                OperationLogDiagnostics::attributes(null),
+                TenantDiagnosticAttributes::fromTenantContext(null),
             );
             throw $exception;
         }
@@ -105,7 +105,7 @@ class OperationLogMiddleware
             OperationalLog::error(
                 $this->executionContext,
                 'operation_log_write_failed',
-                OperationLogDiagnostics::attributes($context) + ['exception' => $exception::class],
+                TenantDiagnosticAttributes::fromTenantContext($context) + ['exception' => $exception::class],
             );
             // 记录日志失败不得影响主流程
         }

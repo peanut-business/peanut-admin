@@ -9746,7 +9746,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c991a2e14f35c93c3ecd4bd94e5b476b6c34a97700a60bb3710c8b1cf2793699"
+            "source_sha256": "b81cbd1c2c24b22cf6c17c83e9088a0410e263da0737d8bcc2a431cf817cf31e"
         },
         {
             "path": "server/app/adminapi/infrastructure/generator/ThinkPhpGeneratorMetadata.php",
@@ -12269,21 +12269,6 @@
             "source_sha256": "cd1dc36c570f746fe795e13a08dd7e92f5d5ca17d87592e9e269e704333ba9ac"
         },
         {
-            "path": "server/app/common/service/audit/OperationLogDiagnostics.php",
-            "target": "server/app/common/service/audit/OperationLogDiagnostics.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b5e4a2d7f0812a61fe73bd9a3449427ea5f7ec523a23f86aea8a425b3c78d481",
-            "adapter_kind": "deprecated-bridge"
-        },
-        {
             "path": "server/app/common/service/audit/OperationLogProjection.php",
             "target": "server/app/common/service/audit/OperationLogProjection.php",
             "classification": "app-owned",
@@ -12508,7 +12493,7 @@
                 "full"
             ],
             "source_sha256": "c3cfbe23d65bc7bb5074852ebbb69ce3c6bf17f97ee31d12d04407960f379c64",
-            "adapter_kind": "deprecated-bridge"
+            "adapter_kind": "application-provider"
         },
         {
             "path": "server/app/common/service/crontab/CrontabTenantLock.php",
@@ -12523,7 +12508,7 @@
                 "full"
             ],
             "source_sha256": "7ae6ae17f7553df9b72902331df6a96985d0932c14b951ebab1ec525b6855981",
-            "adapter_kind": "deprecated-bridge"
+            "adapter_kind": "application-provider"
         },
         {
             "path": "server/app/common/service/decoration/DecorationReadService.php",
@@ -12609,21 +12594,6 @@
             ],
             "source_sha256": "06452de7e9d826138f2cfd2b4502014bc8145790e8c4157def3defe87a503228",
             "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/dict/SystemDictRepository.php",
-            "target": "server/app/common/service/dict/SystemDictRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "3d67bcdfc9eee308a35015240981d29935259724de488b54f197b488777f7f54",
-            "adapter_kind": "deprecated-bridge"
         },
         {
             "path": "server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php",
@@ -12884,7 +12854,7 @@
                 "full"
             ],
             "source_sha256": "5516f1bef2a6244df08bec7c9e382732a2d720dc8328a73bda13a53351495f6f",
-            "adapter_kind": "framework-adapter"
+            "adapter_kind": "deprecated-bridge"
         },
         {
             "path": "server/app/common/service/external/ThinkPhpExternalTenantAudit.php",
@@ -13268,7 +13238,7 @@
                 "full"
             ],
             "source_sha256": "c75a57c5222cc3f688284fced128ae3ba33d2cb328679b26bc23f048baf3d29e",
-            "adapter_kind": "deprecated-bridge"
+            "adapter_kind": "application-provider"
         },
         {
             "path": "server/app/common/service/notice/driver/sms/SmsDriverResult.php",
@@ -13312,7 +13282,7 @@
                 "full"
             ],
             "source_sha256": "15b166f0bac239976ee4859e0cd3284ca84369da7233ccd78f110cccde271aaa",
-            "adapter_kind": "deprecated-bridge"
+            "adapter_kind": "application-provider"
         },
         {
             "path": "server/app/common/service/oauth/WechatOAuthTransport.php",
@@ -20771,7 +20741,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a02e7454482be470b551f3f1dcc18b34b08e321edc1f00de6fc411839a12a112"
+            "source_sha256": "52cedb84b90ac438a8bcb15101e1ed238e7c2583d434d7e35d68311318171b4a"
         },
         {
             "path": "web/src/config/settings.json",
@@ -20829,7 +20799,7 @@
                 "full"
             ],
             "source_sha256": "1461bd399e5935f4a67203a15d38f78230385c620e4a26d908515e0b1edba678",
-            "adapter_kind": "deprecated-bridge"
+            "adapter_kind": "application-provider"
         },
         {
             "path": "web/src/directive/index.ts",
@@ -22786,22 +22756,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "86e8009369c513b342d9d5c3f1df980f167c8f320370b44a6055a66827bbb94e"
-        },
-        {
-            "path": "web/src/store/modules/tab-bar/types.ts",
-            "target": "web/src/store/modules/tab-bar/types.ts",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "5932b07640c994ba6294a9a99d0fd629583e6d55d1cd6abedd2c9c0209c3bbab",
-            "adapter_kind": "deprecated-bridge"
+            "source_sha256": "974df79ecbe8ae52128c00ee381c50326b7ab7fa8e5540d2fdfaa110d87a7f48"
         },
         {
             "path": "web/src/store/modules/user/index.ts",

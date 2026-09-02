@@ -149,8 +149,8 @@
         "phase": "merged_to_dev",
         "candidate": {"commit": "9bafc3f", "integration": "merged_to_dev", "pr": "#222"},
         "business_summary": "统一系统参考码和租户可写字典的读取合同，业务代码不再各自拼接字典查询。",
-        "side_effects": "保留旧 SystemDictRepository 入口，避免不必要的兼容性破坏；未合并字典 Schema。",
-        "next_action": "后续新业务优先使用字典合同，旧调用方按实际重复度逐步迁移。",
+        "side_effects": "无人调用的旧 SystemDictRepository 帮助类已退出；字典 Schema 与现行业务读取合同保持不变。",
+        "next_action": "后续业务继续直接使用现行字典合同和 ThinkPHP Provider，不再恢复静态帮助入口。",
         "blockers": []
       },
       "PA-SVC-EXTERNAL-CHANNEL": {
