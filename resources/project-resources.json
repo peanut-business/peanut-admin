@@ -940,7 +940,7 @@
         "data_source": "external collaboration provider implementing the signed official.rich-text document token contract",
         "freshness_requirement": "when enabled, the provider verifies the current HMAC contract and the exact WebSocket endpoint is reachable",
         "health_check": "two authenticated Admin web providers converge through ws://127.0.0.1:20282",
-        "fallback": "when both collaboration variables are unset, the Module uses database persistence and revision conflict protection without WebSocket collaboration",
+        "fallback": "none",
         "lifecycle": "optional development service; production requires a separately registered production endpoint",
         "cleanup_responsibility": "deployment owner"
       },
