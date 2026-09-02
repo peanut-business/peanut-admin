@@ -47,7 +47,9 @@ function taskHostJob(int $tenantId, string $identity): array
 $serverRoot = dirname(__DIR__, 2);
 $app = new think\App();
 $app->initialize();
+$app->config->set(['mode' => 'multi-tenant'], 'deployment');
 $app->config->set(['signing_key' => hash('sha256', 'PB04-TASK-OPS-HOST-001')], 'async');
+putenv('DEPLOYMENT_MODE=multi-tenant');
 $tenantId = (int)Db::name('tenant')->where('status', 'active')->order('id')->value('id');
 expectTaskHost($tenantId > 0, 'active Tenant fixture is unavailable');
 $context = TenantContext::fromValidatedSession(new ValidatedTenantSession(
