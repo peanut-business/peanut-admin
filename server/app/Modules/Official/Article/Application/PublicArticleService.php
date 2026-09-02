@@ -122,7 +122,7 @@ final class PublicArticleService implements PublicArticleQueries, ArticleCollect
     public function collectionLists(int $memberId, array $params): PageResult
     {
         $query = ArticleTenantRepository::collections()->alias('c')
-            ->join('article a', 'c.article_id = a.id')
+            ->join('article a', 'a.tenant_id = c.tenant_id AND c.article_id = a.id')
             ->where('c.member_id', $memberId)
             ->where('c.status', 1)
             ->where('a.is_show', 1)

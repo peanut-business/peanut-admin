@@ -259,7 +259,7 @@ final class MemberAdministrationService implements MemberAdministration
         }
 
         $query = MemberTenantRepository::balanceLogs($this->executionContext->tenantAdmin())->alias('al')
-            ->join('member u', 'u.id = al.member_id')
+            ->join('member u', 'u.tenant_id = al.tenant_id AND u.id = al.member_id')
             ->field(
                 'u.nickname,u.account,u.sn,u.avatar,u.mobile,'
                 . 'al.action,al.change_amount,al.left_amount,'
