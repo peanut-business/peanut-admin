@@ -1,5 +1,8 @@
 import { Editor } from '@tiptap/core';
-import { HocuspocusProvider } from '@hocuspocus/provider';
+import {
+  HocuspocusProvider,
+  HocuspocusProviderWebsocket,
+} from '@hocuspocus/provider';
 import * as Y from 'yjs';
 import {
   DOCUMENT_VERSION,
@@ -62,15 +65,19 @@ const refreshCollaborationStatus = () => {
     : `${labels[connectionState] || connectionState} · ${authorizationScope} · ${unsyncedChanges ? '有本地待同步' : '服务端已确认'}`;
 };
 
-const provider = new HocuspocusProvider({
+const websocketProvider = new HocuspocusProviderWebsocket({
   url: COLLABORATION_URL,
-  name: COLLABORATION_DOCUMENT,
-  document: collaborationDocument,
-  token: async () => (await requestControl<{ token: string }>(`session?role=${collaborationRole}`)).token,
   delay: 20,
   minDelay: 20,
   maxDelay: 20,
   jitter: false,
+});
+
+const provider = new HocuspocusProvider({
+  websocketProvider,
+  name: COLLABORATION_DOCUMENT,
+  document: collaborationDocument,
+  token: async () => (await requestControl<{ token: string }>(`session?role=${collaborationRole}`)).token,
   onStatus: ({ status }) => {
     connectionState = status;
     refreshCollaborationStatus();
@@ -325,6 +332,7 @@ Object.assign(window, {
 
 window.addEventListener('beforeunload', () => {
   provider.destroy();
+  websocketProvider.destroy();
   collaborationDocument.destroy();
   readonlyEditor?.destroy();
 });
