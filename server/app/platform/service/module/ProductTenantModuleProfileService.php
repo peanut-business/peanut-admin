@@ -28,6 +28,7 @@ final readonly class ProductTenantModuleProfileService
                 'official.payment',
                 'official.oauth',
                 'official.import-export',
+                'official.rich-text',
             ],
         ],
         'demo' => [
