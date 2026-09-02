@@ -36,6 +36,7 @@ final readonly class PdoModuleOperationTaskExecutionService
     /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private PDO $pdo,
+        private AuditContractHost $audit,
         private string $projectRoot,
         private array $moduleConfig,
         private array $trustedKeys,
@@ -179,7 +180,7 @@ SQL);
             $context = $this->context($task);
             $maintenanceKey = (string)$current['maintenance_key'];
             $maintenanceRevision = (int)$current['maintenance_revision'];
-            (new PdoMaintenanceWindowStore($this->pdo))->close(
+            (new PdoMaintenanceWindowStore($this->pdo, $this->audit))->close(
                 $context,
                 $maintenanceKey,
                 $maintenanceRevision,
@@ -334,7 +335,7 @@ SQL);
             }
             $context = $this->context($task);
             $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
-            $child = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($context, $this->childSubmission(
+            $child = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))->dispatch($context, $this->childSubmission(
                 Package::BACKUP_TASK_TYPE,
                 $provider->backupHandlerKey,
                 ['provider_key' => $provider->key],
@@ -379,7 +380,7 @@ SQL);
                 throw new \RuntimeException('OPS_MODULE_BACKUP_FAILED');
             }
             $provider = $this->backupProviders->require(PairedBackupProvider::PROVIDER_KEY);
-            $restore = (new PdoOpsTaskDispatcher($this->pdo))->dispatch($this->context($task), $this->childSubmission(
+            $restore = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))->dispatch($this->context($task), $this->childSubmission(
                 Package::RESTORE_TASK_TYPE,
                 $provider->restoreHandlerKey,
                 [
@@ -472,7 +473,7 @@ SQL);
             );
             $idempotencyDigest = hash('sha256', (string)$task['task_key'] . ':maintenance-open');
             $requestDigest = hash('sha256', $key . ':' . $window->startsAt . ':' . $window->endsAt);
-            $created = (new PdoMaintenanceWindowStore($this->pdo))->schedule(
+            $created = (new PdoMaintenanceWindowStore($this->pdo, $this->audit))->schedule(
                 $context,
                 $window,
                 0,
@@ -755,7 +756,7 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
         ?string $reasonCode,
     ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             $action,
             'module-' . substr((string)$task['task_key'], 4),

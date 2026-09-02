@@ -5,7 +5,7 @@ namespace app\Modules\Official\Oauth\Application;
 
 use app\Modules\Official\Oauth\Contracts\OAuthQueries;
 use app\Modules\Official\Oauth\Contracts\OAuthPersistence;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class OAuthQueryService implements OAuthQueries

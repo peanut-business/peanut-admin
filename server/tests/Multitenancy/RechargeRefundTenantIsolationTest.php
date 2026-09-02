@@ -9,7 +9,11 @@ use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\contract\idempotency\IdempotencyResult;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\idempotency\IdempotencyRuntimeFactory;
+use app\common\service\FileService;
+use app\common\service\payment\PaymentRetryLock;
+use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\XlsxExportService;
+use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
 use app\Modules\Official\Payment\Application\RechargeAdministrationService;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
@@ -17,6 +21,7 @@ use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use think\facade\Console;
 use think\facade\Db;
 
@@ -81,6 +86,21 @@ function financeReconcile(TenantContext $context): void
         $scope,
         static fn() => Console::call('refund:reconcile'),
     ));
+}
+
+function financeRefundService(
+    XlsxExportService $xlsx,
+    IdempotentCommandExecutor $idempotency,
+): RechargeAdministrationService {
+    return new RechargeAdministrationService(
+        $xlsx,
+        $idempotency,
+        app(TransactionManager::class),
+        app(PaymentRetryLock::class),
+        app(PaymentServiceFactory::class),
+        app(FileService::class),
+        app(MemberBalanceCommands::class),
+    );
 }
 
 final class RefundBehaviorGateway implements RefundGatewayInterface
@@ -327,7 +347,7 @@ try {
     expectFinanceTenant($dbPdo instanceof PDO, 'ThinkPHP refund PDO is unavailable');
     $idempotency = IdempotencyRuntimeFactory::forPdo($dbPdo);
     $xlsx = (new ReflectionClass(XlsxExportService::class))->newInstanceWithoutConstructor();
-    $refunds = new RechargeAdministrationService($xlsx, $idempotency);
+    $refunds = financeRefundService($xlsx, $idempotency);
 
     RefundBehaviorGateway::mode('RC-UNKNOWN', 'accepted_unknown');
     $unknown = financeRun($alpha, 'test.refund.accepted-unknown', static fn() => $refunds->refund(
@@ -401,7 +421,7 @@ try {
     );
 
     RefundBehaviorGateway::mode('RC-FINALIZE', 'success');
-    $failingRefunds = new RechargeAdministrationService(
+    $failingRefunds = financeRefundService(
         $xlsx,
         new FailingRefundIdempotency($idempotency),
     );

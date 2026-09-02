@@ -16,8 +16,10 @@ use Throwable;
 /** Application persistence adapter for Core operations tasks. */
 final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private AuditContractHost $audit,
+    ) {
     }
 
     public function dispatch(PlatformContext $context, OpsTaskSubmission $submission): OpsTask
@@ -197,7 +199,7 @@ SQL);
                 'operator_id' => $context->operatorId,
             ]);
 
-            AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+            $this->audit->recordPlatform(
                 $eventType,
                 $action,
                 $context->requestId,

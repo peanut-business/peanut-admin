@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Contracts;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

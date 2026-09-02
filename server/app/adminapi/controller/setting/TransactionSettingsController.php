@@ -8,7 +8,6 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\application\setting\TransactionSettingsApplicationService;
-use app\common\service\transaction\TransactionSettingTenantContext;
 use app\common\application\BusinessException;
 
 /**
@@ -24,7 +23,7 @@ class TransactionSettingsController extends BaseAdminController
     public function getConfig()
     {
         return $this->data($this->transactionSettings->getConfig(
-            TransactionSettingTenantContext::member()
+            $this->tenantAdminContext()
         ));
     }
 
@@ -53,7 +52,7 @@ class TransactionSettingsController extends BaseAdminController
         }
 
         $this->transactionSettings->setConfig(
-            TransactionSettingTenantContext::member(),
+            $this->tenantAdminContext(),
             $post
         );
         return $this->success('操作成功', [], 1, 1);

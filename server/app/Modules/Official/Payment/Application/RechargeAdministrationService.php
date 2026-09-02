@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment\Application;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceMutation;
-use app\Modules\Official\Member\Contracts\MemberContracts;
+use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
 use DateTimeImmutable;
 use app\common\enum\AccountLogEnum;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
@@ -38,6 +38,7 @@ class RechargeAdministrationService
         private readonly PaymentRetryLock $retryLocks,
         private readonly PaymentServiceFactory $payments,
         private readonly FileService $files,
+        private readonly MemberBalanceCommands $memberBalances,
     ) {}
 
     /**
@@ -123,7 +124,7 @@ class RechargeAdministrationService
                 $order->refund_status = FinanceTenantRepository::REFUND_STATUS_STARTED;
                 $order->save();
 
-                MemberContracts::balanceCommands()->applyInTransaction(
+                $this->memberBalances->applyInTransaction(
                     $context,
                     new MemberBalanceMutation(
                         (int)$order->user_id,

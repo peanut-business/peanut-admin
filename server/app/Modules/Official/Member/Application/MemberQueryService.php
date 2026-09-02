@@ -9,7 +9,7 @@ use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\http\PageResult;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\Money;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

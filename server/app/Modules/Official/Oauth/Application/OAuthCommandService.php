@@ -16,7 +16,7 @@ use app\common\persistence\TransactionalExecution;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\oauth\contract\OAuthTransportInterface;
 use app\common\service\oauth\dto\OAuthProfile;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;

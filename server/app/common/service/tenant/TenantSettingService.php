@@ -7,7 +7,7 @@ use app\common\contract\tenant\TenantSettingSnapshot;
 use app\common\contract\tenant\TenantSettingsCommands;
 use app\common\contract\tenant\TenantSettingsProvider;
 use app\common\contract\tenant\TenantSettingsQuery;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

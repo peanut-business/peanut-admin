@@ -6,6 +6,7 @@ require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\ops\DeploymentModuleRequestService;
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
 use app\platform\service\ops\PairedBackupProvider;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
@@ -210,12 +211,14 @@ try {
         'health' => 'healthy',
         'repository_clean' => true,
     ];
-    $platform = new PlatformModuleOperationExecutionService($pdo, $target, $config, [], $registryPath, $runtime);
+    $audit = AuditContractHost::fromPdo($pdo);
+    $platform = new PlatformModuleOperationExecutionService($pdo, $audit, $target, $config, [], $registryPath, $runtime);
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
 
     $executor = new PdoModuleOperationTaskExecutionService(
         $pdo,
+        $audit,
         $target,
         $config,
         [],

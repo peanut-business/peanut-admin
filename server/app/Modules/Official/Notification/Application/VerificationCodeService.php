@@ -7,7 +7,7 @@ use app\Modules\Official\Notification\Contracts\DeliveryResult;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\notice\NoticeSmsSender;
 use app\common\service\notice\NoticeTenantContext;
 use app\common\service\notice\VerificationCodeSecret;

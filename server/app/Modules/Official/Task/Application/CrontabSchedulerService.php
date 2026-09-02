@@ -49,7 +49,7 @@ final class CrontabSchedulerService
         $lastTime = (int)($item['last_time'] ?? 0);
         $scope = TenantScope::fromTrustedContext(
             $tenantId,
-            sprintf('crontab:v1:tenant=%d:job=%d:window=%d', $tenantId, $jobId, max(0, $lastTime))
+            CrontabTaskDefinition::contextIdentity($tenantId, $jobId, max(0, $lastTime)),
         );
 
         $system = new TenantSystemContext(

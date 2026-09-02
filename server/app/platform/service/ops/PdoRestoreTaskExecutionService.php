@@ -26,8 +26,10 @@ final readonly class PdoRestoreTaskExecutionService
         'OPS_RESTORE_RUNTIME_FAILED',
     ];
 
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private AuditContractHost $audit,
+    ) {
     }
 
     /** @return array<string,mixed>|null */
@@ -378,7 +380,7 @@ SQL);
         ?string $reasonCode,
     ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             $action,
             'ops-worker-' . bin2hex(random_bytes(16)),

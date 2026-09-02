@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\file;
 
 use app\common\enum\FileEnum;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\FileMedia\Storage\TenantObjectNamespace;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

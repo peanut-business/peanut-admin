@@ -22,13 +22,14 @@ final readonly class HostApiProblemRenderer
     public function __construct(
         private App $app,
         private ExecutionContextAccess $contexts,
+        private ApiProblemMapper $problems,
     ) {
     }
 
     public function render($request, \Throwable $exception): ?Response
     {
         $application = $this->app->http->getName();
-        $problem = (new ApiProblemMapper())->map($exception);
+        $problem = $this->problems->map($exception);
         if (!$problem instanceof ApiProblem) {
             $fallback = self::FALLBACKS[$application] ?? null;
             if ($fallback === null) {

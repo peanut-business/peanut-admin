@@ -7,7 +7,6 @@ use app\Modules\Official\ImportExport\Application\TenantConfigurationTransferSer
 use app\adminapi\controller\BaseAdminController;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\audit\OperationLogTenantContext;
 use think\App;
 use app\common\application\BusinessException;
 
@@ -25,7 +24,7 @@ final class ConfigurationTransferController extends BaseAdminController
     public function export()
     {
         return $this->data($this->transfers->export(
-                OperationLogTenantContext::member(),
+                $this->tenantAdminContext(),
                 AdminPrincipal::fromArray($this->adminInfo),
         ));
     }
@@ -34,7 +33,7 @@ final class ConfigurationTransferController extends BaseAdminController
     {
         [$package, $secretBindings, $conflictPolicy] = $this->requestPayload();
             return $this->data($this->transfers->dryRun(
-                OperationLogTenantContext::member(),
+                $this->tenantAdminContext(),
                 AdminPrincipal::fromArray($this->adminInfo),
                 $package,
                 $secretBindings,
@@ -46,7 +45,7 @@ final class ConfigurationTransferController extends BaseAdminController
     {
         [$package, $secretBindings, $conflictPolicy] = $this->requestPayload();
             return $this->data($this->transfers->apply(
-                OperationLogTenantContext::member(),
+                $this->tenantAdminContext(),
                 AdminPrincipal::fromArray($this->adminInfo),
                 $package,
                 $secretBindings,

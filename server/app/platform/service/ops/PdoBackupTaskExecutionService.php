@@ -23,8 +23,10 @@ final readonly class PdoBackupTaskExecutionService
         'OPS_BACKUP_RUNTIME_FAILED',
     ];
 
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private AuditContractHost $audit,
+    ) {
     }
 
     /** @return array{task_key:string,backup_reference_key:string,provider_key:string,execution_revision:int}|null */
@@ -313,7 +315,7 @@ SQL);
         ?string $reasonCode,
     ): void
     {
-        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+        $this->audit->recordPlatform(
             $eventType,
             $action,
             'ops-worker-' . bin2hex(random_bytes(16)),

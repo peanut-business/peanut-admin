@@ -55,7 +55,11 @@ final readonly class PlatformOperatorSessionService
 
     public function logout(string $accessToken): void
     {
-        $this->authentication->logout($accessToken);
+        try {
+            $this->authentication->logout($accessToken);
+        } catch (\PeanutAdmin\Kernel\Auth\AuthException) {
+            // Logout is idempotent when the supplied credential is already invalid.
+        }
     }
 
     public function assertAllowed(PlatformOperatorContext $context, string $permission): void

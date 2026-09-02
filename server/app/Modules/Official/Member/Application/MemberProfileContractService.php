@@ -5,7 +5,7 @@ namespace app\Modules\Official\Member\Application;
 
 use app\common\application\BusinessException;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;

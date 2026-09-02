@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\auth;
 
+use app\adminapi\http\AdminRequest;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\application\BusinessException;
+use app\common\service\tenant\ApplicationHostPolicy;
+use app\common\service\tenant\TenantEntryBindingResolver;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantAuthentication;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
@@ -15,24 +18,26 @@ final class LoginApplicationService
     public function __construct(
         private readonly TenantAuthService $tenantAuth,
         private readonly AdminAuthorizationService $authorization,
+        private readonly ApplicationHostPolicy $hostPolicy,
+        private readonly TenantEntryBindingResolver $entryBindings,
     ) {}
 
-    public function login(
-        array $params,
-        ?string $tenantCode,
-        string $ip,
-        string $userAgent,
-        string $requestId,
-    ): array
+    public function login(object $request, array $params): array
     {
         try {
+            $this->hostPolicy->assertTenantAdmin($request);
+            $tenantCode = $this->entryBindings->loginTenantCode(
+                $request,
+                TenantEntryBindingResolver::ADMIN_CLIENT,
+                isset($params['tenant_code']) ? (string)$params['tenant_code'] : null,
+            );
             $outcome = $this->tenantAuth->login(
                 trim((string)$params['account']),
                 (string)$params['password'],
                 $tenantCode,
-                $ip,
-                $userAgent,
-                $requestId,
+                $request->ip(),
+                $request->header('User-Agent'),
+                AdminRequest::requestId($request),
             );
             if ($outcome instanceof TenantSelectionRequired) {
                 return $outcome->responseData();

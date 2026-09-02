@@ -7,7 +7,7 @@ use app\Modules\Official\Oauth\Contracts\Dto\OAuthAttemptRecord;
 use app\Modules\Official\Oauth\Contracts\Dto\OAuthCompletionRecord;
 use app\Modules\Official\Oauth\Contracts\Dto\OAuthIdentityRecord;
 use app\Modules\Official\Oauth\Contracts\Dto\OAuthPrincipalRecord;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

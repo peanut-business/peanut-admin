@@ -310,7 +310,7 @@ SQL)->fetchAll();
     );
     $alphaScope = TenantScope::fromTrustedContext(
         101,
-        sprintf('crontab:v1:tenant=101:job=%d:window=%d', $alphaId, $previousWindow),
+        CrontabTaskDefinition::contextIdentity(101, $alphaId, $previousWindow),
     );
     $scheduler->start($alphaScope, ['id' => $alphaId]);
     expectCrontabTenant(

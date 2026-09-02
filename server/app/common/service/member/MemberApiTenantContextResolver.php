@@ -5,6 +5,7 @@ namespace app\common\service\member;
 
 use app\Modules\Official\Member\Contracts\MemberSubjectLookup;
 use PDO;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
 /** Restores application-member identity from a verified JWT subject and authoritative ownership. */
 final class MemberApiTenantContextResolver

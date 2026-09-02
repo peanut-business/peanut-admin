@@ -5,7 +5,7 @@ namespace app\Modules\Official\Member\Application;
 
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

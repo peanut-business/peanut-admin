@@ -16,8 +16,10 @@ use Throwable;
 /** Application-owned persistence and audit transaction for the Core maintenance contract. */
 final readonly class PdoMaintenanceWindowStore implements MaintenanceWindowStore
 {
-    public function __construct(private PDO $pdo)
-    {
+    public function __construct(
+        private PDO $pdo,
+        private AuditContractHost $audit,
+    ) {
     }
 
     public function current(PlatformContext $context): ?MaintenanceWindow
@@ -190,7 +192,7 @@ SQL);
 
     private function audit(PlatformContext $context, OpsAuditEvent $audit): void
     {
-        AuditContractHost::fromPdo($this->pdo)->recordPlatform(
+        $this->audit->recordPlatform(
             $audit->eventType,
             $audit->action,
             $context->requestId,

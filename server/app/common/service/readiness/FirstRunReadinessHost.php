@@ -8,7 +8,7 @@ use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\config\BrandDefaults;
 use app\common\service\config\WebsiteConfigService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PDO;

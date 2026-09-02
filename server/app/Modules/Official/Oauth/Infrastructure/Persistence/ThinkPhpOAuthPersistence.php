@@ -12,7 +12,7 @@ use app\Modules\Official\Oauth\Model\OAuthAttempt;
 use app\Modules\Official\Oauth\Model\OAuthCompletionTicket;
 use app\Modules\Official\Oauth\Model\OAuthIdentity;
 use app\Modules\Official\Oauth\Model\OAuthPrincipal;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

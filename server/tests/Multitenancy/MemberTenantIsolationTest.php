@@ -7,7 +7,7 @@ use app\Modules\Official\Member\Application\MemberProfileContractService;
 use app\Modules\Official\Member\Application\MemberTagContractService;
 use app\Modules\Official\Member\Application\MemberBalanceService;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;

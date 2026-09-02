@@ -8,7 +8,6 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\SmsApplicationService;
 use app\api\validate\SmsValidate;
-use app\common\service\notice\NoticeTenantContext;
 
 class SmsController extends BaseApiController
 {
@@ -24,7 +23,7 @@ class SmsController extends BaseApiController
         $params = $this->request->post();
         $this->validate($params, SmsValidate::class . '.send');
         $this->sms->sendCode(
-            NoticeTenantContext::verification($this->request, 'notice.verification.send'),
+            $this->publicTenantContext('notice.verification.send'),
             $params
         );
         return $this->success('发送成功');

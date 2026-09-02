@@ -5,7 +5,7 @@ namespace app\Modules\Official\Notification\Infrastructure\Persistence;
 
 use app\Modules\Official\Notification\Model\NoticeLog;
 use app\Modules\Official\Notification\Model\NoticeScene;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\ExecutionContextAccess;
 use app\common\service\notice\NoticeTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

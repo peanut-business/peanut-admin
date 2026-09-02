@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\notice;
 
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\ExecutionContextAccess;
 use app\common\execution\AdminExecutionContext;
 use app\common\execution\ConsumerExecutionContext;

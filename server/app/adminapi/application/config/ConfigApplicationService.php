@@ -7,7 +7,7 @@ use app\common\service\FileService;
 use app\common\service\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\WebsiteConfigService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class ConfigApplicationService

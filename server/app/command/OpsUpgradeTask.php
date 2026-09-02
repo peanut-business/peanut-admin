@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\PdoUpgradeTaskExecutionService;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
@@ -34,9 +35,11 @@ final class OpsUpgradeTask extends DatabaseContextualCommand
             if (!is_array($moduleConfig)) {
                 throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
             }
-            $runtime = new PlatformOpsRuntimeFactory($pdo, dirname(__DIR__, 3), $moduleConfig, []);
+            $audit = AuditContractHost::fromPdo($pdo);
+            $runtime = new PlatformOpsRuntimeFactory($pdo, $audit, dirname(__DIR__, 3), $moduleConfig, []);
             $service = new PdoUpgradeTaskExecutionService(
                 $pdo,
+                $audit,
                 dirname(__DIR__, 3),
                 $runtime->backupProviders(),
                 $runtime->runtimeStatusProvider(),

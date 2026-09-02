@@ -81,6 +81,7 @@ expectOAuthChannelHost(
 );
 $oauthWithoutAllowedContextTypes = str_replace([
     'PeanutAdmin\\Kernel\\Auth\\TenantContext',
+    'PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext',
     'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
 ], '', $oauthLogic);
 expectOAuthChannelHost(

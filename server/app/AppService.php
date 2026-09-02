@@ -34,6 +34,7 @@ use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\instance\DeploymentMode;
 use app\common\service\idempotency\IdempotencyRuntimeFactory;
+use app\common\service\installation\InstallationExecutionHost;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\CoreServiceOverrides;
@@ -155,6 +156,10 @@ class AppService extends Service
             $this->app,
             $this->app->make(CurrentExecutionContext::class),
         ));
+        $this->app->bind(
+            InstallationExecutionHost::class,
+            fn(): InstallationExecutionHost => new InstallationExecutionHost(dirname(__DIR__)),
+        );
         $this->app->bind(AdminAuthorizationService::class, fn(): AdminAuthorizationService => new AdminAuthorizationService(
             $this->app->make(PDO::class),
             $this->app->make(CoreTenantModuleAdminBridge::class),
@@ -257,6 +262,7 @@ class AppService extends Service
             }
             return new PlatformRuntimeFactory(
                 $this->app->make(PDO::class),
+                $this->app->make(AuditContractHost::class),
                 $this->app->make(\app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands::class),
                 $this->app->make(\app\Modules\Official\Task\Contracts\TaskBootstrapCommands::class),
                 $this->app->make(ExecutionContextStore::class),
@@ -282,6 +288,7 @@ class AppService extends Service
             }
             return new PlatformOpsRuntimeFactory(
                 $this->app->make(PDO::class),
+                $this->app->make(AuditContractHost::class),
                 dirname(__DIR__, 2),
                 $moduleConfig,
                 $trustedKeys,

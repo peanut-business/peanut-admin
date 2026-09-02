@@ -68,6 +68,14 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
         return self::OPERATION;
     }
 
+    public static function contextIdentity(int $tenantId, int $scheduleId, int $window): string
+    {
+        if ($tenantId < 1 || $scheduleId < 1 || $window < 0) {
+            throw new \InvalidArgumentException('CRONTAB_TASK_CONTEXT_INVALID');
+        }
+        return sprintf('crontab:v1:tenant=%d:job=%d:window=%d', $tenantId, $scheduleId, $window);
+    }
+
     public function build(AuthorizedOperationContext $context, array $input): TaskSubmission
     {
         $scheduleId = self::positiveInt($input['schedule_id'] ?? null, 'CRONTAB_TASK_INVALID');

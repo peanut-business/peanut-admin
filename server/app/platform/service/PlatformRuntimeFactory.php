@@ -51,6 +51,7 @@ final class PlatformRuntimeFactory
     /** @param array<string,mixed> $moduleConfig @param array<string,mixed> $trustedModuleKeyConfig */
     public function __construct(
         private readonly PDO $pdo,
+        private readonly AuditContractHost $audit,
         private readonly NotificationBootstrapCommands $notifications,
         private readonly TaskBootstrapCommands $tasks,
         private readonly ExecutionContextStore $executionContexts,
@@ -112,7 +113,7 @@ final class PlatformRuntimeFactory
         return $this->tenantEntryBindings ??= new TenantEntryBindingAdminService(
             $this->pdo,
             $this->sessions(),
-            AuditContractHost::fromPdo($this->pdo),
+            $this->audit,
         );
     }
 
@@ -129,7 +130,7 @@ final class PlatformRuntimeFactory
 
         $pdo = $this->pdo;
         $transactions = new PdoTransactionManager($pdo);
-        $audit = AuditContractHost::fromPdo($pdo);
+        $audit = $this->audit;
         $modules = new TenantModuleManager(
             new CompiledModuleRegistry([], [], [], [], 'platform-lifecycle-only'),
             new PdoModuleRuntimeRepository($pdo),
@@ -174,7 +175,7 @@ final class PlatformRuntimeFactory
         );
         $manager = new TenantModuleManager($registry->compiled(), $repository, $validator);
         $transactions = new PdoTransactionManager($pdo);
-        $audit = AuditContractHost::fromPdo($pdo);
+        $audit = $this->audit;
         $governance = new TenantGovernanceService(
             $this->identities(),
             $transactions,

@@ -208,6 +208,7 @@ $tenantSources = [$channelService, $verificationService, $applicationService, (s
 foreach ($tenantSources as $source) {
     $withoutAllowedContextTypes = str_replace([
         'PeanutAdmin\\Kernel\\Auth\\TenantContext',
+        'PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext',
         'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
         'PeanutAdmin\\Kernel\\Persistence\\TransactionManager',
     ], '', $source);

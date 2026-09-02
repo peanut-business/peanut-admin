@@ -7,7 +7,7 @@ use app\Modules\Official\Member\Model\Member;
 use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\Modules\Official\Member\Model\MemberTag;
 use app\Modules\Official\Member\Model\MemberTagRelation;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\persistence\ConvertsModelPage;

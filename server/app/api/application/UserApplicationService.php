@@ -10,7 +10,7 @@ use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\application\BusinessException;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\FileService;
 use PeanutAdmin\Kernel\Module\ModuleException;
 

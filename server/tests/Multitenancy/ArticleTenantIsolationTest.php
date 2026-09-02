@@ -12,7 +12,7 @@ use app\common\execution\ExecutionContextStore;
 use app\Modules\Official\Article\Application\ArticleCapabilityAuthorization;
 use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
 use app\common\service\decoration\DecorationSchemaService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 

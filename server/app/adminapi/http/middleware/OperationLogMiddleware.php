@@ -5,7 +5,6 @@ namespace app\adminapi\http\middleware;
 
 use app\adminapi\service\OperationLogService;
 use app\common\service\audit\OperationLogDiagnostics;
-use app\common\service\audit\OperationLogTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\execution\ExecutionContextAccess;
 use app\common\http\ApiProblemMapper;
@@ -27,6 +26,7 @@ class OperationLogMiddleware
     public function __construct(
         private readonly ExecutionContextAccess $contextAccess,
         private readonly OperationLogService $operationLogs,
+        private readonly ApiProblemMapper $problems,
     ) {}
 
     public function handle($request, \Closure $next)
@@ -53,7 +53,7 @@ class OperationLogMiddleware
             }
             return $response;
         } catch (\Throwable $exception) {
-            $problem = (new ApiProblemMapper())->map($exception);
+            $problem = $this->problems->map($exception);
             $httpStatus = $problem?->httpStatus ?? 500;
             $outcome = in_array($httpStatus, [401, 403], true)
                 ? AuditOutcome::Denied

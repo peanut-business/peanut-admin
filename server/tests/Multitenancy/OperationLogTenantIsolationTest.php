@@ -5,8 +5,8 @@ use app\adminapi\http\middleware\OperationLogMiddleware;
 use app\adminapi\application\log\OperationLogApplicationService;
 use app\adminapi\service\OperationLogService;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\audit\OperationLogDiagnostics;
-use app\common\service\audit\OperationLogTenantContext;
 use app\platform\service\ops\PlatformDiagnosticBundleService;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -125,7 +125,7 @@ try {
     $alpha = operationTenantContext(101, 501, 'mt03-audit-alpha-' . $runId);
     $beta = operationTenantContext(202, 502, 'mt03-audit-beta-' . $runId);
     try {
-        OperationLogTenantContext::member();
+        app(CurrentExecutionContext::class)->tenantAdmin();
         throw new RuntimeException('missing TenantContext unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectOperationTenant($exception->getMessage() !== '', 'missing context denial lost its shape');

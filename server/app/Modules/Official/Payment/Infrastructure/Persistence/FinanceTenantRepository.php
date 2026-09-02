@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Infrastructure\Persistence;
 
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\Modules\Official\Payment\Model\RechargeOrder;
 use app\Modules\Official\Payment\Model\RefundLog;
 use app\Modules\Official\Payment\Model\RefundRecord;

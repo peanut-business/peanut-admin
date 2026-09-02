@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Contracts;
 
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
 interface ArticleCollectionSummary
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\File\Contracts;
 
 use app\common\enum\FileEnum;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\Modules\Official\File\Contracts\Dto\UploadFile;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

@@ -6,7 +6,7 @@ namespace app\Modules\Official\Member\Contracts;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\common\http\PageResult;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

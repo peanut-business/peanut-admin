@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use app\Modules\Official\Task\Application\CrontabApplicationService;
+use app\Modules\Official\Task\Application\CrontabTaskDefinition;
 use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
 use app\common\execution\ExecutionContextStore;
@@ -27,11 +28,6 @@ function expectTaskHost(bool $condition, string $message): void
     if (!$condition) {
         throw new RuntimeException($message);
     }
-}
-
-function taskHostIdentity(int $tenantId, int $taskId, int $window): string
-{
-    return sprintf('crontab:v1:tenant=%d:job=%d:window=%d', $tenantId, $taskId, $window);
 }
 
 /** @return array<string,mixed> */
@@ -133,7 +129,7 @@ try {
         fn() => Crontab::findOrEmpty($taskId),
     );
     expectTaskHost(!$task->isEmpty(), 'temporary crontab is missing');
-    $taskIdentities[] = taskHostIdentity($tenantId, $taskId, 1);
+    $taskIdentities[] = CrontabTaskDefinition::contextIdentity($tenantId, $taskId, 1);
     app(CrontabCommand::class)->start(
         TenantScope::fromTrustedContext($tenantId, $taskIdentities[0]),
         $task->getData(),
@@ -155,7 +151,7 @@ try {
         new \app\common\execution\AdminExecutionContext($context, 'test.task-import-export.crontab.find.denied'),
         fn() => Crontab::findOrEmpty($taskId),
     );
-    $taskIdentities[] = taskHostIdentity($tenantId, $taskId, 2);
+    $taskIdentities[] = CrontabTaskDefinition::contextIdentity($tenantId, $taskId, 2);
     app(CrontabCommand::class)->start(
         TenantScope::fromTrustedContext($tenantId, $taskIdentities[1]),
         $task->getData(),
@@ -187,7 +183,7 @@ try {
     );
     expectTaskHost((int)$task->status === CrontabEnum::START, 'manual retry must restore started state');
     expectTaskHost((string)$task->error === '', 'manual retry must clear the previous error');
-    $taskIdentities[] = taskHostIdentity($tenantId, $taskId, 3);
+    $taskIdentities[] = CrontabTaskDefinition::contextIdentity($tenantId, $taskId, 3);
     app(CrontabCommand::class)->start(
         TenantScope::fromTrustedContext($tenantId, $taskIdentities[2]),
         $task->getData(),

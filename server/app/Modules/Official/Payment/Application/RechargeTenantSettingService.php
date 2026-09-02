@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Payment\Application;
 
 use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\tenant\TenantSettingService;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
 use PeanutAdmin\Kernel\Auth\TenantContext;

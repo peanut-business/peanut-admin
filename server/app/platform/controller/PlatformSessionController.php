@@ -63,11 +63,7 @@ final class PlatformSessionController extends BasePlatformController
     {
         $token = PlatformRequest::bearerToken($this->request);
         if ($token !== '') {
-            try {
-                $this->sessions->logout($token);
-            } catch (AuthException) {
-                // Logout remains idempotent when the supplied credential is already invalid.
-            }
+            $this->sessions->logout($token);
         }
 
         return $this->success('success')->header(['Set-Cookie' => PlatformRefreshCookie::clear()]);

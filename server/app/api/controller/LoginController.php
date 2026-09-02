@@ -7,7 +7,6 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\api\application\LoginApplicationService;
-use app\common\service\notice\NoticeTenantContext;
 use app\common\application\BusinessException;
 
 class LoginController extends BaseApiController
@@ -67,7 +66,7 @@ class LoginController extends BaseApiController
         }
 
         return $this->data($this->login->mobileLogin(
-            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+            $this->publicTenantContext('notice.verification.verify'),
             $params,
             $this->request->ip(),
         ));
@@ -87,7 +86,7 @@ class LoginController extends BaseApiController
         }
 
         $this->login->resetPassword(
-            NoticeTenantContext::verification($this->request, 'notice.verification.verify'),
+            $this->publicTenantContext('notice.verification.verify'),
             $params
         );
         return $this->success('密码已重置');

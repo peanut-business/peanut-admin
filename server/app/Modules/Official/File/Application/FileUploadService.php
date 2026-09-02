@@ -8,7 +8,7 @@ use app\Modules\Official\File\Contracts\Dto\UploadFile;
 use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\enum\FileEnum;
 use app\common\execution\ExecutionContextAccess;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

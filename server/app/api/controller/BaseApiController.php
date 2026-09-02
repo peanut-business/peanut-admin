@@ -6,7 +6,7 @@ namespace app\api\controller;
 use app\common\controller\BaseLikeAdminController;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ConsumerExecutionContext;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\App;
 

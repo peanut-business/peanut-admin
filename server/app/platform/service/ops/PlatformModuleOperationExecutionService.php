@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\common\service\audit\AuditContractHost;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -21,6 +22,7 @@ final readonly class PlatformModuleOperationExecutionService
     /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private PDO $pdo,
+        private AuditContractHost $audit,
         private string $projectRoot,
         private array $moduleConfig,
         private array $trustedKeys,
@@ -66,7 +68,7 @@ final readonly class PlatformModuleOperationExecutionService
                 'source_commit' => $runtime['commit'],
                 'source_tree' => $runtime['tree'],
             ];
-            $row = (new PdoOpsTaskDispatcher($this->pdo))
+            $row = (new PdoOpsTaskDispatcher($this->pdo, $this->audit))
                 ->dispatchModuleOperation($context, $payload, $idempotencyKey);
             $claim = $this->pdo->prepare(<<<'SQL'
 UPDATE pa_ops_module_request

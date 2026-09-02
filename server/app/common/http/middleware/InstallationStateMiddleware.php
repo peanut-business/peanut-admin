@@ -8,6 +8,10 @@ use app\common\service\installation\InstallationExecutionHost;
 /** Keeps every business API closed while a guided fresh installation is incomplete. */
 final class InstallationStateMiddleware
 {
+    public function __construct(private readonly InstallationExecutionHost $host)
+    {
+    }
+
     public function handle($request, \Closure $next)
     {
         if (trim((string)(getenv('PEANUT_INSTALLATION_MODE') ?: 'automatic')) !== 'guided') {
@@ -15,7 +19,7 @@ final class InstallationStateMiddleware
         }
 
         try {
-            $status = (new InstallationExecutionHost(dirname(__DIR__, 4)))->status();
+            $status = $this->host->status();
         } catch (\Throwable) {
             throw \app\common\http\ApiProblem::fromEnvelope(
                 '系统安装状态不可用。',

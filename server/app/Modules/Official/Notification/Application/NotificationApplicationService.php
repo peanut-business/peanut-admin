@@ -12,7 +12,7 @@ use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\service\notice\NoticeChannelService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextAccess;
 use PeanutAdmin\Kernel\Auth\TenantContext;

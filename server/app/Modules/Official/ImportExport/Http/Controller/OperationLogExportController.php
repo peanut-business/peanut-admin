@@ -7,7 +7,6 @@ use app\adminapi\controller\BaseAdminController;
 use app\Modules\Official\ImportExport\Application\OperationLogExportApplicationService;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\audit\OperationLogTenantContext;
 use think\App;
 
 final class OperationLogExportController extends BaseAdminController
@@ -22,7 +21,7 @@ final class OperationLogExportController extends BaseAdminController
 
     public function export()
     {
-        $context = OperationLogTenantContext::member();
+        $context = $this->tenantAdminContext();
             $operation = $this->exports->submit(
                 $context,
                 AdminPrincipal::fromArray($this->adminInfo),
@@ -33,7 +32,7 @@ final class OperationLogExportController extends BaseAdminController
 
     public function exportStatus()
     {
-        $context = OperationLogTenantContext::member();
+        $context = $this->tenantAdminContext();
             $operation = $this->exports->operation(
                 $context,
                 AdminPrincipal::fromArray($this->adminInfo),
@@ -44,7 +43,7 @@ final class OperationLogExportController extends BaseAdminController
 
     public function exportDownload()
     {
-        $context = OperationLogTenantContext::member();
+        $context = $this->tenantAdminContext();
             $file = $this->exports->download(
                 $context,
                 AdminPrincipal::fromArray($this->adminInfo),

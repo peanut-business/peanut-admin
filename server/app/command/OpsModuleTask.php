@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
@@ -33,14 +34,17 @@ final class OpsModuleTask extends DatabaseContextualCommand
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
             $trustedKeys = $this->trustedKeys();
+            $audit = AuditContractHost::fromPdo($pdo);
             $runtime = new PlatformOpsRuntimeFactory(
                 $pdo,
+                $audit,
                 dirname(__DIR__, 3),
                 $config,
                 $trustedKeys,
             );
             $service = new PdoModuleOperationTaskExecutionService(
                 $pdo,
+                $audit,
                 dirname(__DIR__, 3),
                 $config,
                 $trustedKeys,

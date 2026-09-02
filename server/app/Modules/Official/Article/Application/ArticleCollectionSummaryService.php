@@ -5,7 +5,7 @@ namespace app\Modules\Official\Article\Application;
 
 use app\Modules\Official\Article\Contracts\ArticleCollectionSummary;
 use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
 final class ArticleCollectionSummaryService implements ArticleCollectionSummary
 {

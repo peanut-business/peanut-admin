@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\provider\NotificationQualificationContributor;
 use app\platform\service\provider\OauthQualificationContributor;
@@ -22,6 +23,7 @@ final class PlatformOpsRuntimeFactory
     /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
         private readonly PDO $pdo,
+        private readonly AuditContractHost $audit,
         private readonly string $projectRoot,
         private readonly array $moduleConfig,
         private readonly array $trustedKeys,
@@ -56,7 +58,7 @@ final class PlatformOpsRuntimeFactory
                 'security-maintenance',
                 'module-lifecycle',
             ]),
-            new PdoMaintenanceWindowStore($this->pdo),
+            new PdoMaintenanceWindowStore($this->pdo, $this->audit),
         );
     }
 
@@ -70,7 +72,7 @@ final class PlatformOpsRuntimeFactory
         return new OpsTaskService(
             new PlatformOpsPermissionChecker($this->pdo),
             $this->backupProviders(),
-            new PdoOpsTaskDispatcher($this->pdo),
+            new PdoOpsTaskDispatcher($this->pdo, $this->audit),
         );
     }
 
@@ -78,6 +80,7 @@ final class PlatformOpsRuntimeFactory
     {
         return new PlatformUpgradeExecutionService(
             $this->pdo,
+            $this->audit,
             $this->projectRoot,
             $this->runtimeStatusProvider(),
         );
@@ -87,6 +90,7 @@ final class PlatformOpsRuntimeFactory
     {
         return new PlatformModuleOperationExecutionService(
             $this->pdo,
+            $this->audit,
             $this->projectRoot,
             $this->moduleConfig,
             $this->trustedKeys,

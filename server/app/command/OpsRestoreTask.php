@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\PdoRestoreTaskExecutionService;
 use app\common\execution\DatabaseContextualCommand;
 use think\console\Input;
@@ -28,7 +29,8 @@ final class OpsRestoreTask extends DatabaseContextualCommand
     {
         try {
             $pdo = $this->database();
-            $service = new PdoRestoreTaskExecutionService($pdo);
+            $audit = AuditContractHost::fromPdo($pdo);
+            $service = new PdoRestoreTaskExecutionService($pdo, $audit);
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
                 'claim' => $service->claim(),

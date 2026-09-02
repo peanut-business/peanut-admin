@@ -4,6 +4,7 @@ declare(strict_types=1);
 use app\platform\service\ops\PlatformUpgradeReadinessService;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\platform\service\ops\PlatformUpgradeTarget;
+use app\common\service\audit\AuditContractHost;
 use app\platform\service\plugin\PluginLockResolver;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 use think\Config as ThinkConfig;
@@ -287,7 +288,13 @@ SQL);
 
     $moduleConfig = Config::get('modules', []);
     upgradeTargetExpect(is_array($moduleConfig), 'Module fixture configuration is unavailable');
-    $service = (new PlatformOpsRuntimeFactory($pdo, $projectRoot, $moduleConfig, []))->readiness();
+    $service = (new PlatformOpsRuntimeFactory(
+        $pdo,
+        AuditContractHost::fromPdo($pdo),
+        $projectRoot,
+        $moduleConfig,
+        [],
+    ))->readiness();
     $moduleProjection = Closure::bind(
         fn(PlatformUpgradeTarget $value): array => $this->moduleProjection($value),
         $service,

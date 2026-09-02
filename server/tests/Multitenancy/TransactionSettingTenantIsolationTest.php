@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 use app\adminapi\application\setting\TransactionSettingsApplicationService;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\transaction\TransactionSettingTenantContext;
 use app\common\service\transaction\TransactionSettingTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -205,7 +205,7 @@ SQL);
     );
 
     try {
-        TransactionSettingTenantContext::tenantId([]);
+        TenantContextRequirement::tenantId([]);
         throw new RuntimeException('invalid Tenant context was accepted');
     } catch (Throwable $exception) {
         expectTransactionTenant($exception->getMessage() !== '', 'invalid Tenant context denial lost shape');

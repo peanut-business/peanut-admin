@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Oauth\Application;
 
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\member\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /** H5 网页渠道配置。 */

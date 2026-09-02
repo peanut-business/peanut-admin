@@ -32,7 +32,7 @@ foreach ([
     'tenant_session' => 'app/adminapi/controller/auth/TenantSessionController.php',
     'tenant_session_application' => 'app/adminapi/application/auth/TenantSessionApplicationService.php',
     'admin_login' => 'app/adminapi/controller/auth/LoginController.php',
-    'authenticated_member_context' => 'app/common/service/member/AuthenticatedMemberContext.php',
+    'admin_login_application' => 'app/adminapi/application/auth/LoginApplicationService.php',
     'authenticated_member_context_core' => 'vendor/peanut-admin/core/kernel/src/Context/AuthenticatedMemberContext.php',
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
     'member_subject_lookup' => 'app/Modules/Official/Member/Infrastructure/Persistence/ThinkPhpMemberSubjectLookup.php',
@@ -168,10 +168,9 @@ qualificationExpect(
     'member JWT ownership does not establish an active trusted Tenant context'
 );
 qualificationExpect(
-    str_contains(
-        $sources['authenticated_member_context'],
-        'extends \\PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext'
-    )
+    str_contains($sources['member_context'], 'use PeanutAdmin\\Kernel\\Context\\AuthenticatedMemberContext;')
+        && str_contains($sources['member_context'], 'return new AuthenticatedMemberContext(')
+        && !is_file($root . '/app/common/service/member/AuthenticatedMemberContext.php')
         && str_contains($sources['authenticated_member_context_core'], 'public readonly int $memberId')
         && str_contains($sources['authenticated_member_context_core'], 'MEMBER_TENANT_CONTEXT_UNAVAILABLE')
         && !str_contains($sources['authenticated_member_context_core'], 'accountId')
@@ -210,7 +209,8 @@ qualificationExpect(
 qualificationExpect(
     str_contains($sources['tenant_session'], 'TenantSessionApplicationService')
         && str_contains($sources['tenant_session_application'], 'loginTenantCode(')
-        && str_contains($sources['admin_login'], 'loginTenantCode(')
+        && str_contains($sources['admin_login'], '$this->loginApplication->login(')
+        && str_contains($sources['admin_login_application'], 'loginTenantCode(')
         && str_contains($sources['public_tenant_module_middleware'], '$this->entryBindings->system(')
         && !str_contains($sources['public_tenant_module_middleware'], 'DefaultTenantContextResolver::system('),
     'Admin or anonymous member authentication bypasses Tenant entry resolution'

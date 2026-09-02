@@ -9,7 +9,6 @@ use app\common\execution\CurrentExecutionContext;
 use app\adminapi\controller\BaseAdminController;
 use app\common\http\PageResult;
 use app\adminapi\application\log\OperationLogApplicationService;
-use app\common\service\audit\OperationLogTenantContext;
 use app\common\service\module\ModuleExecutionBoundary;
 
 class OperationLogController extends BaseAdminController
@@ -30,7 +29,7 @@ class OperationLogController extends BaseAdminController
             $this->assertExportModule();
         }
         $res = $this->operationLogs->lists(
-                OperationLogTenantContext::member(),
+                $this->tenantAdminContext(),
                 $this->request->get()
         );
         if (!$res instanceof PageResult) {
@@ -42,7 +41,7 @@ class OperationLogController extends BaseAdminController
     public function clear()
     {
         $this->operationLogs->clear(
-            OperationLogTenantContext::member(),
+            $this->tenantAdminContext(),
             $this->adminId,
             (string)($this->adminInfo['username'] ?? ''),
             (string)$this->request->ip()
