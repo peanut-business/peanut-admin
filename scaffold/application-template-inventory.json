@@ -4225,7 +4225,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "467d4ef95665c7207c9eacf6e4b08eb403c99458e65a52cf7469da463cca18e3"
+            "source_sha256": "6a453b0a616847bab861ddf67c24bff5fccfaf30d2e6d7f9956964a9f11ce962"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -4335,7 +4335,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "63e7c95a2f4871f2bb3abb6e85668ef78748865f9e4f3a9c114e1c5217ef2d08"
+            "source_sha256": "e5ed501c99685448b0d334fba33f2633bcabcec9501a2fbd87d33afe20d30f92"
         },
         {
             "path": "plugins/official.oauth/plugin.json",
@@ -4349,7 +4349,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "11d7a2b3e028060b7d4234aaf6fd65da3a7b5ff327447dec326cec7d669b8484"
+            "source_sha256": "14f2e1d914af722e363e71a4ca512bad031b34f065497b39dd48ce3843d77e54"
         },
         {
             "path": "plugins/official.payment/plugin.json",
@@ -4633,7 +4633,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e834253947e519d423b35615c956d001af0e9b1c524f043b90fbcb97ed5a5101"
+            "source_sha256": "1403790853ffa2a5e0b632c407ef2b204a1a0024c4b60d5c3a46ec1b9c0882e8"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -10964,7 +10964,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0f9cdd7a0e686d64578ebffc0c032e0ab91285df6009b94c65219e060b674008"
+            "source_sha256": "c59153ce2a98f1d84465b42acefbe38e7226aac752881388507499d750624ccf"
         },
         {
             "path": "server/app/common/contract/AdminPermissionPolicy.php",

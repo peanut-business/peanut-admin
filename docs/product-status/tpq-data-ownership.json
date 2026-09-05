@@ -33,6 +33,7 @@
     {"model": "app\\Modules\\Official\\Payment\\Model\\PaymentTenantChannelGrant", "table": "pa_payment_tenant_channel_grant", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Payment\\Model\\RefundLog", "table": "pa_refund_log", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Payment\\Model\\RefundRecord", "table": "pa_refund_record", "owner": "tenant-orm"},
+    {"model": "app\\Modules\\Official\\RichText\\Model\\RichTextDocument", "table": "pa_rich_text_document", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Task\\Model\\Crontab", "table": "pa_crontab", "owner": "tenant-orm"},
     {"model": "app\\common\\model\\decoration\\DecoratePage", "table": "pa_decorate_page", "owner": "tenant-orm"},
     {"model": "app\\common\\model\\decoration\\DecorateTabbar", "table": "pa_decorate_tabbar", "owner": "tenant-orm"},
@@ -69,6 +70,7 @@
     {"table": "pa_article_cate", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Article\\Model\\ArticleCate"},
     {"table": "pa_article", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Article\\Model\\Article"},
     {"table": "pa_article_collect", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Article\\Model\\ArticleCollect"},
+    {"table": "pa_rich_text_document", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\RichText\\Model\\RichTextDocument"},
     {"table": "pa_recharge_order", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Payment\\Model\\RechargeOrder"},
     {"table": "pa_refund_record", "owner": "tenant-orm", "access_entry": "app\\Modules\\Official\\Payment\\Model\\RefundRecord"},
     {"table": "pa_decorate_page", "owner": "tenant-orm", "access_entry": "app\\common\\model\\decoration\\DecoratePage"},
@@ -100,10 +102,10 @@
     {"table": "pa_fixture_delivery_record", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Fixture\\DeliveryRecord\\Infrastructure\\Persistence\\PdoDeliveryRecordRepository"}
   ],
   "counts": {
-    "concrete_models": 36,
-    "tenant_models": 30,
+    "concrete_models": 37,
+    "tenant_models": 31,
     "non_tenant_models": 6,
-    "tenant_tables": 47,
+    "tenant_tables": 48,
     "tenant_tables_without_model": 17
   }
 }
