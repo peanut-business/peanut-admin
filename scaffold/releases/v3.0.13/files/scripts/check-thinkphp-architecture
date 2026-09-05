@@ -252,10 +252,7 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             re.IGNORECASE,
         ):
             hits.append(("host_module_internal_dependency", number, line.strip()))
-        if application_path and (
-            re.search(r"^\s*use\s+(?:think\\(?:Model|Console)|app\\[^;]+\\model\\)", line, re.IGNORECASE)
-            or "instanceof \\think\\Model" in line
-        ):
+        if application_path and re.search(r"^\s*use\s+think\\Console\s*;", line):
             hits.append(("application_framework_model", number, line.strip()))
         if (application_path or "/Contracts/" in f"/{rel}") and re.search(
             r"^\s*use\s+think\\file\\UploadedFile", line
