@@ -32,11 +32,13 @@ final readonly class ModuleComposition
 
             $provider = $this->app->make($providerClass, [], true);
             if (!$provider instanceof ModuleProvider
-                || !$provider instanceof ModuleBindingContributor
                 || !hash_equals($moduleKey, $provider->moduleKey())) {
-                throw new ModuleException('MODULE_COMPOSITION_INVALID', "Module binding contributor is invalid: {$moduleKey}");
+                throw new ModuleException('MODULE_COMPOSITION_INVALID', "Module provider is invalid: {$moduleKey}");
             }
             $providers[$providerClass] = true;
+            if (!$provider instanceof ModuleBindingContributor) {
+                continue;
+            }
 
             foreach ($provider->bindings() as $abstract => $concrete) {
                 if (!is_string($abstract) || $abstract === ''
