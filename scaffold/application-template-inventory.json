@@ -463,7 +463,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3ac7d90d6ed95bbdb24c7ec474be84b2e3c6ed4394a45be18612f00a7bd4880c"
+            "source_sha256": "331922b8d830c44dcaba05d3da71e84c49c2716aade37f287318e5dff4951dda"
         },
         {
             "path": "deploy/local-stack.env.example",
