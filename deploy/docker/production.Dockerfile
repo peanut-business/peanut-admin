@@ -63,6 +63,7 @@ WORKDIR /var/www/peanut-admin
 
 COPY deploy/docker/php-upload.ini /usr/local/etc/php/conf.d/peanut-upload.ini
 
+COPY release-versions.json release-versions.json
 COPY RELEASE_METADATA.json RELEASE_METADATA.json
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md RELEASE_SBOM.spdx.json CHANGELOG.md RELEASE_METADATA.json legal/
 COPY resources/project-resources.json resources/project-resources.json
@@ -88,6 +89,7 @@ RUN mkdir -p server/runtime server/public/storage server/private/storage \
     && printf '%s\n' \
         'APP_ENV=production' \
         'APP_DEBUG=false' \
+        'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-build-only' \
         'DEPLOYMENT_MODE=standalone' \
         'DB_HOST=build-only.invalid' \
         'DB_PORT=3306' \
