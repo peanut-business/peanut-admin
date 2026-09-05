@@ -1633,6 +1633,19 @@
       "verification": "TPQ50-STRICT-ABSENCE@fc6fcb803240effdb584c0442dcfdb5650d3e913"
     },
     {
+      "issue_id": "handwritten_tenant_predicate:79abeb78ce1a",
+      "category": "handwritten_tenant_predicate",
+      "path": "server/app/Modules/Official/RichText/Application/RichTextDocumentService.php",
+      "line": 118,
+      "symbol": "'tenant_id' => $tenant->tenantId,",
+      "owner": "TPQ02-TPQ13 / Sol",
+      "decision": "allowlist",
+      "status": "closed",
+      "verification": "reviewed_signed_collaboration_token_payload",
+      "reason": "This field is the authenticated Tenant identity inside the short-lived signed collaboration token; it is not a SQL predicate or writable ownership field.",
+      "review_due": "2027-03-01"
+    },
+    {
       "issue_id": "handwritten_tenant_predicate:5b534b8ee0aa",
       "category": "handwritten_tenant_predicate",
       "path": "server/app/adminapi/application/auth/AdminApplicationService.php",
