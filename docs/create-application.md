@@ -92,3 +92,38 @@ Edition 的正式升级包和自己的发布流程采用后续版本：
 生成结果没有 `.git`，可直接执行 `git init` 成为独立仓库。连接任何资源前，应用 owner
 必须先补全 `resources/project-resources.json`；初始管理员密码仍只允许在空库安装时通过
 `ADMIN_INITIAL_PASSWORD` 显式提供。
+
+## 检查 Core 依赖身份
+
+生成应用可直接从自己的 manifest 与 lock 检查实际锁定的 PHP/Web Core 身份，不需要在相邻
+目录保留 Peanut Admin Core 源码，也不要求先安装 `vendor` 或 `node_modules`：
+
+```bash
+scripts/scaffold-doctor \
+  --resource-id=<应用资源登记中的稳定 ID> \
+  --path=/absolute/path/to/application
+```
+
+默认输出 `scope=php,web mode=released-package`，随后分别报告 `peanut-admin/core` 的 Composer
+constraint、锁定版本、source URL/reference，以及 `@peanut-admin/admin` 的直接依赖 specifier、
+pnpm 锁定版本和 integrity。doctor 不强制 PHP 与 Web 使用相同版本，两者也不必等于最初采用的
+scaffold 版本；跨版本组合仍须由对应发布兼容信息和应用既有检查确认，本工具不证明任意组合兼容，
+也不改变现有联动发布节奏。当前支持面要求两个 Core manifest 都直接声明精确版本，不解析 SemVer
+range；doctor 核对每个 manifest 与自己的 lock 是否形成唯一、完整且一致的不可变依赖身份，并
+拒绝可变 PHP source reference、path dist 与带认证信息的 source URL。它不安装依赖、不访问网络、
+不连接登记资源，也不读取凭据。该结果证明的是锁文件身份，不是依赖已经成功安装、应用能够运行
+或候选具备发布资格。
+
+只有联合调试本地 Core 源码时，才显式选择源码 checkout：
+
+```bash
+scripts/scaffold-doctor \
+  --resource-id=<应用资源登记中的稳定 ID> \
+  --path=/absolute/path/to/application \
+  --core-dir=/absolute/path/to/peanut-admin-core
+```
+
+也可用 `PEANUT_ADMIN_CORE_DIR` 指定同一路径。此时输出
+`scope=php,web mode=local-core-development`，并额外核对 checkout 的 PHP/Web package 版本和
+现有本地依赖软链接是否都指向所选源码。该模式只服务本地联合开发，不代表 Registry 发布包或
+生产运行已经验证。

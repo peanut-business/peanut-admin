@@ -2195,6 +2195,7 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/create-app",
+        "scripts/scaffold-doctor",
         "scripts/build-edition-upgrades",
         "scripts/scaffold-upgrade",
         "release-versions.json",
