@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\application\auth;
 
 use app\common\application\BusinessException;
+use app\common\execution\CurrentExecutionContext;
 use app\platform\http\PlatformRequest;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
@@ -14,6 +15,7 @@ use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 final readonly class TenantSessionApplicationService
 {
     public function __construct(
+        private CurrentExecutionContext $executionContext,
         private TenantAuthEndpoint $tenantAuth,
         private ApplicationHostPolicy $hostPolicy,
         private TenantEntryBindingResolver $entryBindings,
@@ -34,7 +36,7 @@ final readonly class TenantSessionApplicationService
                 $tenantCode,
                 $request->ip(),
                 $request->header('User-Agent'),
-                PlatformRequest::requestId($request),
+                PlatformRequest::requestId($this->executionContext, $request),
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw new BusinessException(
@@ -59,7 +61,7 @@ final readonly class TenantSessionApplicationService
                 (int)($params['tenant_id'] ?? 0),
                 $request->ip(),
                 $request->header('User-Agent'),
-                PlatformRequest::requestId($request),
+                PlatformRequest::requestId($this->executionContext, $request),
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw new BusinessException(
@@ -84,7 +86,7 @@ final readonly class TenantSessionApplicationService
                 PlatformRequest::bearerToken($request),
                 $request->ip(),
                 $request->header('User-Agent'),
-                PlatformRequest::requestId($request),
+                PlatformRequest::requestId($this->executionContext, $request),
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw new BusinessException(
@@ -104,7 +106,7 @@ final readonly class TenantSessionApplicationService
                 $this->isTrustedBrowserOrigin($request),
                 $request->ip(),
                 $request->header('User-Agent'),
-                PlatformRequest::requestId($request),
+                PlatformRequest::requestId($this->executionContext, $request),
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw new BusinessException(
@@ -121,7 +123,7 @@ final readonly class TenantSessionApplicationService
             $this->hostPolicy->assertTenantAdmin($request);
             return $this->tenantAuth->logout(
                 PlatformRequest::bearerToken($request),
-                PlatformRequest::requestId($request),
+                PlatformRequest::requestId($this->executionContext, $request),
             );
         } catch (AuthException|\DomainException|\InvalidArgumentException) {
             throw new BusinessException(

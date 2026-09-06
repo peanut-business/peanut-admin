@@ -186,7 +186,7 @@ class OAuthController extends BaseApiController
 
     private function operationId(): string
     {
-        return RequestTrace::id($this->request, 'oauth');
+        return RequestTrace::id($this->executionContext, $this->request, 'oauth');
     }
 
     private function loginResult(OAuthLoginResult $result): array

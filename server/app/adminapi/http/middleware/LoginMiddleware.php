@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace app\adminapi\http\middleware;
 
-use app\adminapi\http\AdminRequest;
+use app\common\execution\CurrentExecutionContext;
 use app\adminapi\service\AdminTokenService;
 use app\common\execution\ExecutionContextStore;
+use app\common\http\RequestTrace;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\JsonService;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
@@ -16,6 +17,7 @@ use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 final class LoginMiddleware
 {
     public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
         private readonly TenantAuthService $tenantAuth,
         private readonly ExecutionContextStore $executionContexts,
         private readonly AdminAuthorizationService $authorization,
@@ -37,7 +39,7 @@ final class LoginMiddleware
             $this->hostPolicy->assertTenantAdmin($request);
             $context = $this->tenantAuth->context(
                 $token,
-                AdminRequest::requestId($request),
+                RequestTrace::id($this->executionContext, $request, 'admin'),
             );
             $entryBindings = $this->entryBindings;
             $entryBindings->assertTenantAccess(

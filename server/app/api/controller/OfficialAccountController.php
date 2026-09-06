@@ -84,6 +84,6 @@ class OfficialAccountController extends BaseApiController
 
     private function operationId(): string
     {
-        return RequestTrace::id($this->request, 'wechat');
+        return RequestTrace::id($this->executionContext, $this->request, 'wechat');
     }
 }

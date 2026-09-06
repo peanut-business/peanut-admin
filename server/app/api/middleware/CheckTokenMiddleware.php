@@ -6,6 +6,7 @@ namespace app\api\middleware;
 use app\api\service\UserTokenService;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\execution\ExecutionContextStore;
+use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
 use app\common\service\JsonService;
 use app\common\service\member\MemberApiTenantContextResolver;
@@ -18,6 +19,7 @@ use app\common\service\member\MemberApiTenantContextResolver;
 class CheckTokenMiddleware
 {
     public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
         private readonly MemberQueries $members,
         private readonly ExecutionContextStore $executionContexts,
         private readonly MemberApiTenantContextResolver $tenantContexts,
@@ -39,7 +41,7 @@ class CheckTokenMiddleware
         }
 
         try {
-            $requestId = RequestTrace::id($request, 'member');
+            $requestId = RequestTrace::id($this->executionContext, $request, 'member');
             $memberContext = $this->tenantContexts->resolve(
                 $memberId,
                 $token,
