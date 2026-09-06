@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成，v3.0.12 正式源码、Demo 与文档站保持已验证。v3.0.13 首个候选在 Standalone 空库资格中暴露 Edition 持久化分流遗漏并已作废；当前应用在 bdcf812091a143d80b22e423067d84625bc2da0f 完成根因修复、application inventory 与 scaffold 重新同步，真实生成的 Standalone 应用空库聚焦验证通过。当前尚未合入 main、完成新候选 P0-E、发布或由 Demo/文档站采用。跨版本升级体验需等 v3.0.13 成为合格来源后由下一补丁完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.13 正式源码和 Standalone/Multi-tenant 双 Edition 安装基线已在 main@b6530737a17da4ace56b982ed62ba263ed47eef7 完成 P0-E 八组资格、零资源残留、annotated tag 与 GitHub Release；在线 Demo 和文档站仍保持已验证的 v3.0.12，尚未采用 v3.0.13。跨版本升级体验由下一补丁基于 v3.0.13 完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
-> 事实基线：`feat/fix-standalone-core-persistence@bdcf812091a143d80b22e423067d84625bc2da0f`，复核日期：`2026-09-03`。
+> 事实基线：`main@b6530737a17da4ace56b982ed62ba263ed47eef7`，复核日期：`2026-09-06`。
 
 ### 已验证可用
 
@@ -78,7 +78,7 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-ARCH-001` | ThinkPHP/ThinkORM 统一执行与数据边界 | 已实现，待验收 | TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。 |
-| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | v3.0.13 首个候选因 Standalone Edition 持久化分流遗漏而作废；当前根因修复已在 bdcf8120… 完成，application inventory 与双 Edition scaffold 已重新同步，真实生成的 Standalone 应用空库聚焦验证通过。首个正式安装基线仍待合入 main、新候选 P0-E、Release 附件独立消费及 Demo/文档采用；同 Edition 跨版本升级将在 v3.0.13 成为合格来源后的下一补丁采用，因此当前不能标记为已验证。 |
+| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | v3.0.13 已在 main@b6530737… 完成 P0-E 八组资格并发布正式源码、Standalone 与 Multi-tenant 两套安装包，首个正确双 Edition 安装基线已建立。在线 Demo/文档站采用与同 Edition 跨版本升级仍未完成，因此该完整能力继续保持已实现、待后续验收。 |
 
 ### 暂缓或范围外
 
