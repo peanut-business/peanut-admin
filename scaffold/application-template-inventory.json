@@ -4536,7 +4536,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "74a797fec8eceacf6fc8fb56da666b7de12f04cd9fc6b1f000922296a3410fa8"
+            "source_sha256": "93929a8cc3a23175307a384ef8661d5f0940139d2808008117851a180d4775a6"
         },
         {
             "path": "resources/service-registry.json",
@@ -4831,7 +4831,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9ad63d4b59bc7ad0f9d543a0e3582728a9e0e78b248ec1343238b913d89e79bb"
+            "source_sha256": "5410d8ee7110614f40d564688f45835c40e2d3e65dffb793397e72068b447651"
         },
         {
             "path": "scripts/docs-governance",
@@ -10888,7 +10888,21 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9d02b306b91afcd1d86fa5cfeffe7bff4b847f9f1e0912843f4a6fa845ba8d99"
+            "source_sha256": "62ac70018b5560a935f624ba872be4889c9b02e1e820a4726e60dc452f1f195e"
+        },
+        {
+            "path": "server/app/command/PluginReleaseComposition.php",
+            "target": "server/app/command/PluginReleaseComposition.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "a030816a5919bb457d56abeffef323e4b03e7a1e82f765d3ee76c16b075a7b26"
         },
         {
             "path": "server/app/command/PluginRollback.php",
@@ -15830,6 +15844,18 @@
             "source_sha256": "656e97c8d4d8631952afbf825c77f9413202372455be06f76896e0ae418b3512"
         },
         {
+            "path": "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+            "target": "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "full"
+            ],
+            "source_sha256": "63137a3df279817a0e9007d437c3b912d1395b0d27e5936be375c84b7921e93d"
+        },
+        {
             "path": "server/app/platform/service/plugin/PluginRuntimeGovernanceService.php",
             "target": "server/app/platform/service/plugin/PluginRuntimeGovernanceService.php",
             "classification": "app-owned",
@@ -16235,7 +16261,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5121d5aacc1162fa8cac4632efad7b0f20759583b55943fba9d19bd48ec2f273"
+            "source_sha256": "f206567354e4e48f020e29459a224244651ec0acefc0acc5bf2f91e11ee01eca"
         },
         {
             "path": "server/config/cookie.php",

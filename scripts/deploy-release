@@ -628,6 +628,15 @@ jq -e '.status == "ready" and .code == "INSTALL_PREFLIGHT_READY"' <<<"$candidate
   || fail 'candidate Plugin lock is not canonical before target replacement'
 printf 'candidate_installation_preflight=ready\ncandidate_plugin_lock=valid\n'
 
+if [[ "$mode" == update ]]; then
+  "${candidate_compose[@]}" run -T --rm --no-deps \
+    --volume "$root:/run/peanut-current-release:ro" \
+    --entrypoint php php server/think plugin:release-composition \
+    --current-root=/run/peanut-current-release </dev/null \
+    || fail 'candidate Plugin composition would remove, downgrade, or replace an installed package unsafely'
+  printf 'candidate_plugin_composition=ready\n'
+fi
+
 verify_paired_backup() {
   local backup_root="$root/backups" backup_dir
   if [[ "$target" != production ]]; then
@@ -744,7 +753,7 @@ if [[ "$mode" == update ]]; then
   "${compose[@]}" up -d --wait mysql
   migration_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$scaffold_migration_version" </dev/null)" || fail "database migration failed: $migration_result"
   printf '%s\n' "$migration_result"
-  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
+  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --release-locked </dev/null
   demo_mode_enabled=0
   if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
     demo_mode_enabled=1
@@ -777,7 +786,7 @@ fi
 unset ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$migration_target_version" </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/environment-guard.php --current </dev/null
-"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
+"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --release-locked </dev/null
 demo_mode_enabled=0
 if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
   demo_mode_enabled=1

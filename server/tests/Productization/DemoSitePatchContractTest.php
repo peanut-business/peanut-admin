@@ -222,7 +222,9 @@ foreach ([
     'mv -f -- "$temporary" "$target_file"',
     'server/database/install.php',
     'server/database/install.php --migrate --target-version="$scaffold_migration_version"',
-    'plugin:reconcile --official-locked',
+    'plugin:reconcile --release-locked',
+    'plugin:release-composition',
+    '--current-root=/run/peanut-current-release',
     'tenant-module:apply-profile standalone',
     'tenant-module:apply-profile demo',
     'printf \'DEMO_MODE_SET=%q\\n\' "$DEMO_MODE_SET"',
@@ -284,23 +286,28 @@ $metadataValidationPosition = strpos($deploy, "jq -e --arg tag \"\$tag\" --arg c
 $buildPosition = strpos($deploy, '"${candidate_compose[@]}" build');
 $candidatePreflightPosition = strpos($deploy, 'server/database/install.php --preflight', (int)$buildPosition);
 $candidatePluginLockPosition = strpos($deploy, 'server/think plugin:lock --check', (int)$candidatePreflightPosition);
+$candidatePluginCompositionPosition = strpos($deploy, 'server/think plugin:release-composition', (int)$candidatePluginLockPosition);
+$rootCleanupPosition = strpos($deploy, 'sudo -n find "$root" -mindepth 1 -maxdepth 1', (int)$candidatePluginCompositionPosition);
 $destroyPosition = strpos($deploy, '"${current_compose[@]}" down --volumes');
 $expect(
     $metadataValidationPosition !== false
         && $buildPosition !== false
         && $candidatePreflightPosition !== false
         && $candidatePluginLockPosition !== false
+        && $candidatePluginCompositionPosition !== false
+        && $rootCleanupPosition !== false
         && $destroyPosition !== false
         && $metadataValidationPosition < $buildPosition
         && $buildPosition < $candidatePreflightPosition
         && $candidatePreflightPosition < $candidatePluginLockPosition
-        && $candidatePluginLockPosition < $destroyPosition,
+        && $candidatePluginLockPosition < $candidatePluginCompositionPosition
+        && $candidatePluginCompositionPosition < $rootCleanupPosition,
     'fresh deployment does not validate the exact candidate image before destructive work'
 );
 $freshMigration = 'server/database/install.php --migrate --target-version="$migration_target_version"';
 $updateMigration = 'server/database/install.php --migrate --target-version="$scaffold_migration_version"';
 $freshMigrationPosition = strpos($deploy, $freshMigration);
-$reconcilePosition = strpos($deploy, 'server/think plugin:reconcile --official-locked', (int)$freshMigrationPosition);
+$reconcilePosition = strpos($deploy, 'server/think plugin:reconcile --release-locked', (int)$freshMigrationPosition);
 $expect(
     substr_count($deploy, $freshMigration) === 1
         && substr_count($deploy, $updateMigration) === 1
@@ -316,11 +323,11 @@ $expect(
     'deployment does not recompute the overlay migration maximum from its declared migration files'
 );
 $expect(
-    substr_count($deploy, 'run -T --rm --no-deps --entrypoint php') === 13,
+    substr_count($deploy, 'run -T --rm --no-deps') === 14,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
 $expect(
-    substr_count($deploy, '</dev/null') === 13,
+    substr_count($deploy, '</dev/null') === 14,
     'remote one-shot Compose commands must close inherited standard input'
 );
 

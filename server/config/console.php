@@ -27,6 +27,7 @@ return [
         'module:sync' => \app\command\ModuleSync::class,
         'plugin:install'   => \app\command\PluginInstall::class,
         'plugin:reconcile' => \app\command\PluginReconcile::class,
+        'plugin:release-composition' => \app\command\PluginReleaseComposition::class,
         'plugin:make'      => \app\command\PluginMake::class,
         'plugin:lock'      => \app\command\PluginLock::class,
         'plugin:upgrade'   => \app\command\PluginUpgrade::class,
