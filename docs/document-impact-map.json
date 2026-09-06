@@ -60,6 +60,16 @@
       "reason": "Edition packaging, package trust and application upgrade ownership must remain one documented release contract."
     },
     {
+      "id": "application-scaffold-version-contract",
+      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
+      "classifications": ["architecture-decision", "technical"],
+      "upstream": ["application release contract", "scaffold adoption manifest", "migration ledger and immutable SQL"],
+      "technical_docs": ["docs/plans/application-scaffold-version-contract-queue.md", "docs/create-application.md", "docs/scaffold-upgrade.md", "docs/peanut-admin-release-deployment.md", "docs/operations/release-and-application-lifecycle.md"],
+      "site_docs": [],
+      "generated": ["docs/reference/document-catalog.generated.md"],
+      "reason": "Application releases, scaffold provenance, Core locks and database migration targets are separate identities that must remain explicit across generation, upgrade and deployment."
+    },
+    {
       "id": "schema-migration-owner",
       "paths": ["server/database/**/*.sql", "server/database/**/*.php", "server/app/**/model/**/*.php", "server/app/**/module.json"],
       "classifications": ["technical", "developer-site", "architecture-decision"],

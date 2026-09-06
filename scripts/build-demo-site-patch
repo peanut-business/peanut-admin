@@ -29,7 +29,9 @@ files=(
   server/database/seed-multi-tenant-demo.php
 )
 
-migration_target_version="${BASE_TAG#v}"
+migration_target_version="$(git show "$BASE_TAG:release-versions.json" | jq -r '.scaffold_template // empty')"
+[[ "$migration_target_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+  || fail 'base release scaffold migration identity is invalid'
 
 staging="$(mktemp -d -t peanut-admin-demo-patch.XXXXXX)"
 trap 'rm -rf "$staging"' EXIT

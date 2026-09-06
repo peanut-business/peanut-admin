@@ -66,10 +66,22 @@ php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/applicatio
 这条执行器只更新 manifest 中标为 `managed` 或 `generated-managed` 的框架文件，并原子保存
 恢复材料；`app-owned` 业务代码、业务 Schema、部署密钥和业务迁移不会被自动改写。它也不
 执行 Composer/npm、数据库 migration 或服务重启。部署中的前后端与数据库升级由
-`scripts/deploy-release --update` 另行完成：同一大版本会安装锁定依赖并执行
-`php server/database/install.php --migrate --target-version=X.Y.Z`，跨大版本则必须走
+`scripts/deploy-release --update` 另行完成：应用 tag 只控制发布顺序；同一 scaffold 大版本会安装
+锁定依赖并执行 `php server/database/install.php --migrate --target-version=<scaffold-template>`，scaffold
+跨大版本则必须走
 `--fresh`（配对备份、显式确认和重建空库）。升级前先运行 `preflight`，看到 `status=ready`
 且冲突为 0 后再 apply。
+
+当前应用发布版本读取根 `release-versions.json.product_release`；`.peanut/application-manifest.json`
+中的 `application.version` 保留最近一次采用 scaffold 时的渲染快照。preflight 分别用快照重现旧
+baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标渲染参数写入不可变 plan；apply
+只使用 plan 中冻结的目标参数，不在替换 `release-versions.json` 后重读 live 文件。因此应用从
+`0.1.0` 发布到 `2.7.0` 后采用新 scaffold 时，受管版本表面会保持 `2.7.0`，不会退回首次采用值。
+`release-versions.json` 只允许这项已识别的版本 token 变化：`generated_application_default` 保留
+原生成值，目标 scaffold/Core 字段来自目标不可变 artifact；应用自行改过 Core 合同或其他字段
+且上游也变化时仍按现有三方比较报告冲突。成功 apply 后 manifest 的 `application.version` 更新为
+本次冻结的 `product_release`，使下一次升级可以逐字重现这次生成的目标 baseline；最初的
+`generation_source` 继续保持不变。
 
 ## 1.x/2.x 历史归档
 

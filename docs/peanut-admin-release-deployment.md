@@ -212,12 +212,16 @@ curl -fsS http://127.0.0.1:18092/healthz
 php server/database/environment-guard.php --current
 ```
 
-3.0 首次安装仍必须使用空库；跨大版本不得原地升级，必须先备份并走显式 `--fresh` 重建。
-同一大版本的普通更新使用 `scripts/deploy-release --update`，由
-`php server/database/install.php --migrate --target-version=X.Y.Z` 校验 checksum 并按账本
-执行追加 SQL；不得手工修改或删除已应用记录。需要保留旧系统时，继续隔离运行旧实例，并为
-3.0 准备独立空库。Plugin Module 自己的 `pa_module_migration` 属于插件生命周期，应用追加
-migration 使用 `pa_schema_migration`。
+首次安装仍必须使用空库；安装器在 Core/Application 基线之后、返回成功之前执行当前 scaffold
+所需的 Peanut 追加 migration，以及当前源码中不带 `peanut-release` 标记的应用自有 migration。
+scaffold 跨大版本不得原地升级，必须先备份并走显式 `--fresh` 重建。同一 scaffold 大版本的普通
+更新使用 `scripts/deploy-release --update`，由
+`php server/database/install.php --migrate --target-version=<scaffold-template>` 校验 checksum 并按
+账本执行追加 SQL；目标读取发布内 `release-versions.json.scaffold_template`，应用 tag 仍只参与应用
+发布顺序。不得手工修改或删除已应用记录。需要保留旧系统时，继续隔离运行旧实例，并为新基线
+准备独立空库。Plugin Module 自己的 `pa_module_migration` 属于插件生命周期；Peanut 与应用追加
+migration 使用 `pa_schema_migration`，未标记的应用 SQL 以当前 `product_release` 写入账本但不受
+scaffold 目标筛选。
 
 ## 发布最低检查
 

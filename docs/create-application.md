@@ -65,7 +65,11 @@ fail-closed。安装包/生成器已在构建前固定 Edition，不再在一个
 生成的 `.peanut/application-manifest.json` v2 还固定 `application.version`、参数、每个生成文件的 SHA-256、mode、分类、
 owner、managed/app-owned 树摘要，以及 managed baseline 路径和独立 `baseline_sha256`。应用当前
 文件摘要与上游比较基线分开记录后，后续升级可以保留用户对 managed 文件的单边定制，同时仍
-识别上游是否变化。升级器只处理受管文件，不执行数据库迁移。
+识别上游是否变化。其中 manifest 的 `application.version` 是最近一次 scaffold 采用/渲染快照；应用
+建立自己的后续 Release 时，以 `release-versions.json.product_release` 记录当前应用版本。升级器
+用前者重现旧 baseline、用后者渲染目标受管文件，并把两组参数与版本合同摘要冻结进 plan，避免
+scaffold 升级把应用从当前版本退回初始版本；成功后再把 manifest 快照推进到本次目标渲染版本，
+同时保留原 `generation_source`。升级器只处理受管文件，不执行数据库迁移。
 
 ## 后续升级边界
 
@@ -77,14 +81,14 @@ Edition 的正式升级包和自己的发布流程采用后续版本：
 | `peanut-admin/core`、`@peanut-admin/admin` 依赖 | 应用在独立分支人工更新版本和 lock，并运行自己的兼容测试 | 包管理器只能修改 Peanut 依赖；失败时回退应用分支 |
 | `managed` / `generated-managed` 脚手架文件 | 人工比较新 Release 与应用 manifest/baseline，选择性采用 | 应用改过且目标也变化时停止，不静默覆盖 |
 | `app-owned` 业务代码、页面和配置 | 应用自行维护 | 脚手架升级永远不自动改写 |
-| 应用数据库 | 3.0 首次安装必须为空；同一大版本通过 `install.php --migrate --target-version=X.Y.Z` 执行按发布版本筛选的追加 migration（文件名 `YYYYMMDD-<描述>.sql`） | 不复制 Peanut 新安装基线覆盖已有数据库；跨大版本必须 fresh/rebuild |
-| Peanut canonical migration | 随采用的 Release 显式执行并写入 `pa_schema_migration` 账本 | 必须绑定目标 Release、迁移 checksum、备份和应用验证 |
+| 应用数据库 | 首次安装必须为空；安装器先建立 Core/Application 基线，再自动执行当前 scaffold 所需的 Peanut 追加 migration，以及当前源码中没有 `peanut-release` 标记的应用自有 migration | 不复制 Peanut 新安装基线覆盖已有数据库；应用自有 SQL 不由脚手架版本筛掉 |
+| Peanut canonical migration | 同一 scaffold 大版本通过 `install.php --migrate --target-version=<scaffold-template>` 执行并写入 `pa_schema_migration`；目标来自已采用的 `release-versions.json.scaffold_template` | 绑定 scaffold 身份和 migration checksum；scaffold 跨大版本必须 fresh/rebuild，应用自身的 `product_release` 不触发这条停止线 |
 
 升级器提供 `preflight -> apply -> verify -> recover`。首个正确双 Edition Release 只建立安装
 基线，因为此前没有合格的旧 Edition 可作为升级来源；下一补丁版本才会以该基线为最老受支持
 版本，分别发布 Standalone 与 Multi-tenant 签名升级包。派生应用解压与自身 Edition 相同的包后，
 使用包内升级器的 `--package` 入口生成计划，不再自行拼接新旧 manifest。完整部署仍由应用 owner 安装锁定依赖、
-执行数据库迁移、构建、重启和 smoke；跨大版本必须按发布策略 `--fresh`。
+执行数据库迁移、构建、重启和 smoke；scaffold 跨大版本必须按发布策略 `--fresh`。
 历史 `v2.0.0 -> v2.0.1` 已有真实派生
 应用资格，`v2.1.0` 沿用相同所有权和恢复合同。它只管理已登记的框架文件，不会把业务代码变成脚手架所有，也不会替
 应用决定业务数据迁移。升级数据库和 Peanut 依赖时，必须同时参考对应 Release 的发布计划。

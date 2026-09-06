@@ -156,7 +156,7 @@ final class InstallationExecutionHost
                 $baseline = \installFreshDatabase($this->serverRoot, $credentials);
                 $migration = \migrateDatabase(
                     $this->serverRoot,
-                    $this->releaseVersion(),
+                    $this->migrationTargetVersion(),
                 );
                 $modules = $this->installModules($moduleKeys);
                 $health = $this->health($moduleKeys);
@@ -357,16 +357,11 @@ final class InstallationExecutionHost
         );
     }
 
-    private function releaseVersion(): string
+    /** Select Peanut-owned SQL by the adopted scaffold and optional verified overlay identity. */
+    private function migrationTargetVersion(): string
     {
-        $raw = file_get_contents(dirname($this->serverRoot) . '/RELEASE_METADATA.json');
-        $metadata = is_string($raw) ? json_decode($raw, true) : null;
-        $version = is_array($metadata) ? ($metadata['version'] ?? null) : null;
-        if (!is_string($version)
-            || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version) !== 1) {
-            throw new RuntimeException('Release version is unavailable.');
-        }
-        return $version;
+        $versions = \applicationReleaseVersions($this->serverRoot);
+        return \applicationMigrationTargetVersion($this->serverRoot, $versions);
     }
 
     private function mode(): string

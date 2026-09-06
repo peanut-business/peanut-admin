@@ -72,6 +72,22 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-plans-application-scaffold-version-contract-queue",
+      "path": "docs/plans/application-scaffold-version-contract-queue.md",
+      "title": "独立应用与脚手架版本合同执行队列",
+      "audience": ["maintainer", "architect", "ai"],
+      "content_type": "plan",
+      "authority": "interpretation",
+      "canonical_sources": ["release-versions.json", "scripts/scaffold-runtime/ScaffoldManifest.php", "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "server/database/install.php", "scripts/deploy-release", "server/app/platform/service/ops/PlatformUpgradeTarget.php"],
+      "owner": "application-maintainers",
+      "status": "planned",
+      "scope": ["application"],
+      "related": ["scaffold-upgrade", "release-contract", "migration", "execution-queue"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-site-404",
       "path": "docs-site/404.md",
       "title": "页面未找到",

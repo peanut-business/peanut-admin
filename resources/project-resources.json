@@ -527,6 +527,108 @@
         "failure_retention_policy": "on failure, the lease owner preserves the exact run_id databases and output, renews or explicitly transfers the lease, and reports recovery coordinates; cleanup waits for evidence capture and the named owner decision"
       },
       {
+        "stable_resource_id": "peanut-admin-application-version-fresh010-development",
+        "purpose": "isolated Standalone application 0.1.0 fresh-install and scaffold migration verification database",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin application-version contract task lease owner; remote host mac-14",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_development_appver_fresh010",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_appver_fresh010",
+        "deployment_modes": [
+          "standalone"
+        ],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-application-version-fresh010-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-application-version-fresh010-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "the frozen Development Standalone generated application sample; persistent development and production data are forbidden",
+        "freshness_requirement": "the fixed logical database must be absent before every lease-bound verification run",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer host --resource-id peanut-admin-application-version-fresh010-development",
+          "database": "after a successful exclusive claim, confirm this exact database is absent before creation"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "claim_precondition": "before connection, creation, installation, test or cleanup, scripts/project-resource-lease must hold an active exclusive claim for this resource ID, exact database, worktree and output path",
+        "creation_policy": "the active lease owner may create only peanut_admin_development_appver_fresh010",
+        "cleanup_responsibility": "the active task lease owner drops only peanut_admin_development_appver_fresh010 after evidence capture",
+        "backup_responsibility": "not applicable; the database starts absent and contains synthetic data only",
+        "failure_retention_policy": "on failure, preserve the exact database and output under the active lease and report recovery coordinates"
+      },
+      {
+        "stable_resource_id": "peanut-admin-application-version-fresh270-development",
+        "purpose": "isolated Multi-tenant application 2.7.0 fresh-install and scaffold migration verification database",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin application-version contract task lease owner; remote host mac-14",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_development_appver_fresh270",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_appver_fresh270",
+        "deployment_modes": [
+          "multi-tenant"
+        ],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-application-version-fresh270-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "host"
+          ],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": {
+          "endpoint_id": "peanut-admin-application-version-fresh270-docker-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": [
+            "container"
+          ],
+          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+        },
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "the frozen Development Multi-tenant generated application sample; persistent development and production data are forbidden",
+        "freshness_requirement": "the fixed logical database must be absent before every lease-bound verification run",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer host --resource-id peanut-admin-application-version-fresh270-development",
+          "database": "after a successful exclusive claim, confirm this exact database is absent before creation"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral",
+        "claim_precondition": "before connection, creation, installation, test or cleanup, scripts/project-resource-lease must hold an active exclusive claim for this resource ID, exact database, worktree and output path",
+        "creation_policy": "the active lease owner may create only peanut_admin_development_appver_fresh270",
+        "cleanup_responsibility": "the active task lease owner drops only peanut_admin_development_appver_fresh270 after evidence capture",
+        "backup_responsibility": "not applicable; the database starts absent and contains synthetic data only",
+        "failure_retention_policy": "on failure, preserve the exact database and output under the active lease and report recovery coordinates"
+      },
+      {
         "stable_resource_id": "peanut-admin-core-p1ed01-mysql84-gate",
         "purpose": "isolated Task/Job and Import/Export focused verification databases for the fixed Peanut Admin Core P1-ED01 persistence-scope candidate",
         "environments": [

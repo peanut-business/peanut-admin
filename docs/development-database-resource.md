@@ -61,6 +61,20 @@ fail closed。Runner 在 Compose 完全停止后 release lease，目录删除后
 权限的本机唯一 owner；它防止误选和并发越界，不宣称能够抵抗已取得宿主 root 权限的
 密码学伪造。
 
+## 独立应用版本合同临时数据库
+
+V1/V2 Development 验证使用两个精确命名的固定逻辑资源：Standalone 的
+`peanut-admin-application-version-fresh010-development` 与 Multi-tenant 的
+`peanut-admin-application-version-fresh270-development`。两者复用登记的 MySQL 8.4.10 服务和
+宿主入口 `192.168.192.2:20183`，但不接触持久 development 库，也不借用 P0-E 的模板数据库或
+专属 proof 合同。
+
+每次运行前分别取得包含精确 resource ID、database、worktree 和输出目录的独占 lease，再用
+`scripts/project-resource-registry database-env` 的 `local-development`、`host` 和固定
+`--resource-id` 参数选择。owner 必须先确认对应数据库不存在，结束后只删除自己租约内的该固定
+库；失败时按登记保留现场并续租或交接。两个资源均为 development/ephemeral，fallback 为
+`none`，只承载生成应用的合成数据。
+
 ## 使用
 
 首次或资源重建由资源 owner 执行：

@@ -99,8 +99,8 @@ Plugin 安装、数据库 migration 或服务重启。
 
 1. 在应用分支更新 Peanut Admin/Core 版本和 Composer/npm lock，执行锁定安装与兼容检查。
 2. 对同一应用版本执行 `scaffold-upgrade preflight/apply/verify`，必要时 `recover`。
-3. 备份后执行 `php server/database/install.php --migrate --target-version=X.Y.Z`，检查
-   `pa_schema_migration` 账本和数据验证。
+3. 备份后执行 `php server/database/install.php --migrate --target-version=<scaffold-template>`，检查
+   `pa_schema_migration` 账本和数据验证；应用 tag 不作为 Peanut SQL 的筛选版本。
 4. 构建并重启应用，运行 health、登录和关键页面 smoke，再合入应用自己的 `main` 并打 tag。
 
 3.0 是 fresh-only 大版本：旧大版本数据库不能直接交给迁移器；必须按发布计划 fresh/rebuild，

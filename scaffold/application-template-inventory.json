@@ -1205,6 +1205,19 @@
             ]
         },
         {
+            "path": "docs/architecture/core-application-technical-boundary.md",
+            "target": "docs/architecture/core-application-technical-boundary.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/architecture/core_extraction_guide.md",
             "target": "docs/architecture/core_extraction_guide.md",
             "classification": "excluded",
@@ -2924,6 +2937,19 @@
             "source_sha256": "075d9107bfb8f5975d6dcd6cf49703ed1753b745e1352da5dbdb6c3504879d30"
         },
         {
+            "path": "docs/plans/application-scaffold-version-contract-queue.md",
+            "target": "docs/plans/application-scaffold-version-contract-queue.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/plans/consumer-ready-product-plan.md",
             "target": "docs/plans/consumer-ready-product-plan.md",
             "classification": "excluded",
@@ -2991,6 +3017,19 @@
         {
             "path": "docs/plans/saas-enhancement-development-plan.md",
             "target": "docs/plans/saas-enhancement-development-plan.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/plans/storage-driver-extraction-queue.md",
+            "target": "docs/plans/storage-driver-extraction-queue.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3432,6 +3471,19 @@
             ]
         },
         {
+            "path": "docs/product-status/releases/v3.0.13.json",
+            "target": "docs/product-status/releases/v3.0.13.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/product-status/releases/v3.0.5.json",
             "target": "docs/product-status/releases/v3.0.5.json",
             "classification": "excluded",
@@ -3497,6 +3549,19 @@
             ]
         },
         {
+            "path": "docs/reference/core-capabilities-and-application-adoption.md",
+            "target": "docs/reference/core-capabilities-and-application-adoption.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/reference/document-catalog.generated.md",
             "target": "docs/reference/document-catalog.generated.md",
             "classification": "excluded",
@@ -3512,6 +3577,19 @@
         {
             "path": "docs/reference/product-capability-reference-matrix.md",
             "target": "docs/reference/product-capability-reference-matrix.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/reference/scaffold-core-boundary-comparison.md",
+            "target": "docs/reference/scaffold-core-boundary-comparison.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -4458,7 +4536,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1c67907ecdcb198c4172aa3b174962795ce0a4ca71234ea26e30e8ee8b74168e"
+            "source_sha256": "74a797fec8eceacf6fc8fb56da666b7de12f04cd9fc6b1f000922296a3410fa8"
         },
         {
             "path": "resources/service-registry.json",
@@ -4498,7 +4576,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "56c7880ce06f6de4c5ee9567d4029939833e59509b57df7b4bd1dfe4e8ec7a2f"
+            "source_sha256": "fd03b885c20d30e0676bc78a0501e6449f1a3dddfcb3a1105b7504917849b3f0"
         },
         {
             "path": "scripts/build-edition-installers",
@@ -4753,7 +4831,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "39050e40410c228a7794cfb0957f70f948f76dd86ffc2a8432b0867782ec9152"
+            "source_sha256": "334fd7185d3e742c2f350cabc2278232839d295e10d116f88870e0367891ec75"
         },
         {
             "path": "scripts/docs-governance",
@@ -5066,7 +5144,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "439a074780604e17c443450a63e62fb05c87155a44575ce0db9f1485054aa77c"
+            "source_sha256": "ea45828975dc260493e8a09008a9c00bd37d27b4b8cf2293819ca401f9f18647"
         },
         {
             "path": "scripts/scaffold-runtime/EditionUpgradePackage.php",
@@ -13037,7 +13115,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4d92bf83bc21434f9d266157e108d799047c935a0fc245a81b04f561fdf5be26"
+            "source_sha256": "cd7cbebf4332c6d6f84196540cc65de602a8adecf8bc03e3a5cd7906ecc967b1"
         },
         {
             "path": "server/app/common/service/installation/InstallationPreflightHost.php",
@@ -15243,7 +15321,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "c49af304cd758d0d6ef95571339ac698b938f2cabd5b6716ea741366bb7c85d5"
+            "source_sha256": "95e11de71b5495d5aef0d010dfa05f6e537301f20c006f12f62ac9c17d65d498"
         },
         {
             "path": "server/app/platform/service/ops/DeploymentModuleRequestService.php",
@@ -16451,7 +16529,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7b155162e3182691282dc9879d871c0c826639b4a82e37af4bfd3ce7aa533b34"
+            "source_sha256": "af3c7fdf35172b9428c1f518ad97086ca0d9d6a1e944fa7d01a08813867fb99f"
         },
         {
             "path": "server/database/migrations/20260822-classify-official-article-permissions.sql",
@@ -18120,7 +18198,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5e4bba06f6959d0c840e26ddce02aaf239641ff9a35d709c1b7d1b025cd1fb01"
+            "source_sha256": "ca8329da627adf5d4d184ce4175c7968916935ba43cf45f37e5a401758fd95f3"
         },
         {
             "path": "server/tests/Productization/InstallerBootstrapTest.php",

@@ -150,6 +150,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-development-guide` | `docs/peanut-admin-development-guide.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-peanut-admin-release-deployment` | `docs/peanut-admin-release-deployment.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
+| `pa-docs-plans-application-scaffold-version-contract-queue` | `docs/plans/application-scaffold-version-contract-queue.md` | `planned` | `plan` | `application-maintainers` |
 | `pa-docs-plans-consumer-ready-product-plan` | `docs/plans/consumer-ready-product-plan.md` | `current` | `plan` | `product-architecture` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-post-release-enhancement-plan` | `docs/plans/post-release-enhancement-plan.md` | `current` | `plan` | `product-architecture` |

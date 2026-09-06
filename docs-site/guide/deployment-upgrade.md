@@ -96,10 +96,14 @@ php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade apply \
 
 ```bash
 composer install --working-dir=server --no-dev --prefer-dist
-php server/database/install.php --migrate --target-version=<target-version>
+php server/database/install.php --migrate --target-version=<scaffold-template>
 ```
 
-前端和其他运行时也要按各自锁文件使用冻结安装命令；构建使用应用部署方式的正式构建配置。不要手工删改 migration ledger，不要只替换文件而跳过数据库迁移、依赖安装或构建。若目标是新大版本，按 Release 的 fresh/rebuild 方案执行，不把大版本重建伪装成原地升级。
+迁移目标读取应用采用的 `release-versions.json.scaffold_template`；应用自己的发布 tag 只控制应用
+发布顺序，不筛选 Peanut SQL。前端和其他运行时也要按各自锁文件使用冻结安装命令；构建使用应用
+部署方式的正式构建配置。不要手工删改 migration ledger，不要只替换文件而跳过数据库迁移、依赖
+安装或构建。若 scaffold 目标是新大版本，按 Release 的 fresh/rebuild 方案执行，不把大版本重建
+伪装成原地升级。
 
 ### 6. Verify：确认新版本真的可用
 
