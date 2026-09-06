@@ -302,12 +302,13 @@ entryBindingExpect(
 );
 entryBindingExpect(
     str_contains($loginMiddleware, 'assertTenantAccess(')
-        && str_contains($loginMiddleware, 'tenantEntryBound'),
+        && str_contains($loginMiddleware, 'boundTenantId(')
+        && str_contains($loginMiddleware, 'new \\app\\common\\execution\\AdminExecutionContext('),
     'Admin session requests lost the continuous Host boundary',
 );
 entryBindingExpect(
-    str_contains($routes, "api/storage/delivery")
-        && !str_contains($routes, "api/storage/private")
+    str_contains($routes, "Route::get('storage/delivery'")
+        && !str_contains($routes, "Route::get('storage/private'")
         && str_contains($storageService, 'deliverableObjectForTenant')
         && str_contains($storageController, "'Cache-Control' => 'no-store, private'"),
     'Tenant file delivery did not converge on the active-Tenant service boundary',
