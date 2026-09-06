@@ -1,36 +1,64 @@
-# Storage Driver 提取执行队列
+# Storage Driver 提取决策与后续队列
 
-> 当前开发候选，未发布/未正式采用。本文是执行合同，不是发布或下游消费证据。
+> 当前状态：Core 源码候选已实现，独立应用仍使用原实现；发布和 Runtime 迁移暂停在全景审计后的方案决定之前。
 >
-> 目标：在应用与 Core 之间落地已冻结的存储边界。本文是执行合同，不是完成证据。
+> 本次“先审计、后决定”是用户调整的当前工作顺序，不是永久人工 Gate。本文记录候选和恢复条件，不把未合 worktree、未发布源码或测试结果写成正式采用。
 
-## 队列总则
+## 为什么先暂停采用
 
-每项任务必须使用列出的前置 commit，严格限制写集，并把实现、依赖、验证和证据绑定到同一候选树。文档任务不运行 Runtime 检查；Runtime 任务按 owner 的一次最低充分验证执行，失败只允许一次聚焦诊断和一次失败组重跑。未发生的发布、候选封存和资格不写成完成。
+用户当前要先理解 Core 是技术工具集还是公共后台底座、独立应用到底用了哪些能力，以及主流后台脚手架如何划分公共机制与生成应用，然后再决定 Storage Driver 是否正式提取。现有判断依据集中在：
 
-Q0 原则与文档：Luna / medium。Q1 合同及 DDR：Sol / high。Q2 Core 驱动：Sol / high。Q3 应用装配与精确包消费：Sol / high。Q4 普通注释：Luna / medium；复杂注释实现：Sol / high。Q5 聚焦验证与集成：Sol / high；主代理终审。
+- [Core 能力与独立应用采用全景](../reference/core-capabilities-and-application-adoption.md)：两个 aggregate、内部能力域、Core 参考宿主、独立应用真实调用和数据 owner。
+- [后台脚手架的 Core、公共模块与生成应用边界](../reference/scaffold-core-boundary-comparison.md)：LikeAdmin、FastAdmin、MineAdmin、RuoYi-Vue-Plus 的固定源码机制链与受限启示。
+- [Core 与应用技术边界](../architecture/core-application-technical-boundary.md)：若采用 Storage Driver 时必须保留的低层合同和应用职责。
 
-## 任务矩阵
+暂停只影响新的 package 发布、应用 lock 和 Runtime 迁移。Core 已合入的 Storage Driver 源码不回滚；应用旧候选继续保留供复审，本轮不合入。
 
-| ID | 前置 commit | 精确写集 | 禁止项 | 依赖/可并行 | 验收与 owner | 状态/证据 |
-| --- | --- | --- | --- | --- | --- | --- |
-| Q0 | 应用 `f74d841b4e084dbb8b5ec4a2d6312494042b0d10`；Core `cefb050002b455747c20bb0790864d6f50eb24d8` | 两仓边界、队列、入口登记与注释规则 | Runtime、依赖、Schema、测试、自检脚本 | 无；可与 Q1 研究并行 | 文档差异与主代理审计；Luna/medium | 已完成；主代理审计及 Luna docs check 通过 |
-| Q1 | 应用 `f74d841b4e084dbb8b5ec4a2d6312494042b0d10`；Core `cefb050002b455747c20bb0790864d6f50eb24d8` | `packages/php/file-media/src/Storage/{StorageDriver,StorageObjectKey,StorageHttpTransport}.php`；四 Driver；`packages/php/composer.json`；`docs/decisions/dependencies/p1-storage-drivers.{md,json}` | Flysystem、新包、应用生命周期/Schema、三厂商 SDK 强绑 Core | 合同与 DDR 已实现；Q2/Q3 源码可并行；正式消费仍受 Q3 门禁 | Core 实现 owner：Sol/high；文档登记 owner：Luna/medium | 已完成源开发集成：Core commit `9358686fee873dd235489c8794abf556fd70ec4f`，tree `0b4edeefe72e4fbfd20cbfb6e05f89f7b03f17a7`；尚未发布或正式消费 |
-| Q2 | Q1 合同已冻结；应用 `f74d841b4e084dbb8b5ec4a2d6312494042b0d10`；Core `cefb050002b455747c20bb0790864d6f50eb24d8` | `packages/php/file-media/src/Storage/{StorageDriver,StorageObjectKey,StorageHttpTransport}.php`；`packages/php/file-media/src/Storage/Driver/{LocalStorageDriver,AliyunStorageDriver,QcloudStorageDriver,QiniuStorageDriver}.php`；`packages/php/composer.json`；DDR 两文件；`resources/project-resources.json`（既有 lint resource 增加 development 覆盖） | `app` 引用、业务账本、Tenant/授权、现有另一 FileMedia 生命周期、表变更 | 与 Q3 源码实现并行；不得各自改同一合同文件 | Core lint：`for f in packages/php/file-media/src/Storage/StorageDriver.php packages/php/file-media/src/Storage/StorageObjectKey.php packages/php/file-media/src/Storage/StorageHttpTransport.php packages/php/file-media/src/Storage/Driver/LocalStorageDriver.php packages/php/file-media/src/Storage/Driver/AliyunStorageDriver.php packages/php/file-media/src/Storage/Driver/QcloudStorageDriver.php packages/php/file-media/src/Storage/Driver/QiniuStorageDriver.php; do /opt/homebrew/opt/php@8.3/bin/php -l "$f" || exit 1; done`；Composer：`/opt/homebrew/opt/php@8.3/bin/php /private/tmp/peanut-admin-core-tools/composer-2.10.2 validate --no-check-publish --working-dir packages/php`；Sol/high | 已完成源开发集成：Core commit `9358686fee873dd235489c8794abf556fd70ec4f`，tree `0b4edeefe72e4fbfd20cbfb6e05f89f7b03f17a7`；Composer version warning 非失败，资格/发布未执行 |
-| Q3 | Q1 合同经主代理冻结后的同一候选；正式消费另需 immutable split+lock | `server/app/AppService.php`；`server/app/common/service/storage/{StorageDriverFactory,ObservedStorageDriver,StoragePath,StorageRepository,QiniuStorageHttpTransport}.php`；应用删除旧 `StorageDriver.php` 与 `driver/{Local,Aliyun,Qcloud,Qiniu}StorageDriver.php`；`server/tests/Productization/FileMediaHostTest.php` | alpha.12 伪替代、path/vendor 伪替代、兼容桥、Repository/洋葱层、双写 | 源码可与 Q2 并行；合入/正式消费阻塞于新 immutable split 与 lock | `/opt/homebrew/bin/php -l` 受改 PHP；`cd server && /opt/homebrew/bin/php tests/Productization/FileMediaHostTest.php`；Sol/high | 应用源码已实现并通过 PHP lint 与 `PB04-FILE-MEDIA-HOST-001`，但未正式采用；immutable split/lock 外部阻塞 |
-| Q4 | Q2/Q3 当前实现 | 新增或实质修改类/方法注释；复杂流、临时文件、Tenant/授权/副作用说明 | 为标准 CRUD/访问器/纯构造函数堆注释；顺手改无关领域 | 已随 Sol 实现；主代理审计通过 | 注释静态审计；Luna/medium 或 Sol/high | 已完成；审计通过 |
-| Q5 | Q1-Q4 当前开发候选 | 仅集成登记、证据和本任务允许的文档状态文件 | 新功能、Schema/UI、HTTP 整文件下载、正式消费、发布 | Q2/Q3/Q4；主代理终审收敛 | Core Composer 静态边界、两仓 docs check 已通过；主代理终审 | 部分完成；正式消费待新 immutable split |
+## 当前仓库事实
 
-## 不可变依赖与提取门禁
+| 产物 | 固定身份 | 当前状态 | 能证明什么 |
+| --- | --- | --- | --- |
+| Core Storage Driver 源码 | `peanut-admin-core` `9358686fee873dd235489c8794abf556fd70ec4f` | 已在 Core `dev` | 四操作合同、对象 key、HTTP transport 和四个 Driver 已实现；不证明已发布或被独立应用采用 |
+| 独立应用 canonical | `peanut-admin` `72fcf7b9bfbae62aa5329f99c49ec1356435e633` | 当前 `dev` | 仍装配应用自己的 StorageDriver/四 Driver，锁定 Core/Web `0.1.0-alpha.12` |
+| 独立应用采用候选 | `peanut-admin` `590e61830d0e62c0bf25425dfe43d69ae894b726` | 独立 worktree 保留 | 曾完成指向 Core 新边界的源码改造和聚焦静态检查；未合 canonical、未更新 lock、未形成正式消费 |
+| 已发布 Core | source `9089516a18f19e19a048683594087e0b4ffc5455`；Composer split `9017212da0da63f445d693be94d533f681c6dc92` | `0.1.0-alpha.12` | 是当前应用锁身份；不含 `9358686` 新增的 Storage Driver |
 
-Q3 的正式消费必须等待新的 immutable Composer split 版本及其 lock 证据。当前 `alpha.12` 没有新类，不能以 path repository、vendor 复制或未锁定分支作为替代。Aliyun/Qcloud/Qiniu SDK 只能按 accepted DDR 由 Core aggregate 以 Composer `suggest` 揭示；应用 Host 必须显式 require 并锁定精确版本后才能构造对应 Driver，未安装不得启用。Provider SDK 的具体实例由应用注入；Core aggregate 不因四个 Driver 而强制厂商依赖。
+## 候选边界
 
-Q2/Q3 必须证明账户空间路由、凭据解密、用途、授权、对象账本、补偿和 `ObservedStorageDriver` 仍由应用拥有；Core 不能引用应用或现有另一条 FileMedia Schema。Tenant 由宿主 HTTP/Worker 建立，缺失即拒绝。标准 CRUD 可免方法注释，Tenant 权限、事务、幂等、软删和外部副作用不可免。
+若后续决定采用，Core 低层 `StorageDriver` 只保留：
 
-每次操作先解析完整配置快照；Core 不读取 Settings 或当前 Tenant 的全局可变值，也不缓存可变 client。对象按账本 space 定位，prefix 不代替授权，不新增 fallback。应用必要的 Core 技术接口宿主 adapter 属于本次跨仓合同装配，不能被误判为 ThinkPHP Repository/洋葱层。
+```text
+put(objectKey, sourcePath)
+delete(objectKey)
+downloadTo(objectKey, destinationPath)
+localPath(objectKey)
+```
 
-## 外部停止线与发布编排
+Core 的 `StorageObjectKey` 只做技术 key 校验。Local、Aliyun、Qcloud、Qiniu Driver 接受宿主装配的必要根目录、SDK client 或 HTTP transport。Core 不读取当前 Tenant 的全局可变配置，不缓存 Tenant/account 可变 client，不取得应用文件生命周期或高层 FileMedia Schema 的 owner。
 
-当前 `alpha.12` source release 不含新类，正式消费必须等待新的不可变 PHP split 包身份及其 lock；`alpha13` 只是下一候选可用名称，不是发布事实。现有 `release.yml` tag 触发会同时强制 PHP/Web 版本并发布 npm；发布范围仍 pending 用户选择，本轮不启动尚未选择的 PHP/npm 联动步骤，也不修改发布脚本、版本、资源或锁。
+独立应用继续拥有 provider SDK 依赖与装配、账户/space 路由、凭据解密、用途、授权、对象账本、`ObservedStorageDriver`、补偿和产品生命周期。对象 prefix 不代替授权，不新增 fallback；整文件 HTTP 下载仍是独立优化议题。
 
-应用 Tenant 资格测试 `OfficialCapabilityTenantQualificationTest.php` 未运行：该 worktree 未安装 vendor，且本任务禁止安装或复用依赖。该停止线只阻塞对应资格，不影响已完成的 PHP lint 和 FileMedia Host 聚焦验证。
+## 决定后的最小队列
+
+| 顺序 | 任务 | 写集/禁止项 | 验收 | 规则、owner 与模型 | 当前状态 |
+| --- | --- | --- | --- | --- | --- |
+| D0a | 盘点 Core、应用采用和脚手架边界，形成建议 | 只改本轮登记文档；不改 Runtime | 每域说明用途、入口、宿主责任、data owner、采用与证据限制 | 文档/CodeGraph 规则；Terra/medium 只读研究，Sol/high 合成，根代理审计 | 盘点与建议已完成 |
+| D0b | 形成有依据的采用建议和具体写集 | 只做决定和必要文档；不自动改 Runtime | 建议对应 D0a 的真实调用、data owner、宿主责任与维护成本；保持现有窄 Driver 候选，不扩大高层 FileMedia | 根代理负责方向/审计；未授权范围变化或正式发布按适用规则确认，无独立执行模型 | 采用建议已形成；正式推进待发布范围与依赖条件 |
+| D1 | 若采用或调整，冻结最终公共合同与发布粒度 | Core Storage 文件、必要 dependency decision；不扩展高层 FileMedia/Schema | API、可选 SDK、兼容关系和 owner 明确 | 公共合同与依赖规则；Sol/high | 等待 D0b |
+| D2 | 生成新的不可变 PHP split 身份 | Core 版本/发布元数据按正式发布流程；不得用 branch、path repository 或 vendor 复制替代 | 固定 source/tree/split、包可见性和 Composer metadata 一致，并完成 Core 正式发布所要求的固定候选资格与授权 | 发布规则；Sol/high，根代理审计 | 等待 D1 |
+| D3 | 在独立应用基于最新 `dev` 重放最小采用 diff，并更新 Composer lock | `AppService`、`common/service/storage`、现有 FileMedia Host gate 与精确 lock；不新建兼容桥/第二生命周期 | lock 指向 D2；provider 装配、对象 key、观测、账本/授权/补偿语义保持 | 应用边界与不可变依赖规则；Sol/high | 等待 D2 |
+| D4 | 完成应用日常开发验证并合入 | 运行受影响 PHP lint、现有 FileMedia Host/直接 Tenant 安全组和文档检查；不主动扩大到无关开发组 | 同一应用候选上通过，失败按项目一次诊断/一次重跑规则 | 日常开发 §7.1；安全/合同组 Sol/high，机械静态组 Luna/max，根代理终审 | 等待 D3 |
+
+如果决定保留应用实现，D1-D4 不执行，只把 Core driver 标为未采用公共候选，并另外决定 Core 是否继续保留它。这个分支不要求删除已完成研究或伪造迁移证据。
+
+D4 只描述应用采用阶段的日常开发检查，不豁免正式依赖采用或发布资格。D2 的 Core 发布以及应用正式锁定新 Core 的资格仍遵循 `AGENT_EXECUTION_RULES.md` §7.1/§7.2 对固定候选、不可变身份和授权的要求；本轮文档审计不运行或降级这些 Gate。
+
+## 发布与升级成本
+
+Core 当前只有 `peanut-admin/core` 与 `@peanut-admin/admin` 两个 aggregate，独立应用分别用 Composer/npm lock 固定。当前联动发布意味着窄 PHP 改动仍会触及聚合版本、兼容关系和下游升级；移动四个类本身不能消除这些维护成本。
+
+是否把少数域改成独立发布单元属于后续架构评估。评估至少比较依赖图、PHP/Web 兼容矩阵、版本联动、发布失败原子性、应用 lock 更新和升级文档；没有证据时既不自动拆成 13 个包，也不把现有两个 aggregate 写成永久最优。
+
+## 不属于本轮完成状态
+
+本轮不修改 Core/Application Runtime、Composer/npm manifest 或 lock，不发布包、不运行数据库/云 provider/浏览器资格，也不修 `CrossProductAdoptionHost` 的 Collaboration 失效引用。后者已在全景文档登记为“桥接源码存在、仅测试 caller、当前 Core 无该能力”，应由独立的删除或能力重建决定处理。

@@ -8,7 +8,8 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | --- | --- | --- |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
-| Understand Core/Application ownership | [Core 与应用技术边界](architecture/core-application-technical-boundary.md) and [Storage Driver 提取队列](plans/storage-driver-extraction-queue.md) | planned boundary and execution contract; not Runtime completion evidence |
+| Understand Core capabilities and actual application adoption | [Core 能力与独立应用采用全景](reference/core-capabilities-and-application-adoption.md), [Core 与应用技术边界](architecture/core-application-technical-boundary.md) and [Storage Driver 提取队列](plans/storage-driver-extraction-queue.md) | fixed-source audit, planned boundary and decision queue; not Runtime completion evidence |
+| Compare scaffold Core and generated-application boundaries | [后台脚手架的 Core、公共模块与生成应用边界](reference/scaffold-core-boundary-comparison.md) | fixed official-source comparison and bounded recommendations; not evidence that Peanut has adopted another scaffold's design |
 | Understand the target backend organization | [Application and Module architecture blueprint](architecture/application-module-blueprint/README.md) | accepted target and migration input; explicitly not proof that the Runtime has migrated |
 | Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |

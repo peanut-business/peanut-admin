@@ -58,7 +58,7 @@
     {
       "id": "pa-docs-plans-storage-driver-extraction-queue",
       "path": "docs/plans/storage-driver-extraction-queue.md",
-      "title": "Storage Driver 提取执行队列",
+      "title": "Storage Driver 提取决策与后续队列",
       "audience": ["maintainer", "architect", "ai"],
       "content_type": "plan",
       "authority": "interpretation",
@@ -5112,6 +5112,77 @@
         "application"
       ],
       "related": [
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-reference-core-capabilities-and-application-adoption",
+      "path": "docs/reference/core-capabilities-and-application-adoption.md",
+      "title": "Peanut Admin Core 能力与独立应用采用全景",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai",
+        "developer"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/composer.lock",
+        "server/app/AppService.php",
+        "server/app/Modules",
+        "web/package.json",
+        "platform/package.json",
+        "pc/package.json",
+        "uniapp/package.json",
+        "repo://peanut-admin-core/packages/php/composer.json",
+        "repo://peanut-admin-core/packages/web/package.json",
+        "repo://peanut-admin-core/docs/status/index.md"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-application-boundary",
+        "storage",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-reference-scaffold-core-boundary-comparison",
+      "path": "docs/reference/scaffold-core-boundary-comparison.md",
+      "title": "后台脚手架的 Core、公共模块与生成应用边界",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai",
+        "developer"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/reference/core-capabilities-and-application-adoption.md",
+        "official repository permalinks linked in the document"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-application-boundary",
+        "storage",
         "documentation"
       ],
       "site_projections": [],

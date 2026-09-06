@@ -168,7 +168,9 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-product-status-readme` | `docs/product-status/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-product-status-releases-readme` | `docs/product-status/releases/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-productization-baseline-plan` | `docs/productization-baseline-plan.md` | `archived` | `plan` | `product-architecture` |
+| `pa-docs-reference-core-capabilities-and-application-adoption` | `docs/reference/core-capabilities-and-application-adoption.md` | `current` | `reference` | `architecture` |
 | `pa-docs-reference-product-capability-reference-matrix` | `docs/reference/product-capability-reference-matrix.md` | `current` | `reference` | `product-architecture` |
+| `pa-docs-reference-scaffold-core-boundary-comparison` | `docs/reference/scaffold-core-boundary-comparison.md` | `current` | `reference` | `architecture` |
 | `pa-docs-release-engineering` | `docs/release-engineering.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-scaffold-upgrade` | `docs/scaffold-upgrade.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-site-404` | `docs-site/404.md` | `current` | `public-projection` | `developer-experience` |
