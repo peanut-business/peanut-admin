@@ -82,6 +82,10 @@ namespace {
         'app/common/service/storage/StorageService.php',
         'app/common/service/storage/StorageRepository.php',
         'app/common/service/storage/StoragePurpose.php',
+        'app/common/service/storage/StorageDriverFactory.php',
+        'app/common/service/storage/ObservedStorageDriver.php',
+        'app/common/service/storage/StoragePath.php',
+        'app/common/service/storage/QiniuStorageHttpTransport.php',
     ];
     $sources = [];
     foreach ($ownedFiles as $relativePath) {
@@ -141,11 +145,41 @@ namespace {
         && str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'export.csv' => StorageAccess::PRIVATE"),
         'public/private purpose routing changed'
     );
+    expectFileMedia(
+        !is_file($serverRoot . '/app/common/service/storage/StorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/LocalStorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/AliyunStorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/QcloudStorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/QiniuStorageDriver.php'),
+        'application must consume the single Core storage Driver implementation'
+    );
+    expectFileMedia(
+        str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new LocalStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new AliyunStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new QcloudStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new QiniuStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StoragePath.php'], 'StorageObjectKey::assert(')
+            && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'StorageObjectKey::assert(')
+            && str_contains($sources['app/common/service/storage/QiniuStorageHttpTransport.php'], 'implements StorageHttpTransport'),
+        'application storage assembly must use only the frozen Core technical boundary'
+    );
+    $allowedCoreStorageImports = [
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\AliyunStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\LocalStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\QcloudStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\QiniuStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\StorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\StorageHttpTransport',
+        'PeanutAdmin\\FileMedia\\Storage\\StorageObjectKey',
+    ];
     foreach ($sources as $relativePath => $source) {
-        expectFileMedia(
-            !str_contains($source, 'PeanutAdmin\\FileMedia'),
-            'application file owner must not deep import core: ' . $relativePath
-        );
+        preg_match_all('/PeanutAdmin\\\\FileMedia\\\\[A-Za-z0-9_\\\\]+/', $source, $coreImports);
+        foreach ($coreImports[0] as $coreImport) {
+            expectFileMedia(
+                in_array($coreImport, $allowedCoreStorageImports, true),
+                'application may import only Core technical storage Drivers: ' . $relativePath . ' -> ' . $coreImport
+            );
+        }
     }
 
     echo "PB04-FILE-MEDIA-HOST-001 passed\n";

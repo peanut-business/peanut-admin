@@ -52,6 +52,7 @@ use app\common\service\tenant\TenantIdentityQuery;
 use app\common\service\storage\AliyunStorageClientFactory;
 use app\common\service\storage\FailClosedStorageCredentialResolver;
 use app\common\service\storage\QcloudStorageClientFactory;
+use app\common\service\storage\QiniuStorageHttpTransport;
 use app\common\service\storage\StorageCredentialResolver;
 use app\common\service\storage\StorageConfigurationService;
 use app\common\service\storage\StorageDriverFactory;
@@ -101,9 +102,7 @@ use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
-/**
- * 应用服务类
- */
+/** 应用组合根，集中注册 Host 基础设施、业务服务与官方 Module Runtime。 */
 class AppService extends Service
 {
     public function register(): void
@@ -244,7 +243,7 @@ class AppService extends Service
         });
     }
 
-    /** Wires the storage ledger to the configured Edition ownership policy and default Tenant resolver. */
+    /** Wires the Edition-aware storage ledger to the host-configured Core drivers. */
     private function registerStorage(): void
     {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
@@ -255,7 +254,7 @@ class AppService extends Service
         ));
         $this->app->bind(StorageDriverFactory::class, fn(): StorageDriverFactory => new StorageDriverFactory(
             $this->app->make(StorageCredentialResolver::class),
-            $this->app->make(OutboundHttpTransport::class),
+            new QiniuStorageHttpTransport($this->app->make(OutboundHttpTransport::class)),
             $this->app->make(AliyunStorageClientFactory::class),
             $this->app->make(QcloudStorageClientFactory::class),
             $this->app->make(CurrentExecutionContext::class),

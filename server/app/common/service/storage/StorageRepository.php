@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace app\common\service\storage;
 
 use app\common\tenancy\DataScopePolicy;
+use PeanutAdmin\FileMedia\Storage\StorageObjectKey;
 use PDO;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 
@@ -71,7 +72,7 @@ SQL);
             $reference = ltrim($reference, '/');
             if (str_starts_with($reference, 'storage/')) $reference = substr($reference, 8);
             if (preg_match('#^tenants/v1/[1-9][0-9]*/#D', $reference) !== 1) return null;
-            $reference = StoragePath::assertObjectKey($reference);
+            $reference = StorageObjectKey::assert($reference);
             $field = 'f.object_key';
         }
         if ($standaloneTenantId === null) {
