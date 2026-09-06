@@ -9,15 +9,24 @@ php scripts/create-app \
   --slug=acme-console \
   --package=acme/acme-console \
   --target=/absolute/path/to/acme-console \
-  --edition=standalone
+  --edition=standalone \
+  --profile=full
 ```
 
 `--edition` 必须明确选择 `standalone` 或 `multi-tenant`。这不是运行时开关：生成器会从同一份
 Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、索引、Tenant/Platform 能力和
-升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。
+升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。当前正式
+发布清单采用 full 配置，示例显式传入 `--profile=full`。
 
-新应用的独立 `application.version` 默认是 `0.1.0`；需要在首次生成时指定其他 SemVer 时，
-使用 `--application-version=<semver>`。该值不是 Peanut Admin 产品版本，也不是
+三个版本轴各自拥有事实源：
+
+| 版本轴 | 事实源 | 用途 |
+| --- | --- | --- |
+| 应用发布 | `release-versions.json.product_release` | 应用 owner 的版本、tag 与完整应用 Release |
+| Scaffold 采用 | `scaffold_template` 与不可变 scaffold manifest | 受管技术基线、渲染快照与 Peanut migration 目标 |
+| Core 依赖 | Composer/npm 精确包版本与 lock | 应用实际安装的后端/前端 Core 身份 |
+
+`--application-version=<semver>` 可选，默认 `0.1.0`。该值不是 Peanut Admin 产品版本，也不是
 `peanut-admin/core` 或 `@peanut-admin/admin` 的依赖版本。生成器以这一值统一写入 release
 metadata、changelog、SBOM 根包、后端版本配置与 API fallback、Web/PC/UniApp/Docs 根
 package、PC/UniApp 根 lock metadata，以及 UniApp manifest/About；默认 UniApp

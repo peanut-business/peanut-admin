@@ -83,6 +83,17 @@ baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标
 本次冻结的 `product_release`，使下一次升级可以逐字重现这次生成的目标 baseline；最初的
 `generation_source` 继续保持不变。
 
+应用采用 scaffold 与部署应用 Release 是两个阶段。开发期先由上述执行器解决三方比较并形成
+目标应用源码，随后应用 owner 才能建立自己的不可变 Git commit/tree、tag 与
+`RELEASE_METADATA.json`；生成器产出的 baseline metadata 不能当作正式发布证据。Platform 部署
+完整应用 Release，不在生产 Runtime 再次合并 scaffold。应用 `product_release` 可以在
+`scaffold_template` 不变时独立递增；这种纯应用升级要求 from/to scaffold manifest 摘要完全一致。
+
+当前 canonical Peanut worker 只执行本仓登记的固定生产资源与 checkout，不提供独立应用的通用
+部署能力。独立应用必须由 owner 登记自己的资源和执行器，并让 metadata 的
+`application_identity/version/expected_tag` 与应用合同一致；输入缺失时保持阻断。没有旧协议或
+canonical fallback，旧应用中的 app-owned Host 修正也必须由其 owner 审阅并采用。
+
 ## 1.x/2.x 历史归档
 
 > 以下内容是旧版本的历史证据，不是 3.x 的默认安装或升级路径。3.x 仍然是 fresh-only，

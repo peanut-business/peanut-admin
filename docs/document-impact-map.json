@@ -61,10 +61,10 @@
     },
     {
       "id": "application-scaffold-version-contract",
-      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
+      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
       "classifications": ["architecture-decision", "technical"],
       "upstream": ["application release contract", "scaffold adoption manifest", "migration ledger and immutable SQL"],
-      "technical_docs": ["docs/plans/application-scaffold-version-contract-queue.md", "docs/create-application.md", "docs/scaffold-upgrade.md", "docs/peanut-admin-release-deployment.md", "docs/operations/release-and-application-lifecycle.md"],
+      "technical_docs": ["docs/plans/application-scaffold-version-contract-queue.md", "docs/create-application.md", "docs/scaffold-upgrade.md", "docs/peanut-admin-development-guide.md", "docs/peanut-admin-release-deployment.md", "docs/operations/release-and-application-lifecycle.md"],
       "site_docs": [],
       "generated": ["docs/reference/document-catalog.generated.md"],
       "reason": "Application releases, scaffold provenance, Core locks and database migration targets are separate identities that must remain explicit across generation, upgrade and deployment."
@@ -114,9 +114,13 @@
       "paths": [
         "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
         "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
         "server/app/command/OpsUpgradeTask.php",
         "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
         "scripts/ops-upgrade-worker",
+        "scripts/deploy-release",
+        "platform/src/App.vue",
         "docs/architecture/product-closure-upgrade-execution.md"
       ],
       "classifications": ["architecture-decision", "technical", "developer-site"],

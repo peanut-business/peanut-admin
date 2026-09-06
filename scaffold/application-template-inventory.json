@@ -4217,7 +4217,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "6946511ba4b2472962bdce96fae34a3020e15187c9c472b8c295659fdfbdaec8"
+            "source_sha256": "6e15cba7cdc20158ff43871a27e78296f7b0e77cc0703a546954b2201e749ed9"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -4831,7 +4831,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "334fd7185d3e742c2f350cabc2278232839d295e10d116f88870e0367891ec75"
+            "source_sha256": "9ad63d4b59bc7ad0f9d543a0e3582728a9e0e78b248ec1343238b913d89e79bb"
         },
         {
             "path": "scripts/docs-governance",
@@ -5009,7 +5009,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ed9b85d7ad20864937fba1f33b9e4fad165219f2f8e4ac26c71a407681f080d1"
+            "source_sha256": "fc573530e5ffabf777ca79dd2d5c09c8faeda04a9608449c4406264258c24f0e"
         },
         {
             "path": "scripts/p0e-browser-smoke",
@@ -15443,7 +15443,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "cfd887febb870293360dd9ae6ece473eabc93ed4776fb11e99c7f637caa2114e"
+            "source_sha256": "846b23b6a6f7c6bb31df02808d4d0abb2b9d86326c79b32b9ada42ad5e877a57"
         },
         {
             "path": "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
@@ -15551,7 +15551,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "73631d1f47d685c9042695b472d9190fcd636c2732546e2ef984907c42923d6b"
+            "source_sha256": "a72dea37c2df36162a901859a3e4f3fd5bd215b98eec7f619fc504447cabe6fa"
         },
         {
             "path": "server/app/platform/service/ops/PlatformUpgradeTarget.php",
@@ -15563,7 +15563,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "e2fa871af37974fe3a50d73103b51e45d33950cb41d7321696cbd16249d7255b"
+            "source_sha256": "026f927e158d290e86048c183b1a112e6fb60f127e79d945fe452bbfa3655bec"
         },
         {
             "path": "server/app/platform/service/ops/RestoreVerificationEvidence.php",
