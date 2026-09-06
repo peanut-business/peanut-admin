@@ -121,6 +121,9 @@ function classification(string $path): string
     if ($path === 'server/database/seed-demo-data.php') {
         return 'managed';
     }
+    if ($path === 'server/app/common/service/installation/ApplicationReleaseVersions.php') {
+        return 'managed';
+    }
     if ($path === 'scripts/seed-demo-data') {
         return 'app-owned';
     }

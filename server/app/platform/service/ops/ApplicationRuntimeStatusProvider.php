@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
-use app\common\service\scaffold\VersionContract;
+use app\common\service\installation\ApplicationReleaseVersions;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Status\OpsStatusSnapshot;
@@ -346,7 +346,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
     /** Resolve the same scaffold/overlay migration target used by deployment. */
     private function migrationTargetVersion(): string
     {
-        $versions = VersionContract::load($this->projectRoot . '/release-versions.json');
+        $versions = ApplicationReleaseVersions::load($this->projectRoot . '/release-versions.json');
         $base = $versions->scaffoldTemplate();
         $overlayPath = $this->projectRoot . '/DEMO_PATCH_METADATA.json';
         if (!file_exists($overlayPath)) {

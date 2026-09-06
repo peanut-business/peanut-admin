@@ -13090,6 +13090,20 @@
             "source_sha256": "50bf1a40af48fb1e01ab0f70766146bb3519a1b67758450c3b834dc2a73616d2"
         },
         {
+            "path": "server/app/common/service/installation/ApplicationReleaseVersions.php",
+            "target": "server/app/common/service/installation/ApplicationReleaseVersions.php",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "c3bd570c9b48006c39834c8901e66198fd9263f2392b7cca2dbca06f3652e142"
+        },
+        {
             "path": "server/app/common/service/installation/InstallationExecutionException.php",
             "target": "server/app/common/service/installation/InstallationExecutionException.php",
             "classification": "app-owned",
@@ -15321,7 +15335,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "95e11de71b5495d5aef0d010dfa05f6e537301f20c006f12f62ac9c17d65d498"
+            "source_sha256": "77da743448b1f3b624f5625731dfebc344d2414cb2187db6911ef63f7491710d"
         },
         {
             "path": "server/app/platform/service/ops/DeploymentModuleRequestService.php",
@@ -16529,7 +16543,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "af3c7fdf35172b9428c1f518ad97086ca0d9d6a1e944fa7d01a08813867fb99f"
+            "source_sha256": "49cff8d3617d1f4a3de0817c1876f779a37d507611a27056ed0eb4d659fae3aa"
         },
         {
             "path": "server/database/migrations/20260822-classify-official-article-permissions.sql",

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\scaffold\VersionContract;
+use app\common\service\installation\ApplicationReleaseVersions;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
@@ -447,7 +447,7 @@ function applicationMigrationFiles(string $databaseDir): array
 function applicationReleaseVersions(string $serverDir): array
 {
     loadCoreRuntime($serverDir);
-    $contract = VersionContract::load(dirname($serverDir) . '/release-versions.json');
+    $contract = ApplicationReleaseVersions::load(dirname($serverDir) . '/release-versions.json');
     return [
         'product_release' => $contract->productRelease(),
         'scaffold_template' => $contract->scaffoldTemplate(),
