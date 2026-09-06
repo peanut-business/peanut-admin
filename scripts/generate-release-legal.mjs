@@ -11,8 +11,8 @@ const rootDir = resolve(scriptDir, '..')
 const checkOnly = process.argv.includes('--check')
 
 const expectedCounts = {
-  composer: 42,
-  web: 1031,
+  composer: 43,
+  web: 1082,
   platform: 103,
   pc: 923,
   uniapp: 1008,
@@ -293,7 +293,7 @@ Peanut Admin is licensed under Apache-2.0: Copyright 2026 花生科技. Third-pa
 ## Distribution boundary
 
 - The normative GitHub Release distributes this repository's source. It does not attach prebuilt PHP/Nginx images; the fixed core packages are published separately in their public registries.
-- Production Compose builds static management, PC and H5 assets and installs the 33 Composer production packages listed below. No \`node_modules\` directory is copied into the final images.
+- Production Compose builds static management, PC and H5 assets and installs the ${composerRuntime.length} Composer production packages listed below. No \`node_modules\` directory is copied into the final images.
 - The exhaustive package/version/license/source inventory for the six locked dependency graphs is \`RELEASE_SBOM.spdx.json\` (SPDX 2.3). Build-only entries are retained there so source-release recipients can reproduce the build and its notices.
 - Each installed dependency may include additional license or notice files. Those files remain authoritative for that dependency and must not be removed from redistributed dependency archives.
 
@@ -323,7 +323,7 @@ ${licenseRows}
 
 ## Composer production packages
 
-These 33 packages are installed with \`composer install --no-dev\` in the production PHP image.
+These ${composerRuntime.length} packages are installed with \`composer install --no-dev\` in the production PHP image.
 
 | Package | Version | License | Source |
 |---|---|---|---|

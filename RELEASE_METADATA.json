@@ -3,7 +3,7 @@
   "product": "Peanut Admin",
   "version": "3.0.13",
   "expected_tag": "v3.0.13",
-  "release_date": "2026-08-30",
+  "release_date": "2026-09-06",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "Apache-2.0",
@@ -26,25 +26,25 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.11",
-    "web_npm": "@peanut-admin/admin@0.1.0-alpha.11",
-    "platform_npm": "@peanut-admin/admin@0.1.0-alpha.11",
-    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.11",
-    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.11"
+    "composer": "peanut-admin/core@0.1.0-alpha.12",
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.12",
+    "platform_npm": "@peanut-admin/admin@0.1.0-alpha.12",
+    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.12",
+    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.12"
   },
   "lockfiles": {
-    "server/composer.lock": "0bdd7fb32d2f3050082950d05750b4e1c152ad263eeb6a6b326d0c105eef715d",
-    "web/pnpm-lock.yaml": "b8e19b32016a81974df236632133e1136225bfa4d3543d13197ffef0fd54134a",
-    "platform/package-lock.json": "4032cfc75f1455113db6016c350f4f9d12875005d5ae36de2541ea2a695094e8",
-    "pc/package-lock.json": "3bc84a40a35d5be9adc328c28c533a2916feb2675b098965d9a3b41a9b6ede4c",
-    "uniapp/package-lock.json": "85507a09d1af30c308843dfbad7abea2f0e443d6585643bec4711608c40cc6e1",
+    "server/composer.lock": "a07395242713542bbc006518b7d58f89b2c1108d313896c7c1eee78f15cd1ae4",
+    "web/pnpm-lock.yaml": "626d7b1a3a6fb3a12b6c77bd0241fec08931b34048b79d90dac8f287dc3a465d",
+    "platform/package-lock.json": "0e3385cd1604d72826ef4746d7e713b5c2d1ba058b03a34f0b681760974742dd",
+    "pc/package-lock.json": "42f162f10b39113abf0bd397a4213d61275ae27cc61e87464db09a440e52bff3",
+    "uniapp/package-lock.json": "c6545437630550680363bc14910c8b8545d2e623d694334709b9799325f436ba",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "NOTICE": "908896ee207ef8973e8e40944112a19dec70a8b9a92501a0ff576d62895951c6",
-    "THIRD_PARTY_NOTICES.md": "04676aee45d11843defecf1446c4f2b35ceabf7a76bcdd657a3da12234adb2fd",
-    "RELEASE_SBOM.spdx.json": "b0706f8a0cdf2dae736f05b5a41cff23ea596c8995ab9f4740d1bf4e1206b069"
+    "THIRD_PARTY_NOTICES.md": "6e31c61745040c3f293b91309167b3d447d47e9873d7fcf495212f7dbd1b9d21",
+    "RELEASE_SBOM.spdx.json": "f8a991f6ba4789ddeb016b37497a292aa33af503a07e7deb8c5e50f812dfbf31"
   },
   "technical_qualification": {
     "phase": "3.0.13-pending-qualification",
@@ -60,7 +60,7 @@
     "scaffold_version": "3.0.13",
     "application_initial_version": "0.1.0",
     "evidence": "The fixed-candidate qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
-    "release_delta": "Establishes the first formal Standalone and Multi-tenant installer baseline, adopts the qualified Core Alpha.11 packages, adds signed same-Edition upgrade tooling and closes the confirmed Demo experience defects."
+    "release_delta": "Establishes the first formal Standalone and Multi-tenant installer baseline, adopts the qualified Core Alpha.12 packages, adds signed same-Edition upgrade tooling and closes the confirmed Demo experience defects."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

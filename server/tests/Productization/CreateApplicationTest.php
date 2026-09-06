@@ -377,7 +377,7 @@ try {
         $package = json_decode((string)file_get_contents($first . "/{$client}/package.json"), true, 512, JSON_THROW_ON_ERROR);
         createApplicationExpect(($package['version'] ?? null) === '0.1.0', "{$client} root package must use application.version");
         if (in_array($client, ['web', 'pc', 'uniapp'], true)) {
-            $expectedPublicAdmin = '0.1.0-alpha.11';
+            $expectedPublicAdmin = '0.1.0-alpha.12';
             createApplicationExpect(
                 ($package['dependencies']['@peanut-admin/admin'] ?? null) === $expectedPublicAdmin,
                 "{$client} public admin dependency must remain {$expectedPublicAdmin}"
@@ -391,8 +391,8 @@ try {
             "{$client} root lock metadata must use application.version"
         );
         createApplicationExpect(
-            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.11',
-            "{$client} lock root dependency must remain Alpha.11"
+            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.12',
+            "{$client} lock root dependency must remain Alpha.12"
         );
     }
     foreach (['server/config/project.php', 'server/app/adminapi/application/WorkbenchApplicationService.php', 'server/app/api/application/IndexApplicationService.php'] as $versionSurface) {

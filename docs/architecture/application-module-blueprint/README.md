@@ -119,8 +119,9 @@ flowchart TB
 
 当前 Runtime 已具备可复用基础：管理端、消费端、Platform 目录已经存在；执行 Context 生命周期、Module manifest、
 权限/菜单声明、部分 Application Service 和容器绑定也已存在。应用 Composer 已锁定
-`peanut-admin/core@0.1.0-alpha.11`，source reference 为
-`fdd58c4873bea79759826ffe92aac52c5414d688`。这是采用身份事实，不证明 Alpha.11 已支持目标 manifest 或多应用装载。
+`peanut-admin/core@0.1.0-alpha.12`，source reference 为
+`9017212da0da63f445d693be94d533f681c6dc92`。Alpha.12 的 manifest schema 已移除 `backend.routes`；
+这只关闭该字段的采用前置，不证明目标多应用装载已经完成。
 
 但目标架构**尚未整体落地**：当前 Composer 未登记 `topthink/think-multi-app`，`server/route/app.php` 仍统一加载
 Admin、API、Platform、Tenant 和 Module 路由，Module 仍包含 HTTP Controller/route，运行时也仍有多处手工

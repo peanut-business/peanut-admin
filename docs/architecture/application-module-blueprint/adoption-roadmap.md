@@ -28,9 +28,9 @@ candidate commit/tree、未通过 P0-E、未 Tag、未 Release、未部署，也
 | Core Task Job/Attempt/lease/fencing、幂等、Audit、Outbound HTTP 基础 | 复用并校准 | 不把基础机制当成共享受众语义 |
 | 服务登记、资源登记、文档治理和发布控制 | 保留 | 不替代 Module、Schema、Release 或 Runtime 事实源 |
 
-应用已锁定 `peanut-admin/core@0.1.0-alpha.11`，source reference 为
-`fdd58c4873bea79759826ffe92aac52c5414d688`。这只证明 Application 采用身份；当前 worktree 没有该精确 Core 源码，
-不能据此宣称 Alpha.11 已支持删除 `backend.routes` 或目标 multi-app 装配。
+应用已锁定 `peanut-admin/core@0.1.0-alpha.12`，source reference 为
+`9017212da0da63f445d693be94d533f681c6dc92`。Alpha.12 的规范 schema 已移除 `backend.routes`，
+应用 manifest 与唯一生成模板已同步删除该字段；目标 multi-app 装配仍需单独实现和验证。
 
 ### 2.2 最终必须退出
 
@@ -65,8 +65,8 @@ Context、授权、Tenant/DataScope、事务、审计和客户端/OpenAPI 在同
 **必须关闭的核验**：
 
 1. `topthink/think-multi-app` 与 ThinkPHP 8、CLI、安装入口、现有 Module lifecycle 的唯一装载方式；
-2. Alpha.11 精确 Core manifest schema 是否允许删除 `backend.routes`；若不允许，先发布最小 Core 合同变更，
-   Application 只采用已发布固定 identity，不保留空字段兼容；
+2. Alpha.12 精确 Core manifest schema 已确认删除 `backend.routes`；Application 只采用已发布固定 identity，
+   不保留空字段兼容；
 3. Application/Module provider 向唯一 composition root 贡献 binding 的框架 API 与生命周期；
 4. `Db::transaction()`、注入 PDO 和跨 Module participant 是否能证明使用同一连接/事务 handle；
 5. manifest `owned_tables` 对 migration touched tables 的可执行校验方式；
@@ -230,7 +230,7 @@ WP2 Article 样板 + 新生成合同
 
 ## 8. 实施前仍须回答
 
-1. Alpha.11 精确 Core manifest schema、provider lifecycle 和删除 `backend.routes` 的采用顺序；
+1. Alpha.12 provider lifecycle 与后续 multi-app 装配顺序；manifest `backend.routes` 前置已关闭；
 2. ThinkPHP multi-app 对当前 CLI、installation、异常 renderer 和 package lifecycle 的唯一装载行为；
 3. 注入 transaction handle 与 ORM/PDO 实际连接的一致性；
 4. 每个 Admin/Consumer operation 的对象级 DataScope；现有 Tenant scope 不能冒充已完成；
