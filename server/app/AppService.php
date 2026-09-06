@@ -62,13 +62,23 @@ use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
 use app\common\validate\InputValidator;
+use app\platform\invitation\PlatformInvitationRuntimeFactory;
+use app\platform\invitation\TenantOwnerInvitationAdminService;
+use app\platform\invitation\TenantOwnerInvitationPublicService;
+use app\platform\query\PlatformControlPlaneQueryService;
+use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\PlatformRuntimeFactory;
+use app\platform\service\PlatformTenantQueryService;
+use app\platform\service\TenantEntryBindingAdminService;
+use app\platform\service\TenantGovernanceService;
 use app\platform\service\TenantApplicationBootstrapPersistence;
 use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
+use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\ops\PlatformOpsApplicationService;
 use app\platform\service\ops\ApplicationRuntimeStatusProvider;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\ModuleDefinitionRegistryFactory;
 use app\platform\service\plugin\PluginLockResolver;
 use think\Service;
@@ -85,6 +95,7 @@ use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
@@ -334,6 +345,36 @@ class AppService extends Service
                 $trustedModuleKeyConfig,
             );
         });
+        $this->app->bind(PlatformOperatorSessionService::class, fn(): PlatformOperatorSessionService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->sessions());
+        $this->app->bind(PlatformTenantQueryService::class, fn(): PlatformTenantQueryService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->tenantQueries());
+        $this->app->bind(TenantEntryBindingAdminService::class, fn(): TenantEntryBindingAdminService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->tenantEntryBindings());
+        $this->app->bind(PlatformAccessAdminService::class, fn(): PlatformAccessAdminService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->platformAccess());
+        $this->app->bind(TenantGovernanceService::class, fn(): TenantGovernanceService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->tenantGovernance());
+        $this->app->bind(PlatformTenantModuleService::class, fn(): PlatformTenantModuleService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->tenantModules());
+        $this->app->bind(PlatformModuleRuntimeService::class, fn(): PlatformModuleRuntimeService => $this->app
+            ->make(PlatformRuntimeFactory::class)
+            ->moduleRuntime());
+        $this->app->bind(TenantOwnerInvitationAdminService::class, fn(): TenantOwnerInvitationAdminService => $this->app
+            ->make(PlatformInvitationRuntimeFactory::class)
+            ->invitations());
+        $this->app->bind(TenantOwnerInvitationPublicService::class, fn(): TenantOwnerInvitationPublicService => $this->app
+            ->make(PlatformInvitationRuntimeFactory::class)
+            ->publicInvitations());
+        $this->app->bind(PlatformControlPlaneQueryService::class, fn(): PlatformControlPlaneQueryService => $this->app
+            ->make(PlatformInvitationRuntimeFactory::class)
+            ->queries());
         $this->app->bind(PlatformOpsRuntimeFactory::class, function (): PlatformOpsRuntimeFactory {
             $moduleConfig = Config::get('modules', []);
             if (!is_array($moduleConfig)) {
