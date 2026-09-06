@@ -12400,7 +12400,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6841373104c6ee77d8b79d6124252556b41f9cc91fd571c0d13c1ae909c31da0"
+            "source_sha256": "55e9717b59a42db47bc261de6c2c355ae533d3c2bf55293e38be601bb26732ca"
         },
         {
             "path": "server/app/common/service/authorization/CoreTenantModuleAdminBridge.php",
