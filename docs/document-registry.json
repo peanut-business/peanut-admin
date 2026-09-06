@@ -80,7 +80,7 @@
       "authority": "interpretation",
       "canonical_sources": ["release-versions.json", "scripts/scaffold-runtime/ScaffoldManifest.php", "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "server/database/install.php", "scripts/deploy-release", "server/app/platform/service/ops/PlatformUpgradeTarget.php"],
       "owner": "application-maintainers",
-      "status": "planned",
+      "status": "current",
       "scope": ["application"],
       "related": ["scaffold-upgrade", "release-contract", "migration", "execution-queue"],
       "site_projections": [],
