@@ -1,276 +1,50 @@
 # Peanut Admin — Agent Context
 
-> **Read this before touching any file.** This file is the authoritative project state record.
-> Last updated: 2026-08-31
+本仓是现行 Peanut Admin 产品代码仓，位于 `/Users/xing/Documents/company-projects/peanut-admin/`。
+集成分支为 `dev`，稳定分支为 `main`，仓库为 `git@github.com:peanut-business/peanut-admin.git`。
+产品名称不带版本后缀，PC package name 为 `peanut-admin-pc`。更新日期：2026-09-07。
 
-执行任何写任务前，同时读取根目录 `AGENT_EXECUTION_RULES.md`。本文件记录产品事实和
-路线，执行规则由该独立文档维护。
+## 按任务读取
 
-本项目数据库、缓存、队列、对象存储、外部服务、域名、容器消费入口与本地固定端口的
-版本化机器可读日常资源登记为 `resources/project-resources.json`；仅源仓 P0-E 资格工具及其
-远程管理绑定登记为 `resources/p0e-runtime-qualification.json`。连接、启动、迁移、测试或
-部署前必须先读取对应文件并显式选择资源 ID、环境和登记地址；本项目登记是唯一事实源，
-使用前还必须按登记的健康检查核验真实资源。
+先确定当前任务与相关文件。写任务读取 `AGENT_EXECUTION_RULES.md` 中适用的授权、Git 和技术边界；候选封存、发布、历史证据仅在对应任务中读取。
 
-本项目内部复用服务的责任、成熟度、owner、数据归属、依赖、阻塞和推进顺序统一登记在
-`resources/service-registry.json`，人类可读入口为
-`docs/architecture/service-layer-registry.md`；对话执行状态、业务回报和完成模板见
-`docs/architecture/service-execution-status.md`。开始服务层或跨 Module 调用改造前必须先读取该
-登记；Module 自有表仍以对应 `module.json` 为直接事实，运行资源仍以项目资源登记为事实源。
+| 当前任务 | 事实源与入口 |
+| --- | --- |
+| 项目运行资源、连接、启动、迁移、测试、部署 | `resources/project-resources.json`；源仓 P0-E 专用资格工具另见 `resources/p0e-runtime-qualification.json` |
+| 服务层或跨 Module 调用改造 | `resources/service-registry.json`、`docs/architecture/service-layer-registry.md`；Module 自有表以对应 `module.json` 为准 |
+| 服务执行状态或交接 | `docs/architecture/service-execution-status.md` |
+| 能力、完成度、源码 Release、演示部署 | `docs/product-status/README.md`、`docs/product-status/capability-ledger.json` 与对应 `releases/`、`deployments/` 快照 |
+| 文档变更 | `docs/README.md`、`docs/document-registry.json`、`docs/document-impact-map.json` |
+| SaaS 边界或后续路线 | `docs/design/saas-enhancement-blueprint.md`、`docs/plans/multi-tenancy-platform-management-plan.md`；按具体问题选择 `docs/design/saas-roadmap/` 下文件 |
+| 跨项目发布、运营平台与 SaaS 交接 | `docs/plans/product-release-operations-saas-roadmap.md` |
 
-本项目 CodeGraph 的适用范围、每个 worktree 独立索引规则和缺失语义登记在
-`resources/codegraph-registry.json`。需要调用关系、影响范围、服务层、Module 边界或架构事实的
-代码任务，第一步必须运行 `scripts/project-codegraph ensure`；纯文档、简单机械修改和已明确
-单文件局部查看可不启用。当前 worktree 没有 `.codegraph` 时，不得直接写成“项目没有知识图谱”，
-先运行 `scripts/project-codegraph status` 查看其他实际存在的 worktree，再只初始化当前 worktree。
-不同 worktree 的索引禁止复制或共享；其他项目是否需要 CodeGraph 由其自身事实源决定，不由本条
-扩展为全局要求。
+运行资源必须显式选择已登记 ID、环境、地址，并按登记核验健康及新鲜度；不得猜测或替换目标。共享运行资源的租约与清理规则见执行规则 §5。日常开发与生产、固定资格环境分别隔离。
 
-本项目技术文档的稳定 ID、受众、类型、生命周期、owner、上游事实源与公开投影统一登记在
-`docs/document-registry.json`；代码/事实路径到最小文档更新范围的映射统一登记在
-`docs/document-impact-map.json`。两者只登记文档关系，不替代资源、能力、Module、服务、
-Schema、API 或发布事实源。文档变更入口为 `docs/README.md`，最低静态检查为
-`./scripts/docs-governance check`。
+需要调用关系、影响范围、服务层、Module 边界或架构事实的代码任务，先运行 `scripts/project-codegraph ensure`；纯文档、简单机械修改和已明确单文件局部查看不启用。规则见 `resources/codegraph-registry.json`。当前 worktree 无索引时先用 `scripts/project-codegraph status` 核对其他 worktree，再仅初始化当前 worktree；索引不得复制或共享。本条仅适用于本项目。
 
----
+## 当前产品边界
 
-## 1. 项目身份
+- 当前正式源码与演示身份分别见 `docs/product-status/releases/v3.0.13.json` 和 `docs/product-status/deployments/v3.0.12-online-experience.json`；源码发布不代表生产部署完成。
+- 当前管理身份为原生 Account/Credential/TenantMember/RBAC，业务会员 `pa_member` 独立。1.x Admin/Role/Department 映射、默认 Tenant bootstrap、旧数据库或 scaffold 原地兼容升级不属于当前支持面。
+- Standalone 与 Multi-tenant 必须由同一冻结源码确定性生成。跨实例运营平台是独立应用，不进入本仓或 Core Runtime；完整 SaaS 商业化仍暂缓。
+- 完成判断以能力账本、现行源码和相应固定证据为准。历史 PR、迁移/菜单计数和旧任务日志不作为当前基线；追溯时读取对应 Release 快照或 Git 历史。
+- Marketplace、部分/多次退款、真实 Provider 资格、完整 SaaS 商业化、预构建生产镜像及第三方业务生产部署的范围，以当前能力账本和任务授权为准，不从历史计划自行领取。
 
-| 项目 | 值 |
-|------|----|
-| 产品名称 | **Peanut Admin**（不使用任何版本后缀） |
-| 本地目录 | `/Users/xing/Documents/company-projects/peanut-admin/` |
-| GitHub 仓库 | `git@github.com:peanut-business/peanut-admin.git` |
-| PC package name | `peanut-admin-pc` |
-| 集成分支 | `dev` |
-| 稳定分支 | `main` |
+## 开发入口
 
-此前的独立编排工作区已经删除，内容已归档。当前目录是现行产品代码仓，不是旧编排工作区；后续任务只以本文件记录的目录、仓库和主分支为当前事实源。
+- `server/`：ThinkPHP 8；`web/`：Vue 3 + Element Plus 管理端；`platform/`：平台管理端；`pc/`：Nuxt 3；`uniapp/`：小程序/H5。
+- 空库初始化使用 `server/database/init.sql` 与 Core KernelSchema；Schema 变更新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不直接改 `init.sql`。当前迁移集合以目录和账本为准，不在本文件维护计数。
+- 初始管理员邮箱和密码由安装时的 `ADMIN_INITIAL_EMAIL`、`ADMIN_INITIAL_PASSWORD` 显式提供；历史演示账号不是当前环境的默认凭据。
+- 日常开发从 `scripts/local-stack.sh dev-up` 启动。API 与 Web 的登记默认入口分别为 `127.0.0.1:20180`、`127.0.0.1:20181`；实际监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取并保留已有覆盖。
+- 日常 API 使用登记宿主 PHP/Composer；development Compose 不含 PHP。Docker PHP 只用于生产模式预览、生产构建或明确要求的容器等价检查。
+- 日常开发数据库仅使用登记的 `peanut-admin-mysql84-development`（development）；地址与凭据引用从项目资源登记读取。本机不运行替代 MySQL；旧 `3306/peanut_admin` 未登记组合不得连接。生产只使用生产登记资源，不能继承开发数据库。
+- Platform 安装/静态检查使用 `peanut-admin-host-node24-npm-development` 和 `platform/package-lock.json`；每个 worktree 安装自己的依赖，不复用其他 worktree 的 `node_modules`。
+- API 前缀为 `admin/*`（管理端）和 `api/*`（消费端）。文档最低静态检查为 `./scripts/docs-governance check`。
 
----
+## 命名与交付
 
-## 2. 当前状态（2026-08-17）
+LikeAdmin 到 Peanut Admin 的刻意改名不是缺失：`user → member`、`dev_crontab → crontab`、`generate_* → generator_*`、`notice_record → notice_log`、`notice_setting → notice_scene + notice_template`、`user_auth → oauth_*`。
 
-### 2.0 2.0.0 fresh-only 正式源码发布 — ✅ 完成
+功能分支使用 `feat/<描述>`；完成最低充分验证后直接合入并推送 `dev`，清理本任务分支与 worktree。PR 仅用于 `dev → main`、正式发布或明确要求的评审。不要创建带产品版本后缀的产品名称、目录或文件名。
 
-- 当前开发分支已切换为原生 `Account/Credential/TenantMember/RBAC` 管理身份；业务会员
-  `pa_member` 保持独立。
-- fresh install 使用 `server/database/init.sql` 与 Core KernelSchema 建立 canonical
-  Schema；`server/database/migrations/` 当前包含 Owner 邀请、Tenant 入口绑定、Tenant
-  capability setting、官方模块权限归属、余额调账幂等、充值退款扩展、系统共享字典层和
-  Tenant website RBAC 八条 2.0 基线后追加 SQL，不包含 legacy/adopt/compatibility 迁移。
-- 1.x Admin/Role/Department 映射、默认 Tenant bootstrap、兼容余额镜像和 1.x 数据库/
-  scaffold 原地升级不属于 2.0.0 支持面。
-- 登记多租户空库安装得到 87 张表、197 个菜单和 43 项配置；原生 Platform/Tenant 登录、
-  三 Tenant 选择、Store Demo 工作台和官方能力强制 Tenant 资格检查已通过。
-- `scaffold/releases/v2.0.0` 已从 source commit `71684a4…`（tree `629e333…`）完成唯一最终
-  reseal；inventory SHA-256 为 `54c173f…`，manifest 文件 SHA-256 为 `f9889fe…`。本地多租户
-  体验使用登记资源 `peanut-admin-mysql84-local-multi-tenant-demo`、Platform
-  `127.0.0.1:20176`、API `127.0.0.1:20178` 和管理端 `127.0.0.1:20179`，不得复用为生产资源。
-- 已部署的隔离 `production-candidate` 仍是 `d3d5900…`；它包含右上角头像空值/加载失败
-  fallback、可访问用户菜单按钮和对应 Web 合同测试。共享 Admin、Tenant A、Tenant B 已在
-  `79b1095…` 完成三域名截图、破图、加载、溢出和菜单人工检查；到当前 seal 候选没有 Web、
-  Platform 或应用 Runtime 差异。此前占用登记端口 `20190` 的历史 Compose 监听已由 owner
-  释放；固定候选 `78e9667…` 随后的 P0-E 七组全部通过，且数据库、Compose、容器、卷、网络、
-  镜像、监听、缓存均零残留，租约已释放。隔离体验环境仍是独立候选，不冒充正式生产部署。
-- PR #148 已合入 `dev=802ff047e66075672375b4823cfe1202a5e6d2c1`，PR #149 已合入
-  `main=ec4ac732a498afe5e02eafb4a4855ec1f52aa68d`；两者发布时文件树均为
-  `2404b62ab58e64d1d667455951219de40d7cea0f`。annotated tag `v2.0.0`（tag object
-  `769aa9d663a849bee5e5f284cc4f61a64179a1e1`）和同名 GitHub Release 已发布；规范源码包
-  SHA-256 为 `af9fc2f…`，外部 manifest SHA-256 为 `508fc378…`。GitHub Actions 因账户
-  配额/付款限制未执行实际任务，用户明确批准以已通过的固定候选 P0-E 7/7 作为发布门禁后
-  绕过；该例外不能写成 CI 通过。2.0.0 生产部署不在本轮源码发布范围内，后续必须独立执行。
-- 2.0.1 源码正式 Release 已完成：`main` 合入提交 `1c8aff4f1f19069bfe4480a8b29d59414d5c6816`，
-  annotated tag `v2.0.1` 与 [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v2.0.1)
-  已发布。其固定资格候选为 `9ffffed3d25857e99915b9d1da04e122c6a49080`（tree
-  `3a777f72928681c3d4e62adf86473cec506f4612`），P0-E `p0e201r3` 七组通过且零资源残留；
-  `v2.0.0 -> v2.0.1` 派生应用已通过 `preflight/apply/verify/recover`。线上
-  Standalone/Multi-tenant 双部署仍未完成，不得写成已部署。
-
-### 2.0.2 当前 consumer-ready 正式源码与演示 — ✅ v3.0.13 源码 / v3.0.12 演示
-
-- 当前正式源码身份为 `tag@b6530737a17da4ace56b982ed62ba263ed47eef7`（tree
-  `fb461b9ac80b6b61e55a337d38df79f8d52f3129`）、annotated tag object
-  `dcfd702b4a05786a15034089817c8585296c5be5` 与
-  [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.13)。固定候选
-  `p0e3013f` 八组通过，全部登记资格资源零残留且租约已释放；Release 同时发布首个正确的
-  Standalone/Multi-tenant 双 Edition 安装基线，不伪造旧版本升级包。
-- `production-candidate` 多租户 Demo 仍为 v3.0.12；Platform、共享 Admin、Tenant A/B
-  四入口和 Tenant Host 绑定已验证；文档站 `peanut-admin-doc.007345.xyz` 已发布 v3.0.12 演示入口。
-  正式源码与演示分别见 `docs/product-status/releases/v3.0.13.json` 与
-  `docs/product-status/deployments/v3.0.12-online-experience.json`。
-- CR01—CR40 与正式 consumer-ready 源码交付已完成。Marketplace、T16 部分/多次退款、真实 Provider
-  资格、跨实例运营平台、完整 SaaS 商业化、预构建生产镜像和第三方业务生产部署仍不在本轮范围。
-
-### 2.1 LikeAdmin 1.9.4 标准版 Parity — ✅ 完成并独立验证
-
-- 9 个 parity commits 已合并并推送到 `main`；已完成使命的功能分支不再作为后续工作基线
-- 44 controllers、72 actions（≥ LikeAdmin 标准版 45/68）
-- 1.x 数据库入口历史为 `install.php` + `migrate.php` + `init.sql` + 54 migrations；2.0 当前数据库入口为 `init.sql` + `KernelSchema` + 8 migrations；下表中的
-  24 条账本是 parity 时点证据，`v1.1.0` 发布制品固定为 50 条。该计数不是 2.0 当前 Schema。
-
-**独立验证结果（非 Codex 自报）：**
-
-| 验证项 | 方法 | 结果 |
-|--------|------|------|
-| Fresh-clone install | `git clone` → 空 MySQL → `php install.php` | 42 tables / 170 menus / 59 configs / 1 admin ✓ |
-| 前端路由回归 | Playwright 1.62 headless Chromium 真实浏览器 | 30/30 routes pass ✓ |
-| 升级演练 | fresh + legacy adopt + idempotent rerun | 43 tables / 24 migration ledger ✓ |
-
-证据文件：
-- `output/playwright/v01/clone-install-summary.json` — Codex 原始报告（参考）
-- `output/playwright/v02/summary.json` — **本会话独立验证，可信**
-- `output/playwright/v02/*.png` — 9 组截图 + 登录截图
-
-### 2.2 多租户与平台管理 — ✅ MT00–MT06 已完成
-
-设计文档位于 `docs/design/saas-roadmap/`（50 个文件）。默认 Tenant、可信管理端
-TenantContext、代表 SQL/非 SQL Tenant 隔离、实例内 Tenant 治理和双模式 Host 已完成；
-完成身份与验收范围以本节下方的 `v1.1.0` 事实和当前权威计划为准。判断后续范围前仍须
-核对远端 `dev`，不得继续沿用“完全未实现”或“MT02–MT04 尚未整体完成”的旧判断。
-
-截至 MT05 最终代码候选 `074fce5f4b1eb2dd2c89b8ddf0e2c3d7a74819a8`
-（tree `1a2df02e97414b5c236a842adf17804fb33e4699`）：
-
-- MT00、MT01 已完成，Core/Generator 与 DCS Product-only 条件采用身份已经固定；
-- MT02 已完成默认 Tenant、旧管理员/RBAC/组织映射，以及 Article、字典、装修、
-  会员/标签/余额等首批 Tenant-first SQL 域；
-- MT03 已完成缓存/锁端口、文件、Crontab、操作日志与后台 diagnostics、通知、OAuth、
-  导入导出、热搜、客服、交易设置、充值退款、Tabbar、同步 XLSX、会员上传和实例工具
-  边界等独立隔离切片；
-- PM01 已形成 PlatformOperator、Tenant 生命周期、首 owner、TenantModule 和平台端
-  HTTP/Web 主链；MT04 已形成 Tenant 选择/切换/撤销、Admin Host bridge 和 Standalone UI；
-- 管理员、角色、部门和岗位 CRUD 已 Tenant-first，并由数据库复合 Tenant 外键保护；
-- MT05 浏览器候选 `2def481…` 的真实浏览器矩阵已通过，证据为
-  `/private/tmp/pa-mt05-evidence/final-browser-2def481/summary.json`；旧候选
-  `5bd3e78…` 的三模式安装/升级证据早于两条新增 migration，不能覆盖最终候选。
-  PR #99 修正合法部署枚举 `multi-tenant` 后，最终候选的 Standalone 空库、`v1.0.0`
-  前滚和多租户空库均以 50 条 migration/81 张表通过；MT02–MT05 已完成。MT06
-  `v1.1.0` 已正式发布：`main/dev@c6a165f…`、annotated tag object `0f4fffd…`、
-  [GitHub Release](https://github.com/peanut-business/peanut-admin/releases/tag/v1.1.0)
-  与一次干净 Composer/npm/source 安装验证均完成；MT06 已完成。
-
-- 当前权威架构摘要：`docs/design/saas-enhancement-blueprint.md`
-- 当前开发顺序：`docs/plans/multi-tenancy-platform-management-plan.md`；产品正式发布、独立运营平台与后续 SaaS 的跨项目交接顺序见 `docs/plans/product-release-operations-saas-roadmap.md`；完整 SaaS 商业化暂缓，未来规划保留在 `docs/plans/saas-enhancement-development-plan.md`
-- 跨应用实例管理 Release、授权、升级、健康和备份的运营平台已明确为独立应用；它不属于核心包，也不是 SaaS Host 内的租户控制面
-
-### 2.3 产品化正式基线 — ✅ 完成
-
-- `v1.1.3` 已达到 `production-demonstrated`：`main/dev/tag@f0b2b81…`
-  （tree `a9051b1…`）、annotated tag object `42e7e86…` 和正式 GitHub Release 身份一致；
-  从规范 Release 附件生成的独立应用完成五套锁定依赖、生产模式启动和真实浏览器登录，
-  生产 `oracle3:/www/docker/peanut-admin` 在配对备份后从 50 前滚到 54 条迁移，登录、API、
-  工作台、PC、H5 与 TLS 最低 smoke 通过。不可变证据见
-  `docs/product-status/releases/v1.1.3.json`。
-- 执行计划：`docs/productization-baseline-plan.md`；能力图：`docs/architecture/core-application-capability-graph.md`
-- 已完成：生产 Compose、迁移账本、三端 Docker、产品最低 CI、核心包公开发布、核心仓文档 CI、管理端 Element Plus、标准覆盖 Host、PC/UniApp 无 UI client 消费
-- 生产发布：`dev` 已部署到 `peanut-admin.007345.xyz`；登录、文章页、PC、H5 与文档真实 Chromium smoke 通过，证据见 `output/playwright/production-baseline/final-summary.json`
-- 日常开发和本机生产模式预览只使用 Peanut Admin 项目登记的
-  `peanut-admin-mysql84-development`（development）：
-  `192.168.192.2:20183/peanut_admin_development`，MySQL `8.4.10`。凭据引用为
-  `mac-14:/Users/xing/.config/peanut-admin/development-db.env`，不得把密钥写入仓库。
-  机器可读事实源为 `resources/project-resources.json`；P0-E 专用远程管理工具登记为
-  `resources/p0e-runtime-qualification.json`。使用前仍须按登记要求核验目标实况。旧开发
-  端口 `3306` 与旧库名 `peanut_admin` 的组合没有迁移账本，不得连接或作为现行指引。
-  本机不运行 Peanut Admin MySQL。当前生产服务器使用自身 `bundled-db` MySQL profile，
-  不能路由开发局域网地址；两类资源由 `PEANUT_DEPLOYMENT_TARGET` 和
-  `PEANUT_DATABASE_RESOURCE_ID` 门禁隔离。
-- 已完成 PB03：`docs/architecture/pb03-ownership-and-migration-gates.md` 已冻结核心通用基础设施、应用产品 Module、唯一实现、Host/override、测试 owner 与逐领域停止线
-- PB04 已完成：网站设置、权限 Host、管理员/RBAC CRUD、字典、文件素材、任务/导入导出与日志/维护均形成应用唯一实现、核心候选停止线及测试 owner
-- PB05 已完成：会员/标签、权威余额、兼容镜像、分类流水、充值入账与退款形成应用唯一 Runtime；核心 Tenant membership 与 R01/R02 候选未经采用授权
-- PB06 已完成：文章/分类/收藏/计数与移动/PC/Tabbar 装修形成应用唯一 Runtime；产品资源保留 Provider provenance，四端共用唯一装修读取 DTO
-- PB07 已完成：通知、支付、OAuth 与外部渠道均固定应用唯一 Host；旧 Channel CRUD、重复凭据和未实现的公众号 AES 配置入口已退出，PC/公众号通过固定 API bridge 回跳；核心相邻候选未获下游采用授权
-- PB08A 实现已完成：品牌单一 Runtime、中性安装默认、四端消费、包元数据、官网与文档门户均已落地；静态官网门禁通过，唯一桌面/移动 Chromium 验收归 PB08B
-- PB08B 已完成：候选 `4442229…` 通过 registry 构建、弱凭据/24→28/空库、Compose/HTTP/镜像/Host、唯一桌面/移动 Chromium 与文档一致性；总摘要见 `output/playwright/pb08b/summary.json`
-- PB09 已完成：法律门禁、PR #10/#11、`dev/main` 合入、annotated `v1.0.0`、GitHub Release、既有应用与官网部署、24→28 前滚和一次最低线上 smoke 均已封存；生产运行镜像由不可变 tag 源码在部署端构建，不发布预构建镜像
-- Element Plus 证据：`output/playwright/element-plus-baseline/summary.json`，真实 Chromium 登录及 7 个代表业务域全部通过
-- 产品化正式基线与多租户稳定脚手架均已进入 `main`；当前产品固化发布仍以能力账本和跨项目路线的完成条件为准。独立运营平台已获准在同级独立项目立项并先行设计，不进入本仓 Runtime；完整 SaaS 商业化仍暂缓
-
-### 2.4 产品能力与交付状态事实源
-
-当前能力的“已验证、实现待验收、计划/受阻、暂缓/范围外”详细矩阵，以
-`docs/product-status/capability-ledger.json` 为唯一机器可读事实源；对应人类可读入口为
-`docs/product-status/README.md`。本节只保留高层产品事实，不再复制能力表。开放 PR、运行中的
-Gate 和未提交 worktree 不得提前写成完成；正式产品发布时才在
-`docs/product-status/releases/` 冻结不可变能力快照。该内部目录默认不进入 docs-site 首页或
-公开导航。
-
----
-
-## 3. 目录结构
-
-```
-peanut-admin/
-├── server/          # ThinkPHP 8 后端
-│   ├── app/adminapi/    # 管理端 API（44 controllers）
-│   ├── app/api/         # 前端/小程序 API
-│   ├── database/
-│   │   ├── install.php  # 一键安装（空库 → 全量初始化）
-│   │   ├── init.sql     # 基础表 + 种子数据
-│   │   └── migrations/  # 2.0 基线后追加迁移；当前 8 条
-│   └── .env             # DB/JWT 配置（不提交）
-├── web/             # 管理端前端（Vue3 + Element Plus）
-├── pc/              # PC 消费端（Nuxt3）
-├── uniapp/          # 小程序/H5 客户端
-├── docs/
-│   ├── design/saas-roadmap/   # SaaS 路线图（roadmap only）
-│   └── peanut-admin-*.md      # 开发指南、用户手册
-└── output/playwright/         # 验证证据
-    ├── v01/  # Codex 自报
-    ├── v02/  # 独立验证（可信）
-    └── element-plus-baseline/  # Element Plus 迁移真实浏览器证据
-```
-
----
-
-## 4. 开发入口与安装身份
-
-- 初始管理员邮箱必须在空库安装时通过 `ADMIN_INITIAL_EMAIL` 提供，密码通过
-  `ADMIN_INITIAL_PASSWORD` 显式提供；仓库没有可供当前环境复用的共享默认账号或密码。
-  历史 parity 证据中的 `admin` 用户名和旧密码仅用于追溯，不是现行登录指引。
-- 管理端 API 登记默认值：`http://127.0.0.1:20180/`（由 `scripts/local-stack.sh dev-up` 托管）
-- 前端 Dev 登记默认值：`http://127.0.0.1:20181`（`pnpm dev`，位于 `web/`）
-- API 前缀：`admin/*`（管理端），`api/*`（前端/小程序）
-- 日常开发统一从 `scripts/local-stack.sh dev-up` 启动：API 使用项目登记的宿主
-  `/opt/homebrew/bin/php` 8.3.24 与 `/usr/local/bin/composer` 2.8.10；development Compose
-  不含 PHP 服务，容器通过 `host.docker.internal:${PHP_PORT}` 访问宿主 API。所有本地
-  监听从 `.local/stack.env` 或 `PEANUT_LOCAL_ENV_FILE` 读取，`201xx` 只是项目登记默认值。
-  Docker PHP 只用于 local-production-preview、生产构建和明确要求的容器等价 Gate。
-- Platform 的日常依赖安装和静态检查使用登记资源
-  `peanut-admin-host-node24-npm-development`（Node 24.13.0、npm 11.6.2）与
-  `platform/package-lock.json`；每个 worktree 运行自己的 `npm ci`，不得复用其他
-  worktree 的 `node_modules`。
-
----
-
-## 5. 命名规范（重要）
-
-LikeAdmin 到 Peanut Admin 的刻意改名，**不是缺失**：
-
-| LikeAdmin 原名 | Peanut Admin 名称 |
-|----------------|-------------------|
-| `user` | `member` |
-| `dev_crontab` | `crontab` |
-| `generate_*` | `generator_*` |
-| `notice_record` | `notice_log` |
-| `notice_setting` | `notice_scene` + `notice_template` |
-| `user_auth` | `oauth_*` |
-
----
-
-## 6. 给 Codex 的工作约定
-
-1. 所有任务在 `/Users/xing/Documents/company-projects/peanut-admin/` 下执行
-2. 功能分支命名：`feat/<描述>`；任务完成并通过最低充分验证后，直接合入并推送 `dev`，随后删除本地/远端分支和 worktree。PR 仅用于 `dev` → `main`、正式发布或用户明确要求评审的变更
-3. 不要创建带产品版本后缀的名称、路径或文件名
-4. SaaS 相关实现需求 → 先查阅 `docs/design/saas-roadmap/` 再动手
-5. DB 变更：新建 `server/database/migrations/YYYYMMDD-<描述>.sql`，不要直接修改 `init.sql`
-
-## 7. Gate 依赖与并行推进
-
-- 阶段编号只规定最终完成声明和集成验收的顺序，不自动禁止后续阶段开始。
-- 任何“阻塞”必须写明被阻塞的具体交付物、缺失输入和解除条件；不得只用“前一阶段未完成”冻结整个后续阶段。
-- 不依赖缺失输入、文件 owner 不重叠且可独立回滚的合同、迁移、Runtime、fixture 和测试准备应并行推进。
-- 外部发布、Registry 身份或单个 CI Gate 只阻塞直接消费该身份或证据的候选填值、最终验收和完成声明，不冻结无依赖实现。
-- 后续阶段可以形成独立候选，但在其真实前置尚未满足时不得合入共享集成候选、执行最终 Gate 或声称阶段完成。
-- 每次设置停止线时同时列出“仍可并行项”；若没有可并行项，必须记录具体代码或数据依赖，而不是沿用阶段序号推断。
+阶段编号不冻结独立工作。阻塞须写明具体交付物、缺失输入和解除条件；未满足真实前置的候选不得声称完成或进入依赖它的集成/资格。与受阻输入无依赖、写集和资源 owner 不冲突的工作可继续。

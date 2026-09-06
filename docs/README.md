@@ -40,7 +40,7 @@ Existing root-level contracts remain discoverable during the bounded migration. 
 
 ## AI reading order
 
-1. Read `AGENTS.md` and `AGENT_EXECUTION_RULES.md`.
+1. Use `AGENTS.md` to select the task-relevant sections of `AGENT_EXECUTION_RULES.md`.
 2. Read `docs/document-registry.json` and this index.
 3. Open only the authoritative machine source for the fact being changed.
 4. Use `docs/document-impact-map.json` to select the smallest affected explanations and projections.
