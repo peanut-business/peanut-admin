@@ -95,6 +95,27 @@
   必须先取得用户对本节架构锁定的明确变更授权；代码审计、静态扫描命中或通用最佳实践不能
   单独构成解锁依据。
 
+### 6.2 租户隔离、单事实源与平滑升级长效红线
+
+- **全局 TenantScope 强制与手写 tenant_id 绝对禁令**：所有租户拥有（Tenant-owned）的
+  ORM 模型必须且只能继承唯一 `TenantOwnedModel`，由 ThinkORM global scope 自动应用
+  隔离策略。严禁在业务代码中调用手写 `where('tenant_id', ...)` 或命名 `forTenant()`，
+  严禁普通代码调用 `withoutGlobalScope()` 绕过隔离。缺少可信执行上下文时一律 fail-closed，
+  禁止静默回退默认租户。
+- **单人工开发事实源与双 Edition 确定性生成律**：核心代码开发唯一在 `peanut-admin` 仓库
+  进行，严禁建立所谓的独立单租户版人工开发源码仓。Standalone（单租户独立版）与
+  Multi-tenant（多租户平台版）两套构建物必须且只能由构建工具从唯一的 Peanut Admin 冻结
+  Release 确定性生成，不维护两套人工业务源码。
+- **升级工具防御性与业务代码无损红线**：脚手架升级器（`scaffold-upgrade`）只管理框架受管
+  文件（`managed`/`generated-managed`），绝对严禁静默覆盖或双写用户的业务代码（`app-owned`）
+  与环境秘密（如 `server/.env`）。遇到业务冲突必须 fail-closed 阻断并给出明确的人工处理入口，
+  绝不允许为了“提升升级成功率”而引入静默覆盖或强行迁移业务代码的黑魔法。
+- **外部独立系统（运维平台、DCS 等）物理隔离与零渗透规则**：跨实例应用运维平台
+  （`peanut-operations-platform`）与业务系统（如 DCS）属于同级独立派生项目，拥有独立仓库、
+  独立数据库与独立部署。严禁把运维平台 Runtime 或 DCS 私有业务模型（如商品主数据、采购、
+  库存出入库）写入 Peanut Admin 或 Core 仓库；Peanut Admin 仅提供产品中立的扩展 Module 契约
+  与出站实例协议。
+
 ## 7. 交付吞吐与防重复
 
 - 以可用交付物而不是分支、合同或检查数量衡量进度。普通可逆切片默认把必要合同、
