@@ -91,7 +91,9 @@ use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
+use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
+use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
@@ -193,6 +195,7 @@ class AppService extends Service
         ));
     }
 
+    /** Wires current native Admin authorization services to their exact constructor contracts. */
     private function registerAuthorization(): void
     {
         $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
@@ -228,7 +231,9 @@ class AppService extends Service
             $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(TenantAdminRuntime::class, fn(): TenantAdminRuntime => new TenantAdminRuntime(
-            $this->app->make(PDO::class),
+            new MemberAdminService($this->app->make(PDO::class)),
+            new AccountSelfService($this->app->make(PDO::class)),
+            $this->app->make(DemoAccountPolicy::class),
         ));
         $this->app->bind(AdminApiAccessRegistry::class, function (): AdminApiAccessRegistry {
             $routes = Config::get('admin_api_access', []);

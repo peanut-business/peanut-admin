@@ -5374,7 +5374,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c0a46102c474a11d8617ad8b6100c6330b4407e9abde3d3e03bd19810aa9eb49"
+            "source_sha256": "ca80a0a60fc6f16c75cb9930b17b405070ef0ef4627832026a9e4b14fe235d8c"
         },
         {
             "path": "server/app/BaseController.php",
@@ -12470,7 +12470,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5e6ee3d86966629df72e2c304e5facd3dfca60f90b42f37acfe02d9da2c2c03d"
+            "source_sha256": "aca03c80837af25d287821bac5807bd3d680eb72655fab205ec0627aee98c4f8"
         },
         {
             "path": "server/app/common/service/capability/CrossProductAdoptionHost.php",
