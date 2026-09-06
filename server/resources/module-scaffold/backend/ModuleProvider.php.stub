@@ -11,4 +11,9 @@ final class ModuleProvider implements ModuleProviderContract
     {
         return '${MODULE_KEY}';
     }
+
+    public function bindings(): array
+    {
+        return [];
+    }
 }
