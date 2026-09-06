@@ -18,13 +18,21 @@ Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、�
 升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。当前正式
 发布清单采用 full 配置，示例显式传入 `--profile=full`。
 
-三个版本轴各自拥有事实源：
+四种版本身份各自拥有事实源：
 
 | 版本轴 | 事实源 | 用途 |
 | --- | --- | --- |
 | 应用发布 | `release-versions.json.product_release` | 应用 owner 的版本、tag 与完整应用 Release |
 | Scaffold 采用 | `scaffold_template` 与不可变 scaffold manifest | 受管技术基线、渲染快照与 Peanut migration 目标 |
 | Core 依赖 | Composer/npm 精确包版本与 lock | 应用实际安装的后端/前端 Core 身份 |
+| Module | Module manifest、archive SHA-256/签名与安装账本 | 可独立版本化的业务源码 contribution 及其依赖和 migration |
+
+这四种身份不会因为其中一项变化而自动同步。下一次正式发布起，scaffold 与 PHP/Web Core 使用
+同一个基础发行号（包括同步的预发布后缀），但相同号码不替代各自的 manifest、lock、不可变包
+引用或兼容证据；应用版本继续独立，共同号码也不能把 alpha 自动说成稳定版。当前 `3.0.13`
+scaffold 与 `0.1.0-alpha.12` Core 是历史真实身份，不能回写成已对齐。Module 可独立开发和分发，
+继续使用自己的版本与 archive SHA-256，并由应用仓采用、固定依赖、构建和验收，最后随应用自己的
+完整 Release 部署；Module archive 不是生产实例部署单位。
 
 `--application-version=<semver>` 可选，默认 `0.1.0`。该值不是 Peanut Admin 产品版本，也不是
 `peanut-admin/core` 或 `@peanut-admin/admin` 的依赖版本。生成器以这一值统一写入 release
@@ -62,6 +70,10 @@ source commit/tree 以生成结果的 `.peanut/application-manifest.json` 为准
 scaffold 命名空间，不是用户自己的应用版本。生成物使用原生 Account/TenantMember/RBAC、空库
 安装入口和所选 Edition 的确定性投影，不携带 legacy 映射、bootstrap 或兼容镜像。
 
+`create-app` 只运行一次以建立应用仓和基线。已有应用后续必须在自己的开发分支使用同 Edition
+签名 scaffold 包做三方比较，并单独更新 Core/Module 依赖；禁止重新生成到现有目录来覆盖业务
+代码、app-owned Schema 或秘密。
+
 生产管理端 builder 在执行 Vite 前，把应用根目录的 `plugins.lock` 精确复制为
 `/build/plugins.lock`；Plugin contribution resolver 直接读取这份 lock，缺失或无效内容继续
 fail-closed。安装包/生成器已在构建前固定 Edition，不再在一个正式构建物中同时携带两套管理端
@@ -90,6 +102,7 @@ Edition 的正式升级包和自己的发布流程采用后续版本：
 | `peanut-admin/core`、`@peanut-admin/admin` 依赖 | 应用在独立分支人工更新版本和 lock，并运行自己的兼容测试 | 包管理器只能修改 Peanut 依赖；失败时回退应用分支 |
 | `managed` / `generated-managed` 脚手架文件 | 人工比较新 Release 与应用 manifest/baseline，选择性采用 | 应用改过且目标也变化时停止，不静默覆盖 |
 | `app-owned` 业务代码、页面和配置 | 应用自行维护 | 脚手架升级永远不自动改写 |
+| Module package | Standalone 可用 development/debug archive 命令在应用仓采用并固定依赖；app-owned 路由装配显式引入 private Module 自有 routes，完成安装、构建和验收后随完整应用 Release 部署 | Multi-tenant 尚无受支持 archive 采用命令；安装不自动注册 private 路由；缺失、回退或同版本换内容阻断；身份不变且 Module 均为正常 maintenance 禁用态时保留，failed、retire/purge 进行中或未知状态阻断；显式移除先停用/retire 并由 owner 去除路由接线 |
 | 应用数据库 | 首次安装必须为空；安装器先建立 Core/Application 基线，再自动执行当前 scaffold 所需的 Peanut 追加 migration，以及当前源码中没有 `peanut-release` 标记的应用自有 migration | 不复制 Peanut 新安装基线覆盖已有数据库；应用自有 SQL 不由脚手架版本筛掉 |
 | Peanut canonical migration | 同一 scaffold 大版本通过 `install.php --migrate --target-version=<scaffold-template>` 执行并写入 `pa_schema_migration`；目标来自已采用的 `release-versions.json.scaffold_template` | 绑定 scaffold 身份和 migration checksum；scaffold 跨大版本必须 fresh/rebuild，应用自身的 `product_release` 不触发这条停止线 |
 
@@ -101,6 +114,10 @@ Edition 的正式升级包和自己的发布流程采用后续版本：
 历史 `v2.0.0 -> v2.0.1` 已有真实派生
 应用资格，`v2.1.0` 沿用相同所有权和恢复合同。它只管理已登记的框架文件，不会把业务代码变成脚手架所有，也不会替
 应用决定业务数据迁移。升级数据库和 Peanut 依赖时，必须同时参考对应 Release 的发布计划。
+
+签名升级包只是开发源码采用输入。应用完成 scaffold、Core、Module 与业务变更后，必须先固定
+自己的 `product_release`、commit/tree、tag、依赖 lock 和完整应用 Release；运行中实例只消费这
+个完整 Release，不能先修改代码或数据库再补 tag，也不能在生产 Runtime 直接执行 scaffold 合并。
 
 生成结果没有 `.git`，可直接执行 `git init` 成为独立仓库。连接任何资源前，应用 owner
 必须先补全 `resources/project-resources.json`；初始管理员密码仍只允许在空库安装时通过
@@ -119,9 +136,10 @@ scripts/scaffold-doctor \
 
 默认输出 `scope=php,web mode=released-package`，随后分别报告 `peanut-admin/core` 的 Composer
 constraint、锁定版本、source URL/reference，以及 `@peanut-admin/admin` 的直接依赖 specifier、
-pnpm 锁定版本和 integrity。doctor 不强制 PHP 与 Web 使用相同版本，两者也不必等于最初采用的
-scaffold 版本；跨版本组合仍须由对应发布兼容信息和应用既有检查确认，本工具不证明任意组合兼容，
-也不改变现有联动发布节奏。当前支持面要求两个 Core manifest 都直接声明精确版本，不解析 SemVer
+pnpm 锁定版本和 integrity。doctor 的职责只到分别验证两个生态的锁身份，不据版本字符串推断组合
+兼容。当前历史消费组合允许 PHP/Web Core 与已采用 scaffold 使用不同版本；从下一正式发行列车
+起，发布资格另行要求三者使用同一基础发行号。该联动规则不由 doctor 静默补齐，跨版本或同号组合
+仍须由发布兼容信息和应用既有检查确认。当前支持面要求两个 Core manifest 都直接声明精确版本，不解析 SemVer
 range；doctor 核对每个 manifest 与自己的 lock 是否形成唯一、完整且一致的不可变依赖身份，并
 拒绝可变 PHP source reference、path dist 与带认证信息的 source URL。它不安装依赖、不访问网络、
 不连接登记资源，也不读取凭据。该结果证明的是锁文件身份，不是依赖已经成功安装、应用能够运行

@@ -61,12 +61,12 @@
     },
     {
       "id": "application-scaffold-version-contract",
-      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
+      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php", "server/app/command/PluginReleaseComposition.php", "server/app/command/PluginReconcile.php", "server/app/command/PluginInstall.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
       "classifications": ["architecture-decision", "technical"],
       "upstream": ["application release contract", "scaffold adoption manifest", "migration ledger and immutable SQL"],
       "technical_docs": ["docs/plans/application-scaffold-version-contract-queue.md", "docs/create-application.md", "docs/scaffold-upgrade.md", "docs/peanut-admin-development-guide.md", "docs/peanut-admin-release-deployment.md", "docs/operations/release-and-application-lifecycle.md"],
-      "site_docs": [],
-      "generated": ["docs/reference/document-catalog.generated.md"],
+      "site_docs": ["docs-site/guide/application-module-lifecycle.md", "docs-site/reference.md"],
+      "generated": ["docs/reference/document-catalog.generated.md", "docs-site/reference/source-map.generated.md"],
       "reason": "Application releases, scaffold provenance, Core locks and database migration targets are separate identities that must remain explicit across generation, upgrade and deployment."
     },
     {

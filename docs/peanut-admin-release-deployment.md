@@ -75,9 +75,15 @@ scripts/deploy-release v3.0.0 --target production --fresh \
 三种模式都会先校验 tag、归档摘要、目标登记和候选 Compose，并在旧服务仍运行时解包和
 构建带不可变版本标签的 PHP/Nginx 镜像。构建完成后，脚本会直接在该候选 PHP 镜像中运行
 只读安装预检与 `plugin:lock --check`；两项未同时返回 ready/valid 时不会替换目标服务，
-`--fresh` 也不会停止旧服务或删除登记卷。`--install` 要求数据库和上传卷不存在，然后安装
-完整基线；首次安装和常规更新都会先执行应用 migration，再运行
-`php server/think plugin:reconcile --official-locked` 收敛锁定的 official Plugin。`--update` 要求旧 PHP/Nginx/cron 正在运行，只执行 `up -d --no-deps php nginx cron`（Compose
+`--fresh` 也不会停止旧服务或删除登记卷。常规更新还会从目标 Release 自身运行
+`php server/think plugin:release-composition --current-root=<current-physical-root>`，只读比较当前
+lock、数据库安装账本和目标 lock；这个检查必须在任何代码根清理或数据库动作前通过。
+`--install` 要求数据库和上传卷不存在，然后安装完整基线；标准安装只自动选择 official Package，
+目标 Release 已含锁定 private 源码时由授权部署 owner 另行执行
+`php server/think plugin:install <private-key>` 初始化表与 catalog。首次安装和常规更新执行应用
+migration 后，再运行 `php server/think plugin:reconcile --release-locked`：它对齐 official 与
+既有 installed private，身份不变且全部 Module 处于正常 maintenance 禁用态时返回
+`preserved_disabled` 并保持禁用。`--update` 要求旧 PHP/Nginx/cron 正在运行，只执行 `up -d --no-deps php nginx cron`（Compose
 仅重建配置或镜像有变化的应用容器），不会执行 `down --volumes`、删除数据库或上传卷；`--fresh`
 则必须显式 `--confirm-destroy=<target>`，并验证登记的数据库 dump 与 php-storage 配对备份
 后，才允许停止服务、删除登记卷并安装基线。候选解包、配置或镜像构建失败时，旧服务和

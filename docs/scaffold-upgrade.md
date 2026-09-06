@@ -83,11 +83,27 @@ baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标
 本次冻结的 `product_release`，使下一次升级可以逐字重现这次生成的目标 baseline；最初的
 `generation_source` 继续保持不变。
 
-应用采用 scaffold 与部署应用 Release 是两个阶段。开发期先由上述执行器解决三方比较并形成
-目标应用源码，随后应用 owner 才能建立自己的不可变 Git commit/tree、tag 与
-`RELEASE_METADATA.json`；生成器产出的 baseline metadata 不能当作正式发布证据。Platform 部署
-完整应用 Release，不在生产 Runtime 再次合并 scaffold。应用 `product_release` 可以在
-`scaffold_template` 不变时独立递增；这种纯应用升级要求 from/to scaffold manifest 摘要完全一致。
+应用采用 scaffold 与部署应用 Release 是两个阶段。签名 scaffold 包只在开发分支提供受管源码
+采用输入；应用随后更新并锁定 Core/Module 依赖，在隔离 staging 完成依赖安装、前端构建和应用
+验收，才建立自己的不可变 Git commit/tree、tag、`RELEASE_METADATA.json` 和完整 Release。
+生成器产出的 baseline metadata 不能当作正式发布证据。Platform 部署完整应用 Release，不在
+生产 Runtime 再次合并 scaffold。应用 `product_release` 可以在 `scaffold_template` 不变时独立
+递增；这种纯应用升级要求 from/to scaffold manifest 摘要完全一致。
+
+下一次正式发布窗口起，`scaffold_template`、`peanut-admin/core` 与 `@peanut-admin/admin` 使用
+同一个基础发行号，预发布后缀同步；`product_release` 仍由应用独立决定。正式顺序是先发布并验证
+同号 PHP/Web Core 包，再让应用锁定两份依赖并完成消费检查，最后完成同号 scaffold 资格与发布。
+任何一步失败都不能把整套基础发行标记为 ready。版本号一致不能替代 manifest、lock、包引用和
+兼容证据，也不能把 alpha 自动视为稳定版；未变化的 Core 也要产生同号不可变包。当前 `3.0.13`
+与 Core `0.1.0-alpha.12` 保持其真实历史身份，本规则不修改既有 Release、依赖锁或本页记录的
+Development 验证输入。
+
+Module manifest/archive/安装账本是第四种独立身份。Module 可以独立开发和分发，但默认由应用仓
+采用并随完整应用 Release 部署；当前 Module 安装/更新入口不执行 Composer/npm、前端构建或服务
+重启。完整 Release 缺少已安装 Package、发生回退或同版本换内容时必须在部署前停止；正常
+Package 身份不变且其 Module installation 均处于正常 maintenance 禁用态时保留并跳过 reconcile，
+failed、retire/purge 进行中或未知过渡状态阻断；显式移除先走
+停用/retire。不能把低层 Module 源码/数据库操作当成生产热更新或完整部署证据。
 
 当前 canonical Peanut worker 只执行本仓登记的固定生产资源与 checkout，不提供独立应用的通用
 部署能力。独立应用必须由 owner 登记自己的资源和执行器，并让 metadata 的

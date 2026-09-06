@@ -49,15 +49,19 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `php think module:update-package <tar> [--sha256=<hash>] [--signature-key-id=<id>]` | 应用严格更高的不可变版本；不是生产 HTTP 上传入口 |
 | `php think module:disable-package <module-or-package-key>` | 保留制品和数据地停用 Package；必须先停用 TenantModule 和依赖者 |
 | `php think module:uninstall-package MODULE_OR_PACKAGE_KEY [--purge] [--confirm-plan-file=PLAN_JSON --confirm-plan-digest=PLAN_SHA256]` | 无确认参数时只预览；retire/Purge 执行必须提交同一完整 plan 和摘要 |
-| `php think ops-module:request preview\|prepare --delivery-resource-id=<id> --target-resource-id=<id> --operation=update\|retire\|purge --package-key=<key> ...` | deployment owner 在登记受限 inbox 中固定受信包、target 与 retire/Purge 计划；不接收 URL、任意路径或远程命令 |
-| `scripts/ops-module-worker --once` | 只接受 `--once`；从 opaque task 领取一次生产交付，串联配对备份、隔离恢复、维护、操作、smoke 和 recovery pointer |
+| `php server/think plugin:release-composition --current-root=<current-physical-root>` | 从目标 Release 自身运行的只读部署前检查；比较当前 lock、安装账本与目标 lock，任何代码根清理或数据库动作前先停止缺失、回退、同版本换内容及异常状态 |
+| `php server/think plugin:install <private-key>` | 全新空库标准安装后，从当前 `plugins.lock` 已固定的 private 源码初始化表与 catalog；不接收或解压 archive，也不自动注册 private HTTP routes |
+| `php server/think plugin:reconcile --release-locked` | 部署后对齐 official 与既有 installed private Package；相同身份且全部 Module 为正常 maintenance 禁用态时返回 `preserved_disabled` 并跳过启用 |
+| `php think ops-module:request preview\|prepare --delivery-resource-id=<id> --target-resource-id=<id> --operation=update\|retire\|purge --package-key=<key> ...` | deployment owner 在登记受限 inbox 中固定受信包、target 与 retire/Purge 计划；只覆盖既有低层 Package 源码/数据库生命周期，不接收 URL、任意路径或远程命令 |
+| `scripts/ops-module-worker --once` | 只接受 `--once` 并领取 opaque task；现有证据没有覆盖依赖安装、前端构建、服务重启或完整应用 Release 切换，不能当作生产在线更新入口 |
 | `php <upgrade-package>/upgrader/scripts/scaffold-upgrade preflight --project-root=<path> --package=<extracted-package> --signature-key-id=<id>` | 验签并核对 Edition、版本范围、迁移全集和受管文件后生成只读升级计划；公钥必须来自包外信任入口 |
 | `php scripts/scaffold-upgrade preflight --project-root=<path> --from-manifest=<path> --to-manifest=<path>` | 生成 managed/generated-managed 升级计划，不覆盖 app-owned 源码 |
 | `php scripts/scaffold-upgrade apply\|verify\|recover --project-root=<path> --plan=<path>` | 应用、核验或恢复同一 scaffold 计划；不替代数据库或 Module migration |
 
 生产 HTTP 不能上传 Package、选择本机路径、URL、命令、Release、凭据或部署目标。生产操作只消费
 部署 owner 已登记的 target、受限 inbox 和 opaque task；直接 `module:*` Runtime mutation 命令不是
-生产控制面。
+生产控制面。现有 ops-module 入口保留其低层源码/数据库合同，但默认生产部署仍以应用仓采用、
+构建并固定的完整应用 Release 为单位。
 
 ## 错误输出与恢复
 
@@ -66,6 +70,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `module:check`、`module:update-package`、`module:disable-package` | `code`、`reason`、`remediation`；检查另含 `status/checks` | 修复同一个 code 指向的前置条件；update 必须重新 dry-run |
 | `module:create`、`module:install-package`、`module:uninstall-package` | 失败 JSON 的 `error` | 保持当前状态，按 error code 检查目标、信任身份或确认计划 |
 | `module:pack` | Package 命令的结构化成功/失败结果 | 不发布失败或摘要不匹配的 archive |
+| `plugin:release-composition`、`plugin:reconcile` | composition 的只读比较结果；reconcile 的逐 Package 状态（含 `preserved_disabled`） | 保留当前 Release、数据库和恢复坐标；不要删除 lock、源码或账本来绕过异常状态 |
 | `scripts/create-app`、`scripts/scaffold-upgrade` | JSON `status`；无效 usage 退出 64 | 不猜参数；按脚本打印的固定 usage 重试 |
 | `ops-module:request` | `ok/result` 或 `ok=false,error_code` | 修复登记、inbox、target 或双确认，不改写 opaque task |
 | `scripts/ops-module-worker --once` | 单次任务结果写入受控任务状态；stderr 只给安全摘要 | 失败保持维护和恢复指针，由 deployment owner 检查受限日志 |

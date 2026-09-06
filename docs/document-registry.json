@@ -78,7 +78,7 @@
       "audience": ["maintainer", "architect", "ai"],
       "content_type": "plan",
       "authority": "interpretation",
-      "canonical_sources": ["release-versions.json", "scripts/scaffold-runtime/ScaffoldManifest.php", "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "server/database/install.php", "scripts/deploy-release", "scripts/ops-upgrade-worker", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php"],
+      "canonical_sources": ["release-versions.json", "scripts/scaffold-runtime/ScaffoldManifest.php", "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "server/database/install.php", "scripts/deploy-release", "scripts/ops-upgrade-worker", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php", "docs/architecture/consumer-module-lifecycle-contract.md", "plugins.lock", "server/app/adminapi/route/app.php", "server/app/platform/service/module/ProductTenantModuleProfileService.php"],
       "owner": "application-maintainers",
       "status": "current",
       "scope": ["application"],
@@ -391,6 +391,16 @@
       "authority": "projection",
       "canonical_sources": [
         "scripts/create-app",
+        "release-versions.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/command/TenantModuleProfile.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/route/platform.php",
+        "server/app/adminapi/controller/auth/RoleController.php",
         "server/app/command/ModuleCreate.php",
         "server/app/command/ModuleCheck.php",
         "server/app/command/ModulePack.php",
@@ -398,8 +408,15 @@
         "server/app/command/ModuleUpdatePackage.php",
         "server/app/command/ModuleDisablePackage.php",
         "server/app/command/ModuleUninstallPackage.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "web/config/vite.config.base.ts",
+        "web/src/router/routes/plugin-contributions.ts",
         "docs/architecture/consumer-module-lifecycle-contract.md",
-        "scripts/scaffold-upgrade"
+        "scripts/scaffold-upgrade",
+        "RELEASE_METADATA.json"
       ],
       "owner": "developer-experience",
       "status": "current",
@@ -553,6 +570,7 @@
         "server/database/init.sql",
         "server/app/Modules",
         "server/config/console.php",
+        "server/app/adminapi/route/app.php",
         "server/app/command/ModuleCreate.php",
         "server/app/command/ModuleCheck.php",
         "server/app/command/ModulePack.php",
@@ -560,6 +578,9 @@
         "server/app/command/ModuleUpdatePackage.php",
         "server/app/command/ModuleDisablePackage.php",
         "server/app/command/ModuleUninstallPackage.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "server/app/command/OpsModuleRequest.php",
         "scripts/create-app",
         "scripts/local-stack.sh",
@@ -2215,6 +2236,19 @@
         "scripts/build-edition-upgrades",
         "scripts/scaffold-upgrade",
         "release-versions.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/command/TenantModuleProfile.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/route/platform.php",
+        "server/app/adminapi/controller/auth/RoleController.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "scaffold/releases/"
       ],
       "owner": "application-maintainers",
@@ -2225,7 +2259,9 @@
       "related": [
         "documentation"
       ],
-      "site_projections": [],
+      "site_projections": [
+        "pa-docs-site-guide-application-module-lifecycle"
+      ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },
@@ -4465,7 +4501,23 @@
         "scripts/scaffold-upgrade",
         "scripts/create-app",
         "release-versions.json",
-        "RELEASE_METADATA.json"
+        "RELEASE_METADATA.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
+        "web/config/vite.config.base.ts",
+        "web/src/router/routes/plugin-contributions.ts",
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/command/TenantModuleProfile.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/route/platform.php",
+        "server/app/adminapi/controller/auth/RoleController.php",
+        "docs/architecture/consumer-module-lifecycle-contract.md"
       ],
       "owner": "application-maintainers",
       "status": "current",
@@ -4477,7 +4529,8 @@
       ],
       "site_projections": [
         "pa-docs-site-releases",
-        "pa-docs-site-guide-deployment-upgrade"
+        "pa-docs-site-guide-deployment-upgrade",
+        "pa-docs-site-guide-application-module-lifecycle"
       ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -4606,12 +4659,17 @@
         "server/database/install.php",
         "server/database/migrations/",
         "server/route/app.php",
+        "server/app/adminapi/route/app.php",
         "release-versions.json",
         "scripts/deploy-release",
         "scripts/ops-upgrade-worker",
         "server/app/platform/service/ops/PlatformUpgradeTarget.php",
         "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
         "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "resources/project-resources.json"
       ],
       "owner": "application-maintainers",
@@ -4642,6 +4700,10 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/deploy-release",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "scripts/check-release-consistency",
         "scripts/publish-github-release",
         "RELEASE_METADATA.json"
@@ -5322,6 +5384,10 @@
         "scripts/deploy-release",
         "server/app/common/service/installation/ApplicationReleaseVersions.php",
         "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "scaffold/releases/",
         "scaffold/application-template-inventory.json"
       ],
@@ -5334,7 +5400,8 @@
         "documentation"
       ],
       "site_projections": [
-        "pa-docs-site-guide-deployment-upgrade"
+        "pa-docs-site-guide-deployment-upgrade",
+        "pa-docs-site-guide-application-module-lifecycle"
       ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
