@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8464b0aa7ba8a34c9d3d9de5e794898a",
+    "content-hash": "2a6c47ecd780fc4be00134d3dad4c827",
     "packages": [
         {
             "name": "aliyuncs/oss-sdk-php",
@@ -1478,16 +1478,16 @@
         },
         {
             "name": "peanut-admin/core",
-            "version": "0.1.0-alpha.11",
+            "version": "0.1.0-alpha.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
-                "reference": "fdd58c4873bea79759826ffe92aac52c5414d688"
+                "reference": "9017212da0da63f445d693be94d533f681c6dc92"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/fdd58c4873bea79759826ffe92aac52c5414d688",
-                "reference": "fdd58c4873bea79759826ffe92aac52c5414d688",
+                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/9017212da0da63f445d693be94d533f681c6dc92",
+                "reference": "9017212da0da63f445d693be94d533f681c6dc92",
                 "shasum": ""
             },
             "require": {
@@ -1539,10 +1539,10 @@
             ],
             "description": "Scaffold Product Token reusable administration runtime packages",
             "support": {
-                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.11",
+                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.12",
                 "issues": "https://github.com/peanut-opensource/peanut-admin-core-php/issues"
             },
-            "time": "2026-08-30T04:47:31+00:00"
+            "time": "2026-09-06T00:09:23+00:00"
         },
         {
             "name": "psr/container",
