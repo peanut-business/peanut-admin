@@ -216,7 +216,8 @@ Module Commands，不得直接写入 Module 自有表。
 不能绕过 Module 状态；当前 fixture 只证明同步成员命令，正式 Module 必须为实际使用的其他
 入口补负向测试。
 
-管理端 HTTP 路由目前仍由应用在 `server/route/app.php` 显式登记。新增 API 时必须同时
+管理端 HTTP 路由目前仍由应用在 `server/route/app.php` 显式登记，`module.json` 不接受
+`backend.routes`。新增 API 时必须同时
 完成路由、Controller、Module Application Service、权限定义和聚焦测试，不能只增加菜单。
 
 ### 4. 登记前端 contribution

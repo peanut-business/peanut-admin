@@ -281,7 +281,11 @@ class AppService extends Service
                     ->make(DefaultTenantContextResolver::class)
                     ->system($actor, $operation, $operationId)
                 : null;
-            return new TenantEntryBindingResolver($this->app->make(PDO::class), $defaultSystem);
+            return new TenantEntryBindingResolver(
+                $this->app->make(PDO::class),
+                $defaultSystem,
+                $mode === DeploymentMode::MultiTenant,
+            );
         });
         $this->app->bind(ApplicationHostPolicy::class, fn(): ApplicationHostPolicy => new ApplicationHostPolicy(
             (string)Config::get('deployment.mode', ''),

@@ -44,7 +44,8 @@ migration、frontend 和 package 八项结果。输出固定包含 `status`、`c
 3. 菜单、权限和设置会由同一个 catalog applier 同步到开发库并失效相关缓存，无需生成或更新
    `plugins.lock`。
 
-`module.json` 是模块 key、依赖、资源路径和前端入口的唯一真值。开发期不执行
+`module.json` 是模块 key、依赖、资源路径和前端入口的唯一真值；后端路由由应用入口显式登记，
+不再写入 `backend.routes`。开发期不执行
 `plugin:make`、`plugin:lock` 或 `plugin:install`。
 
 ## 打包与分发

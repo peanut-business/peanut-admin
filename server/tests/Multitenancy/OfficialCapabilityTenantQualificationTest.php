@@ -194,7 +194,7 @@ qualificationExpect(
         && str_contains($sources['app_service'], 'DefaultTenantContextResolver::class')
         && str_contains($sources['app_service'], 'DeploymentMode::Standalone')
         && str_contains($sources['app_service'], 'deployment.public_default_tenant_fallback')
-        && str_contains($sources['app_service'], 'new TenantEntryBindingResolver($this->app->make(PDO::class), $defaultSystem)')
+        && str_contains($sources['app_service'], '$mode === DeploymentMode::MultiTenant')
         && str_contains($sources['entry_binding_core'], 'b.host = :host')
         && str_contains($sources['entry_binding_core'], 'b.client_key = :client_key')
         && str_contains($sources['entry_binding_core'], 'count($rows) !== 1')

@@ -14,7 +14,6 @@
   },
   "backend": {
     "provider": "app\\Modules\\Official\\RichText\\ModuleProvider",
-    "routes": "Http/routes.php",
     "migrations": "Database/Migrations",
     "menus": "Resources/menus.json",
     "permissions": "Resources/permissions.json"

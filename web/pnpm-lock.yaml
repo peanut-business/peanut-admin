@@ -20,8 +20,8 @@ importers:
         specifier: 4.6.0
         version: 4.6.0(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
       '@peanut-admin/admin':
-        specifier: 0.1.0-alpha.11
-        version: 0.1.0-alpha.11(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue-router@4.6.4(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))
+        specifier: 0.1.0-alpha.12
+        version: 0.1.0-alpha.12(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue-router@4.6.4(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))
       '@tiptap/core':
         specifier: 3.30.0
         version: 3.30.0(@tiptap/pm@3.30.0)
@@ -617,8 +617,8 @@ packages:
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
 
-  '@peanut-admin/admin@0.1.0-alpha.11':
-    resolution: {integrity: sha512-cww3E4IMRJaZG+zdgHchBUjKvb39tuSHroKmoxPyxJTyHopvA+JqvDccWZdlX3HcTwAOkRJeGOvQuKjGCiFA8A==}
+  '@peanut-admin/admin@0.1.0-alpha.12':
+    resolution: {integrity: sha512-8ADkjerQpJ15aSKZskQwBgPAVjoNu7w7d7SD3ctcwPX6Hkgc/eg0nKjVzAamOGHdBSVGqs4vB8uqD1K+DIOgEw==}
     peerDependencies:
       element-plus: ^2.14.3
       pinia: '>=2.0.23 <5'
@@ -5200,7 +5200,7 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
-  '@peanut-admin/admin@0.1.0-alpha.11(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue-router@4.6.4(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))':
+  '@peanut-admin/admin@0.1.0-alpha.12(element-plus@2.14.3(vue@3.5.40(typescript@4.9.5)))(pinia@2.3.1(typescript@4.9.5)(vue@3.5.40(typescript@4.9.5)))(vue-router@4.6.4(vue@3.5.40(typescript@4.9.5)))(vue@3.5.40(typescript@4.9.5))':
     dependencies:
       openapi-fetch: 0.17.0
       vue: 3.5.40(typescript@4.9.5)

@@ -14,7 +14,6 @@
   },
   "backend": {
     "provider": ${BACKEND_PROVIDER_JSON},
-    "routes": "Http/routes.php",
     "migrations": "Database/Migrations",
     "menus": "Resources/menus.json",
     "permissions": "Resources/permissions.json",

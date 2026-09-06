@@ -6,7 +6,7 @@
     "status": "generated-application-baseline",
     "release_policy": "replace this metadata from an immutable application release candidate before publishing",
     "public_runtime_dependencies": {
-        "composer": "peanut-admin/core@0.1.0-alpha.11",
-        "frontend": "@peanut-admin/admin@0.1.0-alpha.11"
+        "composer": "peanut-admin/core@0.1.0-alpha.12",
+        "frontend": "@peanut-admin/admin@0.1.0-alpha.12"
     }
 }

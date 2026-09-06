@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.0.13",
-        "source_commit": "c50d091f706da0a8e6681b2cbc8eaa824a78728a",
-        "source_tree": "906755a90313b16a2d361e5e303200cafc23abe4",
-        "inventory_sha256": "665fc245b75fda73c0369511d2fa1553b1bb81beee39c38a93f9193112d7897f",
+        "source_commit": "1e684207fb37bf025d7ecc55a54f96d935bcdbfb",
+        "source_tree": "9a5e7c2dab4bc64760155cecf5030704ccce263e",
+        "inventory_sha256": "a05043c78863b44866670103b042939a19a0284a20b6f0817530f8d877fb84df",
         "inventory_template_version": "3.0.13",
-        "managed_tree_sha256": "374b85e59a25ef606fefed93dd0ae2ff211a3fd0577ac74653b7fb409bbe1d18",
+        "managed_tree_sha256": "82099f8bb0d0a7d6daec3e62cc01e432645004434aeab8ec8509ac13cd7962ed",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -112,7 +112,7 @@
         {
             "path": "RELEASE_METADATA.json",
             "source": "files/RELEASE_METADATA.json",
-            "template_sha256": "e9535a230eee5c102f2be46bdb50ee445304b762a68f4f646eb93b0bf3897e4a",
+            "template_sha256": "cf98428055d028d73a8d4d1aeb67d962ef278039d703d2de26208bdf113e8065",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
@@ -122,7 +122,7 @@
         {
             "path": "RELEASE_SBOM.spdx.json",
             "source": "files/RELEASE_SBOM.spdx.json",
-            "template_sha256": "0843a77dade92b59e98d839eccbbc0ddb02fc749f500d44c3890d8f4aa1b8f12",
+            "template_sha256": "9e67c0e9de40bbdf0fae97f6389d29b0d8f6d56ca92f122d84cce98983e70fb7",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
@@ -132,7 +132,7 @@
         {
             "path": "THIRD_PARTY_NOTICES.md",
             "source": "files/THIRD_PARTY_NOTICES.md",
-            "template_sha256": "6d7d3cde4e696a9a4f60cc15d45fe5accb72916e6eb3cee70b45339ff16e598d",
+            "template_sha256": "033552b7511188262fae3baa75f579e009c62717b40a4c85e0ca8734a0a9edb1",
             "classification": "generated-managed",
             "transform": "tokens",
             "mode": 420,
@@ -392,7 +392,7 @@
         {
             "path": "pc/package-lock.json",
             "source": "files/pc/package-lock.json",
-            "template_sha256": "95ffa8824af5629599e083b6dfbfc169f69208eeb98481e8905b530e594eee72",
+            "template_sha256": "9dd45bcca92dc33de4d04f969eeef388a2fe780e800d01ede2b74f2cd94dbc65",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -402,7 +402,7 @@
         {
             "path": "pc/package.json",
             "source": "files/pc/package.json",
-            "template_sha256": "f7d4d1faee25292e60a0fee2f48facba3749cbe29aa9cdb2b014cedeccaf04a8",
+            "template_sha256": "4922774af711cb8b9abaf6b4936ecdd59a6d81abeb1e1d7464e36ca6448c72e0",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -572,7 +572,7 @@
         {
             "path": "platform/package-lock.json",
             "source": "files/platform/package-lock.json",
-            "template_sha256": "227e27f66eabe980b687f511a33d5f50087af216ef2ca71ab84373ebd3961ae9",
+            "template_sha256": "b8aa7ea39e392ceefe6bb1c1aed3b4df89b38942e16e3b9ad674f7104896e762",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -582,7 +582,7 @@
         {
             "path": "platform/package.json",
             "source": "files/platform/package.json",
-            "template_sha256": "e76ebffc3940b00db314512c14bb98823cac5124cb644f97c121431b3d216ecd",
+            "template_sha256": "fdf544018f09b1d8281ece9da20249ebd2ad1e0d3aaf2a454ba46ebc1df03da8",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -612,7 +612,7 @@
         {
             "path": "plugins.lock",
             "source": "files/plugins.lock",
-            "template_sha256": "a2813442517b895a375217f008384160ff7012d0b3f39b0e7149a05013a3002f",
+            "template_sha256": "3638bd892e1494a69a37427c450205c4b909b11c410a04219bce8452912b8b41",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -632,7 +632,7 @@
         {
             "path": "plugins/official.article/plugin.json",
             "source": "files/plugins/official.article/plugin.json",
-            "template_sha256": "3159990623613b6bbb49fb8f329bc7479afcf64a79a917ab82f77e3a5595a693",
+            "template_sha256": "5e8e501738950c5b67fe1e2e4bfcc837d380a7ea318482e01dbadf38d2916a8c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -642,7 +642,7 @@
         {
             "path": "plugins/official.file/plugin.json",
             "source": "files/plugins/official.file/plugin.json",
-            "template_sha256": "dd84b939ebbe4c63639a446b31e3d00552c48743fb6b11632626007ccafd59be",
+            "template_sha256": "e4a777a563cbd7a9c497028b06059b10d5eede38723b76a3efd4ae074a2fb44e",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -652,7 +652,7 @@
         {
             "path": "plugins/official.import-export/plugin.json",
             "source": "files/plugins/official.import-export/plugin.json",
-            "template_sha256": "4b4a59a5d3f3a4be720dbf9b57bbf20937505b52da8a39f8829b42d9d35927b8",
+            "template_sha256": "b5470dffb1b81484fde8ccf839723366be6b1881c574e289830923798577cca2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -662,7 +662,7 @@
         {
             "path": "plugins/official.member/plugin.json",
             "source": "files/plugins/official.member/plugin.json",
-            "template_sha256": "b2dc48ca77b90ab06af944431884cfb280edec8f340aa2c7d62c1f02e804665f",
+            "template_sha256": "31ad4ab7776c233895c023cafef5c9ee8cfd6f34fdf93d86badcdcac003f1d7f",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -672,7 +672,7 @@
         {
             "path": "plugins/official.notification/plugin.json",
             "source": "files/plugins/official.notification/plugin.json",
-            "template_sha256": "e5ed501c99685448b0d334fba33f2633bcabcec9501a2fbd87d33afe20d30f92",
+            "template_sha256": "8762046c5b55f930ae8a680f1b1abef6f6b7673c56976a00a8ecf90724ec43fd",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -682,7 +682,7 @@
         {
             "path": "plugins/official.oauth/plugin.json",
             "source": "files/plugins/official.oauth/plugin.json",
-            "template_sha256": "14f2e1d914af722e363e71a4ca512bad031b34f065497b39dd48ce3843d77e54",
+            "template_sha256": "1432796b12da3c044493987789d60e32cd6335e14db84903100910002f7c1ce2",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -692,7 +692,7 @@
         {
             "path": "plugins/official.payment/plugin.json",
             "source": "files/plugins/official.payment/plugin.json",
-            "template_sha256": "7be4c65e26af85a007380527580a73c25597369648fa644500e9ecba688d0e80",
+            "template_sha256": "08a53f4a3d6ff4d799a315149c6906fe5110832ea08ffc67d42926d2b9ed2501",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -702,7 +702,7 @@
         {
             "path": "plugins/official.rich-text/plugin.json",
             "source": "files/plugins/official.rich-text/plugin.json",
-            "template_sha256": "002049af18cac00693d93b902a5b7a6617ff4fcbeec909c666becd8d3d03f4f8",
+            "template_sha256": "10c43f64be3ed597ecd7f443742dcfae664521a0e1ba72ebc11dbd4ad243461a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -712,7 +712,7 @@
         {
             "path": "plugins/official.task/plugin.json",
             "source": "files/plugins/official.task/plugin.json",
-            "template_sha256": "c932d082f0815f3bac6c4b378cf5134cb44e105445f658be4299a7a93e97a0f3",
+            "template_sha256": "a4c1c4fbf39fad0808579f3808c7b38340024048d132e318914cd6bf3a913640",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -722,7 +722,7 @@
         {
             "path": "release-versions.json",
             "source": "files/release-versions.json",
-            "template_sha256": "d41f5f0331611f2a465fa99212346b8466cfb7e07c7170c6574dc9f62d624a7f",
+            "template_sha256": "c2a3cabe83bffc7c5e89c72ebe046a7cea9496206cbcebb204c2d57db4f435e7",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1042,7 +1042,7 @@
         {
             "path": "server/composer.json",
             "source": "files/server/composer.json",
-            "template_sha256": "61d61afd1d1afca3bd3c2733a796d1592e2dc8f5311b130a08e29118ef4d59c6",
+            "template_sha256": "5ba834a613734a68c277e36e9f031a362160f7b388c5bd85aea23a551aaf9fab",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1052,7 +1052,7 @@
         {
             "path": "server/composer.lock",
             "source": "files/server/composer.lock",
-            "template_sha256": "2e1b42c2a84d19f7e9f990cebe0f1329a4dbe1d6c031849756dae0839201aecd",
+            "template_sha256": "f34a7a1e8a0ff3b965b8ecaacf99b4e41b7e47a697ea1c85bca12792752be82c",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1552,7 +1552,7 @@
         {
             "path": "server/resources/module-scaffold/backend/module.json.stub",
             "source": "files/server/resources/module-scaffold/backend/module.json.stub",
-            "template_sha256": "fd28b60a8e7a6a6b1a715c69f6ed7eb49ec493e2acfa8910f9b2be3233308976",
+            "template_sha256": "033d45ccad5c6283c8b2a705e41e645487703d01cc00c9b71878e8cc154b3f6a",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1812,7 +1812,7 @@
         {
             "path": "uniapp/package-lock.json",
             "source": "files/uniapp/package-lock.json",
-            "template_sha256": "8eedd62456303e616a91d50f0336b5c76105f85ec0dc54479797fae3910fd543",
+            "template_sha256": "bf2429b1f905a60f2de782e30afa680d7e95449c32dcbfffd8dd988faf100b63",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -1822,7 +1822,7 @@
         {
             "path": "uniapp/package.json",
             "source": "files/uniapp/package.json",
-            "template_sha256": "2c248fbcb195eac74a493b1bef98d110de3f36d65277f29198e2572b76001f76",
+            "template_sha256": "804b4b273c915c9622813c129ca45bcb5e3e706e1294d04dd52f2301047ae8ab",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2122,7 +2122,7 @@
         {
             "path": "web/package.json",
             "source": "files/web/package.json",
-            "template_sha256": "533631893908bc09f6ab0987e61801f304ad6be7ea5065b02b21493ed8f6bbfb",
+            "template_sha256": "95a27e310dac71d0d7e18d3d8b2463c62e6d2166d9fcb81661bd20161f4f36e5",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
@@ -2132,7 +2132,7 @@
         {
             "path": "web/pnpm-lock.yaml",
             "source": "files/web/pnpm-lock.yaml",
-            "template_sha256": "b8e19b32016a81974df236632133e1136225bfa4d3543d13197ffef0fd54134a",
+            "template_sha256": "626d7b1a3a6fb3a12b6c77bd0241fec08931b34048b79d90dac8f287dc3a465d",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,

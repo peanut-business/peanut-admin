@@ -1,9 +1,9 @@
 {
-    "schema_version": 1,
-    "protocol": "peanut.release-versions.v1",
+  "schema_version": 1,
+  "protocol": "peanut.release-versions.v1",
   "product_release": "3.0.13",
   "scaffold_template": "3.0.13",
-    "generated_application_default": "0.1.0",
-    "core_php": "0.1.0-alpha.11",
-    "core_web": "0.1.0-alpha.11"
+  "generated_application_default": "0.1.0",
+  "core_php": "0.1.0-alpha.12",
+  "core_web": "0.1.0-alpha.12"
 }

@@ -11,7 +11,7 @@ and the two public core packages have independent version histories.
   components under Apache-2.0. Existing immutable tags and Releases keep the
   license files originally published with those artifacts.
 
-## [3.0.13] - Pending qualification
+## [3.0.13] - 2026-09-06
 
 ### Added
 
@@ -22,7 +22,7 @@ and the two public core packages have independent version histories.
 
 ### Changed
 
-- Adopted the qualified Peanut Admin Core Alpha.11 Composer and npm packages across every client.
+- Adopted the qualified Peanut Admin Core Alpha.12 Composer and npm packages across every client.
 - Demo deployment now consumes the formal Multi-tenant installer and a seed-only overlay instead of
   copying product Runtime files from a moving source checkout.
 

@@ -11,7 +11,6 @@
   "dependencies": [],
   "backend": {
     "provider": "app\\Modules\\Fixture\\DeliveryRecord\\ModuleProvider",
-    "routes": "Http/routes.php",
     "migrations": "Database/Migrations",
     "menus": "Resources/menus.json",
     "permissions": "Resources/permissions.json",

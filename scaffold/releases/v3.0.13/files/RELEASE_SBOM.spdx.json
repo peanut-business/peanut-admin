@@ -5,7 +5,7 @@
     "name": "Scaffold Product Token 999999.999999.999999 generated dependency SBOM",
     "documentNamespace": "https://example.invalid/scaffold-product-token/sbom/999999.999999.999999",
     "creationInfo": {
-        "created": "2026-08-28T00:00:00Z",
+        "created": "2026-09-06T00:00:00Z",
         "creators": [
             "Organization: application owner",
             "Tool: scripts/generate-release-legal.mjs"
@@ -38,7 +38,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:github/scaffold-vendor-token/scaffold-package-token@3.0.12"
+                    "referenceLocator": "pkg:github/scaffold-vendor-token/scaffold-package-token@3.0.13"
                 }
             ]
         },
@@ -405,8 +405,8 @@
         },
         {
             "name": "peanut-admin/core",
-            "SPDXID": "SPDXRef-Package-composer-4a61f9845708b63abc28",
-            "versionInfo": "0.1.0-alpha.11",
+            "SPDXID": "SPDXRef-Package-composer-63dc4b6ec1dda88621de",
+            "versionInfo": "0.1.0-alpha.12",
             "downloadLocation": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
@@ -418,7 +418,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.11"
+                    "referenceLocator": "pkg:composer/peanut-admin/core@0.1.0-alpha.12"
                 }
             ]
         },
@@ -780,6 +780,25 @@
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
                     "referenceLocator": "pkg:composer/topthink/think-helper@v3.1.12"
+                }
+            ]
+        },
+        {
+            "name": "topthink/think-multi-app",
+            "SPDXID": "SPDXRef-Package-composer-4578a5cdd8128808601f",
+            "versionInfo": "v1.1.1",
+            "downloadLocation": "https://github.com/top-think/think-multi-app.git",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "Apache-2.0",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "LIBRARY",
+            "packageComment": "Scaffold Product Token composer locked dependency; release scope: runtime.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:composer/topthink/think-multi-app@v1.1.1"
                 }
             ]
         },
@@ -7188,9 +7207,9 @@
         },
         {
             "name": "@peanut-admin/admin",
-            "SPDXID": "SPDXRef-Package-pc-8a820eaf1a612ba829bb",
-            "versionInfo": "0.1.0-alpha.11",
-            "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.11.tgz",
+            "SPDXID": "SPDXRef-Package-pc-10eb896d4704e4cb94bb",
+            "versionInfo": "0.1.0-alpha.12",
+            "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.12.tgz",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "Apache-2.0",
@@ -7201,7 +7220,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.11"
+                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.12"
                 }
             ]
         },
@@ -21913,9 +21932,9 @@
         },
         {
             "name": "@peanut-admin/admin",
-            "SPDXID": "SPDXRef-Package-platform-3f82a6d4b8f540d6a60e",
-            "versionInfo": "0.1.0-alpha.11",
-            "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.11.tgz",
+            "SPDXID": "SPDXRef-Package-platform-7fd6150973c68ca224f3",
+            "versionInfo": "0.1.0-alpha.12",
+            "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.12.tgz",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "Apache-2.0",
@@ -21926,7 +21945,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.11"
+                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.12"
                 }
             ]
         },
@@ -28487,9 +28506,9 @@
         },
         {
             "name": "@peanut-admin/admin",
-            "SPDXID": "SPDXRef-Package-uniapp-8e47ab19aa609df88706",
-            "versionInfo": "0.1.0-alpha.11",
-            "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.11.tgz",
+            "SPDXID": "SPDXRef-Package-uniapp-0b3f67a6026996713418",
+            "versionInfo": "0.1.0-alpha.12",
+            "downloadLocation": "https://registry.npmjs.org/@peanut-admin/admin/-/admin-0.1.0-alpha.12.tgz",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "Apache-2.0",
@@ -28500,7 +28519,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.11"
+                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.12"
                 }
             ]
         },
@@ -44180,6 +44199,44 @@
             ]
         },
         {
+            "name": "@hocuspocus/common",
+            "SPDXID": "SPDXRef-Package-web-8bafe4fc9f17fb165c0e",
+            "versionInfo": "4.6.0",
+            "downloadLocation": "https://registry.npmjs.org/%40hocuspocus%2Fcommon/4.6.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40hocuspocus/common@4.6.0"
+                }
+            ]
+        },
+        {
+            "name": "@hocuspocus/provider",
+            "SPDXID": "SPDXRef-Package-web-47c388f0c84d799befeb",
+            "versionInfo": "4.6.0",
+            "downloadLocation": "https://registry.npmjs.org/%40hocuspocus%2Fprovider/4.6.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40hocuspocus/provider@4.6.0"
+                }
+            ]
+        },
+        {
             "name": "@humanwhocodes/config-array",
             "SPDXID": "SPDXRef-Package-web-75a417599d64bd875ce4",
             "versionInfo": "0.13.0",
@@ -44408,6 +44465,25 @@
             ]
         },
         {
+            "name": "@lifeomic/attempt",
+            "SPDXID": "SPDXRef-Package-web-78166e8ec3d83781c35b",
+            "versionInfo": "3.1.0",
+            "downloadLocation": "https://registry.npmjs.org/%40lifeomic%2Fattempt/3.1.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40lifeomic/attempt@3.1.0"
+                }
+            ]
+        },
+        {
             "name": "@mrmlnc/readdir-enhanced",
             "SPDXID": "SPDXRef-Package-web-0baab5b25647b1c09680",
             "versionInfo": "2.2.1",
@@ -44542,9 +44618,9 @@
         },
         {
             "name": "@peanut-admin/admin",
-            "SPDXID": "SPDXRef-Package-web-1d9443c472c505f5fdea",
-            "versionInfo": "0.1.0-alpha.11",
-            "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.11",
+            "SPDXID": "SPDXRef-Package-web-fd82685b4df2cd12ba15",
+            "versionInfo": "0.1.0-alpha.12",
+            "downloadLocation": "https://registry.npmjs.org/%40peanut-admin%2Fadmin/0.1.0-alpha.12",
             "filesAnalyzed": false,
             "licenseConcluded": "NOASSERTION",
             "licenseDeclared": "Apache-2.0",
@@ -44555,7 +44631,7 @@
                 {
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
-                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.11"
+                    "referenceLocator": "pkg:npm/%40peanut-admin/admin@0.1.0-alpha.12"
                 }
             ]
         },
@@ -44670,6 +44746,519 @@
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
                     "referenceLocator": "pkg:npm/%40sxzz/popperjs-es@2.11.8"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/core",
+            "SPDXID": "SPDXRef-Package-web-e434b3894bab079dcb20",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fcore/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/core@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-blockquote",
+            "SPDXID": "SPDXRef-Package-web-1812c852823cbdadca5a",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-blockquote/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-blockquote@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-bold",
+            "SPDXID": "SPDXRef-Package-web-cdfe0c9a07367cf9b0a3",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-bold/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-bold@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-bullet-list",
+            "SPDXID": "SPDXRef-Package-web-88982d4e1743c76ab83b",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-bullet-list/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-bullet-list@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-code",
+            "SPDXID": "SPDXRef-Package-web-c13557a82e8073195adb",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-code/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-code@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-code-block",
+            "SPDXID": "SPDXRef-Package-web-bd3c7a9ecbedd7eef3ba",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-code-block/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-code-block@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-collaboration",
+            "SPDXID": "SPDXRef-Package-web-e61b5c7c2979f60bc524",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-collaboration/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-collaboration@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-document",
+            "SPDXID": "SPDXRef-Package-web-0328ddf7a1128ad4f9a0",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-document/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-document@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-dropcursor",
+            "SPDXID": "SPDXRef-Package-web-58e2aa0eb9579c2ab978",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-dropcursor/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-dropcursor@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-gapcursor",
+            "SPDXID": "SPDXRef-Package-web-2173bb715591f962e73f",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-gapcursor/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-gapcursor@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-hard-break",
+            "SPDXID": "SPDXRef-Package-web-8ede37c5298e2a80be05",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-hard-break/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-hard-break@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-heading",
+            "SPDXID": "SPDXRef-Package-web-e00413bbc91eefc5955f",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-heading/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-heading@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-horizontal-rule",
+            "SPDXID": "SPDXRef-Package-web-073ab56fee5afc4695e5",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-horizontal-rule/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-horizontal-rule@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-italic",
+            "SPDXID": "SPDXRef-Package-web-d844918aa474b11881a7",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-italic/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-italic@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-link",
+            "SPDXID": "SPDXRef-Package-web-acc601bafa6891705b2d",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-link/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-link@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-list",
+            "SPDXID": "SPDXRef-Package-web-c72243f0dc3077b31a33",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-list/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-list@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-list-item",
+            "SPDXID": "SPDXRef-Package-web-be900c2a1a6f6674137e",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-list-item/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-list-item@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-list-keymap",
+            "SPDXID": "SPDXRef-Package-web-25f18f57b586a5ea503d",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-list-keymap/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-list-keymap@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-ordered-list",
+            "SPDXID": "SPDXRef-Package-web-b42c36f91ce6cf822e2d",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-ordered-list/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-ordered-list@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-paragraph",
+            "SPDXID": "SPDXRef-Package-web-eac67c41439c46169a74",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-paragraph/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-paragraph@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-strike",
+            "SPDXID": "SPDXRef-Package-web-97f342fda9103080b67a",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-strike/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-strike@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-text",
+            "SPDXID": "SPDXRef-Package-web-650508d42b9b6e777abc",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-text/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-text@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extension-underline",
+            "SPDXID": "SPDXRef-Package-web-73426f940f581b64b2c0",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextension-underline/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extension-underline@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/extensions",
+            "SPDXID": "SPDXRef-Package-web-f6d78f78207c5d33f502",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fextensions/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/extensions@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/pm",
+            "SPDXID": "SPDXRef-Package-web-7e222e024ae6ad1a9767",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fpm/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/pm@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/starter-kit",
+            "SPDXID": "SPDXRef-Package-web-c07f2982c6e4968d73c8",
+            "versionInfo": "3.30.0",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fstarter-kit/3.30.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/starter-kit@3.30.0"
+                }
+            ]
+        },
+        {
+            "name": "@tiptap/y-tiptap",
+            "SPDXID": "SPDXRef-Package-web-b009bd0ae190a4e059cd",
+            "versionInfo": "3.0.9",
+            "downloadLocation": "https://registry.npmjs.org/%40tiptap%2Fy-tiptap/3.0.9",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/%40tiptap/y-tiptap@3.0.9"
                 }
             ]
         },
@@ -54079,6 +54668,25 @@
             ]
         },
         {
+            "name": "isomorphic.js",
+            "SPDXID": "SPDXRef-Package-web-3146f9631ce05121290f",
+            "versionInfo": "0.2.5",
+            "downloadLocation": "https://registry.npmjs.org/isomorphic.js/0.2.5",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/isomorphic.js@0.2.5"
+                }
+            ]
+        },
+        {
             "name": "js-levenshtein",
             "SPDXID": "SPDXRef-Package-web-877f690f38056688ec3b",
             "versionInfo": "1.1.6",
@@ -54611,6 +55219,25 @@
             ]
         },
         {
+            "name": "lib0",
+            "SPDXID": "SPDXRef-Package-web-62fabee87e54373f2acc",
+            "versionInfo": "0.2.117",
+            "downloadLocation": "https://registry.npmjs.org/lib0/0.2.117",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/lib0@0.2.117"
+                }
+            ]
+        },
+        {
             "name": "lilconfig",
             "SPDXID": "SPDXRef-Package-web-5005574043a59a5a4667",
             "versionInfo": "2.1.0",
@@ -54645,6 +55272,25 @@
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
                     "referenceLocator": "pkg:npm/lines-and-columns@1.2.4"
+                }
+            ]
+        },
+        {
+            "name": "linkifyjs",
+            "SPDXID": "SPDXRef-Package-web-35b94f38fcde2767afdb",
+            "versionInfo": "4.3.3",
+            "downloadLocation": "https://registry.npmjs.org/linkifyjs/4.3.3",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/linkifyjs@4.3.3"
                 }
             ]
         },
@@ -56701,6 +57347,25 @@
             ]
         },
         {
+            "name": "orderedmap",
+            "SPDXID": "SPDXRef-Package-web-69ef0ef3a5cd2c71bffd",
+            "versionInfo": "2.1.1",
+            "downloadLocation": "https://registry.npmjs.org/orderedmap/2.1.1",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/orderedmap@2.1.1"
+                }
+            ]
+        },
+        {
             "name": "own-keys",
             "SPDXID": "SPDXRef-Package-web-da1e08a4717714f3aea9",
             "versionInfo": "1.0.2",
@@ -57898,6 +58563,253 @@
             ]
         },
         {
+            "name": "prosemirror-changeset",
+            "SPDXID": "SPDXRef-Package-web-4e544d66eb9398a3c922",
+            "versionInfo": "2.4.2",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-changeset/2.4.2",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-changeset@2.4.2"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-commands",
+            "SPDXID": "SPDXRef-Package-web-46b8ccdc0b42e21358b1",
+            "versionInfo": "1.7.2",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-commands/1.7.2",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-commands@1.7.2"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-dropcursor",
+            "SPDXID": "SPDXRef-Package-web-3caf3eb21a77ef067465",
+            "versionInfo": "1.8.3",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-dropcursor/1.8.3",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-dropcursor@1.8.3"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-gapcursor",
+            "SPDXID": "SPDXRef-Package-web-75ebecc0f0fcd7364532",
+            "versionInfo": "1.4.1",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-gapcursor/1.4.1",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-gapcursor@1.4.1"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-history",
+            "SPDXID": "SPDXRef-Package-web-20d592f2738f1e8294d3",
+            "versionInfo": "1.5.0",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-history/1.5.0",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-history@1.5.0"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-inputrules",
+            "SPDXID": "SPDXRef-Package-web-89d13f21e124a48cf1c5",
+            "versionInfo": "1.5.1",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-inputrules/1.5.1",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-inputrules@1.5.1"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-keymap",
+            "SPDXID": "SPDXRef-Package-web-b9aaea550cd907cc5fbe",
+            "versionInfo": "1.2.3",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-keymap/1.2.3",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-keymap@1.2.3"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-model",
+            "SPDXID": "SPDXRef-Package-web-e71db30a88a95db50732",
+            "versionInfo": "1.25.11",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-model/1.25.11",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-model@1.25.11"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-schema-list",
+            "SPDXID": "SPDXRef-Package-web-a4563c6138660511ead0",
+            "versionInfo": "1.5.1",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-schema-list/1.5.1",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-schema-list@1.5.1"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-state",
+            "SPDXID": "SPDXRef-Package-web-2c210542851f15b9a8fd",
+            "versionInfo": "1.4.4",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-state/1.4.4",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-state@1.4.4"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-tables",
+            "SPDXID": "SPDXRef-Package-web-dc9fa1a78086afc70842",
+            "versionInfo": "1.8.5",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-tables/1.8.5",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-tables@1.8.5"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-transform",
+            "SPDXID": "SPDXRef-Package-web-64efc7f6be355ed44d39",
+            "versionInfo": "1.12.1",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-transform/1.12.1",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-transform@1.12.1"
+                }
+            ]
+        },
+        {
+            "name": "prosemirror-view",
+            "SPDXID": "SPDXRef-Package-web-f50e1188d3a6ba7a2ca0",
+            "versionInfo": "1.42.3",
+            "downloadLocation": "https://registry.npmjs.org/prosemirror-view/1.42.3",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/prosemirror-view@1.42.3"
+                }
+            ]
+        },
+        {
             "name": "prr",
             "SPDXID": "SPDXRef-Package-web-d4893a81642cc4894ab9",
             "versionInfo": "1.0.1",
@@ -58673,6 +59585,25 @@
                     "referenceCategory": "PACKAGE-MANAGER",
                     "referenceType": "purl",
                     "referenceLocator": "pkg:npm/rollup-plugin-visualizer@5.14.0"
+                }
+            ]
+        },
+        {
+            "name": "rope-sequence",
+            "SPDXID": "SPDXRef-Package-web-db5119255a315db27b0f",
+            "versionInfo": "1.3.4",
+            "downloadLocation": "https://registry.npmjs.org/rope-sequence/1.3.4",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/rope-sequence@1.3.4"
                 }
             ]
         },
@@ -61850,6 +62781,25 @@
             ]
         },
         {
+            "name": "w3c-keyname",
+            "SPDXID": "SPDXRef-Package-web-8a0c89052323c724d967",
+            "versionInfo": "2.2.8",
+            "downloadLocation": "https://registry.npmjs.org/w3c-keyname/2.2.8",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/w3c-keyname@2.2.8"
+                }
+            ]
+        },
+        {
             "name": "which",
             "SPDXID": "SPDXRef-Package-web-e38ad474c4e2921bcfde",
             "versionInfo": "1.3.1",
@@ -62135,6 +63085,25 @@
             ]
         },
         {
+            "name": "y-protocols",
+            "SPDXID": "SPDXRef-Package-web-b4f7b93b2696f0f30f93",
+            "versionInfo": "1.0.7",
+            "downloadLocation": "https://registry.npmjs.org/y-protocols/1.0.7",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/y-protocols@1.0.7"
+                }
+            ]
+        },
+        {
             "name": "y18n",
             "SPDXID": "SPDXRef-Package-web-afe9b9be2c15ef270b76",
             "versionInfo": "5.0.8",
@@ -62325,6 +63294,25 @@
             ]
         },
         {
+            "name": "yjs",
+            "SPDXID": "SPDXRef-Package-web-0c01515a35cbc823c084",
+            "versionInfo": "13.6.32",
+            "downloadLocation": "https://registry.npmjs.org/yjs/13.6.32",
+            "filesAnalyzed": false,
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "MIT",
+            "copyrightText": "NOASSERTION",
+            "primaryPackagePurpose": "SOURCE",
+            "packageComment": "Scaffold Product Token web locked dependency; release scope: static-build-input.",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceType": "purl",
+                    "referenceLocator": "pkg:npm/yjs@13.6.32"
+                }
+            ]
+        },
+        {
             "name": "yn",
             "SPDXID": "SPDXRef-Package-web-d211d0a7893278451c0e",
             "versionInfo": "3.1.1",
@@ -62500,7 +63488,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-composer-4a61f9845708b63abc28",
+            "relatedSpdxElement": "SPDXRef-Package-composer-63dc4b6ec1dda88621de",
             "comment": "composer; runtime"
         },
         {
@@ -62615,6 +63603,12 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-composer-d198909bd464ec41e8d1",
+            "comment": "composer; runtime"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-composer-4578a5cdd8128808601f",
             "comment": "composer; runtime"
         },
         {
@@ -64642,7 +65636,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-pc-8a820eaf1a612ba829bb",
+            "relatedSpdxElement": "SPDXRef-Package-pc-10eb896d4704e4cb94bb",
             "comment": "pc; static-build-input"
         },
         {
@@ -69292,7 +70286,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-platform-3f82a6d4b8f540d6a60e",
+            "relatedSpdxElement": "SPDXRef-Package-platform-7fd6150973c68ca224f3",
             "comment": "platform; static-build-input"
         },
         {
@@ -71368,7 +72362,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-uniapp-8e47ab19aa609df88706",
+            "relatedSpdxElement": "SPDXRef-Package-uniapp-0b3f67a6026996713418",
             "comment": "uniapp; static-build-input"
         },
         {
@@ -76324,6 +77318,18 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-8bafe4fc9f17fb165c0e",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-47c388f0c84d799befeb",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-75a417599d64bd875ce4",
             "comment": "web; static-build-input"
         },
@@ -76396,6 +77402,12 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-78166e8ec3d83781c35b",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-0baab5b25647b1c09680",
             "comment": "web; static-build-input"
         },
@@ -76438,7 +77450,7 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": "SPDXRef-Package-web-1d9443c472c505f5fdea",
+            "relatedSpdxElement": "SPDXRef-Package-web-fd82685b4df2cd12ba15",
             "comment": "web; static-build-input"
         },
         {
@@ -76475,6 +77487,168 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-0ba516d0042fc558d9c7",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-e434b3894bab079dcb20",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-1812c852823cbdadca5a",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-cdfe0c9a07367cf9b0a3",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-88982d4e1743c76ab83b",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-c13557a82e8073195adb",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-bd3c7a9ecbedd7eef3ba",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-e61b5c7c2979f60bc524",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-0328ddf7a1128ad4f9a0",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-58e2aa0eb9579c2ab978",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-2173bb715591f962e73f",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-8ede37c5298e2a80be05",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-e00413bbc91eefc5955f",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-073ab56fee5afc4695e5",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-d844918aa474b11881a7",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-acc601bafa6891705b2d",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-c72243f0dc3077b31a33",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-be900c2a1a6f6674137e",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-25f18f57b586a5ea503d",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-b42c36f91ce6cf822e2d",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-eac67c41439c46169a74",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-97f342fda9103080b67a",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-650508d42b9b6e777abc",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-73426f940f581b64b2c0",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-f6d78f78207c5d33f502",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-7e222e024ae6ad1a9767",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-c07f2982c6e4968d73c8",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-b009bd0ae190a4e059cd",
             "comment": "web; static-build-input"
         },
         {
@@ -79450,6 +80624,12 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-3146f9631ce05121290f",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-877f690f38056688ec3b",
             "comment": "web; static-build-input"
         },
@@ -79618,6 +80798,12 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-62fabee87e54373f2acc",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-5005574043a59a5a4667",
             "comment": "web; static-build-input"
         },
@@ -79625,6 +80811,12 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-ed212f5735ccd267a65b",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-35b94f38fcde2767afdb",
             "comment": "web; static-build-input"
         },
         {
@@ -80278,6 +81470,12 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-69ef0ef3a5cd2c71bffd",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-da1e08a4717714f3aea9",
             "comment": "web; static-build-input"
         },
@@ -80656,6 +81854,84 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-4e544d66eb9398a3c922",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-46b8ccdc0b42e21358b1",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-3caf3eb21a77ef067465",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-75ebecc0f0fcd7364532",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-20d592f2738f1e8294d3",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-89d13f21e124a48cf1c5",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-b9aaea550cd907cc5fbe",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-e71db30a88a95db50732",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-a4563c6138660511ead0",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-2c210542851f15b9a8fd",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-dc9fa1a78086afc70842",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-64efc7f6be355ed44d39",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-f50e1188d3a6ba7a2ca0",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-d4893a81642cc4894ab9",
             "comment": "web; static-build-input"
         },
@@ -80897,6 +82173,12 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-05c283bc80e8d404d9ea",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-db5119255a315db27b0f",
             "comment": "web; static-build-input"
         },
         {
@@ -81904,6 +83186,12 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-8a0c89052323c724d967",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-e38ad474c4e2921bcfde",
             "comment": "web; static-build-input"
         },
@@ -81994,6 +83282,12 @@
         {
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-b4f7b93b2696f0f30f93",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-afe9b9be2c15ef270b76",
             "comment": "web; static-build-input"
         },
@@ -82049,6 +83343,12 @@
             "spdxElementId": "SPDXRef-Package-Peanut-Admin",
             "relationshipType": "DEPENDS_ON",
             "relatedSpdxElement": "SPDXRef-Package-web-9f8ee7429b0cc7410314",
+            "comment": "web; static-build-input"
+        },
+        {
+            "spdxElementId": "SPDXRef-Package-Peanut-Admin",
+            "relationshipType": "DEPENDS_ON",
+            "relatedSpdxElement": "SPDXRef-Package-web-0c01515a35cbc823c084",
             "comment": "web; static-build-input"
         },
         {
