@@ -88,6 +88,6 @@ class PaymentNotifyController extends BaseApiController
 
     private function operationId(): string
     {
-        return RequestTrace::id($this->request, 'payment');
+        return RequestTrace::id($this->executionContext, $this->request, 'payment');
     }
 }

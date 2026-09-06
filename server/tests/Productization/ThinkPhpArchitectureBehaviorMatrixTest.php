@@ -316,7 +316,7 @@ expectTpq51(
     'explicit Platform Tenant gateway did not preserve its audited scope bypass',
 );
 
-tpq51InstallDataScopePolicy(new StandaloneDataScopePolicy($current));
+tpq51InstallDataScopePolicy(new StandaloneDataScopePolicy());
 $connection->resetStatements();
 $standalone = new Tpq51Child([
     'id' => 5,
@@ -332,9 +332,9 @@ $store->run(
     static fn() => Tpq51Child::alias('child')->where('child.id', '>', 0)->select(),
 );
 expectTpq51(
-    (int)$standalone->getData('tenant_id') === 101
-        && tpq51SqlCount($connection->statements[0]['sql'] ?? '', 'tenant_id') === 1,
-    'Standalone write did not preserve canonical Tenant ownership',
+    !array_key_exists('tenant_id', $standalone->getData())
+        && tpq51SqlCount($connection->statements[0]['sql'] ?? '', 'tenant_id') === 0,
+    'Standalone write unexpectedly referenced the projected Tenant column',
 );
 expectTpq51(
     tpq51SqlCount($connection->statements[1]['sql'] ?? '', 'tenant_id') === 0,

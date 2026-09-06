@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\auth;
 
-use app\adminapi\http\AdminRequest;
+use app\common\execution\CurrentExecutionContext;
+use app\common\http\RequestTrace;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\application\BusinessException;
 use PeanutAdmin\Kernel\Auth\AuthException;
@@ -16,6 +17,7 @@ use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 final class LoginApplicationService
 {
     public function __construct(
+        private readonly CurrentExecutionContext $executionContext,
         private readonly TenantAuthService $tenantAuth,
         private readonly AdminAuthorizationService $authorization,
         private readonly ApplicationHostPolicy $hostPolicy,
@@ -37,7 +39,7 @@ final class LoginApplicationService
                 $tenantCode,
                 $request->ip(),
                 $request->header('User-Agent'),
-                AdminRequest::requestId($request),
+                RequestTrace::id($this->executionContext, $request, 'admin'),
             );
             if ($outcome instanceof TenantSelectionRequired) {
                 return $outcome->responseData();

@@ -299,9 +299,7 @@ class AppService extends Service
                 DeploymentMode::MultiTenant => new MultiTenantDataScopePolicy(
                     $this->app->make(CurrentExecutionContext::class),
                 ),
-                DeploymentMode::Standalone => new StandaloneDataScopePolicy(
-                    $this->app->make(CurrentExecutionContext::class),
-                ),
+                DeploymentMode::Standalone => new StandaloneDataScopePolicy(),
                 default => throw new \RuntimeException('DEPLOYMENT_MODE_UNCONFIGURED'),
             };
         });
@@ -396,7 +394,9 @@ class AppService extends Service
             );
         });
         $this->app->bind(\app\common\service\tenant\TenantSettingService::class, fn(): \app\common\service\tenant\TenantSettingService => new \app\common\service\tenant\TenantSettingService(
-            new \app\common\service\tenant\ThinkPhpTenantSettingsProvider(),
+            new \app\common\service\tenant\ThinkPhpTenantSettingsProvider(
+                $this->app->make(DataScopePolicy::class),
+            ),
         ));
         $this->app->bind(\app\common\service\ConfigService::class, fn(): \app\common\service\ConfigService => new \app\common\service\ConfigService(
             new \app\common\service\config\ThinkPhpInstanceConfigStore(),
