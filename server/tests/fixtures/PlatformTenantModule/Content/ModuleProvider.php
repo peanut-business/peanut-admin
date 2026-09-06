@@ -13,4 +13,9 @@ final class ModuleProvider implements ModuleProviderContract
     {
         return 'fixture.content';
     }
+
+    public function bindings(): array
+    {
+        return [];
+    }
 }

@@ -97,6 +97,11 @@ final class ModuleProvider implements ModuleProviderContract
     {
         return 'mt05.deployment-fixture';
     }
+
+    public function bindings(): array
+    {
+        return [];
+    }
 }
 PHP);
     file_put_contents($fixtureRoot . '/module.json', <<<'JSON'

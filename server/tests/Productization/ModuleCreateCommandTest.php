@@ -146,7 +146,11 @@ try {
     moduleCreateExpect(($officialManifest['lifecycle']['protected'] ?? null) === false, 'generated Module must be removable by default');
     $customComposer = json_decode((string)file_get_contents($customBackend . '/composer.json'), true, 32, JSON_THROW_ON_ERROR);
     moduleCreateExpect(isset($customComposer['autoload']['psr-4']['app\\Modules\\Acme\\Generated' . ucfirst($suffix) . '\\']), 'custom Composer namespace is not key-derived');
-    moduleCreateExpect(!str_contains((string)file_get_contents($customBackend . '/ModuleProvider.php'), '${'), 'backend template placeholder remains');
+    $customProviderSource = (string)file_get_contents($customBackend . '/ModuleProvider.php');
+    moduleCreateExpect(!str_contains($customProviderSource, '${'), 'backend template placeholder remains');
+    require_once $customBackend . '/ModuleProvider.php';
+    $customProviderClass = 'app\\Modules\\Acme\\Generated' . ucfirst($suffix) . '\\ModuleProvider';
+    moduleCreateExpect((new $customProviderClass())->bindings() === [], 'generated Module bindings must default to empty');
     moduleCreateExpect(!str_contains((string)file_get_contents($customFrontend . '/contribution.ts'), '${'), 'frontend template placeholder remains');
     moduleCreateExpect(!str_contains((string)file_get_contents($customTests . '/TenantSecurityTest.php'), '${'), 'test template placeholder remains');
     moduleCreateExpect(($custom['json']['test_path'] ?? null) === 'server/tests/Modules/Acme/Generated' . ucfirst($suffix), 'test path is not key-derived');
