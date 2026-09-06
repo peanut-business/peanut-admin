@@ -249,8 +249,9 @@ try {
     );
     createApplicationExpect(
         str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=multi-tenant')
-            && !str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=standalone'),
-        'multi-tenant artifact must compile only its selected admin bundle'
+            && !str_contains($generatedProductionDockerfile, 'VITE_DEPLOYMENT_MODE=standalone')
+            && !str_contains($generatedProductionDockerfile, 'seed-multi-tenant-demo.php'),
+        'multi-tenant artifact must compile only its selected admin bundle without source-only demo tooling'
     );
     $standaloneDockerfile = (string)file_get_contents($standalone . '/deploy/docker/production.Dockerfile');
     createApplicationExpect(
