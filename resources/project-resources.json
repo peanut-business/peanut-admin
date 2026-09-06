@@ -739,7 +739,7 @@
         "runtime_resource_id": "peanut-admin-mysql84-development",
         "service_type": "mysql",
         "version": "8.4.10",
-        "application_runtime": true,
+        "application_runtime": false,
         "database": "peanut_admin_development_appupgrade_runtime01",
         "schema": "pa_ table prefix",
         "namespace": "peanut_admin_development_appupgrade_runtime01",
@@ -767,6 +767,43 @@
         "cleanup_responsibility": "after successful evidence capture the active lease owner drops only peanut_admin_development_appupgrade_runtime01",
         "backup_responsibility": "immediately before B switch, dump this exact database and verify its checksum together with the runtime file archive",
         "failure_retention_policy": "on failure preserve this database, runtime root and paired backup until diagnosis and disposition"
+      },
+      {
+        "stable_resource_id": "peanut-admin-application-upgrade-rbac-mysql84-development",
+        "purpose": "isolated database for the existing Admin RBAC Tenant-isolation check affected by the application upgrade permission-registration fix",
+        "environments": ["development"],
+        "owner": "Peanut Admin application-upgrade RBAC verification lease owner; remote host mac-14",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_development_appupgrade_rbac01",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_appupgrade_rbac01",
+        "deployment_modes": ["multi-tenant"],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-application-upgrade-rbac-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": ["host"],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": null,
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "synthetic fixtures created and destroyed only by server/tests/Multitenancy/AdminRbacTenantIsolationTest.php",
+        "freshness_requirement": "the fixed logical database must be absent before each exclusive lease-bound check",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer host --resource-id peanut-admin-application-upgrade-rbac-mysql84-development",
+          "database": "after an exclusive claim, confirm the exact database is absent; grant the registered Development DB user CREATE and DROP only on this exact schema before the check"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral single focused RBAC check",
+        "claim_precondition": "before grant, connection, test or cleanup, the RBAC verification worker must hold an exclusive lease for this resource ID, exact database and its own output path",
+        "creation_policy": "AdminRbacTenantIsolationTest may drop and create only peanut_admin_development_appupgrade_rbac01 through the registered Development DB identity",
+        "cleanup_responsibility": "the RBAC verification lease owner drops only peanut_admin_development_appupgrade_rbac01, revokes the exact-schema CREATE/DROP grant if it was added, then releases its lease",
+        "backup_responsibility": "not applicable; the check owns only synthetic fixtures",
+        "failure_retention_policy": "after one focused diagnosis preserve the exact database and lease for root disposition if the retry fails"
       },
       {
         "stable_resource_id": "peanut-admin-core-p1ed01-mysql84-gate",
