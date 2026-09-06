@@ -8,6 +8,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | --- | --- | --- |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
+| Understand Core/Application ownership | [Core 与应用技术边界](architecture/core-application-technical-boundary.md) and [Storage Driver 提取队列](plans/storage-driver-extraction-queue.md) | planned boundary and execution contract; not Runtime completion evidence |
 | Understand the target backend organization | [Application and Module architecture blueprint](architecture/application-module-blueprint/README.md) | accepted target and migration input; explicitly not proof that the Runtime has migrated |
 | Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
 | Understand Module development | [Module development guide](module-development-guide.md) | current guide |

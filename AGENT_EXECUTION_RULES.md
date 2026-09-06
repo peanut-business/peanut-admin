@@ -105,10 +105,15 @@
   隔离策略。严禁在业务代码中调用手写 `where('tenant_id', ...)` 或命名 `forTenant()`，
   严禁普通代码调用 `withoutGlobalScope()` 绕过隔离。缺少可信执行上下文时一律 fail-closed，
   禁止静默回退默认租户。
-- **单人工开发事实源与双 Edition 确定性生成律**：核心代码开发唯一在 `peanut-admin` 仓库
-  进行，严禁建立所谓的独立单租户版人工开发源码仓。Standalone（单租户独立版）与
+- **单人工开发事实源与双 Edition 确定性生成律**：应用产品源码唯一在 `peanut-admin`，业务无关复用包在
+  `peanut-admin-core`；严禁建立所谓的独立单租户版人工开发源码仓。Standalone（单租户独立版）与
   Multi-tenant（多租户平台版）两套构建物必须且只能由构建工具从唯一的 Peanut Admin 冻结
   Release 确定性生成，不维护两套人工业务源码。
+- **Core/Application 五域与存储边界**：Settings、Storage、Crontab、ImportExport、Logs 五域的
+  owner、装配与提取门禁以
+  `docs/architecture/core-application-technical-boundary.md` 和
+  `docs/plans/storage-driver-extraction-queue.md` 为准；应用继续采用 ThinkPHP 原生
+  Model/Scope 构造注入，不新增 Repository 或洋葱式包装。
 - **升级工具防御性与业务代码无损红线**：脚手架升级器（`scaffold-upgrade`）只管理框架受管
   文件（`managed`/`generated-managed`），绝对严禁静默覆盖或双写用户的业务代码（`app-owned`）
   与环境秘密（如 `server/.env`）。遇到业务冲突必须 fail-closed 阻断并给出明确的人工处理入口，
@@ -230,5 +235,9 @@
   变化开恢复指针 PR。
 - 纯文档同步变更只运行 Markdown/链接/`git diff --check` 等文档等价检查，业务测试和
   多端构建明确跳过。文档检查失败只阻塞该文档变更，不回滚或重复已经通过的业务 Gate。
+- 新增或实质修改的类和方法必须有简洁职责注释；复杂方法需说明 Tenant/授权前置、副作用、
+  异常和流/临时文件 owner。标准 CRUD、访问器和仅注入构造函数可豁免方法注释，但类职责仍须
+  保留；Tenant 权限、事务、幂等、软删和外部副作用不得豁免。Core 使用英文注释，应用沿用
+  局部语言。该规则随存储提取队列 Q4 执行，不扩展本轮其他 Runtime 域。
 - 主工作树存在用户修改时，文档同步必须从最新 `origin/dev` 的独立 worktree 完成；
   不得因为本地主分支陈旧而覆盖远端已更新事实，也不得夹带用户文档。

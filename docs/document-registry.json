@@ -40,6 +40,38 @@
   },
   "documents": [
     {
+      "id": "pa-docs-architecture-core-application-technical-boundary",
+      "path": "docs/architecture/core-application-technical-boundary.md",
+      "title": "Core 与应用技术边界",
+      "audience": ["maintainer", "architect", "ai"],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": ["AGENTS.md", "AGENT_EXECUTION_RULES.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md"],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": ["application"],
+      "related": ["core-application-boundary", "storage", "documentation"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-storage-driver-extraction-queue",
+      "path": "docs/plans/storage-driver-extraction-queue.md",
+      "title": "Storage Driver 提取执行队列",
+      "audience": ["maintainer", "architect", "ai"],
+      "content_type": "plan",
+      "authority": "interpretation",
+      "canonical_sources": ["docs/architecture/core-application-technical-boundary.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md"],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": ["application"],
+      "related": ["storage", "execution-queue", "documentation"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-site-404",
       "path": "docs-site/404.md",
       "title": "页面未找到",
@@ -1399,7 +1431,7 @@
         "documentation"
       ],
       "site_projections": [],
-      "replaced_by": null,
+      "replaced_by": "pa-docs-architecture-core-application-technical-boundary",
       "validation": "./scripts/docs-governance check"
     },
     {

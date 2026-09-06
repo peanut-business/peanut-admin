@@ -22,6 +22,8 @@
 
 需要调用关系、影响范围、服务层、Module 边界或架构事实的代码任务，先运行 `scripts/project-codegraph ensure`；纯文档、简单机械修改和已明确单文件局部查看不启用。规则见 `resources/codegraph-registry.json`。当前 worktree 无索引时先用 `scripts/project-codegraph status` 核对其他 worktree，再仅初始化当前 worktree；索引不得复制或共享。本条仅适用于本项目。
 
+Core/Application 五域职责和 Storage Driver 提取入口见 `docs/architecture/core-application-technical-boundary.md` 与 `docs/plans/storage-driver-extraction-queue.md`；两 Edition 由同一应用源码确定性生成，应用继续使用 ThinkPHP 原生 Model/Scope 构造注入。
+
 ## 当前产品边界
 
 - 当前正式源码与演示身份分别见 `docs/product-status/releases/v3.0.13.json` 和 `docs/product-status/deployments/v3.0.12-online-experience.json`；源码发布不代表生产部署完成。
