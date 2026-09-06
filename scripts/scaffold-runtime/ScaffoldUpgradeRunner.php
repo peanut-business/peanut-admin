@@ -9,6 +9,16 @@ use Throwable;
 /** Plan, apply, verify, and recover scaffold-owned changes with frozen application identities. */
 final class ScaffoldUpgradeRunner
 {
+    private const VERSION_CONTRACT_KEYS = [
+        'schema_version',
+        'protocol',
+        'product_release',
+        'scaffold_template',
+        'generated_application_default',
+        'core_php',
+        'core_web',
+    ];
+
     /**
      * Build the immutable scaffold plan without writing a plan file or ledger event.
      *
@@ -247,9 +257,8 @@ final class ScaffoldUpgradeRunner
                 }
                 $oldContent = $this->renderArtifact($from, $before, $fromParameters);
                 $currentVersionContent = $this->renderCurrentVersionArtifact($from, $before, $targetParameters, $versionContract);
-                $currentVersionDigest = hash('sha256', $currentVersionContent);
-                $actions[] = ((hash_equals(hash('sha256', $oldContent), $current['sha256'])
-                        || hash_equals($currentVersionDigest, $current['sha256']))
+                $actions[] = (($this->renderedContentMatches($root, $path, $current, $oldContent)
+                        || $this->renderedContentMatches($root, $path, $current, $currentVersionContent))
                     && ($current['mode'] ?? null) === ($before['mode'] ?? null))
                     ? $this->action($path, $before, 'delete', 'upstream_removed_only', false, $current, null)
                     : $this->action($path, $before, 'conflict', 'project_modified_upstream_removed', true, $current, null);
@@ -266,19 +275,19 @@ final class ScaffoldUpgradeRunner
                 continue;
             }
             $oldContent = $this->renderArtifact($from, $before, $fromParameters);
-            $oldDigest = hash('sha256', $oldContent);
             $currentVersionContent = $this->renderCurrentVersionArtifact($from, $before, $targetParameters, $versionContract);
             $currentVersionDigest = hash('sha256', $currentVersionContent);
             if (!$current['present']) {
                 $actions[] = $this->action($path, $after, 'conflict', 'managed_file_missing', true, $current, $targetDigest);
                 continue;
             }
-            if (hash_equals($targetDigest, $current['sha256']) && ($current['mode'] ?? null) === ($after['mode'] ?? null)) {
+            if ($this->renderedContentMatches($root, $path, $current, $targetContent)
+                && ($current['mode'] ?? null) === ($after['mode'] ?? null)) {
                 $actions[] = $this->action($path, $after, 'preserve', 'already_at_target', false, $current, $targetDigest);
                 continue;
             }
-            $projectChanged = (!hash_equals($oldDigest, $current['sha256'])
-                    && !hash_equals($currentVersionDigest, $current['sha256']))
+            $projectChanged = (!$this->renderedContentMatches($root, $path, $current, $oldContent)
+                    && !$this->renderedContentMatches($root, $path, $current, $currentVersionContent))
                 || ($current['mode'] ?? null) !== ($before['mode'] ?? null);
             $upstreamChanged = !hash_equals($currentVersionDigest, $targetDigest)
                 || ($before['mode'] ?? null) !== ($after['mode'] ?? null);
@@ -332,18 +341,10 @@ final class ScaffoldUpgradeRunner
         if (($file['path'] ?? null) !== 'release-versions.json') {
             return $rendered;
         }
-        try {
-            $document = json_decode($rendered, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $exception) {
-            throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID', 0, $exception);
-        }
-        if (!is_array($document)
-            || ($document['schema_version'] ?? null) !== 1
-            || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'
-            || array_keys($document) !== array_keys($versionContract)
-        ) {
-            throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID');
-        }
+        $document = $this->normalizeVersionContractDocument(
+            $rendered,
+            'SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID',
+        );
         $document['product_release'] = $versionContract['product_release'];
         $document['generated_application_default'] = $versionContract['generated_application_default'];
         return json_encode(
@@ -416,28 +417,64 @@ final class ScaffoldUpgradeRunner
             throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_INVALID');
         }
         $raw = file_get_contents($path);
-        try {
-            $document = is_string($raw) ? json_decode($raw, true, 512, JSON_THROW_ON_ERROR) : null;
-        } catch (\JsonException $exception) {
-            throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_INVALID', 0, $exception);
-        }
-        $keys = ['schema_version', 'protocol', 'product_release', 'scaffold_template', 'generated_application_default', 'core_php', 'core_web'];
-        if (!is_array($document)
-            || array_keys($document) !== $keys
-            || ($document['schema_version'] ?? null) !== 1
-            || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'
-        ) {
-            throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_INVALID');
-        }
-        foreach (array_slice($keys, 2) as $key) {
-            if (!is_string($document[$key]) || !$this->isSemanticVersion($document[$key])) {
-                throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_INVALID: ' . $key);
-            }
-        }
+        $document = $this->normalizeVersionContractDocument(
+            is_string($raw) ? $raw : '',
+            'SCAFFOLD_VERSION_CONTRACT_INVALID',
+        );
         if ($document['scaffold_template'] !== ($application['template']['version'] ?? null)) {
             throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_IDENTITY_MISMATCH');
         }
         return [$document, 'sha256:' . hash('sha256', (string)$raw)];
+    }
+
+    /** Compare the known version contract semantically while all other managed files remain byte-exact. */
+    private function renderedContentMatches(
+        string $root,
+        string $path,
+        array $current,
+        string $expected,
+    ): bool {
+        if (($current['present'] ?? false) !== true) {
+            return false;
+        }
+        if ($path !== 'release-versions.json') {
+            return hash_equals(hash('sha256', $expected), (string)$current['sha256']);
+        }
+        $actual = file_get_contents(ScaffoldPathGuard::projectPath($root, $path));
+        return is_string($actual)
+            && hash_equals(hash('sha256', $actual), (string)$current['sha256'])
+            && $this->normalizeVersionContractDocument($actual, 'SCAFFOLD_VERSION_CONTRACT_INVALID')
+                === $this->normalizeVersionContractDocument($expected, 'SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID');
+    }
+
+    /** Parse exactly the seven supported fields and return their stable semantic order. */
+    private function normalizeVersionContractDocument(string $raw, string $error): array
+    {
+        try {
+            $document = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException($error, 0, $exception);
+        }
+        $keys = is_array($document) ? array_keys($document) : [];
+        if (!is_array($document)
+            || count($keys) !== count(self::VERSION_CONTRACT_KEYS)
+            || array_diff($keys, self::VERSION_CONTRACT_KEYS) !== []
+            || array_diff(self::VERSION_CONTRACT_KEYS, $keys) !== []
+            || ($document['schema_version'] ?? null) !== 1
+            || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'
+        ) {
+            throw new RuntimeException($error);
+        }
+        $normalized = [];
+        foreach (self::VERSION_CONTRACT_KEYS as $key) {
+            $value = $document[$key];
+            if (!in_array($key, ['schema_version', 'protocol'], true)
+                && (!is_string($value) || !$this->isSemanticVersion($value))) {
+                throw new RuntimeException($error . ': ' . $key);
+            }
+            $normalized[$key] = $value;
+        }
+        return $normalized;
     }
 
     /** Accept the SemVer surface already supported by scaffold application identities. */
