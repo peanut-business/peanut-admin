@@ -4536,7 +4536,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "93929a8cc3a23175307a384ef8661d5f0940139d2808008117851a180d4775a6"
+            "source_sha256": "ce5fbd5ca9728745259328a8ad1a3cf36aeda85fa8ac1b827fc42ad3a25ee241"
         },
         {
             "path": "resources/service-registry.json",
@@ -5374,7 +5374,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ca80a0a60fc6f16c75cb9930b17b405070ef0ef4627832026a9e4b14fe235d8c"
+            "source_sha256": "1d8f4813a43aca76b4307642c66fcdb14b5db448d994bab86c98da1b014c0b59"
         },
         {
             "path": "server/app/BaseController.php",
@@ -14124,7 +14124,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ddcbd0e1d7d7b3f636516396b59f83f3d6ca605efcfa2badfe89464e77315289"
+            "source_sha256": "014d50ea0ed8a4e698ff8394dde0a0f5c1c5f477e9341b1518e73e23e67a80b6"
         },
         {
             "path": "server/app/common/service/storage/StorageService.php",

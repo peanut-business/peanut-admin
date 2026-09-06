@@ -4,8 +4,12 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
 use app\common\service\storage\StorageRepository;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use app\common\tenancy\MultiTenantDataScopePolicy;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -83,7 +87,10 @@ $resolver = new TenantEntryBindingResolver(
         return new TenantSystemContext(999, $actor, $operation, $operationId);
     },
 );
-$storage = new StorageRepository($pdo);
+$multiTenantScope = new MultiTenantDataScopePolicy(
+    new CurrentExecutionContext(new ExecutionContextStore()),
+);
+$storage = new StorageRepository($pdo, $multiTenantScope, new DefaultTenantContextResolver($pdo));
 entryBindingExpect(
     $storage->deliverableObjectForTenant(101, 'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') !== null,
     'an active Tenant file was not deliverable',

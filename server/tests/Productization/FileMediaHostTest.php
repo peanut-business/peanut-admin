@@ -130,8 +130,10 @@ namespace {
     expectFileMedia(
         str_contains($sources['app/common/service/storage/StorageService.php'], 'repository->route')
         && str_contains($sources['app/common/service/storage/StorageService.php'], 'objectForTenant')
-        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'f.tenant_id=:tenant_id'),
-        'storage object writes and reads must remain Tenant-bound'
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], "\$prefix . 'tenant_id=:tenant_id'")
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'object_key LIKE :tenant_object_prefix')
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'DefaultTenantContextResolver'),
+        'sealed File Media evidence requires explicit Multi-tenant and Standalone object ownership predicates'
     );
     expectFileMedia(
         str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'material.image' => StorageAccess::PUBLIC")

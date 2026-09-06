@@ -244,11 +244,14 @@ class AppService extends Service
         });
     }
 
+    /** Wires the storage ledger to the configured Edition ownership policy and default Tenant resolver. */
     private function registerStorage(): void
     {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
         $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
             $this->app->make(PDO::class),
+            $this->app->make(DataScopePolicy::class),
+            $this->app->make(DefaultTenantContextResolver::class),
         ));
         $this->app->bind(StorageDriverFactory::class, fn(): StorageDriverFactory => new StorageDriverFactory(
             $this->app->make(StorageCredentialResolver::class),
