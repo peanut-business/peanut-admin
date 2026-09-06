@@ -16939,7 +16939,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e7a36051f44dd4bc2bd57130dc37a9e50515bbe9476b71d8627d2fb9a90a1158"
+            "source_sha256": "8b7a37ccb2433befda59514ccaf63283a185ff84f191227416d1ced637a605b1"
         },
         {
             "path": "server/resources/module-scaffold/backend/composer.json.stub",
