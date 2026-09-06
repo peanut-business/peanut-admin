@@ -230,9 +230,52 @@ foreach ([
     'demo overlay migration target version does not match its migration files',
     'demo overlay metadata identity is invalid',
     'demo_overlay_commit=',
+    '--expected-commit',
+    '--expected-tree',
+    'release_ref="$tag_commit"',
+    'git archive --format=tar "$release_ref"',
 ] as $token) {
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }
+$expect(
+    substr_count($deploy, 'git show "$release_ref:') >= 4
+        && str_contains($deploy, '"$tag_tree" == "$EXPECTED_TREE"'),
+    'deployment does not read and archive the caller-bound immutable commit/tree'
+);
+$upgradeWorker = $read($root . '/scripts/ops-upgrade-worker');
+$expect(
+    str_contains($upgradeWorker, '.result.target_commit == $commit')
+        && str_contains($upgradeWorker, '.result.target_tree == $tree')
+        && str_contains($upgradeWorker, '--expected-commit "$target_commit" --expected-tree "$target_tree"'),
+    'upgrade worker does not fence deployment with the task-bound commit/tree'
+);
+$upgradeExecution = $read($root . '/server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php');
+$claimStart = strpos($upgradeExecution, 'public function claim()');
+$advanceStart = strpos($upgradeExecution, 'public function advance(');
+$succeedStart = strpos($upgradeExecution, 'public function succeed(');
+$maintenanceStart = strpos($upgradeExecution, 'private function advanceMaintenance(');
+$createExecutionStart = strpos($upgradeExecution, 'private function createExecution(');
+$expect(
+    $claimStart !== false && $advanceStart !== false && $succeedStart !== false
+        && $maintenanceStart !== false && $createExecutionStart !== false,
+    'upgrade execution response boundaries are unavailable'
+);
+$claimResponse = substr($upgradeExecution, (int)$claimStart, (int)$advanceStart - (int)$claimStart);
+$reentryResponse = substr($upgradeExecution, (int)$advanceStart, (int)$succeedStart - (int)$advanceStart);
+$maintenanceResponse = substr(
+    $upgradeExecution,
+    (int)$maintenanceStart,
+    (int)$createExecutionStart - (int)$maintenanceStart,
+);
+$expect(
+    str_contains($claimResponse, "'target_commit' => \$payload['target_commit']")
+        && str_contains($claimResponse, "'target_tree' => \$payload['target_tree']")
+        && str_contains($reentryResponse, "'target_commit' => (string)\$execution['target_commit']")
+        && str_contains($reentryResponse, "'target_tree' => (string)\$execution['target_tree']")
+        && str_contains($maintenanceResponse, "'target_commit' => (string)\$execution['target_commit']")
+        && str_contains($maintenanceResponse, "'target_tree' => (string)\$execution['target_tree']"),
+    'upgrade task responses do not retain the bound deployment commit/tree'
+);
 $expect(
     str_contains($deploy, 'requires distinct default Admin, Platform, Tenant A and Tenant B emails'),
     'fresh demo deployment does not reject identity collisions before database work'

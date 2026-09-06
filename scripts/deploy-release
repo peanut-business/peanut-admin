@@ -18,6 +18,8 @@ OVERLAY=""
 EDITION_PACKAGE=""
 EDITION_MANIFEST=""
 CONFIRM_DESTROY=""
+EXPECTED_COMMIT=""
+EXPECTED_TREE=""
 ADMIN_EMAIL="${PEANUT_GENERATED_ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
 PLATFORM_EMAIL="${PEANUT_GENERATED_PLATFORM_EMAIL:-}"
@@ -36,6 +38,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/deploy-release <vX.Y.Z> --target <production|production-candidate> \
   (--install | --update | --fresh) [--apply | --dry-run] [--ssh-alias <alias>] \
+  [--expected-commit <sha1> --expected-tree <sha1>] \
   [--edition-package <installer.tar.gz> --edition-manifest <manifest.json>] \
   [--overlay <demo-patch.tar>] \
   [--confirm-destroy <target>]
@@ -55,6 +58,8 @@ instance. It never guesses a host, path, port, database or fallback target.
              external manifest shipped beside --edition-package
   --confirm-destroy
              required for --fresh; value must exactly equal the target
+  --expected-commit, --expected-tree
+             pin a caller-bound release commit and tree; both are required together
 
 Routine updates preserve the database and apply append-only application
 migrations from server/database/migrations. Fresh installation uses the
@@ -181,12 +186,22 @@ while [[ $# -gt 0 ]]; do
     --confirm-destroy)
       [[ $# -ge 2 ]] || fail '--confirm-destroy requires a value'
       CONFIRM_DESTROY="$2"; shift 2 ;;
+    --expected-commit)
+      [[ $# -ge 2 ]] || fail '--expected-commit requires a value'
+      EXPECTED_COMMIT="$2"; shift 2 ;;
+    --expected-tree)
+      [[ $# -ge 2 ]] || fail '--expected-tree requires a value'
+      EXPECTED_TREE="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
     *) usage >&2; exit 64 ;;
   esac
 done
 
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'tag must be an immutable vX.Y.Z release tag'
+[[ -z "$EXPECTED_COMMIT" || "$EXPECTED_COMMIT" =~ ^[a-f0-9]{40}$ ]] || fail 'expected commit must be a full lowercase SHA-1'
+[[ -z "$EXPECTED_TREE" || "$EXPECTED_TREE" =~ ^[a-f0-9]{40}$ ]] || fail 'expected tree must be a full lowercase SHA-1'
+[[ -z "$EXPECTED_COMMIT" && -z "$EXPECTED_TREE" || -n "$EXPECTED_COMMIT" && -n "$EXPECTED_TREE" ]] \
+  || fail '--expected-commit and --expected-tree must be provided together'
 [[ "$TARGET" == production || "$TARGET" == production-candidate ]] || fail 'target must be production or production-candidate'
 [[ $((INSTALL + UPDATE + FRESH)) -eq 1 ]] || fail 'choose exactly one of --install, --update or --fresh'
 [[ $((APPLY + DRY_RUN)) -eq 1 ]] || fail 'choose exactly one of --apply or --dry-run'
@@ -275,16 +290,22 @@ fi
 tag_commit="$(git rev-parse "$TAG^{commit}")"
 remote_commit="$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk 'NR == 1 { print $1 }')"
 [[ -n "$remote_commit" && "$remote_commit" == "$tag_commit" ]] || fail "$TAG local and remote commit identities differ"
+[[ -z "$EXPECTED_COMMIT" || "$tag_commit" == "$EXPECTED_COMMIT" ]] \
+  || fail "$TAG commit differs from the caller-bound expected commit"
+# All release reads and the source archive use this resolved immutable commit, never the tag name again.
+release_ref="$tag_commit"
+tag_tree="$(git rev-parse "$release_ref^{tree}")"
+[[ -z "$EXPECTED_TREE" || "$tag_tree" == "$EXPECTED_TREE" ]] \
+  || fail "$TAG tree differs from the caller-bound expected tree"
 version="${TAG#v}"
-metadata_version="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.version // empty')"
-metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
+metadata_version="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r '.version // empty')"
+metadata_tag="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
 [[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || fail "RELEASE_METADATA.json does not match $TAG"
-contract_product_version="$(git show "$TAG:release-versions.json" | jq -r '.product_release // empty')"
-scaffold_migration_version="$(git show "$TAG:release-versions.json" | jq -r '.scaffold_template // empty')"
+contract_product_version="$(git show "$release_ref:release-versions.json" | jq -r '.product_release // empty')"
+scaffold_migration_version="$(git show "$release_ref:release-versions.json" | jq -r '.scaffold_template // empty')"
 [[ "$contract_product_version" == "$version" ]] || fail "release-versions.json product_release does not match $TAG"
 [[ "$scaffold_migration_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
   || fail 'release-versions.json scaffold_template is invalid'
-tag_tree="$(git rev-parse "$TAG^{tree}")"
 archive_kind=source
 if [[ -n "$EDITION_PACKAGE" ]]; then
   archive_kind=edition
@@ -402,7 +423,7 @@ trap 'rm -f "$archive_file" "$secrets_file"' EXIT
 if [[ "$archive_kind" == edition ]]; then
   cp "$EDITION_PACKAGE" "$archive_file"
 else
-  git archive --format=tar "$TAG" -o "$archive_file"
+  git archive --format=tar "$release_ref" -o "$archive_file"
 fi
 archive_sha256="$(shasum -a 256 "$archive_file" | awk '{print $1}')"
 [[ "$archive_sha256" =~ ^[0-9a-f]{64}$ ]] || fail 'cannot calculate release archive SHA-256'

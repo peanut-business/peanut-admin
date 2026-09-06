@@ -100,6 +100,8 @@ SQL);
                 'execution_revision' => $revision,
                 'current_step' => 'preflight',
                 'target_release_key' => $payload['target_release_key'],
+                'target_commit' => $payload['target_commit'],
+                'target_tree' => $payload['target_tree'],
                 'target_descriptor_sha256' => $payload['target_descriptor_sha256'],
             ];
         });
@@ -118,6 +120,8 @@ SQL);
             'deployment' => [
                 'action' => 'deploy',
                 'target_release_key' => (string)$execution['target_release_key'],
+                'target_commit' => (string)$execution['target_commit'],
+                'target_tree' => (string)$execution['target_tree'],
             ],
             default => throw new \RuntimeException('OPS_UPGRADE_STEP_INVALID'),
         };
@@ -593,6 +597,8 @@ SQL);
             return [
                 'action' => 'deploy',
                 'target_release_key' => (string)$execution['target_release_key'],
+                'target_commit' => (string)$execution['target_commit'],
+                'target_tree' => (string)$execution['target_tree'],
             ];
         });
     }

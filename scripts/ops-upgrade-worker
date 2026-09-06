@@ -74,9 +74,13 @@ fi
 task_key="$(jq -r '.result.task_key' <<<"$claim_json")"
 revision="$(jq -r '.result.execution_revision' <<<"$claim_json")"
 target_release_key="$(jq -r '.result.target_release_key' <<<"$claim_json")"
+target_commit="$(jq -r '.result.target_commit' <<<"$claim_json")"
+target_tree="$(jq -r '.result.target_tree' <<<"$claim_json")"
 [[ "$task_key" =~ ^job_[a-f0-9]{32}$ ]] || die 'claimed task key is invalid'
 [[ "$revision" =~ ^[1-9][0-9]*$ ]] || die 'claimed revision is invalid'
 [[ "$target_release_key" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die 'claimed target release is invalid'
+[[ "$target_commit" =~ ^[a-f0-9]{40}$ ]] || die 'claimed target commit is invalid'
+[[ "$target_tree" =~ ^[a-f0-9]{40}$ ]] || die 'claimed target tree is invalid'
 
 failure_code='OPS_UPGRADE_PREFLIGHT_FAILED'
 heartbeat_pid=''
@@ -124,13 +128,17 @@ remote_child_worker restore
 
 failure_code='OPS_UPGRADE_MAINTENANCE_FAILED'
 advance_json="$(remote_upgrade advance "$task_key" "$revision")"
-jq -e --arg release "$target_release_key" \
-  '.ok == true and .result.action == "deploy" and .result.target_release_key == $release' \
+jq -e --arg release "$target_release_key" --arg commit "$target_commit" --arg tree "$target_tree" \
+  '.ok == true and .result.action == "deploy"
+   and .result.target_release_key == $release
+   and .result.target_commit == $commit
+   and .result.target_tree == $tree' \
   <<<"$advance_json" >/dev/null || false
 
 stop_heartbeat
 failure_code='OPS_UPGRADE_DEPLOYMENT_FAILED'
-"$project_root/scripts/deploy-release" "$target_release_key" --target production --update --apply
+"$project_root/scripts/deploy-release" "$target_release_key" --target production --update --apply \
+  --expected-commit "$target_commit" --expected-tree "$target_tree"
 
 failure_code='OPS_UPGRADE_SMOKE_FAILED'
 succeed_json="$(remote_upgrade succeed "$task_key" "$revision")"

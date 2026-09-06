@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\common\service\installation\ApplicationReleaseVersions;
 use RuntimeException;
 
 /**
@@ -15,23 +16,32 @@ final readonly class PlatformUpgradeTarget
 {
     private const TARGET_DIRECTORY = '.peanut/upgrade-target';
     private const VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D';
+    private const APPLICATION_VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
     private const RELEASE_KEY = '/^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D';
     private const KERNEL_VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
     private const COMMIT = '/^[a-f0-9]{40}$/D';
     private const SHA256 = '/^[a-f0-9]{64}$/D';
     private const MIGRATION = '/^[0-9]{8}-[a-z0-9][a-z0-9_-]*$/D';
+    private const SLUG = '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/D';
+    private const PACKAGE_IDENTITY = '/^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/D';
 
     /**
      * @param array{key:string,commit:string,tree:string,qualification:array<string,mixed>} $release
      * @param array{from_version:string,from_manifest_sha256:string,to_version:string,to_manifest_sha256:string} $scaffold
      * @param array{from:array{inventory_sha256:string,files:list<array{migration_id:string,sha256:string}>},to:array{inventory_sha256:string,files:list<array{migration_id:string,sha256:string}>}} $migrations
      * @param array{lock_sha256:string,kernel_version:string} $modules
+     * @param array{slug:string,package_identity:string,application_version:string,product_release:string} $application
+     * @param array{version:string,source_commit:string,source_tree:string,inventory_sha256:string} $sourceTemplate
+     * @param array{version:string,source_commit:string,source_tree:string,inventory_sha256:string} $template
      */
     private function __construct(
         public array $release,
         public array $scaffold,
         public array $migrations,
         public array $modules,
+        public array $application,
+        public array $sourceTemplate,
+        public array $template,
         public string $descriptorSha256,
         public string $fromManifestPath,
         public string $toManifestPath,
@@ -41,6 +51,7 @@ final readonly class PlatformUpgradeTarget
     ) {
     }
 
+    /** Verify staged application source plus its release and scaffold identities. */
     public static function load(string $projectRoot): self
     {
         $root = self::targetRoot($projectRoot);
@@ -56,26 +67,44 @@ final readonly class PlatformUpgradeTarget
         $scaffold = self::scaffold($descriptor['scaffold'] ?? null);
         $migrations = self::migrations($descriptor['migrations'] ?? null);
         $modules = self::modules($descriptor['modules'] ?? null);
-        if ($release['key'] !== 'v' . $scaffold['to_version']) {
-            throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
-        }
-
         $fromManifestPath = self::fixedFile($root, 'from/scaffold-manifest.json');
         $toManifestPath = self::fixedFile($root, 'to/scaffold-manifest.json');
         self::assertDigest($fromManifestPath, $scaffold['from_manifest_sha256']);
         self::assertDigest($toManifestPath, $scaffold['to_manifest_sha256']);
-        self::assertScaffoldVersion($fromManifestPath, $scaffold['from_version']);
+        $sourceScaffoldRelease = self::assertScaffoldVersion($fromManifestPath, $scaffold['from_version']);
         $targetScaffoldRelease = self::assertScaffoldVersion(
             $toManifestPath,
             $scaffold['to_version']
         );
-        if (!hash_equals($release['commit'], $targetScaffoldRelease['source_commit'])
-            || !hash_equals($release['tree'], $targetScaffoldRelease['source_tree'])) {
-            throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
+        if ($scaffold['from_version'] === $scaffold['to_version']
+            && !hash_equals($scaffold['from_manifest_sha256'], $scaffold['to_manifest_sha256'])) {
+            throw new RuntimeException('UPGRADE_TARGET_SCAFFOLD_INVALID');
         }
 
         $releaseRoot = self::fixedDirectory($root, 'release');
         self::assertRegularTree($releaseRoot);
+        self::assertGitTree($releaseRoot, $release['tree']);
+        $application = self::applicationManifest(
+            self::fixedFile($releaseRoot, '.peanut/application-manifest.json'),
+        );
+        $releaseVersionsPath = self::fixedFile($releaseRoot, 'release-versions.json');
+        try {
+            $versions = ApplicationReleaseVersions::load($releaseVersionsPath);
+        } catch (RuntimeException $exception) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID', 0, $exception);
+        }
+        $metadata = self::releaseMetadata(
+            self::fixedFile($releaseRoot, 'RELEASE_METADATA.json'),
+        );
+        $productRelease = $versions->productRelease();
+        if ($release['key'] !== 'v' . $productRelease
+            || $metadata['version'] !== $productRelease
+            || $metadata['expected_tag'] !== $release['key']
+            || !hash_equals($application['package_identity'], $metadata['application_identity'])
+            || !self::sameScaffoldRelease($application['template'], $targetScaffoldRelease)
+            || $versions->scaffoldTemplate() !== $targetScaffoldRelease['version']) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
+        }
         $releaseServerRoot = self::fixedDirectory($releaseRoot, 'server');
         $targetLockPath = self::fixedFile($releaseRoot, 'plugins.lock');
         self::assertDigest($targetLockPath, $modules['lock_sha256']);
@@ -90,6 +119,14 @@ final readonly class PlatformUpgradeTarget
             $scaffold,
             $migrations,
             $modules,
+            [
+                'slug' => $application['slug'],
+                'package_identity' => $application['package_identity'],
+                'application_version' => $application['application_version'],
+                'product_release' => $productRelease,
+            ],
+            $sourceScaffoldRelease,
+            $application['template'],
             $descriptorDigest,
             $fromManifestPath,
             $toManifestPath,
@@ -171,6 +208,126 @@ final readonly class PlatformUpgradeTarget
                 || ($resolved !== $root && !str_starts_with($resolved, $root . DIRECTORY_SEPARATOR))) {
                 throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
             }
+        }
+    }
+
+    /** Rebuild the staged release's Git tree identity without trusting a checkout or shell command. */
+    private static function assertGitTree(string $root, string $expected): void
+    {
+        $actual = self::gitTreeHash($root);
+        if (!hash_equals($expected, $actual)) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+        }
+    }
+
+    /** Hash one directory using Git's byte ordering, file modes and binary tree entry format. */
+    private static function gitTreeHash(string $directory): string
+    {
+        $names = scandir($directory);
+        if ($names === false) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+        }
+        $entries = [];
+        foreach ($names as $name) {
+            if ($name === '.' || $name === '..') {
+                continue;
+            }
+            $path = $directory . DIRECTORY_SEPARATOR . $name;
+            if (is_link($path)) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            if (is_dir($path)) {
+                $entries[] = [
+                    'name' => $name,
+                    'sort' => $name . '/',
+                    'mode' => '40000',
+                    'hash' => self::gitTreeHash($path),
+                ];
+                continue;
+            }
+            if (!is_file($path)) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $stat = stat($path);
+            if (!is_array($stat) || !is_int($stat['mode'] ?? null)) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $entries[] = [
+                'name' => $name,
+                'sort' => $name . "\0",
+                'mode' => (($stat['mode'] & 0100) !== 0) ? '100755' : '100644',
+                'hash' => self::gitBlobHash($path),
+            ];
+        }
+        usort(
+            $entries,
+            static fn(array $left, array $right): int => strcmp($left['sort'], $right['sort']),
+        );
+        $context = hash_init('sha1');
+        $size = 0;
+        $content = [];
+        foreach ($entries as $entry) {
+            $object = pack('H*', $entry['hash']);
+            if (strlen($object) !== 20) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $row = $entry['mode'] . ' ' . $entry['name'] . "\0" . $object;
+            $size += strlen($row);
+            $content[] = $row;
+        }
+        if (!hash_update($context, 'tree ' . $size . "\0")) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+        }
+        foreach ($content as $row) {
+            if (!hash_update($context, $row)) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+        }
+        $hash = hash_final($context);
+        if (preg_match(self::COMMIT, $hash) !== 1) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+        }
+        return $hash;
+    }
+
+    /** Stream a regular file into Git's blob framing and reject failed or short reads. */
+    private static function gitBlobHash(string $path): string
+    {
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+        }
+        try {
+            $stat = fstat($handle);
+            $size = is_array($stat) ? ($stat['size'] ?? null) : null;
+            if (!is_int($size) || $size < 0) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $context = hash_init('sha1');
+            if (!hash_update($context, 'blob ' . $size . "\0")) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $read = 0;
+            while (!feof($handle)) {
+                $chunk = fread($handle, 1024 * 1024);
+                if ($chunk === false || ($chunk === '' && !feof($handle))) {
+                    throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+                }
+                $read += strlen($chunk);
+                if (!hash_update($context, $chunk)) {
+                    throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+                }
+            }
+            if ($read !== $size) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            $hash = hash_final($context);
+            if (preg_match(self::COMMIT, $hash) !== 1) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_TREE_INVALID');
+            }
+            return $hash;
+        } finally {
+            fclose($handle);
         }
     }
 
@@ -313,7 +470,7 @@ final readonly class PlatformUpgradeTarget
         }
     }
 
-    /** @return array{source_commit:string,source_tree:string,inventory_sha256:string} */
+    /** @return array{version:string,source_commit:string,source_tree:string,inventory_sha256:string} */
     private static function assertScaffoldVersion(string $path, string $expected): array
     {
         $manifest = self::json($path, 'UPGRADE_TARGET_SCAFFOLD_INVALID');
@@ -328,10 +485,82 @@ final readonly class PlatformUpgradeTarget
             throw new RuntimeException('UPGRADE_TARGET_SCAFFOLD_INVALID');
         }
         return [
+            'version' => $expected,
             'source_commit' => $release['source_commit'],
             'source_tree' => $release['source_tree'],
             'inventory_sha256' => $release['inventory_sha256'],
         ];
+    }
+
+    /** @return array{slug:string,package_identity:string,application_version:string,template:array{version:string,source_commit:string,source_tree:string,inventory_sha256:string}} */
+    private static function applicationManifest(string $path): array
+    {
+        $manifest = self::json($path, 'UPGRADE_TARGET_APPLICATION_MANIFEST_INVALID');
+        $application = is_array($manifest['application'] ?? null) ? $manifest['application'] : [];
+        $template = is_array($manifest['template'] ?? null) ? $manifest['template'] : [];
+        $slug = $application['slug'] ?? null;
+        $packageIdentity = $application['package_identity'] ?? null;
+        $applicationVersion = $application['version'] ?? null;
+        if (($manifest['schema_version'] ?? null) !== 2
+            || ($manifest['protocol'] ?? null) !== 'peanut.application-scaffold.v2'
+            || !is_string($slug) || strlen($slug) > 63 || preg_match(self::SLUG, $slug) !== 1
+            || !is_string($packageIdentity) || strlen($packageIdentity) > 120
+            || preg_match(self::PACKAGE_IDENTITY, $packageIdentity) !== 1
+            || !is_string($applicationVersion) || preg_match(self::APPLICATION_VERSION, $applicationVersion) !== 1
+            || !is_string($template['version'] ?? null)
+            || preg_match(self::VERSION, $template['version']) !== 1
+            || !is_string($template['source_commit'] ?? null)
+            || preg_match(self::COMMIT, $template['source_commit']) !== 1
+            || !is_string($template['source_tree'] ?? null)
+            || preg_match(self::COMMIT, $template['source_tree']) !== 1
+            || !is_string($template['inventory_sha256'] ?? null)
+            || preg_match(self::SHA256, $template['inventory_sha256']) !== 1) {
+            throw new RuntimeException('UPGRADE_TARGET_APPLICATION_MANIFEST_INVALID');
+        }
+        return [
+            'slug' => $slug,
+            'package_identity' => $packageIdentity,
+            'application_version' => $applicationVersion,
+            'template' => [
+                'version' => $template['version'],
+                'source_commit' => $template['source_commit'],
+                'source_tree' => $template['source_tree'],
+                'inventory_sha256' => $template['inventory_sha256'],
+            ],
+        ];
+    }
+
+    /** @return array{application_identity:string,version:string,expected_tag:string} */
+    private static function releaseMetadata(string $path): array
+    {
+        $metadata = self::json($path, 'UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
+        foreach (['application_identity', 'version', 'expected_tag'] as $key) {
+            if (!is_string($metadata[$key] ?? null)) {
+                throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
+            }
+        }
+        if (strlen($metadata['application_identity']) > 120
+            || preg_match(self::PACKAGE_IDENTITY, $metadata['application_identity']) !== 1
+            || preg_match(self::VERSION, $metadata['version']) !== 1
+            || preg_match(self::RELEASE_KEY, $metadata['expected_tag']) !== 1) {
+            throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
+        }
+        return [
+            'application_identity' => $metadata['application_identity'],
+            'version' => $metadata['version'],
+            'expected_tag' => $metadata['expected_tag'],
+        ];
+    }
+
+    /** @param array<string,string> $left @param array<string,string> $right */
+    private static function sameScaffoldRelease(array $left, array $right): bool
+    {
+        foreach (['version', 'source_commit', 'source_tree', 'inventory_sha256'] as $key) {
+            if (!isset($left[$key], $right[$key]) || !hash_equals($left[$key], $right[$key])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** @param list<array{migration_id:string,sha256:string}> $files @return array<string,string> */

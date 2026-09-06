@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\common\service\installation\ApplicationReleaseVersions;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\module\StrictVersionConstraintMatcher;
 use app\platform\service\plugin\PluginLifecycleException;
@@ -21,6 +22,8 @@ final readonly class PlatformUpgradeReadinessService
     private const VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
     private const COMMIT = '/^[a-f0-9]{40}$/D';
     private const SHA256 = '/^[a-f0-9]{64}$/D';
+    private const SLUG = '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/D';
+    private const PACKAGE_IDENTITY = '/^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/D';
 
     public function __construct(
         private PDO $pdo,
@@ -203,7 +206,7 @@ final readonly class PlatformUpgradeReadinessService
         );
     }
 
-    /** @return array<string,mixed>|null */
+    /** Read the current application's stable identity, product release and adopted scaffold provenance. */
     private function sourceIdentity(): ?array
     {
         $path = $this->projectRoot . '/.peanut/application-manifest.json';
@@ -227,10 +230,15 @@ final readonly class PlatformUpgradeReadinessService
         }
         $application = is_array($data['application'] ?? null) ? $data['application'] : [];
         $template = is_array($data['template'] ?? null) ? $data['template'] : [];
+        $slug = $application['slug'] ?? null;
+        $packageIdentity = $application['package_identity'] ?? null;
         if (($data['schema_version'] ?? null) !== 2
             || ($data['protocol'] ?? null) !== 'peanut.application-scaffold.v2'
             || !is_string($application['version'] ?? null)
             || preg_match(self::VERSION, $application['version']) !== 1
+            || !is_string($slug) || strlen($slug) > 63 || preg_match(self::SLUG, $slug) !== 1
+            || !is_string($packageIdentity) || strlen($packageIdentity) > 120
+            || preg_match(self::PACKAGE_IDENTITY, $packageIdentity) !== 1
             || !is_string($template['version'] ?? null)
             || preg_match(self::VERSION, $template['version']) !== 1
             || !$this->isCommit($template['source_commit'] ?? null)
@@ -239,8 +247,30 @@ final readonly class PlatformUpgradeReadinessService
             || !is_string($raw)) {
             throw new RuntimeException('UPGRADE_SOURCE_APPLICATION_MANIFEST_INVALID');
         }
+        try {
+            $versions = ApplicationReleaseVersions::load($this->sourceFile('release-versions.json'));
+        } catch (RuntimeException $exception) {
+            throw new RuntimeException('UPGRADE_SOURCE_APPLICATION_RELEASE_VERSIONS_INVALID', 0, $exception);
+        }
+        $metadata = $this->sourceJson(
+            $this->sourceFile('RELEASE_METADATA.json'),
+            'UPGRADE_SOURCE_RELEASE_METADATA_INVALID',
+        );
+        $productRelease = $versions->productRelease();
+        if (!is_string($metadata['application_identity'] ?? null)
+            || !is_string($metadata['version'] ?? null)
+            || !is_string($metadata['expected_tag'] ?? null)
+            || !hash_equals($packageIdentity, $metadata['application_identity'])
+            || $metadata['version'] !== $productRelease
+            || $metadata['expected_tag'] !== 'v' . $productRelease
+            || $versions->scaffoldTemplate() !== $template['version']) {
+            throw new RuntimeException('UPGRADE_SOURCE_RELEASE_METADATA_INVALID');
+        }
         return [
             'application_version' => $application['version'],
+            'product_release' => $productRelease,
+            'slug' => $slug,
+            'package_identity' => $packageIdentity,
             'template_version' => $template['version'],
             'template_source_commit' => $template['source_commit'],
             'template_source_tree' => $template['source_tree'],
@@ -249,16 +279,29 @@ final readonly class PlatformUpgradeReadinessService
         ];
     }
 
+    /** Reject cross-application deployment, product non-upgrades and unsupported scaffold movement. */
     private function directionCode(array $source, PlatformUpgradeTarget $target): ?string
     {
-        $from = (string)$source['template_version'];
-        $expected = (string)$target->scaffold['from_version'];
-        $to = (string)$target->scaffold['to_version'];
-        if ($from !== $expected) {
+        if (!hash_equals((string)$source['slug'], $target->application['slug'])
+            || !hash_equals((string)$source['package_identity'], $target->application['package_identity'])) {
+            return 'UPGRADE_APPLICATION_IDENTITY_MISMATCH';
+        }
+        if (version_compare((string)$source['product_release'], $target->application['product_release'], '>=')) {
+            return 'UPGRADE_TARGET_NOT_NEWER';
+        }
+        $sourceTemplate = [
+            'version' => (string)$source['template_version'],
+            'source_commit' => (string)$source['template_source_commit'],
+            'source_tree' => (string)$source['template_source_tree'],
+            'inventory_sha256' => (string)$source['template_inventory_sha256'],
+        ];
+        if (!$this->sameScaffoldRelease($sourceTemplate, $target->sourceTemplate)) {
             return 'UPGRADE_SOURCE_RELEASE_MISMATCH';
         }
-        if (version_compare($from, $to, '>=')) {
-            return 'UPGRADE_TARGET_NOT_NEWER';
+        $from = $target->sourceTemplate['version'];
+        $to = $target->template['version'];
+        if (version_compare($from, $to, '>')) {
+            return 'UPGRADE_SCAFFOLD_DOWNGRADE_FORBIDDEN';
         }
         if (explode('.', $from, 2)[0] !== explode('.', $to, 2)[0]) {
             return 'UPGRADE_FRESH_REBUILD_REQUIRED';
@@ -282,6 +325,7 @@ final readonly class PlatformUpgradeReadinessService
                 'cleanup_residual_count' => $target->release['qualification']['cleanup_residual_count'],
                 'lease_released' => $target->release['qualification']['lease_released'],
             ],
+            'application' => $target->application,
             'scaffold' => [
                 'from_version' => $target->scaffold['from_version'],
                 'to_version' => $target->scaffold['to_version'],
@@ -449,50 +493,21 @@ final readonly class PlatformUpgradeReadinessService
         ];
     }
 
-    /** @return array<string,mixed> */
+    /** Report the scaffold provenance already adopted by the verified full application release. */
     private function scaffoldProjection(PlatformUpgradeTarget $target): array
     {
-        try {
-            $this->loadScaffoldRuntime();
-            $runner = new \app\common\service\scaffold\ScaffoldUpgradeRunner();
-            $plan = $runner->preview(
-                $this->projectRoot,
-                $target->fromManifestPath,
-                $target->toManifestPath,
-            );
-            $reasons = [];
-            foreach ($plan['actions'] as $action) {
-                if (($action['conflict'] ?? false) !== true) {
-                    continue;
-                }
-                $reason = strtoupper((string)($action['reason'] ?? 'unknown'));
-                $code = 'SCAFFOLD_' . preg_replace('/[^A-Z0-9]+/', '_', $reason);
-                $reasons[$code] = ($reasons[$code] ?? 0) + 1;
-            }
-            ksort($reasons, SORT_STRING);
-            return [
-                'status' => $plan['status'],
-                'code' => $plan['status'] === 'ready'
-                    ? 'UPGRADE_SCAFFOLD_READY'
-                    : 'UPGRADE_SCAFFOLD_CONFLICT',
-                'candidate' => $plan['candidate'],
-                'automatic' => $plan['summary']['automatic'],
-                'preserved' => $plan['summary']['preserved'],
-                'conflicts' => $plan['summary']['conflicts'],
-                'managed_pre_sha256' => $this->plainSha256($plan['identity']['managed_pre_sha256']),
-                'app_owned_pre_sha256' => $this->plainSha256($plan['identity']['app_owned_pre_sha256']),
-                'app_owned_count' => count($plan['app_owned_pre_state']),
-                'conflict_reasons' => $reasons,
-            ];
-        } catch (Throwable $exception) {
-            $message = $exception->getMessage();
-            $code = str_starts_with($message, 'SCAFFOLD_RELEASE_CHAIN_INVALID')
-                ? 'UPGRADE_SCAFFOLD_RELEASE_CHAIN_INVALID'
-                : (str_starts_with($message, 'SCAFFOLD_APPLICATION_')
-                    ? 'UPGRADE_SOURCE_APPLICATION_MANIFEST_INVALID'
-                    : 'UPGRADE_SCAFFOLD_ANALYSIS_FAILED');
-            return $this->scaffoldUnavailable($code);
-        }
+        return [
+            'status' => 'ready',
+            'code' => 'UPGRADE_SCAFFOLD_PROVENANCE_READY',
+            'candidate' => $target->descriptorSha256,
+            'automatic' => 0,
+            'preserved' => 0,
+            'conflicts' => 0,
+            'managed_pre_sha256' => null,
+            'app_owned_pre_sha256' => null,
+            'app_owned_count' => 0,
+            'conflict_reasons' => [],
+        ];
     }
 
     /** @return array<string,mixed> */
@@ -604,30 +619,44 @@ final readonly class PlatformUpgradeReadinessService
         return preg_match('/^UPGRADE_[A-Z0-9_]{1,112}$/D', $code) === 1 ? $code : $fallback;
     }
 
-    private function loadScaffoldRuntime(): void
+    /** Resolve a fixed current-application identity file without accepting links or escapes. */
+    private function sourceFile(string $relative): string
     {
-        foreach ([
-            'ScaffoldPathGuard.php',
-            'ScaffoldManifest.php',
-            'ScaffoldUpgradeLedger.php',
-            'ScaffoldUpgradeRunner.php',
-        ] as $file) {
-            $path = $this->projectRoot . '/scripts/scaffold-runtime/' . $file;
-            if (!is_file($path) || is_link($path)) {
-                throw new RuntimeException('UPGRADE_SCAFFOLD_ANALYZER_UNAVAILABLE');
-            }
-            require_once $path;
+        $root = realpath($this->projectRoot);
+        $path = $this->projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+        if ($root === false || !is_file($path) || is_link($path)) {
+            throw new RuntimeException('UPGRADE_SOURCE_IDENTITY_FILE_INVALID');
         }
+        $resolved = realpath($path);
+        if ($resolved === false || !str_starts_with($resolved, $root . DIRECTORY_SEPARATOR)) {
+            throw new RuntimeException('UPGRADE_SOURCE_IDENTITY_FILE_INVALID');
+        }
+        return $resolved;
     }
 
-    private function plainSha256(mixed $value): string
+    /** @return array<string,mixed> */
+    private function sourceJson(string $path, string $code): array
     {
-        $value = is_string($value) ? $value : '';
-        $plain = str_starts_with($value, 'sha256:') ? substr($value, 7) : $value;
-        if (!$this->isSha256($plain)) {
-            throw new RuntimeException('UPGRADE_SCAFFOLD_ANALYSIS_FAILED');
+        try {
+            $decoded = json_decode((string)file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException($code, 0, $exception);
         }
-        return $plain;
+        if (!is_array($decoded) || array_is_list($decoded)) {
+            throw new RuntimeException($code);
+        }
+        return $decoded;
+    }
+
+    /** @param array<string,string> $left @param array<string,string> $right */
+    private function sameScaffoldRelease(array $left, array $right): bool
+    {
+        foreach (['version', 'source_commit', 'source_tree', 'inventory_sha256'] as $key) {
+            if (!isset($left[$key], $right[$key]) || !hash_equals($left[$key], $right[$key])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private function isCommit(mixed $value): bool
