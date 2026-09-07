@@ -16,11 +16,13 @@ abstract class BaseAdminController extends BaseController
 
     protected int   $adminId   = 0;
     protected array $adminInfo = [];
+    protected readonly CurrentExecutionContext $executionContext;
 
     public function __construct(
         App $app,
-        protected readonly CurrentExecutionContext $executionContext,
+        ?CurrentExecutionContext $executionContext = null,
     ) {
+        $this->executionContext = $executionContext ?? $app->make(CurrentExecutionContext::class);
         parent::__construct($app);
     }
 
