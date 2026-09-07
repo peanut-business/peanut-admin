@@ -49,8 +49,8 @@ provider 和路由与首个真实 callback 同一纵向切片创建；在此之�
 server/
 ├── app/
 │   ├── adminapi/                 # ThinkPHP Application：管理后台（宿主核心入口）
-│   │   ├── Controllers/          # 仅包含宿主核心控制（如登录、系统配置等）
-│   │   ├── Services/             # 仅跨 Module 或管理会话编排
+│   │   ├── controller/          # 仅包含宿主核心控制（如登录、系统配置等）
+│   │   ├── service/             # 仅跨 Module 或管理会话编排
 │   │   ├── middleware/           # 管理身份、Admin Tenant、RBAC、审计
 │   │   ├── validate/             # 管理端请求白名单与格式
 │   │   ├── route/                # 只登记 adminapi 核心路由，并通过自动扫描加载模块内 admin 路由组
@@ -67,7 +67,7 @@ server/
     └── official-article/         # 独立打包分发的业务单元（全栈自闭环）
 ```
 
-目录不要求为空也提前创建。目标规则是“允许的归属固定”，当某个 Application 首次需要 `Services/` 或
+目录不要求为空也提前创建。目标规则是“允许的归属固定”，当某个 Application 首次需要 `service/` 或
 `validate/` 时再建立；已经存在的目录按最终命名收敛。
 
 ### 3.1 唯一 composition root 与顶层执行单元

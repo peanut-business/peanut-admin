@@ -1,5 +1,7 @@
 # 目录、调用与依赖规范
 
+> 💡 **重要**：关于命名空间、异常处理、RESTful 与 URL 映射的核心准则，请务必先阅读 [核心代码规范与认知模型统一指南](coding-standards.md)。
+
 ## 1. Module 的最低心智模型
 
 Module 只回答三个问题：
@@ -20,22 +22,22 @@ modules/official-article/
 ├── server/
 │   ├── composer.json           # PSR-4 声明
 │   ├── routes.php              # 声明式路由映射（不含鉴权逻辑）
-│   ├── Controllers/            # Module 各端口 Controller
+│   ├── controller/            # Module 各端口 Controller
 │   │   ├── adminapi/
 │   │   └── api/
-│   ├── Services/               # 业务逻辑、用例、事务边界（替代原 Application）
-│   ├── Contracts/              # 只放真正对外公开的 PHP 能力/DTO/已冻结 fact
-│   ├── Models/                 # Module 自有 ThinkORM Model
-│   ├── Database/Migrations/    # Module 自有 append-only migration
-│   ├── Resources/              # permissions、menus、settings 等声明
-│   └── Infrastructure/         # 可选：外部 Provider 适配
+│   ├── service/               # 业务逻辑、用例、事务边界（替代原 Application）
+│   ├── contract/              # 只放真正对外公开的 PHP 能力/DTO/已冻结 fact
+│   ├── model/                 # Module 自有 ThinkORM Model
+│   ├── database/migrations/    # Module 自有 append-only migration
+│   ├── resource/              # permissions、menus、settings 等声明
+│   └── infrastructure/         # 可选：外部 Provider 适配
 └── web/                        # 前端资产
     ├── package.json
     ├── contribution.ts         # 动态路由扫描入口
     └── views/
 ```
 
-目标态中，Module 是一个全栈自闭环的物理目录。为了支持插件市场的独立打包与分发，Controller 和路由表（`routes.php`）重新回到 Module 目录内部，但**严格禁止在路由表中直接写死租户上下文或安全中间件**；这部分安全防腐层由宿主 Application 在挂载时动态注入。同时，全面废除 `Application` 和 `Domain` 这种 DDD 形式主义目录，收敛为 `Services`。
+目标态中，Module 是一个全栈自闭环的物理目录。为了支持插件市场的独立打包与分发，Controller 和路由表（`routes.php`）重新回到 Module 目录内部，但**严格禁止在路由表中直接写死租户上下文或安全中间件**；这部分安全防腐层由宿主 Application 在挂载时动态注入。同时，全面废除 `Application` 和 `Domain` 这种 DDD 形式主义目录，收敛为 `service`。
 
 ## 3. 哪些目录必须有，哪些按需增加
 
@@ -43,16 +45,16 @@ modules/official-article/
 | --- | --- | --- | --- |
 | `module.json` | 必须 | key、version、依赖、权限资源、公开 Contract、自有表 | Runtime 状态、`backend.routes`、重复路由表 |
 | `server/routes.php` | 必须 | 纯声明式路由表，划分 admin/consumer 组 | 中间件调用、权限判断逻辑 |
-| `server/Controllers/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
-| `server/Services/` | 必须 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
-| `server/Models/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
-| `server/Database/Migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
-| `server/Resources/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
-| `server/Contracts/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
-| `server/Infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
+| `server/controller/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
+| `server/service/` | 必须 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
+| `server/model/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
+| `server/database/migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
+| `server/resource/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
+| `server/contract/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
+| `server/infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
 | `web/` | 必须 | 插件完整前端资产（含 vue 和路由贡献脚本）| - |
 
-空目录不提交。简单字典 CRUD 通常只需 `routes.php + Controllers + Services + Models + Database + web`。所有 Module 使用同一允许清单，心智模型稳定。**彻底废除原有的 `ModuleProvider.php`、`Application/` 和 `Domain/` 目录结构**。
+空目录不提交。简单字典 CRUD 通常只需 `routes.php + controller + service + model + Database + web`。所有 Module 使用同一允许清单，心智模型稳定。**彻底废除原有的 `ModuleProvider.php`、`Application/` 和 `Domain/` 目录结构**。
 
 ## 4. 宿主 Application 内部目录
 
@@ -60,10 +62,10 @@ modules/official-article/
 
 ```text
 adminapi/
-├── Controllers/
+├── controller/
 │   ├── AuthController.php     # 仅保留宿主核心功能：管理登录、Tenant 选择等
 │   └── SystemController.php
-├── Services/                  # 替代原 application/
+├── service/                  # 替代原 application/
 │   ├── Auth/
 │   └── Workbench/             # 确实需要跨 Module 聚合时才存在
 ├── middleware/
@@ -74,15 +76,15 @@ adminapi/
 └── middleware.php
 ```
 
-业务 Module（如 `article`、`payment`）的 Controller 已经全部回归 Module 自身，`adminapi/Controllers/` 将变得非常轻量，**仅保留与核心鉴权、基础宿主配置相关的功能**。
+业务 Module（如 `article`、`payment`）的 Controller 已经全部回归 Module 自身，`adminapi/controller/` 将变得非常轻量，**仅保留与核心鉴权、基础宿主配置相关的功能**。
 
-`adminapi/Services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 `modules/official-article/server/Controllers/adminapi/` 接管。Host 编排不得接管 owner Module 的业务事务。
+`adminapi/service/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 `modules/official-article/server/controller/adminapi/` 接管。Host 编排不得接管 owner Module 的业务事务。
 
 ## 5. Controller、Service、Model、Infrastructure 的职责
 
 | 位置 | 自然语言职责 | 可以做 | 不可以做 |
 | --- | --- | --- | --- |
-| Controller | 把协议变成业务调用 | 取已验证输入、调用 Services、映射响应 | 开事务、拼业务 SQL、推断 Tenant、写死鉴权 |
+| Controller | 把协议变成业务调用 | 取已验证输入、调用 service、映射响应 | 开事务、拼业务 SQL、推断 Tenant、写死鉴权 |
 | Host Service | 协调跨 Module 专属流程 | 组合只读 Query、管理 Host session、调用 owner 业务 | 拥有 Module 表/事务、复制业务规则 |
 | Module Service | 完成一个完整业务用例 | 校验业务规则；拥有完整业务结果的方法开最外层事务；调用自有 Model/公开合同 | 读全局 Request、返回 HTTP Response、接受 union Context |
 | Model | 持久化 Module 自有数据 | 查询、锁行、保存、应用 DataScope | 代替权限 middleware、跨 owner 写表 |
@@ -115,14 +117,14 @@ adminapi/
 Module 公开面越小越好：
 
 ```text
-Contracts/
+contract/
 ├── Dto/
 │   └── MemberBalanceSnapshot.php
 ├── MemberQueries.php
 └── MemberBalanceCommands.php
 ```
 
-只有真实提交后事实已经有具体消费者并另行冻结交付语义时，才在 `Contracts/` 增加对应 fact 类型；本蓝图明确
+只有真实提交后事实已经有具体消费者并另行冻结交付语义时，才在 `contract/` 增加对应 fact 类型；本蓝图明确
 排除 `Events/`、Event Bus 和 Outbox。未来如需可靠事件交付，必须以新的架构决定显式取代本合同。
 
 公开 DTO 使用标量、值对象和稳定枚举，不暴露 ThinkORM Model、PDO、Request、Response 或内部表字段。每个端口只
@@ -319,9 +321,9 @@ Attempt 新建 `SystemExecutionContext`，提交者只保留为 causation，完�
 
 ## 13. 生成器应该生成什么
 
-Module 生成器只生成最低骨架：manifest、`routes.php` 声明式模板、各端基础 Controller、`Services` 示例骨架、Model/migration/web 前端脚手架。不再生成原有的 `ModuleProvider.php`。
+Module 生成器只生成最低骨架：manifest、`routes.php` 声明式模板、各端基础 Controller、`service` 示例骨架、Model/migration/web 前端脚手架。不再生成原有的 `ModuleProvider.php`。
 
-目标生成器必须遵循新版架构规范（即 Controllers 与路由全栈回到 Module 目录中，但彻底去除鉴权决策逻辑）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑始终收敛在 `Services/` 目录下。真实需求出现后再增加其它。
+目标生成器必须遵循新版架构规范（即 controller 与路由全栈回到 Module 目录中，但彻底去除鉴权决策逻辑）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑始终收敛在 `service/` 目录下。真实需求出现后再增加其它。
 
 ## 14. 生命周期、升级和发布稳定面
 

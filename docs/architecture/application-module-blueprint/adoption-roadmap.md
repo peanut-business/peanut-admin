@@ -23,7 +23,7 @@ candidate commit/tree、未通过 P0-E、未 Tag、未 Release、未部署，也
 | `adminapi`、`api`、`platform` 目录和战略受众 | 升格为真正 Application | 不复制 Module 业务规则 |
 | `ExecutionContextStore` 的 scope/`finally` 机制 | 保留生命周期机制 | 退出 union Context、任意 attributes 和 actor 混用 |
 | Module `module.json`、registry、lock、权限/菜单和迁移声明 | 保留事实源 | manifest 最终删除 `backend.routes`；migration 只改 `owned_tables` |
-| Module `Application/Contracts/Model/Infrastructure` | 按需保留 | 不强制空 Domain/Repository/Event 层 |
+| Module `Application/contract/Model/Infrastructure` | 按需保留 | 不强制空 Domain/Repository/Event 层 |
 | 容器 binding 与构造器注入 | 收口到唯一 composition root | provider 只贡献启动期 binding |
 | Core Task Job/Attempt/lease/fencing、幂等、Audit、Outbound HTTP 基础 | 复用并校准 | 不把基础机制当成共享受众语义 |
 | 服务登记、资源登记、文档治理和发布控制 | 保留 | 不替代 Module、Schema、Release 或 Runtime 事实源 |

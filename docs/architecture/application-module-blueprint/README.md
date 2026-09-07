@@ -53,7 +53,7 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 11. Job 是提交意图，Attempt 只在成功 claim 时创建；Consumer、Provider、System 都不得冒充 Admin。
 12. 关键 `AuditEvent` 与业务结果原子提交；入口日志和诊断束只是可丢失、可重建的脱敏投影。
 13. 一个部署进程只有一份 Composer/npm 依赖图和 lock；冲突在安装或构建期拒绝，不加载第二份 vendor。
-14. 本蓝图明确排除通用 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层（彻底废除 `application/` 目录，收敛为 `Services/`）；未来真实需求只能通过新的架构决定显式取代本合同。
+14. 本蓝图明确排除通用 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层（彻底废除 `application/` 目录，收敛为 `service/`）；未来真实需求只能通过新的架构决定显式取代本合同。
 15. 迁移按业务域硬切，最终验收将全面转向基于 `modules/*/server/routes.php` 的标准模块路由注册机制，废弃原有散落各处的零散入口。
 
 ## 目标知识图谱
@@ -100,16 +100,17 @@ flowchart TB
 | `app/adminapi` | 管理员怎样安全访问系统？ | 管理会话、Tenant 选择、RBAC、数据范围、仅含宿主核心 Controller（如登录/系统配置） |
 | `app/api` | 会员或匿名用户怎样访问业务？ | 会员会话、消费端 Tenant 解析、限流中间件 |
 | `app/platform` | 平台运营者怎样管理实例和 Tenant？ | Platform 身份、平台权限、跨 Tenant 控制面操作 |
-| `modules/.../article` | Article 业务本身怎样工作？ | 文章前后端全栈（Controller/Services/Models/web）、声明式路由、自有表、迁移 |
+| `modules/.../article` | Article 业务本身怎样工作？ | 文章前后端全栈（Controller/service/model/web）、声明式路由、自有表、迁移 |
 | `app/common` | 是否真的是所有入口都通用？ | 无业务 owner 的底层适配、值对象和少量共享合同 |
 | `app/command` / worker | 非 HTTP 操作怎样进入业务？ | 解析命令/Job、建立 Context、调用 Module，不复制业务规则 |
 
 ## 文档导航
 
-1. [主流脚手架源码研究](reference-research.md)：LikeAdmin、LikeAdmin SaaS、MineAdmin、BuildAdmin、Hyperf 的真实组织方式、优点和代价。
-2. [目标架构与完整执行流程](target-architecture.md)：Application、Module、HTTP、回调、Job、WS、权限和可观测性如何协作。
-3. [目录、调用与依赖规范](module-conventions.md)：每个目录放什么、跨 Module 怎么调、何时用 static/public/private、第三方包冲突怎么办。
-4. [现状差距与一次收敛路线](adoption-roadmap.md)：暂态边界、最小工作包、依赖、最低验证和停止线如何收敛。
+1. [核心代码规范与认知模型统一指南](coding-standards.md)：解决历史代码中的命名、异常、动词与映射冲突，确立新版极简心智模型。
+2. [主流脚手架源码研究](reference-research.md)：LikeAdmin、LikeAdmin SaaS、MineAdmin、BuildAdmin、Hyperf 的真实组织方式、优点和代价。
+3. [目标架构与完整执行流程](target-architecture.md)：Application、Module、HTTP、回调、Job、WS、权限和可观测性如何协作。
+4. [目录、调用与依赖规范](module-conventions.md)：每个目录放什么、跨 Module 怎么调、何时用 static/public/private、第三方包冲突怎么办。
+5. [现状差距与一次收敛路线](adoption-roadmap.md)：暂态边界、最小工作包、依赖、最低验证和停止线如何收敛。
 
 ## 当前事实与目标的边界
 
@@ -135,7 +136,7 @@ Admin、API、Platform、Tenant 和 Module 路由，Module 仍包含 HTTP Contro
 
 1. 代码是否只负责某种入口的身份、协议或响应？放对应 Application。
 2. 代码是否表达某项具体业务（包含其 API、前后端页面与业务规则）？放对应 Module。
-3. 代码是否协调多个 Module 完成一个跨模块专属流程？放调用方 Application 或公共设施的 `Services/`，但不得接管 owner Module 的业务事务。
+3. 代码是否协调多个 Module 完成一个跨模块专属流程？放调用方 Application 或公共设施的 `service/`，但不得接管 owner Module 的业务事务。
 4. 代码是否被多个入口复用但仍有产品业务含义？明确一个 owner Module，并为不同受众提供不同窄端口和 DTO。
 5. 代码是否被多个 Module 复用但仍有产品业务含义？明确一个 owner Module，其他模块调用其公开能力。
 6. 只有完全不含产品语义、确实被多处复用的能力，才进入 `common` 或 Core。
