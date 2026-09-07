@@ -57,7 +57,7 @@ Peanut Admin 的目标是让新应用可安装、可诊断、可备份、可恢�
 | Tenant 安全生成器 | 生成 Commands、append-only migration 指南和 A/B Tenant 安全骨架 | `module:create` | 不新增第二 Plugin Runtime；伪造 ID、撤权、停用和失败 migration 都要测试 |
 | 配置转移 | 导出 schema 化配置包，先 dry-run，再按冲突策略和秘密重绑定导入 | ImportExport Module | 与数据库备份分离；不导出密码、token、Cookie 或密钥 |
 | Core 公共合同 | 提供身份、Context、RBAC、Module、Audit、Settings 和 Ops 原语 | 公开 PHP/Web 包 | Application 只消费公开导出，不复制包源码或 deep import |
-| Host / contribution | 装配页面、路由、Provider、任务和外部渠道 | Application/Module contribution | 数据和 Runtime 仍只有一个 owner；扩展不能直接写其他 Module 的表 |
+| Host / contribution | 装配页面、路由、Provider、任务和外部渠道 | service/module contribution | 数据和 Runtime 仍只有一个 owner；扩展不能直接写其他 Module 的表 |
 
 ## 阅读路径
 

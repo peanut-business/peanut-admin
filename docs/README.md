@@ -13,7 +13,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | Compare scaffold Core and generated-application boundaries | [后台脚手架的 Core、公共模块与生成应用边界](reference/scaffold-core-boundary-comparison.md) | fixed official-source comparison and bounded recommendations; not evidence that Peanut has adopted another scaffold's design |
 | Understand the target backend organization | [Application and Module architecture blueprint](architecture/application-module-blueprint/README.md) | accepted target and migration input; explicitly not proof that the Runtime has migrated |
 | Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
-| Understand Module development | [Module development guide](module-development-guide.md) | current guide |
+| Understand Module development | [新版模块代码规范与认知模型统一指南](architecture/application-module-blueprint/coding-standards.md) | latest unified coding standards; replaces the deprecated legacy module-development-guide |
 | Follow the public consumer path | [Create applications and deliver Modules](../docs-site/guide/application-module-lifecycle.md), [command reference](../docs-site/reference.md) and [support guide](../docs-site/support.md) | public task projection; runtime and release facts remain upstream |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |

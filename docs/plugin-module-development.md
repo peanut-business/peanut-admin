@@ -1,3 +1,5 @@
+> 🚨 **已废弃 (DEPRECATED)**：本文档描述的模块结构（如 Application、Domain、分离的 Controller）已被彻底废弃。关于最新的“全栈自闭环”与“全小写命名规范”，请统一参考 [新版模块架构蓝图](architecture/application-module-blueprint/README.md) 与 [代码心智规范](architecture/application-module-blueprint/coding-standards.md)。
+
 # 用 Module 开发独立业务
 
 > 本文是 Peanut Admin Module/Plugin 的详细开发参考。先读“5 分钟速读”，再按纵向切片
