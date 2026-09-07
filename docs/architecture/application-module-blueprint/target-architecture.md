@@ -46,34 +46,28 @@ provider 和路由与首个真实 callback 同一纵向切片创建；在此之�
 ## 3. 目标目录
 
 ```text
-server/app/
-├── adminapi/                 # ThinkPHP Application：管理后台
-│   ├── controller/           # HTTP 输入/输出适配，按业务名分组
-│   ├── application/          # 仅跨 Module 或管理会话编排
-│   ├── middleware/           # 管理身份、Admin Tenant、RBAC、审计
-│   ├── validate/             # 管理端请求白名单与格式
-│   ├── route/                # 只登记 adminapi 路由
-│   ├── config/
-│   ├── provider.php
-│   └── middleware.php
-├── api/                      # ThinkPHP Application：会员/匿名消费端
-│   ├── controller/
-│   ├── application/
-│   ├── middleware/
-│   ├── validate/
-│   ├── route/
-│   ├── config/
-│   ├── provider.php
-│   └── middleware.php
-├── platform/                 # ThinkPHP Application：平台控制面
-├── integrationapi/           # 首个真实 callback 到来时创建：外部 Provider 入口
-├── installation/             # ThinkPHP Application：一次性安装入口
-├── command/                  # Console/Worker adapter
-├── Modules/                  # 业务 owner，结构见 module-conventions.md
-└── common/                   # 真正跨入口且无业务 owner 的少量共享能力
+server/
+├── app/
+│   ├── adminapi/                 # ThinkPHP Application：管理后台（宿主核心入口）
+│   │   ├── Controllers/          # 仅包含宿主核心控制（如登录、系统配置等）
+│   │   ├── Services/             # 仅跨 Module 或管理会话编排
+│   │   ├── middleware/           # 管理身份、Admin Tenant、RBAC、审计
+│   │   ├── validate/             # 管理端请求白名单与格式
+│   │   ├── route/                # 只登记 adminapi 核心路由，并通过自动扫描加载模块内 admin 路由组
+│   │   ├── config/
+│   │   ├── provider.php
+│   │   └── middleware.php
+│   ├── api/                      # ThinkPHP Application：会员/匿名消费端（宿主核心入口）
+│   ├── platform/                 # ThinkPHP Application：平台控制面
+│   ├── integrationapi/           # 首个真实 callback 到来时创建：外部 Provider 入口
+│   ├── installation/             # ThinkPHP Application：一次性安装入口
+│   ├── command/                  # Console/Worker adapter
+│   └── common/                   # 真正跨入口且无业务 owner 的少量共享能力
+└── modules/                      # 所有插件化业务模块
+    └── official-article/         # 独立打包分发的业务单元（全栈自闭环）
 ```
 
-目录不要求为空也提前创建。目标规则是“允许的归属固定”，当某个 Application 首次需要 `application/` 或
+目录不要求为空也提前创建。目标规则是“允许的归属固定”，当某个 Application 首次需要 `Services/` 或
 `validate/` 时再建立；已经存在的目录按最终命名收敛。
 
 ### 3.1 唯一 composition root 与顶层执行单元

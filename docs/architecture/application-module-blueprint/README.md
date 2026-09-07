@@ -37,10 +37,8 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 1. `server/app/adminapi`、`api`、`platform` 是独立 Application，不是 Module。
 2. Application 拥有最终路由、Controller、输入验证、身份链、Tenant 获取规则、入口授权和协议错误映射。
 3. Module 按业务、数据 owner 和业务不变量划分，拥有用例、自有表、迁移、菜单/权限声明和公开能力。
-4. “共享 Module”只共享 owner、领域规则、Repository/表和必要不变量；Admin、Consumer、Platform、Provider、
-   System 使用不同窄端口、强类型 Context、授权、DataScope、DTO 和结果映射。禁止万能 CRUD、`actorType` flag、
-   union Context 和任意 `attributes`。
-5. Module 不拥有最终 HTTP Controller 或路由；同一 owner 可以被多个 Application、CLI、Job 或未来 WS Host 调用。
+4. 鉴权、Tenant 提取、限流、安全边界检查，全部由宿主 Application 在路由挂载时通过中间件（Middleware 和 Context Pipeline）强制注入；不能向后流转给 union Context 和任意 `attributes`。
+5. Module 包含全栈自闭环的 HTTP Controller 和声明式路由（`routes.php`），但**绝不自带鉴权逻辑**；安全防腐层始终由宿主控制。同一 owner 依然可以被其他 Module、CLI 或 Job 调用。
 6. 每个顶层 HTTP 请求、CLI 操作、Worker Attempt、Provider callback 或未来 WS message 恰好有一个强类型权威
    Context；tenant-scoped 端口恰好有一个 current Tenant，认证、instance-public 与 Platform Context 明确
    tenantless。`TargetTenantId` 只是授权后的 Command 目标。内部调用不得重建不同 actor、audience 或 Tenant 的
@@ -55,10 +53,8 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 11. Job 是提交意图，Attempt 只在成功 claim 时创建；Consumer、Provider、System 都不得冒充 Admin。
 12. 关键 `AuditEvent` 与业务结果原子提交；入口日志和诊断束只是可丢失、可重建的脱敏投影。
 13. 一个部署进程只有一份 Composer/npm 依赖图和 lock；冲突在安装或构建期拒绝，不加载第二份 vendor。
-14. 本蓝图明确排除通用 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层；未来真实需求
-    只能通过新的架构决定显式取代本合同，不能在本蓝图实施中顺带加入。
-15. 迁移按业务域硬切且任何 endpoint 不得双路由；最后一个域迁完后才关闭暂态根业务装载，最终验收清除
-    Module HTTP、`backend.routes`、手工 Provider 定位和旧生成器模板。
+14. 本蓝图明确排除通用 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层（彻底废除 `application/` 目录，收敛为 `Services/`）；未来真实需求只能通过新的架构决定显式取代本合同。
+15. 迁移按业务域硬切，最终验收将全面转向基于 `modules/*/server/routes.php` 的标准模块路由注册机制，废弃原有散落各处的零散入口。
 
 ## 目标知识图谱
 
@@ -101,10 +97,10 @@ flowchart TB
 
 | 看到的路径 | 先问的问题 | 它应该包含什么 |
 | --- | --- | --- |
-| `app/adminapi` | 管理员怎样安全访问系统？ | 管理会话、Tenant 选择、RBAC、数据范围、管理端 Controller |
-| `app/api` | 会员或匿名用户怎样访问业务？ | 会员会话、公开/会员 API、消费端 Tenant 解析、限流 |
+| `app/adminapi` | 管理员怎样安全访问系统？ | 管理会话、Tenant 选择、RBAC、数据范围、仅含宿主核心 Controller（如登录/系统配置） |
+| `app/api` | 会员或匿名用户怎样访问业务？ | 会员会话、消费端 Tenant 解析、限流中间件 |
 | `app/platform` | 平台运营者怎样管理实例和 Tenant？ | Platform 身份、平台权限、跨 Tenant 控制面操作 |
-| `app/Modules/.../Article` | Article 业务本身怎样工作？ | 文章用例、规则、自有表、迁移、公开查询/命令 |
+| `modules/.../article` | Article 业务本身怎样工作？ | 文章前后端全栈（Controller/Services/Models/web）、声明式路由、自有表、迁移 |
 | `app/common` | 是否真的是所有入口都通用？ | 无业务 owner 的底层适配、值对象和少量共享合同 |
 | `app/command` / worker | 非 HTTP 操作怎样进入业务？ | 解析命令/Job、建立 Context、调用 Module，不复制业务规则 |
 
@@ -131,18 +127,15 @@ Admin、API、Platform、Tenant 和 Module 路由，Module 仍包含 HTTP Contro
 `pending qualification`：没有最终 candidate commit/tree、没有 P0-E 通过、没有 Tag、GitHub Release 或部署；
 它不能作为本架构已交付、已资格或已采用的证据。
 
-旧的 `optimized-module-architecture-plan.md` 和 `module-architecture-refinement-appendix.md` 把 Module 同时当成
-业务边界和 HTTP Host，已经不能继续作为源码组织目标；其中包完整性、生命周期和 catalog 的有效设计仍由
-`consumer-module-lifecycle-contract.md` 及现行命令事实承接。
+历史文档曾在此处产生分歧，本蓝图现已正式确立“现代模块化 + 传统组件风格”。我们完全拥抱 `optimized-module-architecture-plan.md` 和 `module-architecture-refinement-appendix.md` 中关于 Module 全栈物理打包的设计；包完整性、生命周期和 catalog 的有效设计继续由 `consumer-module-lifecycle-contract.md` 及现行命令事实承接。
 
 ## 判断新代码放在哪里
 
 只按下面的顺序判断，不需要背更多概念：
 
 1. 代码是否只负责某种入口的身份、协议或响应？放对应 Application。
-2. 代码是否表达某项业务规则或修改某个业务 owner 的数据？放对应 Module。
-3. 代码是否协调多个 Module 完成一个入口专属流程？放调用方 Application 的 `application/`，但不得接管 owner
-   Module 的业务事务。
+2. 代码是否表达某项具体业务（包含其 API、前后端页面与业务规则）？放对应 Module。
+3. 代码是否协调多个 Module 完成一个跨模块专属流程？放调用方 Application 或公共设施的 `Services/`，但不得接管 owner Module 的业务事务。
 4. 代码是否被多个入口复用但仍有产品业务含义？明确一个 owner Module，并为不同受众提供不同窄端口和 DTO。
 5. 代码是否被多个 Module 复用但仍有产品业务含义？明确一个 owner Module，其他模块调用其公开能力。
 6. 只有完全不含产品语义、确实被多处复用的能力，才进入 `common` 或 Core。

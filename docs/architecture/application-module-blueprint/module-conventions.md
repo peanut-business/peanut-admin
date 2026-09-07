@@ -15,61 +15,57 @@ Module 只回答三个问题：
 ## 2. 标准 Module 目录
 
 ```text
-server/app/Modules/Official/Article/
-├── module.json                 # 唯一身份、依赖、资源、公开合同和数据 owner 声明；无 routes
-├── ModuleProvider.php          # 唯一 composition root 的启动期 binding 贡献者
-├── Application/               # 可执行用例：Command、Query、事务边界
-├── Contracts/                 # 只放真正对外公开的 PHP 能力/DTO/已冻结 fact
-├── Model/                     # Module 自有 ThinkORM Model
-├── Database/
-│   └── Migrations/            # Module 自有 append-only migration
-├── Resources/                 # permissions、menus、settings 等声明
-├── Domain/                    # 可选：复杂状态机、值对象、策略
-└── Infrastructure/            # 可选：外部 Provider、复杂 persistence adapter
+modules/official-article/
+├── module.json                 # 唯一身份、依赖、资源、公开合同和数据 owner 声明
+├── server/
+│   ├── composer.json           # PSR-4 声明
+│   ├── routes.php              # 声明式路由映射（不含鉴权逻辑）
+│   ├── Controllers/            # Module 各端口 Controller
+│   │   ├── Admin/
+│   │   └── Consumer/
+│   ├── Services/               # 业务逻辑、用例、事务边界（替代原 Application）
+│   ├── Contracts/              # 只放真正对外公开的 PHP 能力/DTO/已冻结 fact
+│   ├── Models/                 # Module 自有 ThinkORM Model
+│   ├── Database/Migrations/    # Module 自有 append-only migration
+│   ├── Resources/              # permissions、menus、settings 等声明
+│   └── Infrastructure/         # 可选：外部 Provider 适配
+└── web/                        # 前端资产
+    ├── package.json
+    ├── contribution.ts         # 动态路由扫描入口
+    └── views/
 ```
 
-目标态中不再出现，`module.json` 也最终删除 `backend.routes`：
-
-```text
-Http/Controller/
-Http/routes.php
-Validation/
-```
-
-Controller、route 和请求验证移动到消费该能力的 Application。例如 Article 的管理接口放
-`app/adminapi/controller/article`，公开接口放 `app/api/controller/article`，两者调用同一个 Article Module。
+目标态中，Module 是一个全栈自闭环的物理目录。为了支持插件市场的独立打包与分发，Controller 和路由表（`routes.php`）重新回到 Module 目录内部，但**严格禁止在路由表中直接写死租户上下文或安全中间件**；这部分安全防腐层由宿主 Application 在挂载时动态注入。同时，全面废除 `Application` 和 `Domain` 这种 DDD 形式主义目录，收敛为 `Services`。
 
 ## 3. 哪些目录必须有，哪些按需增加
 
 | 目录/文件 | 默认 | 放什么 | 不放什么 |
 | --- | --- | --- | --- |
 | `module.json` | 必须 | key、version、依赖、权限资源、公开 Contract、自有表 | Runtime 状态、`backend.routes`、重复路由表 |
-| `ModuleProvider.php` | 必须 | 向唯一 root 贡献容器 binding | 建第二容器、请求期 accessor、`new` 当前用户/Tenant、业务流程、HTTP route |
-| `Application/` | 必须 | 有业务意义的 Query/Command，用例级事务 | Request/Response、万能 helper |
-| `Model/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
-| `Database/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
-| `Resources/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
-| `Contracts/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
-| `Domain/` | 有复杂不变量时增加 | 状态机、实体、值对象、策略 | 简单 CRUD 的空壳实体 |
-| `Infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client、Repository 实现 | 业务规则 |
+| `server/routes.php` | 必须 | 纯声明式路由表，划分 admin/consumer 组 | 中间件调用、权限判断逻辑 |
+| `server/Controllers/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
+| `server/Services/` | 必须 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
+| `server/Models/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
+| `server/Database/Migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
+| `server/Resources/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
+| `server/Contracts/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
+| `server/Infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
+| `web/` | 必须 | 插件完整前端资产（含 vue 和路由贡献脚本）| - |
 
-空目录不提交。简单字典 CRUD 通常只需 `Application + Model + Database + Resources`；支付、退款、任务这类复杂
-业务再增加 Domain 和 Infrastructure。所有 Module 使用同一允许清单，因此心智模型稳定，但不为目录对称制造
-空代码。
+空目录不提交。简单字典 CRUD 通常只需 `routes.php + Controllers + Services + Models + Database + web`。所有 Module 使用同一允许清单，心智模型稳定。**彻底废除原有的 `ModuleProvider.php`、`Application/` 和 `Domain/` 目录结构**。
 
-## 4. Application 内部目录
+## 4. 宿主 Application 内部目录
 
-以 `adminapi` 为例：
+以宿主 `adminapi` 为例：
 
 ```text
 adminapi/
-├── controller/
-│   ├── auth/
-│   ├── article/
-│   └── payment/
-├── application/
-│   ├── auth/                  # 管理登录、Tenant 选择等 Host 用例
-│   └── workbench/             # 确实需要跨 Module 聚合时才存在
+├── Controllers/
+│   ├── AuthController.php     # 仅保留宿主核心功能：管理登录、Tenant 选择等
+│   └── SystemController.php
+├── Services/                  # 替代原 application/
+│   ├── Auth/
+│   └── Workbench/             # 确实需要跨 Module 聚合时才存在
 ├── middleware/
 ├── validate/
 ├── route/
@@ -78,29 +74,21 @@ adminapi/
 └── middleware.php
 ```
 
-同一业务名在 Controller 下出现不是业务复制。例如：
+业务 Module（如 `article`、`payment`）的 Controller 已经全部回归 Module 自身，`adminapi/Controllers/` 将变得非常轻量，**仅保留与核心鉴权、基础宿主配置相关的功能**。
 
-- `adminapi/controller/article/ArticleController` 负责管理端输入、权限元数据和输出；
-- `api/controller/article/ArticleController` 负责公开/会员端输入和输出；
-- 两者分别调用 Article owner 的 Admin/Consumer 窄端口，底层业务规则、Repository 和表只有一份。
+`adminapi/Services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 `modules/official-article/server/Controllers/Admin/` 接管。Host 编排不得接管 owner Module 的业务事务。
 
-`adminapi/application/` 不是所有 Controller 的强制中转层。只有登录/Tenant session 属于 Host 本身，或工作台需要
-协调多个 Module 时才增加 Host Application Service；单一 Article CRUD 可以由 Controller 直接调用匹配 audience
-的 Module 端口，避免无意义代理。Host 编排不得接管 owner Module 的业务事务。
-
-## 5. Controller、Application Service、Domain、Model 的职责
+## 5. Controller、Service、Model、Infrastructure 的职责
 
 | 位置 | 自然语言职责 | 可以做 | 不可以做 |
 | --- | --- | --- | --- |
-| Controller | 把协议变成用例调用 | 取已验证输入、调用服务、映射响应 | 开事务、拼业务 SQL、推断 Tenant、捕获所有异常 |
-| Host Application Service | 协调一个入口专属流程 | 组合只读 Query、管理 Host session、调用 owner Command | 拥有 Module 表/事务、复制业务状态机 |
-| Module Application | 完成一个完整业务用例 | 校验业务规则；拥有完整业务结果的 Command 开最外层事务；调用自有 Model/公开合同 | 读全局 Request、返回 HTTP Response、接受 union Context |
-| Domain | 表达复杂且可独立理解的规则 | 状态转换、金额/库存规则、值对象 | 数据库/HTTP/框架调用 |
-| Model/Repository | 持久化 Module 自有数据 | 查询、锁行、保存、应用 DataScope | 代替权限 middleware、跨 owner 写表 |
-| Infrastructure | 对接技术细节 | SDK、外部 HTTP、文件、复杂 repository | 决定业务成功状态 |
+| Controller | 把协议变成业务调用 | 取已验证输入、调用 Services、映射响应 | 开事务、拼业务 SQL、推断 Tenant、写死鉴权 |
+| Host Service | 协调跨 Module 专属流程 | 组合只读 Query、管理 Host session、调用 owner 业务 | 拥有 Module 表/事务、复制业务规则 |
+| Module Service | 完成一个完整业务用例 | 校验业务规则；拥有完整业务结果的方法开最外层事务；调用自有 Model/公开合同 | 读全局 Request、返回 HTTP Response、接受 union Context |
+| Model | 持久化 Module 自有数据 | 查询、锁行、保存、应用 DataScope | 代替权限 middleware、跨 owner 写表 |
+| Infrastructure | 对接技术细节 | SDK、外部 HTTP、文件、复杂持久化 | 决定业务成功状态 |
 
-一句话判断：Controller 说“请求长什么样”，Application 说“一次业务要完整完成什么”，Domain 说“什么状态才合法”，
-Model/Infrastructure 说“数据和外部系统怎样读写”。
+一句话判断：Controller 说“请求长什么样”，Service 说“一次业务要完整完成什么”，Model/Infrastructure 说“数据和外部系统怎样读写”。彻底抛弃 Application/Domain 这种过重的心智负担。
 
 ## 6. 跨 Module 调用
 
@@ -331,12 +319,9 @@ Attempt 新建 `SystemExecutionContext`，提交者只保留为 causation，完�
 
 ## 13. 生成器应该生成什么
 
-Module 生成器只生成最低骨架：manifest、Provider、一个示例 Use Case、Model/migration/resource 的按需选项。Application
-Controller 生成器根据 audience 选择固定 middleware 链和请求模板。
+Module 生成器只生成最低骨架：manifest、`routes.php` 声明式模板、各端基础 Controller、`Services` 示例骨架、Model/migration/web 前端脚手架。不再生成原有的 `ModuleProvider.php`。
 
-目标生成器必须删除当前 `Http/routes.php`、`Http/Controller`、`Validation` 输出、选项、stub 和位置型断言；不得以
-兼容开关继续生成旧结构。它也不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 或测试
-全家桶。真实需求出现后再增加；目录允许清单和静态检查负责拒绝旧位置与 manifest `backend.routes`。
+目标生成器必须遵循新版架构规范（即 Controllers 与路由全栈回到 Module 目录中，但彻底去除鉴权决策逻辑）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑始终收敛在 `Services/` 目录下。真实需求出现后再增加其它。
 
 ## 14. 生命周期、升级和发布稳定面
 
