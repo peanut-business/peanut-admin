@@ -21,8 +21,8 @@ modules/official-article/
 │   ├── composer.json           # PSR-4 声明
 │   ├── routes.php              # 声明式路由映射（不含鉴权逻辑）
 │   ├── Controllers/            # Module 各端口 Controller
-│   │   ├── Admin/
-│   │   └── Consumer/
+│   │   ├── adminapi/
+│   │   └── api/
 │   ├── Services/               # 业务逻辑、用例、事务边界（替代原 Application）
 │   ├── Contracts/              # 只放真正对外公开的 PHP 能力/DTO/已冻结 fact
 │   ├── Models/                 # Module 自有 ThinkORM Model
@@ -76,7 +76,7 @@ adminapi/
 
 业务 Module（如 `article`、`payment`）的 Controller 已经全部回归 Module 自身，`adminapi/Controllers/` 将变得非常轻量，**仅保留与核心鉴权、基础宿主配置相关的功能**。
 
-`adminapi/Services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 `modules/official-article/server/Controllers/Admin/` 接管。Host 编排不得接管 owner Module 的业务事务。
+`adminapi/Services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 `modules/official-article/server/Controllers/adminapi/` 接管。Host 编排不得接管 owner Module 的业务事务。
 
 ## 5. Controller、Service、Model、Infrastructure 的职责
 
