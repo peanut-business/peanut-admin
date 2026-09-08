@@ -10,18 +10,15 @@ Peanut Admin 提供可复用后台底座，独立应用拥有自己的业务源�
 | Core 依赖 | Composer/npm manifest 与 lock 中的精确包身份 | 应用实际安装的 PHP/Web 公共底座版本 |
 | Module 版本 | Module manifest、不可变 archive SHA-256 与签名、安装账本 | 独立业务模块的内容、依赖、migration 与生命周期 |
 
-从下一次正式发布窗口起，Peanut Admin 采用统一基础发行号：`scaffold_template`、
-`peanut-admin/core` 和 `@peanut-admin/admin` 使用同一个版本号，预发布后缀也必须一致；应用自己的
-`product_release` 仍独立递增。统一号码只表达三项基础制品来自同一发行列车，不能代替 scaffold
-manifest、Composer/npm lock、包 source/reference 和兼容证据。共同版本号与预发布等级、资格结果
-一起表达成熟度，不能只改号码把现有 alpha 说成稳定版。第三方或私有 Module 仍保留自身版本、
-archive SHA-256 与签名，不能借用基础发行号。
+Peanut Admin 应用 Release 与 scaffold 使用同一个稳定发行号；`peanut-admin/core` 和
+`@peanut-admin/admin` 保持自己的 SemVer/预发布历史，由应用 Composer/npm lock 固定精确版本、来源
+reference 与完整性摘要。三者可以进入同一发行列车，但不得为追求数字相同而重发内容不变的 Core，
+也不得只改号码把 alpha 冒充稳定版。第三方或私有 Module 同样保留自身版本、archive SHA-256 与签名。
 
-这是后续正式发布政策，尚未改写历史身份：当前正式 scaffold 是 `3.0.13`，应用仍锁定 Core
-`0.1.0-alpha.12`。下一发行列车必须先以目标统一版本发布并验证 PHP/Web Core 包，再由应用更新
-两份 lock、完成消费检查，最后用同号 scaffold 完成资格并发布。任一步失败时，整套发行列车都
-不能标记为 ready；即使 Core 内容未变，也要发布同号不可变包，因此会增加 Registry、兼容核对和
-下游锁更新成本。不得增加一个不对应真实包版本的别名来掩盖未对齐身份。
+当前正式应用/scaffold 是 `3.0.13`；新的 `3.0.14` 候选采用已经独立资格并发布的 Core
+`0.1.0-alpha.13`。发行列车必须先验证 Core 公共身份可消费，再更新应用 lock、生成同号 scaffold，
+最后在应用固定候选完成资格与发布。任一步失败时只阻塞依赖它的下游状态，不创建不对应真实包版本的
+别名。此前“Core 必须与 scaffold 数字同号”的文档要求与现行独立版本事实冲突，现已撤销。
 
 Standalone 与 Multi-tenant 安装包来自同一个 Peanut Admin Release，是两种确定性 Edition 构建物，
 不是两套人工源码。对应的签名升级包只提供同 Edition 的 scaffold 采用输入，也不是完整应用

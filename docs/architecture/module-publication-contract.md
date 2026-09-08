@@ -142,8 +142,8 @@ Standalone 部署 owner 可另行执行 `php think tenant-module:enable-locked-p
 - 当前全官方 Module 打包合同改为从 `plugins.lock` 自动发现 official keys，Rich Text 以及未来新增的
   bundled official Module 不再能被硬编码清单漏掉。
 
-本次在固定源码提交 `23c6c31ff4468fb2a5c389f38092adb3ffd0ed24` 上运行 `module:check`，八项检查
-全部通过；随后生成未签名本地候选 `/private/tmp/official.rich-text-1.0.0-unsigned.tar`，SHA-256 为
+本次在固定源码提交 `882182e7ead6af6b5eab4d5a4a89f94747acdbb7` 上运行 `module:check`，八项检查
+全部通过；随后生成并复验未签名本地候选，SHA-256 为
 `9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`。这使独立包通道达到
 **package-candidate（local/unsigned）**，不改变 bundled 通道状态，也不满足 qualified 或 published。
 

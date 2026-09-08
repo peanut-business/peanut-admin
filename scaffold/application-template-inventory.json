@@ -1,6 +1,6 @@
 {
     "schema_version": 2,
-    "template_version": "3.0.13",
+    "template_version": "3.0.14",
     "protocol": "peanut.create-app-inventory.v2",
     "application": {
         "version": "0.1.0"
@@ -271,7 +271,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f8a991f6ba4789ddeb016b37497a292aa33af503a07e7deb8c5e50f812dfbf31"
+            "source_sha256": "7777cf261bca41c577168e61e1bc7178fb00f3a2e80db216f160e42e7e2215d1"
         },
         {
             "path": "SECURITY.md",
@@ -299,7 +299,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6e31c61745040c3f293b91309167b3d447d47e9873d7fcf495212f7dbd1b9d21"
+            "source_sha256": "562f7c2c95c0f68ca2651f4c29f405a9be453fcc8b32623037b06c7014dd1582"
         },
         {
             "path": "UPGRADE_TRUSTED_KEYS.json",
@@ -3871,7 +3871,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "42f162f10b39113abf0bd397a4213d61275ae27cc61e87464db09a440e52bff3"
+            "source_sha256": "84ce908f0e7f15af0ba9c88a04aad4a13f453c50d92abeec8c8cb758d4c65183"
         },
         {
             "path": "pc/package.json",
@@ -3884,7 +3884,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b542eae5630e50f300051d7f54a6a2a66c538addf92ba994ace2bfae8bcb2220"
+            "source_sha256": "344918a5e37befbca8925fbeb634e2eb0d18ccb9233c38fdd6d4efe78ffab58a"
         },
         {
             "path": "pc/pages/account/security.vue",
@@ -4258,7 +4258,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "0e3385cd1604d72826ef4746d7e713b5c2d1ba058b03a34f0b681760974742dd"
+            "source_sha256": "7aad54b4d2754f67f4db55aa2976f21321045a3f04b98326f3af11932c21b70a"
         },
         {
             "path": "platform/package.json",
@@ -4270,7 +4270,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "2782d3c3953eb6b459bc699502e06492397dfee530d202696dcac5de36ad5936"
+            "source_sha256": "95687fe430870d92f806f66aee4539c9f09ca34f299c8772666ce7b18ca6e46f"
         },
         {
             "path": "platform/src/App.vue",
@@ -5465,7 +5465,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7f3678a16aba4adde813ba6c2c0c6351a9c018e4a236fd063b4588ad40535517"
+            "source_sha256": "1a40965617b73b821b7df21998f107aabe737b7a5ad630c02e62ed43661c4480"
         },
         {
             "path": "server/app/BaseController.php",
@@ -14089,7 +14089,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f2ca2e4d741d66e4bb477088bc2f152a97fa21baff5eb9b6e85fd600fcbd5cd1"
+            "source_sha256": "7ffc7493438a1d8dce24822125697d2be7a42118c2477f74055468979673e9b2"
         },
         {
             "path": "server/app/common/service/storage/QcloudStorageClientFactory.php",
@@ -14104,6 +14104,20 @@
                 "full"
             ],
             "source_sha256": "b8e1d2da5216b4e4afe6523ef8435adb8ceaa3c98f98a7dc73dd4bc6447e012b"
+        },
+        {
+            "path": "server/app/common/service/storage/QiniuStorageHttpTransport.php",
+            "target": "server/app/common/service/storage/QiniuStorageHttpTransport.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "cd4e2348debd8097604a492efeddc474e4da7001c1c786a15193fce70fad359b"
         },
         {
             "path": "server/app/common/service/storage/StorageAccess.php",
@@ -14162,20 +14176,6 @@
             "source_sha256": "c7b477c344f115d929c622e96ac6e17f0acde63458f32510ccc9fb193b4a2e90"
         },
         {
-            "path": "server/app/common/service/storage/StorageDriver.php",
-            "target": "server/app/common/service/storage/StorageDriver.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "398821075d93849fe1fd59b42c1228b510f554be8f8525108239c982047f731e"
-        },
-        {
             "path": "server/app/common/service/storage/StorageDriverFactory.php",
             "target": "server/app/common/service/storage/StorageDriverFactory.php",
             "classification": "app-owned",
@@ -14187,7 +14187,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "83a6d7ae79bb18af0b8e0c2daab7c2e30d53fba942654a4f1e0ce03c4703e515"
+            "source_sha256": "8be2a40868171e852f3984456176df5414e1954b079991dfb5302caff6d35047"
         },
         {
             "path": "server/app/common/service/storage/StoragePath.php",
@@ -14201,7 +14201,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3286e975e5c3770a99389b9f4244cabff83ef9acb5ae5c651ebe89f6f49e40f7"
+            "source_sha256": "f567876e71db782970f8255e4185d3c48bd122f0dcc3979310b2b47516e4d673"
         },
         {
             "path": "server/app/common/service/storage/StorageProviderException.php",
@@ -14243,7 +14243,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "014d50ea0ed8a4e698ff8394dde0a0f5c1c5f477e9341b1518e73e23e67a80b6"
+            "source_sha256": "aba0b723d3256f71ef172d261d8ddd33500dbdea3b204987392a9f748c2c08f2"
         },
         {
             "path": "server/app/common/service/storage/StorageService.php",
@@ -14258,62 +14258,6 @@
                 "full"
             ],
             "source_sha256": "2f204559cda28cb6c1bd90b1a758cd0f212997195222a8aa4658fd3b5626a2c7"
-        },
-        {
-            "path": "server/app/common/service/storage/driver/AliyunStorageDriver.php",
-            "target": "server/app/common/service/storage/driver/AliyunStorageDriver.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "eb7d74b83a04ef310057f33086226a9e32ee500879c10ce28bf377555714adb6"
-        },
-        {
-            "path": "server/app/common/service/storage/driver/LocalStorageDriver.php",
-            "target": "server/app/common/service/storage/driver/LocalStorageDriver.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "64ece8b22aab648f11bbe7ef0778d02c98ee3223104845d709007a2d41c80fd5"
-        },
-        {
-            "path": "server/app/common/service/storage/driver/QcloudStorageDriver.php",
-            "target": "server/app/common/service/storage/driver/QcloudStorageDriver.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "a77693a724459ca1fbf77110bfc698b209ec90cdea9737742ba2eefc5996eba0"
-        },
-        {
-            "path": "server/app/common/service/storage/driver/QiniuStorageDriver.php",
-            "target": "server/app/common/service/storage/driver/QiniuStorageDriver.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b3217bbabcbb4f5b36af7f14533cbf975f06357f53c5a1fe96c89bee58415b36"
         },
         {
             "path": "server/app/common/service/tenant/PdoTenantSettingsBootstrapProvider.php",
@@ -15948,7 +15892,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "d79724417c32744d741ffb7aac5fbd2ed8ff711ab7e7ba680212ec629707472a"
+            "source_sha256": "3d0e80cf651b4edc07dbcb2c0f69f909bcc83405a46985f85c51302879eccc8c"
         },
         {
             "path": "server/app/platform/service/plugin/PluginPackageException.php",
@@ -16292,7 +16236,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "05de861d12626af9adfb3ac1d42c6ef4b2c163f4f6fbdb302be47e76122cd376"
+            "source_sha256": "af8914721ba1fdec8f674f357f3ea18b2be33c64760fa8e8fd8f136edf12535e"
         },
         {
             "path": "server/composer.lock",
@@ -16306,7 +16250,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a07395242713542bbc006518b7d58f89b2c1108d313896c7c1eee78f15cd1ae4"
+            "source_sha256": "f9e749d01f37bb96cbcf7e0e3e16b6e3d6045883580d905a7d6c8253003b7d1d"
         },
         {
             "path": "server/config/admin_api_access.php",
@@ -19294,7 +19238,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c6545437630550680363bc14910c8b8545d2e623d694334709b9799325f436ba"
+            "source_sha256": "3fa0bae625d5bd3b415de94c484197c040a226ee6009ef1c4c85117ca1c58e68"
         },
         {
             "path": "uniapp/package.json",
@@ -19307,7 +19251,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d2fd8cbd270217e768e1b7a566cf0a586ba51a230c3973011d5b2eda88ca9562"
+            "source_sha256": "dca01366012c57368348db9bc6f6b9d6905e80806b2faf28bb630c6646a12d7f"
         },
         {
             "path": "uniapp/packages/pages/404/404.vue",
@@ -20370,7 +20314,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9e07c2f719c0c76cd08734f9862fc63c93c6c4a06bc9c3e70b715927ddb353da"
+            "source_sha256": "9f88d292030da05f74a4f5aeadc76aa5c409be73c41f94813adf331466b9fd86"
         },
         {
             "path": "web/pnpm-lock.yaml",
@@ -20384,7 +20328,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "626d7b1a3a6fb3a12b6c77bd0241fec08931b34048b79d90dac8f287dc3a465d"
+            "source_sha256": "63b1d8f83d4826bd714845b57a8c4134a9773538e7865cb5272fae3447d77fb8"
         },
         {
             "path": "web/public/brand/avatar-admin.svg",

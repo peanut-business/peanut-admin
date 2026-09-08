@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.13 正式源码和 Standalone/Multi-tenant 双 Edition 安装基线已在 main@b6530737a17da4ace56b982ed62ba263ed47eef7 完成 P0-E 八组资格、零资源残留、annotated tag 与 GitHub Release；在线 Demo 和文档站仍保持已验证的 v3.0.12，尚未采用 v3.0.13。跨版本升级体验由下一补丁基于 v3.0.13 完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.13 正式源码和 Standalone/Multi-tenant 双 Edition 安装基线已在 main@b6530737a17da4ace56b982ed62ba263ed47eef7 完成 P0-E 八组资格、零资源残留、annotated tag 与 GitHub Release；v3.0.14 正在准备固定候选，用于收敛 Gemini 遗留、采用已资格的 Core Alpha.13 并恢复真实测试门禁。在线 Demo 和文档站仍保持已验证的 v3.0.12。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1431,7 +1431,7 @@
       "name": "双 Edition 安装与升级分发",
       "area": "delivery",
       "status": "implemented",
-      "summary": "v3.0.13 已在 main@b6530737… 完成 P0-E 八组资格并发布正式源码、Standalone 与 Multi-tenant 两套安装包，首个正确双 Edition 安装基线已建立。在线 Demo/文档站采用与同 Edition 跨版本升级仍未完成，因此该完整能力继续保持已实现、待后续验收。",
+      "summary": "v3.0.13 已在 main@b6530737… 完成 P0-E 八组资格并发布正式源码、Standalone 与 Multi-tenant 两套安装包，首个正确双 Edition 安装基线已建立。v3.0.14 收敛候选已采用 Core Alpha.13、正式修复 Gemini 测试占位与 Module 发布门禁，尚待最终 main 固定候选 P0-E、Release 和生产采用。",
       "acceptance": [
         "同一冻结 source commit/tree 生成两个 Edition 安装包并显式记录 Schema 与 checksum 差异",
         "下一正式版本为两个 Edition 分别发布签名升级包，并拒绝错 Edition、篡改、降级与不受支持来源",

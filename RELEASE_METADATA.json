@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "product": "Peanut Admin",
-  "version": "3.0.13",
-  "expected_tag": "v3.0.13",
-  "release_date": "2026-09-06",
+  "version": "3.0.14",
+  "expected_tag": "v3.0.14",
+  "release_date": "2026-09-09",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "Apache-2.0",
@@ -26,28 +26,28 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.12",
-    "web_npm": "@peanut-admin/admin@0.1.0-alpha.12",
-    "platform_npm": "@peanut-admin/admin@0.1.0-alpha.12",
-    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.12",
-    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.12"
+    "composer": "peanut-admin/core@0.1.0-alpha.13",
+    "web_npm": "@peanut-admin/admin@0.1.0-alpha.13",
+    "platform_npm": "@peanut-admin/admin@0.1.0-alpha.13",
+    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.13",
+    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.13"
   },
   "lockfiles": {
-    "server/composer.lock": "a07395242713542bbc006518b7d58f89b2c1108d313896c7c1eee78f15cd1ae4",
-    "web/pnpm-lock.yaml": "626d7b1a3a6fb3a12b6c77bd0241fec08931b34048b79d90dac8f287dc3a465d",
-    "platform/package-lock.json": "0e3385cd1604d72826ef4746d7e713b5c2d1ba058b03a34f0b681760974742dd",
-    "pc/package-lock.json": "42f162f10b39113abf0bd397a4213d61275ae27cc61e87464db09a440e52bff3",
-    "uniapp/package-lock.json": "c6545437630550680363bc14910c8b8545d2e623d694334709b9799325f436ba",
+    "server/composer.lock": "f9e749d01f37bb96cbcf7e0e3e16b6e3d6045883580d905a7d6c8253003b7d1d",
+    "web/pnpm-lock.yaml": "63b1d8f83d4826bd714845b57a8c4134a9773538e7865cb5272fae3447d77fb8",
+    "platform/package-lock.json": "7aad54b4d2754f67f4db55aa2976f21321045a3f04b98326f3af11932c21b70a",
+    "pc/package-lock.json": "84ce908f0e7f15af0ba9c88a04aad4a13f453c50d92abeec8c8cb758d4c65183",
+    "uniapp/package-lock.json": "3fa0bae625d5bd3b415de94c484197c040a226ee6009ef1c4c85117ca1c58e68",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "NOTICE": "908896ee207ef8973e8e40944112a19dec70a8b9a92501a0ff576d62895951c6",
-    "THIRD_PARTY_NOTICES.md": "6e31c61745040c3f293b91309167b3d447d47e9873d7fcf495212f7dbd1b9d21",
-    "RELEASE_SBOM.spdx.json": "f8a991f6ba4789ddeb016b37497a292aa33af503a07e7deb8c5e50f812dfbf31"
+    "THIRD_PARTY_NOTICES.md": "562f7c2c95c0f68ca2651f4c29f405a9be453fcc8b32623037b06c7014dd1582",
+    "RELEASE_SBOM.spdx.json": "7777cf261bca41c577168e61e1bc7178fb00f3a2e80db216f160e42e7e2215d1"
   },
   "technical_qualification": {
-    "phase": "3.0.13-pending-qualification",
+    "phase": "3.0.14-pending-qualification",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -57,10 +57,10 @@
     "cleanup_residual_count": null,
     "lease_released": false,
     "migrations": 10,
-    "scaffold_version": "3.0.13",
+    "scaffold_version": "3.0.14",
     "application_initial_version": "0.1.0",
     "evidence": "The fixed-candidate qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
-    "release_delta": "Establishes the first formal Standalone and Multi-tenant installer baseline, adopts the qualified Core Alpha.12 packages, adds signed same-Edition upgrade tooling and closes the confirmed Demo experience defects."
+    "release_delta": "Converges the audited Gemini refactor into verified incremental changes, adopts qualified Core Alpha.13 storage and security fixes, formalizes Module package publication rules, and replaces temporary test skips with executable gates."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

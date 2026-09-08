@@ -133,8 +133,9 @@ package 保持 `private: true`，Marketplace 仍 blocked。
 Module。`official.rich-text` 因而进入打包资格，未来新增 official Module 也不能静默漏测。
 
 Rich Text 的 bundled 通道达到 **bundled-locked**：源码随 v3.0.13 完整应用 Release（源码与两种
-Edition 安装包）冻结；线上 Demo 仍是 v3.0.12。固定提交 `23c6c31f` 的 `module:check` 八项全部通过，
-并生成未签名本地 tar（SHA-256 `9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`），
+Edition 安装包）冻结；线上 Demo 仍是 v3.0.12。固定提交 `882182e7` 的 `module:check` 八项全部通过，
+并重新生成/复验未签名本地 tar（SHA-256 `9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`）；
+同一提交的动态清单资格已打包 9 个官方 Module 并完成生产 Web 构建，
 所以独立包通道达到 **package-candidate（local/unsigned）**。签名、SBOM、review/漏洞响应未建立；
 Tiptap/ProseMirror/Yjs 客户端已实现，仓库没有 Hocuspocus 服务端，原专用浏览器会话未完成。它不能被
 描述为 independently published 或生产协同编辑已可用。
