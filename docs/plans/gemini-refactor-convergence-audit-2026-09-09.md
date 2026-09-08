@@ -8,10 +8,11 @@ Owner: `product-architecture`
 
 Audience: `maintainer, architect, operator, ai`
 
-Fixed inputs: Peanut Admin `dev@e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d`、Application
+Fixed inputs: Peanut Admin clean baseline `dev@e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d`、Application
 quarantine snapshot `1b2b66cd`、Peanut Admin Core Alpha.13 source candidate
 `a949a77728f2940153c6cfd76b104d5d8bb183e3`、Core quarantine snapshot `90bf92f`、
-Application convergence branch `feat/refactor-convergence-remediation`（Storage adoption `563df8c4`）。
+Application convergence `main@f61d41ffb7137447e7be0b8ae2f7f9aaf4e27f7f`（PR #434；Storage adoption
+`563df8c4`）及其资格测试修复 `dev@fd35bc67e60d1a3c0d1055ee85fa175286cbee26`。
 
 > 本报告把 Gemini 的机械处理视为未完成迁移工件，而不是动机错误或可继承的通过证据。目标是吸收有
 > 价值的设计与行为，正式重做缺失实现和测试，再清理隔离现场。用户已授权后续发布、生产与精确破坏性
@@ -43,6 +44,7 @@ Application convergence branch `feat/refactor-convergence-remediation`（Storage
 | Core Luna | 修复已吸收到 Alpha.13 固定候选 | 已发布 | 不再保留为未发布候选 |
 | Storage adoption | `563df8c4`（由 `590e6183 → 64460af8` 收敛） | 已锁 Core Alpha.13 并通过当前装配检查 | 进入应用收敛候选，待应用 Release |
 | High-capacity media spike | `quarantine/high-capacity-media-storage-spike-20260831@e915bea7` | 已恢复显式引用，未进入 dev/main | 设计输入，不是产品能力 |
+| Application convergence | `main@f61d41ff`（PR #434） | 大重构收敛主体已进入 main；首次最终 P0-E 暴露资格测试边界缺口 | 资格修复进入 dev 后重新形成 main 候选 |
 
 Application quarantine 的 148 个未跟踪文件含 139 个 Python 和 9 个 PHP；已提交根目录还含 22 个
 迁移/修复脚本。Core 未跟踪现场实际是 182 个文件，其中包括 18 个 `module.json` 和 14 个无法解析的
@@ -113,6 +115,20 @@ Core package 本身继续通过显式 PDO/transaction handle 保持产品中立�
 fixture 测试中短小、无控制/断言、无条件输出 pass 后 `exit(0)` 的占位形态；canonical 当前检查通过。
 全官方 Module 打包证据生成器也已固定 `CI=1` 与 `HUSKY=0`：非交互执行不得在 pnpm 的
 `node_modules` 重建提示处以 exit 0 提前结束、随后再让生产构建因缺少 `vue-tsc` 失败。
+
+首次最终候选 `f61d41ff` 的 P0-E `v3014a` 真实通过 generated-application、standalone-fresh 和
+multi-tenant-fresh，随后在 plugin-lifecycle 暴露 `MemberUploadTenantWiringTest` 仍是机械迁移半成品：
+它把宿主前缀 `api` 写进 Module 相对 route 断言、用非 `default` Tenant 执行依赖 default seed 的
+`init.sql`、把 `UploadedFile` 对象误传给 ThinkPHP `Request::withFiles()`、缺少合法 Account/TenantMember
+外键 fixture，并且 ThinkPHP CLI 异常处理可能打印错误后返回 0。P0-E Host 环境本身也没有把持久化的
+随机 JWT/Tenant/Platform HMAC 密钥传入各阶段，导致真实 StorageService 拒绝构造。
+
+这些问题已作为同一资格边界在 `fd35bc67` 正式修复：测试使用 Module 相对 route、canonical default
+Tenant、原生 `$_FILES` 数组、合法 TenantMember，并在框架初始化后安装 fail-closed exception handler；
+P0-E 则把三项随机密钥写入仅存于 lease cache 的 `0600` 恢复文件，Host 与 Compose 阶段复用，成功清理
+时随 cache 删除。开发聚焦重跑 `v3014f` 显式输出 `MT03-MEMBER-UPLOAD-TENANT-WIRING-001 passed`，数据库、
+cache、output 与 lease 均为零残留。首次失败候选的 evidence 保留，数据库、Compose、监听、cache 和 lease
+已按精确 run ID 清理，未沿用为新候选通过证据。
 
 后续恢复规则：
 
@@ -185,7 +201,7 @@ reservation、Tenant settings 窄例外登记，以及旧测试脚本的正式�
 
 - 全官方 Module 打包证据必须在最终应用源码身份上重新生成；
 - Rich Text 独立发布仍缺浏览器、协同服务、签名、SBOM、review/漏洞响应 owner 与明确渠道；
-- 应用最终 `main` 固定候选必须按 L2 只运行一次 P0-E；
+- 资格测试修复合入最终 `main` 后，应用固定候选必须重新运行 L2 P0-E；旧候选仅保留失败取证；
 - 真实云 Provider 和生产部署按各自登记资源与资格执行。
 
 ## 11. 集成、发布、生产与清理顺序
@@ -206,12 +222,12 @@ reservation、Tenant settings 窄例外登记，以及旧测试脚本的正式�
 | --- | --- | --- |
 | 两仓大迁移只读审计 | 已完成 | Terra/Luna/GPT-6 交叉复核；已定位确定解析、类、Tenant、事务和文档问题 |
 | Module 发布合同 | 已完成（开发候选） | 文档登记、公开投影、动态 official Module 打包清单 |
-| 测试占位防回归 | 已完成（开发候选） | `TEST-INTEGRITY-001` 通过；尚待合入 dev |
+| 测试占位防回归 | 已完成并进入 main | `TEST-INTEGRITY-001` 通过；Module 打包非交互假阳性已关闭 |
 | Rich Text 独立发布 | 部分完成 | bundled-locked + local unsigned package-candidate；浏览器、协同服务、签名/SBOM/review/渠道未完成 |
 | `590e6183` 拉平 | 已完成并吸收 | `590e6183 → 64460af8 → 563df8c4`；不是 merge，Core Alpha.13 依赖已锁定 |
 | 厂商 Storage 可用性 | 源码与装配完成、真实资格后置 | 四 provider 源码/依赖/Factory 保留且构造通过；真实账号生产资格未冒充完成 |
-| Luna/Gemini 收敛 | 开发候选完成 | 已吸收正式实现与真实测试修复；原机械现场仅留 quarantine 取证 |
+| Luna/Gemini 收敛 | 主体进入 main；资格修复在 dev | PR #434 已合并；`fd35bc67` 关闭首次 P0-E 暴露的测试边界 |
 | High-capacity media | 已审计/隔离 | 不进入 Runtime；后续独立能力任务 |
 | Core 正式发布 | 已完成 | Alpha.13 source/split/tag/GitHub Release/npm/Packagist 已一致 |
-| 应用正式发布与生产 | 未完成 | 待合入 main、最终应用 P0-E、Release 与登记生产 smoke |
+| 应用正式发布与生产 | 未完成 | 待资格修复再次进入 main、最终应用 P0-E、Release 与登记生产 smoke |
 | quarantine 破坏性清理 | 可恢复证据已固定、暂不删 branch | `1b2b66cd` / `90bf92f`；待独有价值最终登记后精确清理 |
