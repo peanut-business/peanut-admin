@@ -270,7 +270,7 @@ sort($applicationMigrations, SORT_STRING);
 executeSqlFiles($pdo, $applicationMigrations);
 
 $projectRoot = dirname($serverRoot);
-$temporary = sys_get_temp_dir() . '/pa-module-bundle-' . $databaseMatch[1];
+$temporary = realpath(sys_get_temp_dir()) . '/pa-module-bundle-' . $databaseMatch[1];
 moduleBundleExpect(!file_exists($temporary), 'isolated bundle output path already exists');
 $source = $temporary . '/source';
 $target = $temporary . '/target';
@@ -715,6 +715,49 @@ try {
         );
     moduleBundleExpect(($repeatPurge['operation'] ?? null) === 'unchanged', 'repeated bundle purge was not idempotent');
 
+    $privateArchive = $temporary . '/private-fixture.tar';
+    $privatePackage = (new PluginPackageArchiveService($projectRoot . '/server'))->packModule('fixture.delivery-record', $privateArchive);
+    (new PluginPackageInstaller($pdo, $target . '/server', $moduleConfig, []))->install($privateArchive, $privatePackage['sha256'], null);
+    $privateLock = new \app\platform\service\plugin\PluginLockResolver($target . '/server', '../plugins.lock');
+    $profile = new \app\platform\service\module\ProductTenantModuleProfileService(
+        $pdo,
+        new \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager($pdo),
+        new \PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository($pdo, true),
+        new \app\platform\service\module\PdoModuleGovernanceProvider($pdo, $target . '/server', $moduleConfig + ['plugin_lock' => '../plugins.lock']),
+        \app\common\service\audit\AuditContractHost::fromPdo($pdo),
+    );
+    foreach ([
+        [['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::MultiTenant, 'PRIVATE_TENANT_MODULE_STANDALONE_REQUIRED'],
+        [['official.file'], \app\common\service\instance\DeploymentMode::Standalone, 'PRIVATE_TENANT_MODULE_NOT_LOCKED'],
+        [['acme.absent'], \app\common\service\instance\DeploymentMode::Standalone, 'PRIVATE_TENANT_MODULE_NOT_LOCKED'],
+    ] as [$selection, $edition, $error]) {
+        try {
+            $profile->applyAdditionalInstallationSelection($selection, $edition, $privateLock);
+            throw new RuntimeException('invalid private selection was accepted');
+        } catch (\PeanutAdmin\Kernel\Module\ModuleException $exception) {
+            moduleBundleExpect($exception->errorCode === $error, 'private selection boundary changed');
+        }
+    }
+    $rbacBefore = $pdo->query('SELECT * FROM pa_role_permission ORDER BY role_id,permission_id')->fetchAll();
+    $tenantRevision = $pdo->query("SELECT authorization_revision FROM pa_tenant WHERE code='default'")->fetchColumn();
+    // A real database failure after enable proves row/revision/audit changes share the transaction.
+    $pdo->exec("ALTER TABLE pa_tenant_audit_event ADD CONSTRAINT private_adoption_audit_failure CHECK (event_type <> 'tenant-module.profile-enabled')");
+    try {
+        $profile->applyAdditionalInstallationSelection(['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::Standalone, $privateLock);
+        throw new RuntimeException('private additive audit failure was not injected');
+    } catch (\PDOException $exception) {
+        moduleBundleExpect(str_contains($exception->getMessage(), 'private_adoption_audit_failure'), 'unexpected additive failure');
+    } finally {
+        $pdo->exec('ALTER TABLE pa_tenant_audit_event DROP CHECK private_adoption_audit_failure');
+    }
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchColumn() === 0, 'failed additive enable left a TenantModule row');
+    moduleBundleExpect($pdo->query("SELECT authorization_revision FROM pa_tenant WHERE code='default'")->fetchColumn() === $tenantRevision, 'failed additive enable changed Tenant revision');
+    $selection = $profile->applyAdditionalInstallationSelection(['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::Standalone, $privateLock);
+    moduleBundleExpect($selection['binding_count'] === 1, 'private additive selection was not enabled');
+    $openingBefore = $pdo->query("SELECT * FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchAll();
+    moduleBundleExpect($profile->applyAdditionalInstallationSelection(['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::Standalone, $privateLock)['binding_count'] === 0, 'private selection rewrote an effective opening');
+    moduleBundleExpect($pdo->query("SELECT * FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchAll() === $openingBefore, 'private selection changed existing opening configuration');
+    moduleBundleExpect($pdo->query('SELECT * FROM pa_role_permission ORDER BY role_id,permission_id')->fetchAll() === $rbacBefore, 'private selection granted RBAC');
     $completed = true;
     echo "MODULE-BUNDLE-LIFECYCLE-001 passed database={$database} content_sha256={$packed['sha256']} recoverable_sha256={$recoverablePacked['sha256']}\n";
 } finally {

@@ -21,6 +21,7 @@ return [
         'module:pack'      => \app\command\ModulePack::class,
         'bundle:pack'      => \app\command\BundlePack::class,
         'module:install-package' => \app\command\ModuleInstallPackage::class,
+        'module:adopt-package' => \app\command\ModuleAdoptPackage::class,
         'module:update-package' => \app\command\ModuleUpdatePackage::class,
         'module:disable-package' => \app\command\ModuleDisablePackage::class,
         'module:uninstall-package' => \app\command\ModuleUninstallPackage::class,
@@ -34,6 +35,7 @@ return [
         'plugin:rollback'  => \app\command\PluginRollback::class,
         'plugin:uninstall' => \app\command\PluginUninstall::class,
         'tenant-module:apply-profile' => \app\command\TenantModuleProfile::class,
+        'tenant-module:enable-locked-private' => \app\command\TenantModuleEnableLockedPrivate::class,
     ],
     // Every command that may run from the Tenant scheduler must declare its owning Module.
     // Core commands use the built-in `core` capability; application Modules register their key.

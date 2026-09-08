@@ -73,7 +73,44 @@ key 不得冒充成员；安装、停用、退役和 Purge 均以完整 Package 
 `module:pack` 默认输出到 `.local/module-packages/`，该目录是开发产物，不提交。命令不会自动修改
 `plugins.lock`、开通 TenantModule、授予 RBAC 或发布到外部服务。
 
-## 5. `official.rich-text` 当前裁定（2026-09-09）
+## 5. Private Package 的 development source adoption
+
+`php think module:adopt-package <tar> --sha256=<digest> --signature-key-id=<trusted-id>`
+将已验签私有 Package 固化为下一完整应用 Release 的开发输入。`APP_ENV` 必须来自当前后端环境文件；
+命令和服务仅接受 development。SHA-256 与 `module_packages.trusted_ed25519_keys` 中受信 Ed25519
+公钥均必需；官方 Package 或包含 `official.*` Module 的 Bundle 一律拒绝。新包不得覆盖已有未归属目录；
+更新必须保持 Bundle 成员集合、版本不能倒退，同版本不能改变 immutable identity。
+
+成功结果为 `development-adopted`，源码与 `plugins.lock` 仍使用 bundled 合同。此状态不是
+`qualified`/`published`，也不是新的 Registry 或 Marketplace 渠道。命令不连接数据库，不运行 migration、
+Runtime install、TenantModule 开通或 RBAC 授权。返回 `route_contributions` 和 `manual_dependencies`；
+应用 owner 负责显式路由组合、第三方 PHP/npm 依赖、构建与完整应用 Release 资格。两 Edition 从同一源码生成，
+不能把该 tar 当作生产实例部署单位。
+
+源码事务在 `.local/module-source-adoption/` 中执行，由该 development 应用 owner 独占。必须停止开发服务
+及其他人工源码写入；adoption 与 Runtime package installer 使用同一文件锁互斥。应用 root、祖先、Module/
+Plugin/前端目标以及其内部均拒绝 symlink，调用方须提供 canonical absolute path。
+
+| 持久状态 | 可观察结果与恢复 |
+| --- | --- |
+| payload 准备，尚无 journal | 正式源码与 lock 未变化；未提交临时目录可由 owner 检查后清理 |
+| journal 已发布 | 新源码、旧源码摘要及目标 lock 已持久保存；resolver 拒绝消费未完成组合 |
+| 部分 root 已备份或落位 | journal 不变；按摘要识别已完成 root，并从剩余 payload 继续前滚 |
+| lock 已原子替换，journal 尚在 | 校验完整目标后清除 journal；重复恢复幂等 |
+| journal 清除 | 源码与 lock 配对完成，旧源码和 transaction receipt 保留给 owner |
+
+异常或进程终止后执行 `php think module:adopt-package --recover`，或下一次 adoption 自动先恢复。
+恢复不依赖原 tar、验签 staging 或进程内变量。任何目标、payload 或 lock 的意外改动均停止并保留证据，
+不能覆盖人工修改。此合同覆盖进程崩溃；不承诺磁盘丢失或操作系统断电后的存储持久性。`.local` 是本应用
+开发恢复材料，不进入应用 Release、不得跨 worktree 共享；成功后由应用 owner 检查并清理已完成 transaction
+目录，禁止删除仍有 journal 的恢复输入。
+
+Standalone 部署 owner 可另行执行 `php think tenant-module:enable-locked-private --module=<key>`（可重复参数）。
+只能选择 lock 中由非官方 Package 拥有的非官方 Module，且 Runtime 已安装。默认 Tenant 行锁下，选中 Module
+及当前有效依赖一起校验；新增开通与授权 revision、审计写入使用同一事务。已有有效开通及配置保持原值，
+过期或停用依赖不视为已满足；该命令不会授予任何角色权限。Multi-tenant 继续使用现有租户管理授权入口。
+
+## 6. `official.rich-text` 当前裁定（2026-09-09）
 
 - 源码、Module manifest、前端贡献和 bundled Plugin identity 已进入 Peanut Admin v3.0.13 完整应用
   Release（源码与两种 Edition 安装包），故 bundled 状态为 **bundled-locked**；在线 Demo 仍是 v3.0.12，

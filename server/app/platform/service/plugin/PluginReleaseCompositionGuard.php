@@ -211,7 +211,7 @@ SQL);
                 'Installed Plugin package identity is invalid: ' . $exception->getMessage()
             );
         }
-        if (!is_array($decoded) || !array_is_list($decoded)) {
+        if (!is_array($decoded) || !array_is_list($decoded) || !str_starts_with(ltrim($value), '[')) {
             throw new PluginLifecycleException(
                 'PLUGIN_RELEASE_CURRENT_IDENTITY_INVALID',
                 'Installed Plugin package identity must be a list.'

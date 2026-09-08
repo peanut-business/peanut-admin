@@ -46,9 +46,13 @@ final class ApplicationCreator
         string $target,
         string $edition,
         ?string $applicationVersion = null,
-        string $profile = 'standard'
+        string $profile = 'full'
     ): array
     {
+        $journal = $this->sourceRoot . '/.local/module-source-adoption/journal.json';
+        if (file_exists($journal) || is_link($journal)) {
+            throw new RuntimeException('MODULE_PACKAGE_RECOVERY_REQUIRED');
+        }
         $inventory = $this->loadInventory();
         if (!in_array($profile, self::PROFILES, true)) {
             throw new RuntimeException('CREATE_APP_PROFILE_INVALID');
@@ -109,7 +113,7 @@ final class ApplicationCreator
             if ($adoption !== null) {
                 $this->assertAdoptionEquivalent($stage, $adoption, $parameters, $files);
             }
-            $files = $this->rebuildOfficialPluginArtifacts($stage, $files);
+            $files = $this->rebuildBundledPluginArtifacts($stage, $files);
             if ($this->projectEdition) {
                 $files = $this->projectEdition($stage, $inventory, $files, $editionProfile);
             }
@@ -952,45 +956,46 @@ PHP;
         ) {
             throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
         }
-        $official = [];
+        $bundled = [];
         $keys = [];
         foreach ($source['plugins'] as $plugin) {
             $key = is_array($plugin) ? ($plugin['key'] ?? null) : null;
             if (!is_string($key) || $key === '') {
                 throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
             }
-            if (!str_starts_with($key, 'official.')) {
+            // The source-only qualification fixture is excluded by the template inventory.
+            if ($key === 'fixture.delivery-record') {
                 continue;
             }
             if (isset($keys[$key])) {
                 throw new RuntimeException('CREATE_APP_PLUGIN_LOCK_SOURCE_INVALID');
             }
             $keys[$key] = true;
-            $official[] = $plugin;
+            $bundled[] = $plugin;
         }
-        if ($official === []) {
-            throw new RuntimeException('CREATE_APP_OFFICIAL_PLUGIN_SET_EMPTY');
+        if ($bundled === []) {
+            throw new RuntimeException('CREATE_APP_PLUGIN_SET_EMPTY');
         }
         return json_encode(
-            ['schema_version' => 1, 'plugins' => $official],
+            ['schema_version' => 1, 'plugins' => $bundled],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         ) . "\n";
     }
 
     /** @param list<array<string,mixed>> $files @return list<array<string,mixed>> */
-    private function rebuildOfficialPluginArtifacts(string $stage, array $files): array
+    private function rebuildBundledPluginArtifacts(string $stage, array $files): array
     {
         $manifestPaths = [];
         foreach ($files as $file) {
             $path = (string)($file['path'] ?? '');
-            if (preg_match('#^plugins/(official\.[a-z0-9.-]+)/plugin\.json$#D', $path, $matches) !== 1) {
+            if (preg_match('#^plugins/([a-z][a-z0-9.-]+)/plugin\.json$#D', $path, $matches) !== 1) {
                 continue;
             }
             $manifestPaths[$matches[1]] = $path;
         }
         ksort($manifestPaths, SORT_STRING);
         if ($manifestPaths === []) {
-            throw new RuntimeException('CREATE_APP_OFFICIAL_PLUGIN_SET_EMPTY');
+            throw new RuntimeException('CREATE_APP_PLUGIN_SET_EMPTY');
         }
 
         // create-app is intentionally PHP/Git-only. The Writer still owns the

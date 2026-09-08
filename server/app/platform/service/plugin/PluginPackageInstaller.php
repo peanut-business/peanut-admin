@@ -27,7 +27,9 @@ final class PluginPackageInstaller
         ?string $expectedSha256,
         ?string $signatureKeyId,
     ): array {
-        return $this->promote('install', $archivePath, $expectedSha256, $signatureKeyId, false);
+        return (new PluginPackageSourcePromoter($this->serverRoot))->run(
+            fn(): array => $this->promote('install', $archivePath, $expectedSha256, $signatureKeyId, false),
+        );
     }
 
     /** @return array<string,mixed> */
@@ -37,7 +39,9 @@ final class PluginPackageInstaller
         ?string $signatureKeyId,
         bool $dryRun,
     ): array {
-        return $this->promote('update', $archivePath, $expectedSha256, $signatureKeyId, $dryRun);
+        return (new PluginPackageSourcePromoter($this->serverRoot))->run(
+            fn(): array => $this->promote('update', $archivePath, $expectedSha256, $signatureKeyId, $dryRun),
+        );
     }
 
     /** @return array<string,mixed> */
@@ -310,6 +314,10 @@ final class PluginPackageInstaller
     /** @return array<string,PluginDescriptor> */
     private function currentDescriptors(): array
     {
+        $journal = $this->projectRoot() . '/.local/module-source-adoption/journal.json';
+        if (file_exists($journal) || is_link($journal)) {
+            throw new PluginPackageException('MODULE_PACKAGE_RECOVERY_REQUIRED', 'Recover development source adoption before Runtime package operations.');
+        }
         $lockPath = $this->projectRoot() . '/plugins.lock';
         if (!is_file($lockPath)) {
             return [];

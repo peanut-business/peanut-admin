@@ -150,7 +150,7 @@ try {
     $second = $temporary . '/second';
     $other = $temporary . '/other';
     $standalone = $temporary . '/standalone';
-    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, 'multi-tenant', null, 'full');
+    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, 'multi-tenant');
     $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second, 'multi-tenant', null, 'full');
     $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other, 'multi-tenant', null, 'full');
     $standaloneManifest = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $standalone, 'standalone', null, 'full');

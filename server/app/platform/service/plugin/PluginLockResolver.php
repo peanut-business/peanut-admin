@@ -18,6 +18,10 @@ final class PluginLockResolver
     /** @return array<string,PluginDescriptor> */
     public function all(): array
     {
+        $journal = dirname($this->serverRoot) . '/.local/module-source-adoption/journal.json';
+        if (file_exists($journal) || is_link($journal)) {
+            throw new PluginLifecycleException('MODULE_PACKAGE_RECOVERY_REQUIRED', 'Run module:adopt-package --recover before resolving application source.');
+        }
         if ($this->resolved !== null) {
             return $this->resolved;
         }
@@ -107,6 +111,9 @@ final class PluginLockResolver
                 $moduleRoots,
                 $trust
             );
+        }
+        if (file_exists($journal) || is_link($journal) || hash_file('sha256', $lockPath) !== $lockDigest) {
+            throw new PluginLifecycleException('MODULE_PACKAGE_RECOVERY_REQUIRED', 'Application source changed during resolution.');
         }
         return $this->resolved = $plugins;
     }

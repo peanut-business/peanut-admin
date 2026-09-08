@@ -538,6 +538,12 @@ class AppService extends Service
 
     private function registerModules(): void
     {
+        // Recovery must boot while a pending source journal deliberately blocks the Module resolver.
+        if ($this->app->runningInConsole()
+            && ($_SERVER['argv'][1] ?? null) === 'module:adopt-package'
+            && env('APP_ENV', '') === 'development') {
+            return;
+        }
         $config = Config::get('modules', []);
         if (!is_array($config)) {
             throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');

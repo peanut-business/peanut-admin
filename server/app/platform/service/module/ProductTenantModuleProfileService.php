@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\platform\service\module;
 
 use app\common\service\audit\AuditContractHost;
+use app\common\service\instance\DeploymentMode;
+use app\platform\service\plugin\PluginLockResolver;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -73,14 +75,36 @@ final readonly class ProductTenantModuleProfileService
         ]);
     }
 
+    /** Standalone owner selection adds locked private Modules; existing openings/configuration and RBAC remain intact. */
+    public function applyAdditionalInstallationSelection(array $moduleKeys, DeploymentMode $mode, PluginLockResolver $lock): array
+    {
+        if ($mode !== DeploymentMode::Standalone) {
+            throw new ModuleException('PRIVATE_TENANT_MODULE_STANDALONE_REQUIRED', 'Private Module selection requires Standalone.');
+        }
+        if ($moduleKeys === [] || !array_is_list($moduleKeys)
+            || array_filter($moduleKeys, static fn(mixed $key): bool => !is_string($key) || $key === '') !== []) {
+            throw new ModuleException('PRODUCT_PROFILE_INVALID', 'Select at least one private Module.');
+        }
+        $private = [];
+        foreach ($lock->all() as $packageKey => $descriptor) {
+            if (str_starts_with($packageKey, 'official.')) continue;
+            foreach (array_keys($descriptor->moduleRoots) as $moduleKey) {
+                if (!str_starts_with($moduleKey, 'official.')) $private[$moduleKey] = true;
+            }
+        }
+        foreach ($moduleKeys as $moduleKey) {
+            if (!isset($private[$moduleKey])) throw new ModuleException('PRIVATE_TENANT_MODULE_NOT_LOCKED', 'Selected Module is not owned by a locked private package.');
+        }
+        return $this->applyDefinition('private-additive', ['tenant_codes' => ['default'], 'modules' => array_values(array_unique($moduleKeys))], true);
+    }
+
     /**
      * @param array{tenant_codes:list<string>,modules:list<string>} $definition
      * @return array{profile:string,tenant_count:int,module_count:int,binding_count:int}
      */
-    private function applyDefinition(string $profile, array $definition): array
+    private function applyDefinition(string $profile, array $definition, bool $additive = false): array
     {
         $registry = $this->registry();
-        $moduleKeys = $this->dependencyOrder($registry, $definition['modules']);
         $repository = new VerifiedTenantModuleRepository(
             $this->moduleRuntime,
             $registry
@@ -98,12 +122,25 @@ final readonly class ProductTenantModuleProfileService
             $repository,
             $manager,
             $now,
-            $moduleKeys
+            $registry,
+            $additive
         ): array {
             $tenants = $this->tenants($definition['tenant_codes']);
+            $selected = $definition['modules'];
+            if ($additive) {
+                // The locked default Tenant row serializes profile changes; count only still-effective dependencies.
+                foreach ($registry->compiled()->modules as $manifest) {
+                    $key = $manifest->data['key'];
+                    if ($repository->tenantModule($tenants[0]['id'], $key)?->isEffective($now)) $selected[] = $key;
+                }
+            }
+            $moduleKeys = $this->dependencyOrder($registry, array_values(array_unique($selected)));
+            $bindings = 0;
             foreach ($tenants as $tenant) {
                 foreach ($moduleKeys as $moduleKey) {
+                    if ($additive && !in_array($moduleKey, $definition['modules'], true)) continue;
                     $before = $repository->tenantModule((int)$tenant['id'], $moduleKey);
+                    if ($additive && $before?->isEffective($now)) continue;
                     $manager->enable(
                         (int)$tenant['id'],
                         $moduleKey,
@@ -111,6 +148,7 @@ final readonly class ProductTenantModuleProfileService
                         $now,
                         'product_profile'
                     );
+                    $bindings++;
                     if ($before === null || !$before->isEffective($now)) {
                         $this->audit->recordTenantSystem(
                             (int)$tenant['id'],
@@ -128,8 +166,8 @@ final readonly class ProductTenantModuleProfileService
             return [
                 'profile' => $profile,
                 'tenant_count' => count($tenants),
-                'module_count' => count($moduleKeys),
-                'binding_count' => count($tenants) * count($moduleKeys),
+                'module_count' => count($definition['modules']),
+                'binding_count' => $bindings,
             ];
         });
     }
