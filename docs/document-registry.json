@@ -104,22 +104,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-architecture-application-module-blueprint-coding-standards",
-      "path": "docs/architecture/application-module-blueprint/coding-standards.md",
-      "title": "Application 与 Module 代码规范",
-      "audience": ["maintainer", "architect", "developer", "ai"],
-      "content_type": "decision",
-      "authority": "accepted-target",
-      "canonical_sources": ["AGENT_EXECUTION_RULES.md", "server/app/common/service/module/ModuleScaffoldGenerator.php", "server/app/Modules/", "server/route/", "web/src/modules/"],
-      "owner": "architecture",
-      "status": "current",
-      "scope": ["application"],
-      "related": ["module-boundary", "application-boundary", "tenant-isolation", "documentation"],
-      "site_projections": ["pa-docs-site-guide-module-development"],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-plans-application-scaffold-version-contract-queue",
       "path": "docs/plans/application-scaffold-version-contract-queue.md",
       "title": "独立应用与脚手架版本合同执行队列",
@@ -1005,7 +989,7 @@
     {
       "id": "pa-docs-architecture-application-module-blueprint-coding-standards",
       "path": "docs/architecture/application-module-blueprint/coding-standards.md",
-      "title": "核心代码规范与认知模型统一指南",
+      "title": "Application 与 Module 代码规范",
       "audience": [
         "maintainer",
         "architect",
@@ -1015,10 +999,11 @@
       "content_type": "decision",
       "authority": "accepted-target",
       "canonical_sources": [
-        "docs/architecture/application-module-blueprint/README.md",
-        "docs/architecture/application-module-blueprint/module-conventions.md",
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/common/service/module/ModuleScaffoldGenerator.php",
         "server/app/Modules/",
-        "server/route/"
+        "server/route/",
+        "web/src/modules/"
       ],
       "owner": "architecture",
       "status": "current",
@@ -1028,9 +1013,12 @@
       "related": [
         "documentation",
         "application-boundary",
-        "module-boundary"
+        "module-boundary",
+        "tenant-isolation"
       ],
-      "site_projections": [],
+      "site_projections": [
+        "pa-docs-site-guide-module-development"
+      ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },

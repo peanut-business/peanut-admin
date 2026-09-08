@@ -11,7 +11,6 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-2026-08-05-core-packages-production-claude-review-result` | `docs/2026-08-05-core-packages-production-claude-review-RESULT.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-architecture-application-module-blueprint-adoption-roadmap` | `docs/architecture/application-module-blueprint/adoption-roadmap.md` | `planned` | `plan` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-coding-standards` | `docs/architecture/application-module-blueprint/coding-standards.md` | `current` | `decision` | `architecture` |
-| `pa-docs-architecture-application-module-blueprint-coding-standards` | `docs/architecture/application-module-blueprint/coding-standards.md` | `current` | `decision` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-index` | `docs/architecture/application-module-blueprint/README.md` | `current` | `index` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-module-conventions` | `docs/architecture/application-module-blueprint/module-conventions.md` | `current` | `decision` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-reference-research` | `docs/architecture/application-module-blueprint/reference-research.md` | `current` | `reference` | `architecture` |
