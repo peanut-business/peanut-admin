@@ -99,15 +99,31 @@ try {
     $application=$temporary.'/application';
     $edition=$options['edition']??null;
     $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,$edition!==null);
-    $manifest=$creator->create(
-        RELEASE_PRODUCT_TOKEN,
-        RELEASE_SLUG_TOKEN,
-        RELEASE_PACKAGE_TOKEN,
-        $application,
-        $edition??'multi-tenant',
-        RELEASE_APPLICATION_VERSION_TOKEN,
-        'full'
-    );
+    $create=new ReflectionMethod($creator,'create');
+    $createParameters=array_map(static fn(ReflectionParameter $parameter):string=>$parameter->getName(),$create->getParameters());
+    if($createParameters===['productName','slug','packageIdentity','target','applicationVersion']) {
+        // Immutable pre-edition releases accepted the application version as
+        // argument five. Passing today's edition there corrupts their check.
+        $manifest=$creator->create(
+            RELEASE_PRODUCT_TOKEN,
+            RELEASE_SLUG_TOKEN,
+            RELEASE_PACKAGE_TOKEN,
+            $application,
+            RELEASE_APPLICATION_VERSION_TOKEN
+        );
+    } elseif($createParameters===['productName','slug','packageIdentity','target','edition','applicationVersion','profile']) {
+        $manifest=$creator->create(
+            RELEASE_PRODUCT_TOKEN,
+            RELEASE_SLUG_TOKEN,
+            RELEASE_PACKAGE_TOKEN,
+            $application,
+            $edition??'multi-tenant',
+            RELEASE_APPLICATION_VERSION_TOKEN,
+            'full'
+        );
+    } else {
+        throw new RuntimeException('SCAFFOLD_RELEASE_CREATOR_SIGNATURE_UNSUPPORTED');
+    }
     $generationSource=$manifest['generation_source']??null;
     if(($manifest['template']['source_commit']??null)!==$commit||($manifest['template']['source_tree']??null)!==$tree
         ||($generationSource!==null&&(!is_array($generationSource)||($generationSource['commit']??null)!==$commit||($generationSource['tree']??null)!==$tree
