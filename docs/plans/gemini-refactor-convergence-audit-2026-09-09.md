@@ -182,7 +182,7 @@ Application `190d4735` 可从当前 dev 快进；Core `22f6a6c` 可从当前 Cor
 - Core PHP/Web 测试入口遗漏；
 - Vite contribution 路径规范化、根边界和 symlink；
 - 短信发送 reservation、幂等窗口和未知 Provider 结果；
-- `ThinkPhpTenantSettingsProvider` 与 Tenant 红线的精确架构裁定；
+- `ThinkPhpTenantSettingsProvider` 与 Tenant 红线的精确架构裁定（已以 §6.2 唯一窄例外关闭）；
 - scaffold 固定 fixture 缺 `release-versions.json` 的门禁漂移；
 - Storage adoption 后重新打开的 LocalDriver 安全合同。
 

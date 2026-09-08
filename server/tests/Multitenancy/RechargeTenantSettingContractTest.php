@@ -25,6 +25,12 @@ foreach (["where('tenant_id', \$tenantId)", "where('namespace', \$namespace)",
     expectRechargeTenantSetting(str_contains($settingProvider, $marker), 'Tenant setting owner invariant missing: ' . $marker);
 }
 expectRechargeTenantSetting(
+    str_contains($settingProvider, 'TENANT_SETTING_SCOPE_EXCEPTION')
+    && str_contains($settingProvider, 'DataScopePolicy')
+    && !str_contains($settingProvider, 'withoutGlobalScope'),
+    'Tenant setting narrow scope exception is not explicitly bounded'
+);
+expectRechargeTenantSetting(
     str_contains($settingService, 'implements TenantSettingsQuery, TenantSettingsCommands'),
     'Tenant setting query/command contract is missing'
 );

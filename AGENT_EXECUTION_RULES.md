@@ -105,6 +105,14 @@
   隔离策略。严禁在业务代码中调用手写 `where('tenant_id', ...)` 或命名 `forTenant()`，
   严禁普通代码调用 `withoutGlobalScope()` 绕过隔离。缺少可信执行上下文时一律 fail-closed，
   禁止静默回退默认租户。
+- **唯一窄例外（Tenant Setting 双 Edition adapter）**：仅
+  `server/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php` 可在 `tenant_setting` 表上显式
+  拼接 `where('tenant_id', $tenantId)`。原因是该 Host adapter 必须让同一源码适配 Multi-tenant 的
+  tenant column 与 Standalone 的无 tenant column Schema，无法由一个 `TenantOwnedModel` 同时表达。
+  例外只允许使用显式传入的可信 `tenantId`，并受 `DataScopePolicy::usesTenantColumn()` 控制；读、锁、
+  更新与插入必须成组保持同一分支。不得扩展到业务 Module、其他表、默认租户 fallback、
+  `withoutGlobalScope()` 或通用手写 Tenant 查询。源码必须保留 `TENANT_SETTING_SCOPE_EXCEPTION` 标记和
+  `RechargeTenantSettingContractTest` 合同；改变该 adapter 或 Schema 时重新审计本例外。
 - **单人工开发事实源与双 Edition 确定性生成律**：应用产品源码唯一在 `peanut-admin`，业务无关复用包在
   `peanut-admin-core`；严禁建立所谓的独立单租户版人工开发源码仓。Standalone（单租户独立版）与
   Multi-tenant（多租户平台版）两套构建物必须且只能由构建工具从唯一的 Peanut Admin 冻结
