@@ -152,6 +152,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-plans-application-scaffold-version-contract-queue` | `docs/plans/application-scaffold-version-contract-queue.md` | `current` | `plan` | `application-maintainers` |
 | `pa-docs-plans-consumer-ready-product-plan` | `docs/plans/consumer-ready-product-plan.md` | `current` | `plan` | `product-architecture` |
+| `pa-docs-plans-luna-max-source-preaudit-2026-09-08` | `docs/plans/luna-max-source-preaudit-2026-09-08.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-post-release-enhancement-plan` | `docs/plans/post-release-enhancement-plan.md` | `current` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `archived` | `plan` | `product-architecture` |

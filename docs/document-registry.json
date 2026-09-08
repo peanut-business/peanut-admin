@@ -4749,6 +4749,46 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-plans-luna-max-source-preaudit-2026-09-08",
+      "path": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
+      "title": "Luna Max 源码预审登记（2026-09-08）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/",
+        "server/route/",
+        "scripts/",
+        ".github/workflows/",
+        "web/",
+        "platform/",
+        "pc/",
+        "uniapp/",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/packages/web/",
+        "repo://peanut-admin-core/.github/workflows/"
+      ],
+      "owner": "product-architecture",
+      "status": "planned",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "architecture",
+        "qualification"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-plans-multi-tenancy-platform-management-plan",
       "path": "docs/plans/multi-tenancy-platform-management-plan.md",
       "title": "Peanut Admin 多租户与平台管理计划",
