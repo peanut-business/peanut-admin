@@ -299,6 +299,26 @@ export interface OpsUpgradeCenterSnapshot {
 }
 
 const tokenKey = 'peanut-platform-token';
+type PlatformSessionListener = (authenticated: boolean) => void;
+const platformSessionListeners = new Set<PlatformSessionListener>();
+
+/** Persists the bearer token and notifies UI owners only when authentication presence changes. */
+function setPlatformSessionToken(token: string | null): void {
+  const wasAuthenticated = hasPlatformSession();
+  if (token === null) localStorage.removeItem(tokenKey);
+  else localStorage.setItem(tokenKey, token);
+  const authenticated = hasPlatformSession();
+  if (authenticated !== wasAuthenticated) {
+    platformSessionListeners.forEach((listener) => listener(authenticated));
+  }
+}
+
+/** Subscribes to same-tab session transitions emitted by the platform transport. */
+export function onPlatformSessionChange(listener: PlatformSessionListener): () => void {
+  platformSessionListeners.add(listener);
+  return () => platformSessionListeners.delete(listener);
+}
+
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || undefined,
   withCredentials: true,
@@ -333,7 +353,7 @@ const handleResponse = async (response: AxiosResponse<Envelope<unknown>>) => {
         .post<Envelope<Session>>('/platformapi/session/refresh')
         .then((result) => {
           if (result.data.code !== 20000) throw new Error(result.data.msg);
-          localStorage.setItem(tokenKey, result.data.data.access_token);
+          setPlatformSessionToken(result.data.data.access_token);
           return result.data.data.access_token;
         })
         .finally(() => {
@@ -344,7 +364,7 @@ const handleResponse = async (response: AxiosResponse<Envelope<unknown>>) => {
       config.headers.Authorization = `Bearer ${refreshedToken}`;
       return client.request(config);
     } catch {
-      localStorage.removeItem(tokenKey);
+      setPlatformSessionToken(null);
     }
   }
   return response;
@@ -366,7 +386,7 @@ async function unwrap<T>(request: Promise<{ data: Envelope<T> }>): Promise<T> {
   const result = await request;
   if (result.data.code !== 20000) {
     if (result.data.code === 40100) {
-      localStorage.removeItem(tokenKey);
+      setPlatformSessionToken(null);
     }
     const details = result.data.data as { error_code?: string } | null;
     const errorCode = details?.error_code || '';
@@ -402,14 +422,14 @@ export const api = {
     const session = await unwrap<Session>(
       client.post('/platformapi/session/login', { email, password })
     );
-    localStorage.setItem(tokenKey, session.access_token);
+    setPlatformSessionToken(session.access_token);
     return session;
   },
   async logout() {
     try {
       await unwrap(client.post('/platformapi/session/logout'));
     } finally {
-      localStorage.removeItem(tokenKey);
+      setPlatformSessionToken(null);
     }
   },
   sessionInfo: () => unwrap<SessionInfo>(client.get('/platformapi/session/info')),

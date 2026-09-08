@@ -25,6 +25,7 @@ namespace {
     $serverRoot = dirname(__DIR__, 2);
     $repositoryRoot = dirname($serverRoot);
 
+    require_once $serverRoot . '/vendor/autoload.php';
     require $serverRoot . '/app/common/service/FileService.php';
 
     $apiEvidence = json_decode((string)file_get_contents(
@@ -82,6 +83,10 @@ namespace {
         'app/common/service/storage/StorageService.php',
         'app/common/service/storage/StorageRepository.php',
         'app/common/service/storage/StoragePurpose.php',
+        'app/common/service/storage/StorageDriverFactory.php',
+        'app/common/service/storage/ObservedStorageDriver.php',
+        'app/common/service/storage/StoragePath.php',
+        'app/common/service/storage/QiniuStorageHttpTransport.php',
     ];
     $sources = [];
     foreach ($ownedFiles as $relativePath) {
@@ -130,8 +135,10 @@ namespace {
     expectFileMedia(
         str_contains($sources['app/common/service/storage/StorageService.php'], 'repository->route')
         && str_contains($sources['app/common/service/storage/StorageService.php'], 'objectForTenant')
-        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'f.tenant_id=:tenant_id'),
-        'storage object writes and reads must remain Tenant-bound'
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], "\$prefix . 'tenant_id=:tenant_id'")
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'object_key LIKE :tenant_object_prefix')
+        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'DefaultTenantContextResolver'),
+        'sealed File Media evidence requires explicit Multi-tenant and Standalone object ownership predicates'
     );
     expectFileMedia(
         str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'material.image' => StorageAccess::PUBLIC")
@@ -139,12 +146,101 @@ namespace {
         && str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'export.csv' => StorageAccess::PRIVATE"),
         'public/private purpose routing changed'
     );
+    expectFileMedia(
+        !is_file($serverRoot . '/app/common/service/storage/StorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/LocalStorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/AliyunStorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/QcloudStorageDriver.php')
+            && !is_file($serverRoot . '/app/common/service/storage/driver/QiniuStorageDriver.php'),
+        'application must consume the single Core storage Driver implementation'
+    );
+    expectFileMedia(
+        str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new LocalStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new AliyunStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new QcloudStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new QiniuStorageDriver(')
+            && str_contains($sources['app/common/service/storage/StoragePath.php'], 'StorageObjectKey::assert(')
+            && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'StorageObjectKey::assert(')
+            && str_contains($sources['app/common/service/storage/QiniuStorageHttpTransport.php'], 'implements StorageHttpTransport'),
+        'application storage assembly must use only the frozen Core technical boundary'
+    );
+    $allowedCoreStorageImports = [
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\AliyunStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\LocalStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\QcloudStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\Driver\\QiniuStorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\StorageDriver',
+        'PeanutAdmin\\FileMedia\\Storage\\StorageHttpTransport',
+        'PeanutAdmin\\FileMedia\\Storage\\StorageObjectKey',
+    ];
     foreach ($sources as $relativePath => $source) {
-        expectFileMedia(
-            !str_contains($source, 'PeanutAdmin\\FileMedia'),
-            'application file owner must not deep import core: ' . $relativePath
-        );
+        preg_match_all('/PeanutAdmin\\\\FileMedia\\\\[A-Za-z0-9_\\\\]+/', $source, $coreImports);
+        foreach ($coreImports[0] as $coreImport) {
+            expectFileMedia(
+                in_array($coreImport, $allowedCoreStorageImports, true),
+                'application may import only Core technical storage Drivers: ' . $relativePath . ' -> ' . $coreImport
+            );
+        }
     }
+
+    // Verify the application can actually assemble every retained provider from
+    // the installed Core package. The sealed historical evidence above does not
+    // prove that current Composer autoloading or constructor contracts still work.
+    $credentialResolver = new class implements \app\common\service\storage\StorageCredentialResolver {
+        /** @var list<string> */
+        public array $resolvedDrivers = [];
+
+        public function resolve(array $account): array
+        {
+            $this->resolvedDrivers[] = (string)($account['driver'] ?? '');
+            return ['access_key' => 'fixture-access-key', 'secret_key' => 'fixture-secret-key'];
+        }
+    };
+    $outboundTransport = new class implements \app\common\service\http\OutboundHttpTransport {
+        public function send(\app\common\service\http\OutboundHttpRequest $request): \app\common\service\http\OutboundHttpResponse
+        {
+            throw new RuntimeException('provider assembly must not perform network I/O');
+        }
+    };
+    $factory = new \app\common\service\storage\StorageDriverFactory(
+        $credentialResolver,
+        new \app\common\service\storage\QiniuStorageHttpTransport($outboundTransport),
+        new \app\common\service\storage\AliyunStorageClientFactory(),
+        new \app\common\service\storage\QcloudStorageClientFactory(),
+        new \app\common\execution\CurrentExecutionContext(new \app\common\execution\ExecutionContextStore()),
+        new \think\App($serverRoot . DIRECTORY_SEPARATOR),
+    );
+    $delegateProperty = new ReflectionProperty(\app\common\service\storage\ObservedStorageDriver::class, 'delegate');
+    foreach ([
+        'local' => [
+            ['driver' => 'local'],
+            ['local_path' => 'private/storage', 'access_type' => \app\common\service\storage\StorageAccess::PRIVATE],
+            \PeanutAdmin\FileMedia\Storage\Driver\LocalStorageDriver::class,
+        ],
+        'qiniu' => [
+            ['driver' => 'qiniu'],
+            ['bucket' => 'fixture', 'endpoint' => '', 'access_domain' => 'https://cdn.example.test/'],
+            \PeanutAdmin\FileMedia\Storage\Driver\QiniuStorageDriver::class,
+        ],
+        'aliyun' => [
+            ['driver' => 'aliyun'],
+            ['bucket' => 'fixture', 'endpoint' => 'https://oss-cn-hangzhou.aliyuncs.com'],
+            \PeanutAdmin\FileMedia\Storage\Driver\AliyunStorageDriver::class,
+        ],
+        'qcloud' => [
+            ['driver' => 'qcloud'],
+            ['bucket' => 'fixture-1250000000', 'region' => 'ap-guangzhou'],
+            \PeanutAdmin\FileMedia\Storage\Driver\QcloudStorageDriver::class,
+        ],
+    ] as $provider => [$account, $space, $expectedDriver]) {
+        $driver = $factory->make($account, $space);
+        expectFileMedia($driver instanceof \PeanutAdmin\FileMedia\Storage\StorageDriver, $provider . ' did not produce a Core driver');
+        expectFileMedia($delegateProperty->getValue($driver) instanceof $expectedDriver, $provider . ' application assembly drifted');
+    }
+    expectFileMedia(
+        $credentialResolver->resolvedDrivers === ['qiniu', 'aliyun', 'qcloud'],
+        'cloud credentials must resolve per assembly while local storage remains credential-free',
+    );
 
     echo "PB04-FILE-MEDIA-HOST-001 passed\n";
 }

@@ -66,10 +66,49 @@ php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/applicatio
 这条执行器只更新 manifest 中标为 `managed` 或 `generated-managed` 的框架文件，并原子保存
 恢复材料；`app-owned` 业务代码、业务 Schema、部署密钥和业务迁移不会被自动改写。它也不
 执行 Composer/npm、数据库 migration 或服务重启。部署中的前后端与数据库升级由
-`scripts/deploy-release --update` 另行完成：同一大版本会安装锁定依赖并执行
-`php server/database/install.php --migrate --target-version=X.Y.Z`，跨大版本则必须走
+`scripts/deploy-release --update` 另行完成：应用 tag 只控制发布顺序；同一 scaffold 大版本会安装
+锁定依赖并执行 `php server/database/install.php --migrate --target-version=<scaffold-template>`，scaffold
+跨大版本则必须走
 `--fresh`（配对备份、显式确认和重建空库）。升级前先运行 `preflight`，看到 `status=ready`
 且冲突为 0 后再 apply。
+
+当前应用发布版本读取根 `release-versions.json.product_release`；`.peanut/application-manifest.json`
+中的 `application.version` 保留最近一次采用 scaffold 时的渲染快照。preflight 分别用快照重现旧
+baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标渲染参数写入不可变 plan；apply
+只使用 plan 中冻结的目标参数，不在替换 `release-versions.json` 后重读 live 文件。因此应用从
+`0.1.0` 发布到 `2.7.0` 后采用新 scaffold 时，受管版本表面会保持 `2.7.0`，不会退回首次采用值。
+`release-versions.json` 只允许这项已识别的版本 token 变化：`generated_application_default` 保留
+原生成值，目标 scaffold/Core 字段来自目标不可变 artifact；应用自行改过 Core 合同或其他字段
+且上游也变化时仍按现有三方比较报告冲突。成功 apply 后 manifest 的 `application.version` 更新为
+本次冻结的 `product_release`，使下一次升级可以逐字重现这次生成的目标 baseline；最初的
+`generation_source` 继续保持不变。
+
+应用采用 scaffold 与部署应用 Release 是两个阶段。签名 scaffold 包只在开发分支提供受管源码
+采用输入；应用随后更新并锁定 Core/Module 依赖，在隔离 staging 完成依赖安装、前端构建和应用
+验收，才建立自己的不可变 Git commit/tree、tag、`RELEASE_METADATA.json` 和完整 Release。
+生成器产出的 baseline metadata 不能当作正式发布证据。Platform 部署完整应用 Release，不在
+生产 Runtime 再次合并 scaffold。应用 `product_release` 可以在 `scaffold_template` 不变时独立
+递增；这种纯应用升级要求 from/to scaffold manifest 摘要完全一致。
+
+下一次正式发布窗口起，`scaffold_template`、`peanut-admin/core` 与 `@peanut-admin/admin` 使用
+同一个基础发行号，预发布后缀同步；`product_release` 仍由应用独立决定。正式顺序是先发布并验证
+同号 PHP/Web Core 包，再让应用锁定两份依赖并完成消费检查，最后完成同号 scaffold 资格与发布。
+任何一步失败都不能把整套基础发行标记为 ready。版本号一致不能替代 manifest、lock、包引用和
+兼容证据，也不能把 alpha 自动视为稳定版；未变化的 Core 也要产生同号不可变包。当前 `3.0.13`
+与 Core `0.1.0-alpha.12` 保持其真实历史身份，本规则不修改既有 Release、依赖锁或本页记录的
+Development 验证输入。
+
+Module manifest/archive/安装账本是第四种独立身份。Module 可以独立开发和分发，但默认由应用仓
+采用并随完整应用 Release 部署；当前 Module 安装/更新入口不执行 Composer/npm、前端构建或服务
+重启。完整 Release 缺少已安装 Package、发生回退或同版本换内容时必须在部署前停止；正常
+Package 身份不变且其 Module installation 均处于正常 maintenance 禁用态时保留并跳过 reconcile，
+failed、retire/purge 进行中或未知过渡状态阻断；显式移除先走
+停用/retire。不能把低层 Module 源码/数据库操作当成生产热更新或完整部署证据。
+
+当前 canonical Peanut worker 只执行本仓登记的固定生产资源与 checkout，不提供独立应用的通用
+部署能力。独立应用必须由 owner 登记自己的资源和执行器，并让 metadata 的
+`application_identity/version/expected_tag` 与应用合同一致；输入缺失时保持阻断。没有旧协议或
+canonical fallback，旧应用中的 app-owned Host 修正也必须由其 owner 审阅并采用。
 
 ## 1.x/2.x 历史归档
 

@@ -8,14 +8,20 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | --- | --- | --- |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
+| Understand Core capabilities and actual application adoption | [Core 能力与独立应用采用全景](reference/core-capabilities-and-application-adoption.md), [Core 与应用技术边界](architecture/core-application-technical-boundary.md) and [Storage Driver 提取队列](plans/storage-driver-extraction-queue.md) | fixed-source audit, planned boundary and decision queue; not Runtime completion evidence |
+| Follow the Gemini refactor convergence | [Gemini 大重构收敛审计与执行报告](plans/gemini-refactor-convergence-audit-2026-09-09.md) | fixed branch/worktree evidence, accepted design intent, rejected mechanical state and executable integration order |
+| Track independent application/scaffold version work | [独立应用与脚手架版本合同执行队列](plans/application-scaffold-version-contract-queue.md), [创建独立应用](create-application.md) and [脚手架升级执行器](scaffold-upgrade.md) | executable ownership, dependencies and current evidence state; not Release proof |
+| Compare scaffold Core and generated-application boundaries | [后台脚手架的 Core、公共模块与生成应用边界](reference/scaffold-core-boundary-comparison.md) | fixed official-source comparison and bounded recommendations; not evidence that Peanut has adopted another scaffold's design |
 | Understand the target backend organization | [Application and Module architecture blueprint](architecture/application-module-blueprint/README.md) | accepted target and migration input; explicitly not proof that the Runtime has migrated |
 | Understand Module/Host boundary | [Module execution context](architecture/module-execution-context-contract.md), [consumer lifecycle contract](architecture/consumer-module-lifecycle-contract.md) and [service registry](architecture/service-layer-registry.md) | current technical contracts |
-| Understand Module development | [Module development guide](module-development-guide.md) | current guide |
+| Understand Module development and delivery | [Module development guide](plugin-module-development.md), [Application and Module coding standards](architecture/application-module-blueprint/coding-standards.md) and [Module publication contract](architecture/module-publication-contract.md) | current source layout, implementation rules and explicit bundled/package/published states |
 | Follow the public consumer path | [Create applications and deliver Modules](../docs-site/guide/application-module-lifecycle.md), [command reference](../docs-site/reference.md) and [support guide](../docs-site/support.md) | public task projection; runtime and release facts remain upstream |
 | Understand identity and tenancy | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current architecture |
 | Inspect product state | [Product status](product-status/README.md) | internal machine facts and evidence |
 | Inspect the current formal release and registered demo | [v3.0.13 release snapshot](product-status/releases/v3.0.13.json), [v3.0.12 online-experience snapshot](product-status/deployments/v3.0.12-online-experience.json) and [demo handoff](operations/demo-access.md) | current immutable source release identity plus the separately versioned no-secret deployment evidence |
 | Inspect known Demo experience issues | [Demo experience audit](product-status/audits/demo-experience-audit.md) | v3.0.12 historical browser evidence, issue/evidence index and explicit untested scope; not a repaired-state claim |
+| Trace the original Luna Max source candidates | [Luna Max source pre-audit register](plans/luna-max-source-preaudit-2026-09-08.md) | archived fixed-source input; do not use it as an active queue |
+| Review the high-level disposition of Luna findings | [Luna Max source audit report](plans/luna-max-source-audit-report-2026-09-08.md) | current confirmed/rejected/accepted-risk matrix and bounded remediation status; not Release qualification |
 | Follow the product-closure work | [Execution queue](plans/product-closure-execution-queue.md), [compatibility baseline](architecture/product-closure-core-application-compatibility.md) and [observability panel](product-status/product-closure-observability.md) | internal decisions and execution evidence; not capability completion proof |
 | Follow consumer-ready delivery | [Consumer-ready product plan](plans/consumer-ready-product-plan.md), [post-release enhancement plan](plans/post-release-enhancement-plan.md) and [evidence retention register](maintenance/consumer-ready-evidence-retention.md) | completed delivery baseline, current enhancement queue and path-level keep/archive/delete decisions |
 | Prevent avoidable delivery retries | [Consumer-ready minimal controller](operations/consumer-ready-control.md) | current read-only preflight contract and upgrade boundary |
@@ -40,7 +46,7 @@ Existing root-level contracts remain discoverable during the bounded migration. 
 
 ## AI reading order
 
-1. Read `AGENTS.md` and `AGENT_EXECUTION_RULES.md`.
+1. Use `AGENTS.md` to select the task-relevant sections of `AGENT_EXECUTION_RULES.md`.
 2. Read `docs/document-registry.json` and this index.
 3. Open only the authoritative machine source for the fact being changed.
 4. Use `docs/document-impact-map.json` to select the smallest affected explanations and projections.

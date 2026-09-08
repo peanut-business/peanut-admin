@@ -8,6 +8,7 @@ use app\Modules\Official\File\Model\FileCate;
 use app\common\execution\CurrentExecutionContext;
 use app\common\persistence\ConvertsModelPage;
 
+/** Provides Tenant-scoped persistence operations for file and category records. */
 final class FileTenantRepository
 {
     use ConvertsModelPage;
@@ -25,6 +26,12 @@ final class FileTenantRepository
     public static function findFile(int $id): ?File
     {
         return self::files()->where('id', $id)->find();
+    }
+
+    /** Restores a soft-deleted Tenant-owned file after its external object deletion fails. */
+    public static function restoreFile(int $id): bool
+    {
+        return File::withTrashed()->where('id', $id)->update(['delete_time' => null]) === 1;
     }
 
     public static function findCategory(int $id): ?FileCate

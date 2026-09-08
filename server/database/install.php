@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use app\common\service\installation\ApplicationReleaseVersions;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
@@ -438,24 +439,103 @@ function applicationMigrationFiles(string $databaseDir): array
     return $files;
 }
 
-function migrationReleaseVersion(string $sql, string $targetVersion): string
+/**
+ * Read the independent application release and scaffold migration axes from the root contract.
+ *
+ * @return array{product_release:string,scaffold_template:string}
+ */
+function applicationReleaseVersions(string $serverDir): array
 {
-    if (preg_match('/^\s*--\s*peanut-release:\s*(\d+\.\d+\.\d+)\s*$/mi', $sql, $matches) === 1) {
-        $version = $matches[1];
-        if (preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version) !== 1) {
-            throw new RuntimeException('迁移 release 版本无效：' . $version);
-        }
-        return $version;
+    loadCoreRuntime($serverDir);
+    $contract = ApplicationReleaseVersions::load(dirname($serverDir) . '/release-versions.json');
+    return [
+        'product_release' => $contract->productRelease(),
+        'scaffold_template' => $contract->scaffoldTemplate(),
+    ];
+}
+
+/**
+ * Resolve the SQL target from this scaffold and its optional deployment-verified demo overlay.
+ *
+ * @param array{product_release:string,scaffold_template:string} $versions
+ */
+function applicationMigrationTargetVersion(string $serverDir, array $versions): string
+{
+    $base = $versions['scaffold_template'];
+    $path = dirname($serverDir) . '/DEMO_PATCH_METADATA.json';
+    if (!file_exists($path)) {
+        return $base;
+    }
+    if (!is_file($path) || is_link($path)) {
+        throw new RuntimeException('MIGRATION_TARGET_CONTRACT_INVALID');
+    }
+    try {
+        $overlay = json_decode((string)file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException $exception) {
+        throw new RuntimeException('MIGRATION_TARGET_CONTRACT_INVALID', 0, $exception);
+    }
+    if (!is_array($overlay)
+        || ($overlay['schema_version'] ?? null) !== 1
+        || ($overlay['kind'] ?? null) !== 'peanut-admin-demo-site-overlay'
+        || ($overlay['base_tag'] ?? null) !== 'v' . $versions['product_release']
+        || !is_array($overlay['files'] ?? null)
+        || !is_string($overlay['migration_target_version'] ?? null)
+        || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $overlay['migration_target_version']) !== 1
+        || version_compare($overlay['migration_target_version'], $base, '<')
+    ) {
+        throw new RuntimeException('MIGRATION_TARGET_CONTRACT_INVALID');
+    }
+    return $overlay['migration_target_version'];
+}
+
+/**
+ * Refuse a caller-provided SQL target that differs from the adopted scaffold/overlay identity.
+ *
+ * @param array{product_release:string,scaffold_template:string} $versions
+ */
+function validatedMigrationTargetVersion(string $serverDir, string $targetVersion, array $versions): string
+{
+    if (!hash_equals(applicationMigrationTargetVersion($serverDir, $versions), $targetVersion)) {
+        throw new RuntimeException('MIGRATION_TARGET_CONTRACT_MISMATCH');
     }
     return $targetVersion;
 }
 
-/** @return array{status:string,target_version:string,applied:list<string>,pending:list<string>} */
+/**
+ * Resolve immutable Peanut markers separately from the three hash-pinned application migrations.
+ *
+ * @return array{release_version:string,peanut_release:bool}
+ */
+function migrationReleaseIdentity(string $sql, string $applicationVersion): array
+{
+    preg_match_all('/^\s*--\s*peanut-release\b[^\r\n]*$/mi', $sql, $markerLines);
+    if (count($markerLines[0]) === 0) {
+        return ['release_version' => $applicationVersion, 'peanut_release' => false];
+    }
+    if (count($markerLines[0]) !== 1
+        || preg_match(
+            '/^\s*--\s*peanut-release:\s*((0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))\s*$/iD',
+            $markerLines[0][0],
+            $matches,
+        ) !== 1
+    ) {
+        throw new RuntimeException('MIGRATION_RELEASE_MARKER_INVALID');
+    }
+    return ['release_version' => $matches[1], 'peanut_release' => true];
+}
+
+/**
+ * Select and apply eligible immutable migrations while preserving their checksum ledger.
+ *
+ * @return array{status:string,target_version:string,applied:list<string>,pending:list<string>}
+ */
 function migrateDatabase(string $serverDir, string $targetVersion, bool $dryRun = false): array
 {
     if (preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $targetVersion) !== 1) {
         throw new RuntimeException('目标版本必须是 X.Y.Z');
     }
+    $versions = applicationReleaseVersions($serverDir);
+    $targetVersion = validatedMigrationTargetVersion($serverDir, $targetVersion, $versions);
     loadCoreRuntime($serverDir);
     $config = loadConfig($serverDir);
     if (!preg_match('/^[A-Za-z0-9_]+$/D', $config['DB_NAME'])) {
@@ -486,8 +566,9 @@ function migrateDatabase(string $serverDir, string $targetVersion, bool $dryRun 
                 throw new RuntimeException('迁移文件为空：' . $id);
             }
             $checksum = hash('sha256', $sql);
-            $releaseVersion = migrationReleaseVersion($sql, $targetVersion);
-            if (version_compare($releaseVersion, $targetVersion, '>')) {
+            $releaseIdentity = migrationReleaseIdentity($sql, $versions['product_release']);
+            $releaseVersion = $releaseIdentity['release_version'];
+            if ($releaseIdentity['peanut_release'] && version_compare($releaseVersion, $targetVersion, '>')) {
                 continue;
             }
             $statement = $pdo->prepare('SELECT checksum,status FROM pa_schema_migration WHERE migration_id = ?');

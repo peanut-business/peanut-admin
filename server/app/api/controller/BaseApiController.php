@@ -17,9 +17,11 @@ abstract class BaseApiController extends BaseController
 
     protected int   $memberId   = 0;
     protected array $memberInfo = [];
+    protected readonly CurrentExecutionContext $executionContext;
 
-    public function __construct(App $app, protected readonly CurrentExecutionContext $executionContext)
+    public function __construct(App $app, ?CurrentExecutionContext $executionContext = null)
     {
+        $this->executionContext = $executionContext ?? $app->make(CurrentExecutionContext::class);
         parent::__construct($app);
     }
 

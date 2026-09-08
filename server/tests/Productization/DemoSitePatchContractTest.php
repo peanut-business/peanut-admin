@@ -104,7 +104,8 @@ $overlayBuilder = $read($root . '/scripts/build-demo-site-patch');
 $expect(
     preg_match('/files=\(\n(?<files>.*?)\n\)/s', $overlayBuilder, $fileMatch) === 1
         && trim((string)$fileMatch['files']) === 'server/database/seed-multi-tenant-demo.php'
-        && str_contains($overlayBuilder, 'migration_target_version="${BASE_TAG#v}"'),
+        && str_contains($overlayBuilder, "git show \"\$BASE_TAG:release-versions.json\"")
+        && str_contains($overlayBuilder, ".scaffold_template // empty"),
     'demo overlay must contain only the source-only synthetic data seed'
 );
 $expect(
@@ -117,6 +118,18 @@ $archive = $temporaryRoot . '/overlay.tar';
 mkdir($repository . '/scripts', 0700, true);
 file_put_contents($repository . '/scripts/build-demo-site-patch', $overlayBuilder);
 chmod($repository . '/scripts/build-demo-site-patch', 0700);
+file_put_contents(
+    $repository . '/release-versions.json',
+    json_encode([
+        'schema_version' => 1,
+        'protocol' => 'peanut.release-versions.v1',
+        'product_release' => '3.0.5',
+        'scaffold_template' => '3.0.4',
+        'generated_application_default' => '0.1.0',
+        'core_php' => '0.1.0-alpha.12',
+        'core_web' => '0.1.0-alpha.12',
+    ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
+);
 try {
     $paths = preg_split('/\R/', trim((string)$fileMatch['files'])) ?: [];
     foreach ($paths as $path) {
@@ -149,8 +162,8 @@ try {
     );
     $expect(
         ($metadata['base_tag'] ?? null) === 'v3.0.5'
-            && ($metadata['migration_target_version'] ?? null) === '3.0.5',
-        'generated overlay metadata does not keep the formal installer version'
+            && ($metadata['migration_target_version'] ?? null) === '3.0.4',
+        'generated overlay metadata does not keep the scaffold migration identity'
     );
     $seedMetadata = array_values(array_filter(
         is_array($metadata['files'] ?? null) ? $metadata['files'] : [],
@@ -203,12 +216,15 @@ foreach ([
     'seed-multi-tenant-demo.php',
     'down --volumes',
     '--fresh requires --confirm-destroy $TARGET',
-    'major release change ${current_tag} -> ${tag} requires --fresh',
+    'scaffold downgrade ${current_scaffold_version} -> ${scaffold_migration_version} is forbidden',
+    'scaffold major change ${current_scaffold_version} -> ${scaffold_migration_version} requires --fresh',
     'mktemp "${target_file}.deploy.',
     'mv -f -- "$temporary" "$target_file"',
     'server/database/install.php',
-    'server/database/install.php --migrate --target-version="$version"',
-    'plugin:reconcile --official-locked',
+    'server/database/install.php --migrate --target-version="$scaffold_migration_version"',
+    'plugin:reconcile --release-locked',
+    'plugin:release-composition',
+    '--current-root=/run/peanut-current-release',
     'tenant-module:apply-profile standalone',
     'tenant-module:apply-profile demo',
     'printf \'DEMO_MODE_SET=%q\\n\' "$DEMO_MODE_SET"',
@@ -216,9 +232,52 @@ foreach ([
     'demo overlay migration target version does not match its migration files',
     'demo overlay metadata identity is invalid',
     'demo_overlay_commit=',
+    '--expected-commit',
+    '--expected-tree',
+    'release_ref="$tag_commit"',
+    'git archive --format=tar "$release_ref"',
 ] as $token) {
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }
+$expect(
+    substr_count($deploy, 'git show "$release_ref:') >= 4
+        && str_contains($deploy, '"$tag_tree" == "$EXPECTED_TREE"'),
+    'deployment does not read and archive the caller-bound immutable commit/tree'
+);
+$upgradeWorker = $read($root . '/scripts/ops-upgrade-worker');
+$expect(
+    str_contains($upgradeWorker, '.result.target_commit == $commit')
+        && str_contains($upgradeWorker, '.result.target_tree == $tree')
+        && str_contains($upgradeWorker, '--expected-commit "$target_commit" --expected-tree "$target_tree"'),
+    'upgrade worker does not fence deployment with the task-bound commit/tree'
+);
+$upgradeExecution = $read($root . '/server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php');
+$claimStart = strpos($upgradeExecution, 'public function claim()');
+$advanceStart = strpos($upgradeExecution, 'public function advance(');
+$succeedStart = strpos($upgradeExecution, 'public function succeed(');
+$maintenanceStart = strpos($upgradeExecution, 'private function advanceMaintenance(');
+$createExecutionStart = strpos($upgradeExecution, 'private function createExecution(');
+$expect(
+    $claimStart !== false && $advanceStart !== false && $succeedStart !== false
+        && $maintenanceStart !== false && $createExecutionStart !== false,
+    'upgrade execution response boundaries are unavailable'
+);
+$claimResponse = substr($upgradeExecution, (int)$claimStart, (int)$advanceStart - (int)$claimStart);
+$reentryResponse = substr($upgradeExecution, (int)$advanceStart, (int)$succeedStart - (int)$advanceStart);
+$maintenanceResponse = substr(
+    $upgradeExecution,
+    (int)$maintenanceStart,
+    (int)$createExecutionStart - (int)$maintenanceStart,
+);
+$expect(
+    str_contains($claimResponse, "'target_commit' => \$payload['target_commit']")
+        && str_contains($claimResponse, "'target_tree' => \$payload['target_tree']")
+        && str_contains($reentryResponse, "'target_commit' => (string)\$execution['target_commit']")
+        && str_contains($reentryResponse, "'target_tree' => (string)\$execution['target_tree']")
+        && str_contains($maintenanceResponse, "'target_commit' => (string)\$execution['target_commit']")
+        && str_contains($maintenanceResponse, "'target_tree' => (string)\$execution['target_tree']"),
+    'upgrade task responses do not retain the bound deployment commit/tree'
+);
 $expect(
     str_contains($deploy, 'requires distinct default Admin, Platform, Tenant A and Tenant B emails'),
     'fresh demo deployment does not reject identity collisions before database work'
@@ -227,43 +286,48 @@ $metadataValidationPosition = strpos($deploy, "jq -e --arg tag \"\$tag\" --arg c
 $buildPosition = strpos($deploy, '"${candidate_compose[@]}" build');
 $candidatePreflightPosition = strpos($deploy, 'server/database/install.php --preflight', (int)$buildPosition);
 $candidatePluginLockPosition = strpos($deploy, 'server/think plugin:lock --check', (int)$candidatePreflightPosition);
+$candidatePluginCompositionPosition = strpos($deploy, 'server/think plugin:release-composition', (int)$candidatePluginLockPosition);
+$rootCleanupPosition = strpos($deploy, 'sudo -n find "$root" -mindepth 1 -maxdepth 1', (int)$candidatePluginCompositionPosition);
 $destroyPosition = strpos($deploy, '"${current_compose[@]}" down --volumes');
 $expect(
     $metadataValidationPosition !== false
         && $buildPosition !== false
         && $candidatePreflightPosition !== false
         && $candidatePluginLockPosition !== false
+        && $candidatePluginCompositionPosition !== false
+        && $rootCleanupPosition !== false
         && $destroyPosition !== false
         && $metadataValidationPosition < $buildPosition
         && $buildPosition < $candidatePreflightPosition
         && $candidatePreflightPosition < $candidatePluginLockPosition
-        && $candidatePluginLockPosition < $destroyPosition,
+        && $candidatePluginLockPosition < $candidatePluginCompositionPosition
+        && $candidatePluginCompositionPosition < $rootCleanupPosition,
     'fresh deployment does not validate the exact candidate image before destructive work'
 );
 $freshMigration = 'server/database/install.php --migrate --target-version="$migration_target_version"';
-$updateMigration = 'server/database/install.php --migrate --target-version="$version"';
+$updateMigration = 'server/database/install.php --migrate --target-version="$scaffold_migration_version"';
 $freshMigrationPosition = strpos($deploy, $freshMigration);
-$reconcilePosition = strpos($deploy, 'server/think plugin:reconcile --official-locked', (int)$freshMigrationPosition);
+$reconcilePosition = strpos($deploy, 'server/think plugin:reconcile --release-locked', (int)$freshMigrationPosition);
 $expect(
     substr_count($deploy, $freshMigration) === 1
         && substr_count($deploy, $updateMigration) === 1
         && $freshMigrationPosition !== false
         && $reconcilePosition !== false
         && $freshMigrationPosition < $reconcilePosition,
-    'deployment does not keep tag migration for update while applying the verified overlay target before reconcile'
+    'deployment does not keep scaffold migration for update while applying the verified overlay target before reconcile'
 );
 $expect(
-    str_contains($deploy, 'computed_migration_target="$version"')
+    str_contains($deploy, 'computed_migration_target="$scaffold_migration_version"')
         && str_contains($deploy, '.files[].path | select(startswith("server/database/migrations/"))')
         && str_contains($deploy, '[[ "$migration_target_version" == "$computed_migration_target" ]]'),
     'deployment does not recompute the overlay migration maximum from its declared migration files'
 );
 $expect(
-    substr_count($deploy, 'run -T --rm --no-deps --entrypoint php') === 13,
+    substr_count($deploy, 'run -T --rm --no-deps') === 14,
     'remote one-shot Compose commands must not consume the deployment heredoc'
 );
 $expect(
-    substr_count($deploy, '</dev/null') === 13,
+    substr_count($deploy, '</dev/null') === 14,
     'remote one-shot Compose commands must close inherited standard input'
 );
 

@@ -1,5 +1,7 @@
 # PB04-04 文件与素材 Host 合同
 
+> 历史决策：本合同保留封存事实与证据；其存储提取方向由 [Core 与应用技术边界](core-application-technical-boundary.md) 替代。本标注不改变历史 Runtime 证据，也不声称迁移已完成。
+
 > 状态：Accepted
 >
 > 应用前置提交：`22d06e3df7a96b5489f3900ecccf6848f30e41c1`

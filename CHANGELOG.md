@@ -11,6 +11,31 @@ and the two public core packages have independent version histories.
   components under Apache-2.0. Existing immutable tags and Releases keep the
   license files originally published with those artifacts.
 
+## [3.0.14] - 2026-09-09
+
+### Changed
+
+- Adopted the qualified Peanut Admin Core Alpha.13 Composer and npm packages across all clients,
+  including the single Core implementation of Local, Aliyun OSS, Tencent COS and Qiniu drivers.
+- Defined fail-closed Module source-package publication states and content rules; all official
+  Modules, including Rich Text, are discovered from `plugins.lock` for deterministic packaging.
+- Converged the reviewed Gemini refactor as incremental application changes while preserving the
+  ThinkPHP application boundary and isolating the rejected mechanical rewrite.
+
+### Fixed
+
+- Replaced temporary or privilege-dependent test paths with executable administrator, import/export,
+  member upload, scaffold, SMS reservation and package crash-recovery gates.
+- Rejected environment files, private keys, dependency trees, build output and workspace state from
+  Module source packages.
+- Preserved current-session cleanup, article lifecycle guards, file-delete compensation and storage
+  provider error handling from the independent source audit.
+
+### Delivery
+
+- This release requires an L2 fixed-candidate P0-E qualification because it changes Core identities,
+  dependency locks, authentication and Tenant-sensitive Runtime paths.
+
 ## [3.0.13] - 2026-09-06
 
 ### Added

@@ -68,7 +68,7 @@ paths:
           schema: {type: integer, minimum: 1}
       responses:
         '200': {$ref: '#/components/responses/ApiResponse'}
-  /official.file.upload.file:
+  /adminapi/official.file.upload.file:
     post:
       tags: [File]
       operationId: uploadFile
@@ -122,7 +122,7 @@ paths:
               schema: {type: string, format: binary}
         '404':
           description: Signature, object state or Tenant state rejected
-  /official.file.list:
+  /adminapi/official.file.list:
     get:
       tags: [File]
       operationId: listFiles

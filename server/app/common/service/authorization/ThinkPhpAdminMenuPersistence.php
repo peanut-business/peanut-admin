@@ -94,6 +94,7 @@ final class ThinkPhpAdminMenuPersistence implements AdminMenuPersistence
             ->column('id'));
     }
 
+    /** Resolves active permission keys while keeping SQL quoting inside ThinkORM's field API. */
     public function activePermissionKeys(array $menuIds): array
     {
         if ($menuIds === []) {
@@ -105,8 +106,8 @@ final class ThinkPhpAdminMenuPersistence implements AdminMenuPersistence
             ->whereIn('m.id', $menuIds)
             ->where('m.perms', '<>', '')
             ->where('p.status', 'active')
-            ->order('p.`key`')
-            ->column('p.`key`'))));
+            ->order('p.key')
+            ->column('p.key'))));
     }
 
     public function systemMenuPermissionRows(): array

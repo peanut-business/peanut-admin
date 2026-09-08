@@ -109,6 +109,10 @@ scripts/deploy-release vX.Y.Z --target production-candidate --fresh \
 
 ## 内部 `plugin:*` 命令
 
+Module 的 bundled source、package candidate、qualified 与 published 状态以及 Package 内容边界，统一见
+[`Module 发布与制品合同`](architecture/module-publication-contract.md)。`module:pack` 的成功输出不能单独
+作为外部发布证据。
+
 普通模块开发者使用 `module:*` / `bundle:*` 入口。以下命令属于发布工程或既有内部入口，不是第二套
 模块状态、依赖图或权限源，也不应进入新项目的日常开发流程：
 

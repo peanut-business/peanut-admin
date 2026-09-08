@@ -19,6 +19,7 @@ final class NoticeTenantRepository
     public const LOG_STATUS_PENDING = NoticeLog::STATUS_PENDING;
     public const LOG_STATUS_SUCCESS = NoticeLog::STATUS_SUCCESS;
     public const LOG_STATUS_FAIL = NoticeLog::STATUS_FAIL;
+    public const LOG_STATUS_UNKNOWN = NoticeLog::STATUS_UNKNOWN;
     public const LOG_CHANNEL_SMS = NoticeLog::CHANNEL_SMS;
     public const LOG_VERIFIED_NO = NoticeLog::VERIFIED_NO;
     public const LOG_VERIFIED_YES = NoticeLog::VERIFIED_YES;

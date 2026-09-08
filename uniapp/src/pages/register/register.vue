@@ -30,10 +30,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useUserStore } from '@/store/user'
 import { register } from '@/api/account'
 
-const userStore = useUserStore()
 const loading = ref(false)
 const form = ref({ account: '', password: '', password_confirm: '' })
 
@@ -45,9 +43,9 @@ async function handleRegister() {
 
   loading.value = true
   try {
-    const data = await register(form.value)
-    userStore.login(data)
-    uni.reLaunch({ url: '/pages/user/user' })
+    await register(form.value)
+    uni.showToast({ title: '注册成功，请登录', icon: 'success' })
+    uni.reLaunch({ url: '/pages/login/login' })
   } finally {
     loading.value = false
   }

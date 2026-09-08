@@ -9,7 +9,7 @@ Peanut Admin 的 HTTP API、两个公开运行包和 Host 覆盖共同构成扩�
 
 ## 5 分钟速读
 
-- 普通业务 API 仍按路由、Controller、Application/Logic、Repository 分层。
+- 普通业务 API 仍按路由、Controller、service/Logic、Repository 分层。
 - 新的独立业务域优先做 Module；Plugin 负责分发，TenantModule 负责租户开通。
 - 其他 Module 只能调用 `Contracts/` 中公开的命令或查询，不能直接使用私有 Model/表。
 - Plugin lifecycle、Module migration、菜单、权限、设置和前端 contribution 已通过当前 fresh
@@ -158,7 +158,7 @@ Tenant ID、配置摘要、秘密、收件人、订单/交易号或原始平台�
 | --- | --- |
 | 路由 | HTTP 方法、URI、认证中间件明确 |
 | Controller/Validate | 只做输入、场景校验和响应转换 |
-| Application/Logic | 事务、状态和失败语义集中 |
+| service/Logic | 事务、状态和失败语义集中 |
 | Tenant | 只从可信 TenantContext 取 Tenant，不接受浏览器伪造 |
 | Permission | `perms` 与去掉 `adminapi/` 后的 URI 一致 |
 | Menu/Button | 只是展示和操作入口，不承担安全边界 |
@@ -210,7 +210,7 @@ server/app/Modules/Fixture/DeliveryRecord/
   module.json
   ModuleProvider.php
   Contracts/DeliveryRecordCommands.php
-  Application/DeliveryRecordService.php
+  service/DeliveryRecordService.php
   Infrastructure/{Authorization,Persistence}/
   Database/Migrations/
   Resources/{permissions,menus,setting-definitions}.json

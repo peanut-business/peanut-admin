@@ -31,11 +31,6 @@
       >
         使用微信登录
       </el-button>
-
-      <p class="text-center text-sm text-gray-400">
-        没有账号？
-        <NuxtLink to="/register" class="text-primary hover:underline">立即注册</NuxtLink>
-      </p>
     </div>
   </div>
 </template>

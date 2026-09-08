@@ -92,22 +92,32 @@ final class TencentSms implements SmsDriver
 
         $data = json_decode((string) $resp, true);
         $receipt = is_array($data) ? $data : ['raw' => (string)$resp];
+        if (!is_array($data) || !is_array($data['Response'] ?? null)) {
+            return new SmsDriverResult(SmsDriverResult::OUTCOME_UNKNOWN, '短信服务商返回无法确认', $receipt);
+        }
         $result = $data['Response'] ?? [];
         if (isset($result['Error'])) {
             return new SmsDriverResult(
-                false,
+                SmsDriverResult::OUTCOME_FAILED,
                 (string)($result['Error']['Code'] ?? '') . ': ' . (string)($result['Error']['Message'] ?? ''),
                 $receipt,
             );
         }
 
         $sendStatusSet = $result['SendStatusSet'] ?? [];
+        if (!is_array($sendStatusSet) || $sendStatusSet === []) {
+            return new SmsDriverResult(SmsDriverResult::OUTCOME_UNKNOWN, '短信服务商返回无法确认', $receipt);
+        }
         foreach ($sendStatusSet as $status) {
             if (($status['Code'] ?? '') !== 'Ok') {
-                return new SmsDriverResult(false, (string)($status['Message'] ?? '发送失败'), $receipt);
+                return new SmsDriverResult(
+                    SmsDriverResult::OUTCOME_FAILED,
+                    (string)($status['Message'] ?? '发送失败'),
+                    $receipt,
+                );
             }
         }
 
-        return new SmsDriverResult(true, '', $receipt);
+        return new SmsDriverResult(SmsDriverResult::OUTCOME_SUCCEEDED, '', $receipt);
     }
 }

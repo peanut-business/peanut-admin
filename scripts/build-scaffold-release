@@ -22,16 +22,34 @@ foreach (array_slice($argv, 1) as $argument) {
 }
 foreach (['version','source-commit','output'] as $required) if (!isset($options[$required])) releaseUsage();
 try {
-    $contract = json_decode((string)file_get_contents($root.'/release-versions.json'), true, 512, JSON_THROW_ON_ERROR);
     $parser = new \Composer\Semver\VersionParser();
     $actual = $parser->normalize($options['version']);
-    $expected = $parser->normalize((string)($contract['scaffold_template'] ?? ''));
-    if (!\Composer\Semver\Comparator::equalTo($actual, $expected)) {
-        releaseUsage();
-    }
 } catch (Throwable) { releaseUsage(); }
 if (preg_match('/^[a-f0-9]{40}$/D',$options['source-commit'])!==1 || !str_starts_with($options['output'],'/')
     || (isset($options['edition']) && !in_array($options['edition'], ['standalone', 'multi-tenant'], true))) releaseUsage();
+
+// A normal build can only create the currently declared scaffold template.
+// Historical releases are still checked from their immutable artifact below;
+// their source commits predate the current release-versions contract and must
+// not be rejected merely because the current template version is newer.
+if (!$check) {
+    try {
+        $contract = json_decode((string)file_get_contents($root.'/release-versions.json'), true, 512, JSON_THROW_ON_ERROR);
+        $expected = $parser->normalize((string)($contract['scaffold_template'] ?? ''));
+        if (!\Composer\Semver\Comparator::equalTo($actual, $expected)) {
+            releaseUsage();
+        }
+    } catch (Throwable) { releaseUsage(); }
+} else {
+    $existingManifestPath = rtrim($options['output'], '/') . '/scaffold-manifest.json';
+    try {
+        $existing = json_decode((string)file_get_contents($existingManifestPath), true, 512, JSON_THROW_ON_ERROR);
+        $existingVersion = $parser->normalize((string)($existing['release']['version'] ?? ''));
+        if (!\Composer\Semver\Comparator::equalTo($actual, $existingVersion)) {
+            releaseUsage();
+        }
+    } catch (Throwable) { releaseUsage(); }
+}
 
 function releaseRun(array $command, ?string $cwd = null): string
 {
@@ -81,15 +99,40 @@ try {
     $application=$temporary.'/application';
     $edition=$options['edition']??null;
     $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,$edition!==null);
-    $manifest=$creator->create(
-        RELEASE_PRODUCT_TOKEN,
-        RELEASE_SLUG_TOKEN,
-        RELEASE_PACKAGE_TOKEN,
-        $application,
-        $edition??'multi-tenant',
-        RELEASE_APPLICATION_VERSION_TOKEN,
-        'full'
-    );
+    $create=new ReflectionMethod($creator,'create');
+    $createParameters=array_map(static fn(ReflectionParameter $parameter):string=>$parameter->getName(),$create->getParameters());
+    if($createParameters===['productName','slug','packageIdentity','target']) {
+        // The earliest immutable releases predate generated application
+        // versions; their v2 manifests intentionally contain only three tokens.
+        $manifest=$creator->create(
+            RELEASE_PRODUCT_TOKEN,
+            RELEASE_SLUG_TOKEN,
+            RELEASE_PACKAGE_TOKEN,
+            $application
+        );
+    } elseif($createParameters===['productName','slug','packageIdentity','target','applicationVersion']) {
+        // Immutable pre-edition releases accepted the application version as
+        // argument five. Passing today's edition there corrupts their check.
+        $manifest=$creator->create(
+            RELEASE_PRODUCT_TOKEN,
+            RELEASE_SLUG_TOKEN,
+            RELEASE_PACKAGE_TOKEN,
+            $application,
+            RELEASE_APPLICATION_VERSION_TOKEN
+        );
+    } elseif($createParameters===['productName','slug','packageIdentity','target','edition','applicationVersion','profile']) {
+        $manifest=$creator->create(
+            RELEASE_PRODUCT_TOKEN,
+            RELEASE_SLUG_TOKEN,
+            RELEASE_PACKAGE_TOKEN,
+            $application,
+            $edition??'multi-tenant',
+            RELEASE_APPLICATION_VERSION_TOKEN,
+            'full'
+        );
+    } else {
+        throw new RuntimeException('SCAFFOLD_RELEASE_CREATOR_SIGNATURE_UNSUPPORTED');
+    }
     $generationSource=$manifest['generation_source']??null;
     if(($manifest['template']['source_commit']??null)!==$commit||($manifest['template']['source_tree']??null)!==$tree
         ||($generationSource!==null&&(!is_array($generationSource)||($generationSource['commit']??null)!==$commit||($generationSource['tree']??null)!==$tree

@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 use app\api\controller\UploadController;
 use app\common\enum\FileEnum;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use app\common\execution\ConsumerExecutionContext;
+use app\common\execution\ExecutionContextStore;
+use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use think\file\UploadedFile;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -17,18 +19,36 @@ function expectMemberUpload(bool $condition, string $message): void
     }
 }
 
-function memberUploadContext(int $tenantId, int $memberId, string $requestId): TenantContext
+function memberUploadContext(int $tenantId, int $memberId, string $requestId): AuthenticatedMemberContext
 {
-    return TenantContext::fromValidatedSession(new ValidatedTenantSession(
-        $memberId,
-        '01JMT03UPLOAD' . str_pad((string)$memberId, 13, '0', STR_PAD_LEFT),
+    return new AuthenticatedMemberContext(
         $tenantId,
-        $memberId + 10000,
         $memberId,
-        'member-web',
-        new DateTimeImmutable('2031-01-01T00:00:00Z'),
-        1,
-    ), $requestId);
+        hash('sha256', 'member-upload-' . $tenantId . '-' . $memberId),
+        $requestId,
+    );
+}
+
+function memberUploadSchema(PDO $pdo, string $serverRoot): void
+{
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
+    }
+    $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_tenant
+  (id, code, name, display_name, status, activated_at, created_at, updated_at)
+VALUES
+  (101, 'alpha', 'Alpha', 'Alpha', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
+SQL);
+    $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
+    expectMemberUpload($schema !== '', 'canonical application schema is missing');
+    $pdo->exec($schema);
+    $storageMigration = (string)file_get_contents(
+        $serverRoot . '/database/migrations/20260823-unify-storage-service.sql'
+    );
+    expectMemberUpload($storageMigration !== '', 'canonical storage migration is missing');
+    $pdo->exec($storageMigration);
 }
 
 $serverRoot = dirname(__DIR__, 2);
@@ -45,17 +65,14 @@ expectMemberUpload(
 
 $host = IsolatedBackendEnvironment::required('DB_HOST');
 $port = (int)IsolatedBackendEnvironment::required('DB_PORT');
+$database = IsolatedBackendEnvironment::required('DB_NAME');
 $user = IsolatedBackendEnvironment::required('DB_USER');
 $password = IsolatedBackendEnvironment::required('DB_PASS');
 $runId = strtolower(bin2hex(random_bytes(5)));
-$database = 'peanut_admin_mt03_member_upload_' . $runId;
-$admin = new PDO(
-    "mysql:host={$host};port={$port};charset=utf8mb4",
-    $user,
-    $password,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+expectMemberUpload(
+    preg_match('/^peanut_admin_development_p0e_[a-z0-9]{1,11}_plugin_lifecycle$/D', $database) === 1,
+    'member upload Gate requires its exact registered P0-E plugin_lifecycle database'
 );
-$admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 $storedObject = null;
 $temporaryUpload = tempnam(sys_get_temp_dir(), 'peanut-member-upload-');
 
@@ -66,52 +83,13 @@ try {
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
-    $pdo->exec(<<<'SQL'
-CREATE TABLE pa_config (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  type VARCHAR(32) NOT NULL DEFAULT '',
-  name VARCHAR(64) NOT NULL DEFAULT '',
-  value TEXT NULL,
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (id), UNIQUE KEY uk_type_name (type, name)
-) ENGINE=InnoDB;
-CREATE TABLE pa_file_cate (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  pid INT UNSIGNED NOT NULL DEFAULT 0,
-  type TINYINT NOT NULL DEFAULT 10,
-  name VARCHAR(64) NOT NULL DEFAULT '',
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL DEFAULT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_file_cate_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_file (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  cid INT UNSIGNED NOT NULL DEFAULT 0,
-  source_id INT UNSIGNED NOT NULL DEFAULT 0,
-  source TINYINT NOT NULL DEFAULT 0,
-  type TINYINT NOT NULL DEFAULT 10,
-  name VARCHAR(255) NOT NULL DEFAULT '',
-  uri VARCHAR(255) NOT NULL DEFAULT '',
-  storage VARCHAR(20) NOT NULL DEFAULT 'local',
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL DEFAULT NULL,
-  PRIMARY KEY (id), UNIQUE KEY uk_file_tenant_id (tenant_id, id)
-) ENGINE=InnoDB;
-INSERT INTO pa_config (type, name, value) VALUES ('storage', 'default', 'local');
-SQL);
+    memberUploadSchema($pdo, $serverRoot);
 
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
 
     $app = new think\App($serverRoot);
     $app->initialize();
     $request = $app->request;
-    $request->tenantContext = memberUploadContext(101, 501, 'mt03-member-upload-' . $runId);
-    $request->memberInfo = ['id' => 501];
     $request->withPost([
         'cid' => 0,
         'tenant_id' => 202,
@@ -130,24 +108,47 @@ SQL);
     ]);
     $app->instance('request', $request);
 
-    $response = (new UploadController($app))->image();
+    $member = memberUploadContext(101, 501, 'mt03-member-upload-' . $runId);
+    $contexts = $app->make(ExecutionContextStore::class);
+    $response = $contexts->run(
+        ConsumerExecutionContext::member($member, 'member.file.upload'),
+        static function () use ($app): object {
+            $controller = $app->make(UploadController::class);
+            $controller->initialize();
+            return $controller->image();
+        },
+    );
+    expectMemberUpload($contexts->isEmpty(), 'member upload leaked its execution context');
     $body = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
     expectMemberUpload(($body['code'] ?? null) === 20000, 'member upload failed: ' . ($body['msg'] ?? 'unknown error'));
 
-    $row = $pdo->query('SELECT tenant_id, source_id, source, type, name, uri, storage FROM pa_file LIMIT 1')->fetch(PDO::FETCH_ASSOC);
+    $row = $pdo->query(<<<'SQL'
+SELECT f.tenant_id, f.source_id, f.source, f.type, f.name, f.file_key,
+       o.object_key, o.status, o.created_by_member_id, a.driver, s.local_path
+FROM pa_file f
+JOIN pa_file_object o ON o.file_key = f.file_key
+JOIN pa_storage_space s ON s.id = o.storage_space_id
+JOIN pa_storage_account a ON a.id = s.account_id
+LIMIT 1
+SQL)->fetch(PDO::FETCH_ASSOC);
     expectMemberUpload(is_array($row), 'member upload did not create a file row');
     expectMemberUpload((int)$row['tenant_id'] === 101, 'payload forged uploaded file Tenant ownership');
     expectMemberUpload((int)$row['source_id'] === 501, 'payload forged uploaded file member owner');
     expectMemberUpload((int)$row['source'] === FileEnum::SOURCE_USER, 'member upload was stored as an admin upload');
     expectMemberUpload((int)$row['type'] === FileEnum::IMAGE, 'member upload file type changed');
     expectMemberUpload($row['name'] === 'member-avatar.png', 'member upload original name changed');
-    expectMemberUpload(str_starts_with($row['uri'], 'storage/tenants/v1/101/uploads/images/'), 'member upload escaped its Tenant object namespace');
-    expectMemberUpload(!str_contains($row['uri'], '/202/'), 'payload Tenant appeared in stored object namespace');
-    expectMemberUpload($row['storage'] === 'local', 'member upload did not use the configured local storage');
+    expectMemberUpload(preg_match('/^file_[0-9a-f]{32}$/D', (string)$row['file_key']) === 1, 'member upload file identity changed');
+    expectMemberUpload(str_starts_with((string)$row['object_key'], 'tenants/v1/101/material/image/'), 'member upload escaped its Tenant object namespace');
+    expectMemberUpload(!str_contains((string)$row['object_key'], '/202/'), 'payload Tenant appeared in stored object namespace');
+    expectMemberUpload($row['driver'] === 'local' && $row['local_path'] === 'public/storage', 'member upload did not use the registered local public storage route');
+    expectMemberUpload($row['status'] === 'ready', 'member upload object was not made ready');
+    expectMemberUpload((int)$row['created_by_member_id'] === 501, 'payload forged the storage object member owner');
+    expectMemberUpload(($body['data']['file_key'] ?? null) === $row['file_key'], 'upload response did not return the canonical file identity');
 
-    $storedObject = $serverRoot . '/public/' . $row['uri'];
+    $storedObject = $serverRoot . '/public/storage/' . $row['object_key'];
     expectMemberUpload(is_file($storedObject), 'member upload object was not written to storage');
     expectMemberUpload((int)$pdo->query('SELECT COUNT(*) FROM pa_file')->fetchColumn() === 1, 'member upload created an unexpected number of rows');
+    expectMemberUpload((int)$pdo->query('SELECT COUNT(*) FROM pa_file_object')->fetchColumn() === 1, 'member upload created an unexpected number of object rows');
 
     echo "MT03-MEMBER-UPLOAD-TENANT-WIRING-001 passed\n";
 } finally {
@@ -157,12 +158,13 @@ SQL);
     if (is_string($temporaryUpload) && is_file($temporaryUpload)) {
         unlink($temporaryUpload);
     }
-    if (isset($row['uri'])) {
-        $directory = dirname($serverRoot . '/public/' . $row['uri']);
+    if (isset($row['object_key'])) {
+        $directory = dirname($serverRoot . '/public/storage/' . $row['object_key']);
         @rmdir($directory);
         @rmdir(dirname($directory));
         @rmdir(dirname($directory, 2));
         @rmdir(dirname($directory, 3));
+        @rmdir(dirname($directory, 4));
+        @rmdir(dirname($directory, 5));
     }
-    $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

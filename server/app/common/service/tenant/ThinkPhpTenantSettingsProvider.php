@@ -8,6 +8,10 @@ use app\common\contract\tenant\TenantSettingsProvider;
 use app\common\tenancy\DataScopePolicy;
 use think\facade\Db;
 
+/**
+ * TENANT_SETTING_SCOPE_EXCEPTION: the sole explicit tenant_id query allowed by
+ * AGENT_EXECUTION_RULES.md §6.2 for the dual-Edition tenant_setting schema.
+ */
 final class ThinkPhpTenantSettingsProvider implements TenantSettingsProvider
 {
     public function __construct(private readonly DataScopePolicy $dataScopePolicy)

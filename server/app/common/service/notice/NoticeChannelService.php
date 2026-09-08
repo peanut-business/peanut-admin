@@ -8,6 +8,7 @@ use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\notice\driver\sms\AliyunSms;
 use app\common\service\notice\driver\sms\SmsDriver;
+use app\common\service\notice\driver\sms\SmsDriverResult;
 use app\common\service\notice\driver\sms\TencentSms;
 use app\common\service\http\OutboundHttpTransport;
 use app\common\execution\CurrentExecutionContext;
@@ -130,7 +131,7 @@ final class NoticeChannelService
         $stored = array_replace($stored, $changes);
     }
 
-    /** @return array{success:bool,provider:string,error:string,result:array<string,mixed>} */
+    /** @return array{success:bool,outcome:string,provider:string,error:string,result:array<string,mixed>} */
     public function sendSms(
         CurrentExecutionContext $executionContext,
         TenantContext|TenantSystemContext $context,
@@ -147,7 +148,7 @@ final class NoticeChannelService
             ? self::providerConfig($stored, $provider)
             : [];
         if (!self::complete($provider, $config)) {
-            return self::result(false, $provider, '短信服务商未启用或配置不完整');
+            return self::result(SmsDriverResult::OUTCOME_FAILED, $provider, '短信服务商未启用或配置不完整');
         }
 
         $driver = self::makeDriver($provider, $config, $this->transport);
@@ -157,28 +158,34 @@ final class NoticeChannelService
         try {
             $delivery = $driver->send($mobile, $templateId, $variables);
             return self::result(
-                $delivery->success,
+                $delivery->outcome,
                 $provider,
                 self::sanitizeError($delivery->error, $mobile, $config),
                 self::safeReceipt($provider, $delivery->receipt),
             );
         } catch (\Throwable $exception) {
             return self::result(
-                false,
+                SmsDriverResult::OUTCOME_UNKNOWN,
                 $provider,
-                self::sanitizeError($exception->getMessage(), $mobile, $config)
+                self::sanitizeError('短信服务商调用结果未知', $mobile, $config)
             );
         }
     }
 
-    /** @return array{success:bool,provider:string,error:string,result:array<string,mixed>} */
+    /** @return array{success:bool,outcome:string,provider:string,error:string,result:array<string,mixed>} */
     private static function result(
-        bool $success,
+        string $outcome,
         string $provider,
         string $error,
         array $result = []
     ): array {
-        return compact('success', 'provider', 'error', 'result');
+        return [
+            'success' => $outcome === SmsDriverResult::OUTCOME_SUCCEEDED,
+            'outcome' => $outcome,
+            'provider' => $provider,
+            'error' => $error,
+            'result' => $result,
+        ];
     }
 
     private function bindingConfig(TenantContext|TenantSystemContext $context): array

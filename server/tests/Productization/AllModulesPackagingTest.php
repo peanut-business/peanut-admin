@@ -14,19 +14,80 @@ function allModulesPackagingExpect(bool $condition, string $message): void
     }
 }
 
+/** @param list<string> $command */
+function allModulesPackagingRun(array $command, ?string $cwd = null): string
+{
+    $pipes = [];
+    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $cwd);
+    if (!is_resource($process)) {
+        throw new RuntimeException('unable to start packaging evidence identity command');
+    }
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $code = proc_close($process);
+    if ($code !== 0) {
+        throw new RuntimeException('packaging evidence identity command failed: ' . trim((string)$stderr));
+    }
+    return trim((string)$stdout);
+}
+
+/** @return array{files:int,sha256:string} */
+function allModulesPackagingDistFacts(string $root): array
+{
+    if (!is_dir($root)) {
+        throw new RuntimeException('Production Web build output is missing: ' . $root);
+    }
+    $rows = [];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+    );
+    foreach ($iterator as $file) {
+        if ($file->isLink() || !$file->isFile()) {
+            throw new RuntimeException('Production Web build output contains a non-regular entry');
+        }
+        $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+        $digest = hash_file('sha256', $file->getPathname());
+        if (!is_string($digest)) {
+            throw new RuntimeException('Production Web build output digest is unavailable: ' . $relative);
+        }
+        $rows[] = $relative . "\0" . $digest . "\0" . ($file->getPerms() & 0777);
+    }
+    sort($rows, SORT_STRING);
+    return ['files' => count($rows), 'sha256' => hash('sha256', implode("\n", $rows))];
+}
+
 $serverRoot = dirname(__DIR__, 2);
 $projectRoot = dirname($serverRoot);
 $resultsPath = $argv[1] ?? '/tmp/module-packages-test/packaging-results.json';
-$expectedModules = [
-    'official.article',
-    'official.file',
-    'official.task',
-    'official.notification',
-    'official.member',
-    'official.payment',
-    'official.oauth',
-    'official.import-export',
-];
+$currentCandidate = allModulesPackagingRun(['git', '-C', $projectRoot, 'rev-parse', 'HEAD^{commit}']);
+$currentTree = allModulesPackagingRun(['git', '-C', $projectRoot, 'rev-parse', 'HEAD^{tree}']);
+$pluginLock = json_decode(
+    (string)file_get_contents($projectRoot . '/plugins.lock'),
+    true,
+    64,
+    JSON_THROW_ON_ERROR,
+);
+allModulesPackagingExpect(
+    is_array($pluginLock['plugins'] ?? null) && array_is_list($pluginLock['plugins']),
+    'Bundled Plugin lock is invalid',
+);
+$expectedModules = [];
+foreach ($pluginLock['plugins'] as $plugin) {
+    allModulesPackagingExpect(is_array($plugin), 'Bundled Plugin lock entry is invalid');
+    foreach ($plugin['modules'] ?? [] as $module) {
+        $moduleKey = is_array($module) ? ($module['key'] ?? null) : null;
+        if (!is_string($moduleKey) || !str_starts_with($moduleKey, 'official.')) {
+            continue;
+        }
+        allModulesPackagingExpect(!isset($expectedModules[$moduleKey]), "Bundled official Module is duplicated: {$moduleKey}");
+        $expectedModules[$moduleKey] = true;
+    }
+}
+$expectedModules = array_keys($expectedModules);
+sort($expectedModules, SORT_STRING);
+allModulesPackagingExpect($expectedModules !== [], 'Bundled official Module inventory is empty');
 
 allModulesPackagingExpect(is_file($resultsPath), "Packaging result evidence is missing: {$resultsPath}");
 $evidence = json_decode((string)file_get_contents($resultsPath), true, 64, JSON_THROW_ON_ERROR);
@@ -35,6 +96,11 @@ allModulesPackagingExpect(
     is_string($evidence['candidate'] ?? null)
         && preg_match('/^[a-f0-9]{40}$/D', $evidence['candidate']) === 1,
     'Packaging candidate identity is invalid',
+);
+allModulesPackagingExpect(
+    hash_equals($currentCandidate, (string)$evidence['candidate'])
+        && hash_equals($currentTree, (string)($evidence['source_tree'] ?? '')),
+    'Packaging evidence does not describe the current source commit/tree',
 );
 
 $results = $evidence['results'] ?? null;
@@ -46,7 +112,9 @@ foreach ($results as $result) {
     allModulesPackagingExpect(is_string($moduleKey) && !isset($resultsByModule[$moduleKey]), 'Packaging result identity is invalid');
     $resultsByModule[$moduleKey] = $result;
 }
-allModulesPackagingExpect(array_keys($resultsByModule) === $expectedModules, 'Official Module packaging evidence is incomplete or reordered');
+$resultModules = array_keys($resultsByModule);
+sort($resultModules, SORT_STRING);
+allModulesPackagingExpect($resultModules === $expectedModules, 'Official Module packaging evidence is incomplete or contains an unknown Module');
 
 $availableVersions = [];
 $sourcePreflight = new ModulePackagePreflight($projectRoot);
@@ -102,7 +170,28 @@ foreach ($expectedModules as $moduleKey) {
 
 $productionBuild = $evidence['production_build'] ?? null;
 allModulesPackagingExpect(is_array($productionBuild), 'Production build evidence is missing');
+allModulesPackagingExpect(
+    ($productionBuild['command'] ?? null) === 'pnpm --dir web build'
+        && ($productionBuild['install_command'] ?? null) === 'pnpm --dir web install --frozen-lockfile'
+        && ($productionBuild['install_environment'] ?? null) === ['HUSKY' => '0', 'CI' => '1']
+        && ($productionBuild['candidate'] ?? null) === $currentCandidate
+        && ($productionBuild['source_tree'] ?? null) === $currentTree
+        && ($productionBuild['dist_path'] ?? null) === 'web/dist',
+    'Production Web build evidence identity is invalid',
+);
 allModulesPackagingExpect(($productionBuild['exit_code'] ?? null) === 0, 'Production Web build failed');
+allModulesPackagingExpect(is_int($productionBuild['files'] ?? null), 'Production Web file count is invalid');
+allModulesPackagingExpect(
+    is_string($productionBuild['tree_sha256'] ?? null)
+        && preg_match('/^[a-f0-9]{64}$/D', $productionBuild['tree_sha256']) === 1,
+    'Production Web tree digest is invalid',
+);
+$distFacts = allModulesPackagingDistFacts($projectRoot . '/web/dist');
+allModulesPackagingExpect(
+    $productionBuild['files'] === $distFacts['files']
+        && hash_equals((string)$productionBuild['tree_sha256'], $distFacts['sha256']),
+    'Production Web build evidence does not match web/dist',
+);
 allModulesPackagingExpect(($productionBuild['filename_dev_tools_hits'] ?? null) === [], 'Production bundle contains a dev-tools filename');
 allModulesPackagingExpect(($productionBuild['symbol_hits'] ?? null) === [], 'Production bundle contains a dev-tools symbol');
 

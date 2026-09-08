@@ -375,8 +375,26 @@ final class EditionProjector
             'server/database/migrations/20260823-unify-storage-service.sql' => $this->storageMigration($content),
             'server/database/migrations/20260824-payment-channel-grants.sql' => $this->paymentGrantMigration($content),
             'server/database/migrations/20260828-provider-qualification-evidence.sql' => $content,
+            'server/database/migrations/20260909-notification-sms-reservation.sql' =>
+                $this->notificationSmsReservationMigration($content),
             default => throw new RuntimeException('CREATE_APP_STANDALONE_MIGRATION_PROJECTOR_MISSING: ' . $source),
         };
+    }
+
+    private function notificationSmsReservationMigration(string $content): string
+    {
+        $content = $this->replaceOnce(
+            $content,
+            'SELECT `tenant_id`, `channel`, `receiver`, MAX(`id`) AS `id`',
+            'SELECT `channel`, `receiver`, MAX(`id`) AS `id`',
+            'CREATE_APP_STANDALONE_SMS_RESERVATION_MIGRATION_SOURCE_INVALID',
+        );
+        return $this->replaceOnce(
+            $content,
+            'GROUP BY `tenant_id`, `channel`, `receiver`',
+            'GROUP BY `channel`, `receiver`',
+            'CREATE_APP_STANDALONE_SMS_RESERVATION_MIGRATION_SOURCE_INVALID',
+        );
     }
 
     private function storageMigration(string $content): string

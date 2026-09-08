@@ -52,6 +52,7 @@ use app\common\service\tenant\TenantIdentityQuery;
 use app\common\service\storage\AliyunStorageClientFactory;
 use app\common\service\storage\FailClosedStorageCredentialResolver;
 use app\common\service\storage\QcloudStorageClientFactory;
+use app\common\service\storage\QiniuStorageHttpTransport;
 use app\common\service\storage\StorageCredentialResolver;
 use app\common\service\storage\StorageConfigurationService;
 use app\common\service\storage\StorageDriverFactory;
@@ -91,7 +92,9 @@ use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
+use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
+use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
@@ -99,9 +102,7 @@ use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
-/**
- * 应用服务类
- */
+/** 应用组合根，集中注册 Host 基础设施、业务服务与官方 Module Runtime。 */
 class AppService extends Service
 {
     public function register(): void
@@ -193,6 +194,7 @@ class AppService extends Service
         ));
     }
 
+    /** Wires current native Admin authorization services to their exact constructor contracts. */
     private function registerAuthorization(): void
     {
         $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
@@ -228,7 +230,9 @@ class AppService extends Service
             $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(TenantAdminRuntime::class, fn(): TenantAdminRuntime => new TenantAdminRuntime(
-            $this->app->make(PDO::class),
+            new MemberAdminService($this->app->make(PDO::class)),
+            new AccountSelfService($this->app->make(PDO::class)),
+            $this->app->make(DemoAccountPolicy::class),
         ));
         $this->app->bind(AdminApiAccessRegistry::class, function (): AdminApiAccessRegistry {
             $routes = Config::get('admin_api_access', []);
@@ -239,15 +243,18 @@ class AppService extends Service
         });
     }
 
+    /** Wires the Edition-aware storage ledger to the host-configured Core drivers. */
     private function registerStorage(): void
     {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
         $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
             $this->app->make(PDO::class),
+            $this->app->make(DataScopePolicy::class),
+            $this->app->make(DefaultTenantContextResolver::class),
         ));
         $this->app->bind(StorageDriverFactory::class, fn(): StorageDriverFactory => new StorageDriverFactory(
             $this->app->make(StorageCredentialResolver::class),
-            $this->app->make(OutboundHttpTransport::class),
+            new QiniuStorageHttpTransport($this->app->make(OutboundHttpTransport::class)),
             $this->app->make(AliyunStorageClientFactory::class),
             $this->app->make(QcloudStorageClientFactory::class),
             $this->app->make(CurrentExecutionContext::class),
@@ -530,6 +537,12 @@ class AppService extends Service
 
     private function registerModules(): void
     {
+        // Recovery must boot while a pending source journal deliberately blocks the Module resolver.
+        if ($this->app->runningInConsole()
+            && ($_SERVER['argv'][1] ?? null) === 'module:adopt-package'
+            && env('APP_ENV', '') === 'development') {
+            return;
+        }
         $config = Config::get('modules', []);
         if (!is_array($config)) {
             throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');

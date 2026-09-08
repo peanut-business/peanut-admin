@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
+use app\common\service\installation\ApplicationReleaseVersions;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Status\OpsStatusSnapshot;
@@ -295,9 +296,10 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         ];
     }
 
-    /** @return array<string,string> */
+    /** Return migrations eligible for the deployed scaffold or verified demo overlay target. */
     private function expectedMigrations(): array
     {
+        $targetVersion = $this->migrationTargetVersion();
         $directory = $this->projectRoot . '/server/database/migrations';
         $files = glob($directory . '/*.sql') ?: [];
         sort($files, SORT_STRING);
@@ -313,9 +315,64 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
             if (!is_string($contents) || trim($contents) === '') {
                 throw new \RuntimeException('OPS_MIGRATION_INVENTORY_INVALID');
             }
+            $peanutRelease = $this->peanutMigrationRelease($contents);
+            if ($peanutRelease !== null && version_compare($peanutRelease, $targetVersion, '>')) {
+                continue;
+            }
             $expected[basename($name, '.sql')] = hash('sha256', $contents);
         }
         return $expected;
+    }
+
+    /** Return one valid Peanut marker, while leaving truly unmarked application SQL unversioned. */
+    private function peanutMigrationRelease(string $sql): ?string
+    {
+        preg_match_all('/^\s*--\s*peanut-release\b[^\r\n]*$/mi', $sql, $markerLines);
+        if (count($markerLines[0]) === 0) {
+            return null;
+        }
+        if (count($markerLines[0]) !== 1
+            || preg_match(
+                '/^\s*--\s*peanut-release:\s*((0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))\s*$/iD',
+                $markerLines[0][0],
+                $matches,
+            ) !== 1
+        ) {
+            throw new \RuntimeException('OPS_MIGRATION_INVENTORY_INVALID');
+        }
+        return $matches[1];
+    }
+
+    /** Resolve the same scaffold/overlay migration target used by deployment. */
+    private function migrationTargetVersion(): string
+    {
+        $versions = ApplicationReleaseVersions::load($this->projectRoot . '/release-versions.json');
+        $base = $versions->scaffoldTemplate();
+        $overlayPath = $this->projectRoot . '/DEMO_PATCH_METADATA.json';
+        if (!file_exists($overlayPath)) {
+            return $base;
+        }
+        if (!is_file($overlayPath) || is_link($overlayPath)) {
+            throw new \RuntimeException('OPS_MIGRATION_TARGET_INVALID');
+        }
+        try {
+            $overlay = json_decode((string)file_get_contents($overlayPath), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new \RuntimeException('OPS_MIGRATION_TARGET_INVALID', 0, $exception);
+        }
+        $target = is_array($overlay) ? ($overlay['migration_target_version'] ?? null) : null;
+        if (!is_array($overlay)
+            || ($overlay['schema_version'] ?? null) !== 1
+            || ($overlay['kind'] ?? null) !== 'peanut-admin-demo-site-overlay'
+            || ($overlay['base_tag'] ?? null) !== 'v' . $versions->productRelease()
+            || !is_array($overlay['files'] ?? null)
+            || !is_string($target)
+            || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $target) !== 1
+            || version_compare($target, $base, '<')
+        ) {
+            throw new \RuntimeException('OPS_MIGRATION_TARGET_INVALID');
+        }
+        return $target;
     }
 
     /** @return array{applied:int,target:int,pending:int,digest:string,drift:bool,files:array<string,string>} */

@@ -3,6 +3,9 @@
 本文件是 Peanut Admin 仓库的执行规则入口。仓库状态、产品路线和命名约定仍以
 `AGENTS.md` 及其引用的权威计划为准。
 
+按任务读取对应章节：普通修改关注 §1、§2、§5 和相关 §6；实际验证看 §4；
+阶段集成看 §3/§7，封存发布才读 §7.2；文档变更看 §8。无需为局部修改通读发布流程。
+
 ## 1. 事实和完成证据
 
 - 在判断代码、架构或完成度前，读取相关关键实现；明确区分已确认事实和未经验证的推断。
@@ -56,7 +59,7 @@
 - `dev` 是日常开发集成分支，必须允许已验证候选直接推送。PR 仅用于 `dev` → `main`、正式发布或用户明确要求评审的变更；若远端规则阻止直接推送 `dev`，应修正规则而不是为日常任务创建绕行 PR。
 
 - 同一文件同一时刻只有一个 owner。共享数据库、容器、缓存、服务和其他可变资源也必须有唯一 owner 和项目隔离。
-- 本项目任何会启动数据库、监听端口、服务、浏览器、容器、缓存或一次性 Gate 的任务，必须先通过 `scripts/project-resource-lease claim` 原子登记全部资源；未成功 claim 不得启动。登记至少包含 owner/thread、固定 candidate、Gate、worktree，以及实际使用的 DB、端口、cache/output 路径。长任务在过期前 `renew`，成功、失败或停止后立即 `release`；只允许 `prune-expired` 清理过期登记。凭据不得作为资源值。动态租约位于本仓 Git common-dir，不提交，所有 Peanut Admin worktree 共享；聊天中的 owner 声明不能替代登记。
+- 启动数据库、监听端口、服务、浏览器、容器、共享缓存或使用这些资源的 Gate 前，必须通过 `scripts/project-resource-lease claim` 原子登记实际资源；未成功 claim 不得启动。纯静态文件/文档检查不占用运行资源，不要求运行租约。登记包含 owner/thread、candidate、Gate、worktree 及实际 DB、端口、cache/output 路径；长任务及时 `renew`，结束后 `release`，仅用 `prune-expired` 清理过期租约。凭据不得作为资源值。动态租约位于 Git common-dir，所有本项目 worktree 共享，不提交。
 - 真实 Gate 前先用 `scripts/project-resource-lease list/show` 核对唯一 owner，再验证服务、数据库和输出目录与租约及固定 candidate 一致。候选变化后必须释放旧租约并重新 claim；不得沿用旧候选的数据库、服务、缓存或证据。资源冲突只阻塞该资源使用者，不冻结不依赖它的工作。
 - 长任务和并行写任务使用独立分支与 worktree；临时目录不得成为长期事实源。任务结束时必须把独有改动合入 `dev`，或在确认其未完成、失效或已被替代后明确丢弃；不得遗留来源和状态不明的分支或 worktree。
 - 任务合入 `dev` 后立即释放对应 owner，并清理其临时 worktree、本地分支和远端分支。仓库级“合入后自动删除分支”保持关闭，清理由显式命令完成；本地只保留 `dev` 及用户明确保留的分支，远端保留 `dev`、`main`。清理前必须确认候选已进入 `dev` 或已获明确丢弃授权，且没有活跃 owner。
@@ -95,6 +98,40 @@
   必须先取得用户对本节架构锁定的明确变更授权；代码审计、静态扫描命中或通用最佳实践不能
   单独构成解锁依据。
 
+### 6.2 租户隔离、单事实源与平滑升级长效红线
+
+- **全局 TenantScope 强制与手写 tenant_id 绝对禁令**：所有租户拥有（Tenant-owned）的
+  ORM 模型必须且只能继承唯一 `TenantOwnedModel`，由 ThinkORM global scope 自动应用
+  隔离策略。严禁在业务代码中调用手写 `where('tenant_id', ...)` 或命名 `forTenant()`，
+  严禁普通代码调用 `withoutGlobalScope()` 绕过隔离。缺少可信执行上下文时一律 fail-closed，
+  禁止静默回退默认租户。
+- **唯一窄例外（Tenant Setting 双 Edition adapter）**：仅
+  `server/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php` 可在 `tenant_setting` 表上显式
+  拼接 `where('tenant_id', $tenantId)`。原因是该 Host adapter 必须让同一源码适配 Multi-tenant 的
+  tenant column 与 Standalone 的无 tenant column Schema，无法由一个 `TenantOwnedModel` 同时表达。
+  例外只允许使用显式传入的可信 `tenantId`，并受 `DataScopePolicy::usesTenantColumn()` 控制；读、锁、
+  更新与插入必须成组保持同一分支。不得扩展到业务 Module、其他表、默认租户 fallback、
+  `withoutGlobalScope()` 或通用手写 Tenant 查询。源码必须保留 `TENANT_SETTING_SCOPE_EXCEPTION` 标记和
+  `RechargeTenantSettingContractTest` 合同；改变该 adapter 或 Schema 时重新审计本例外。
+- **单人工开发事实源与双 Edition 确定性生成律**：应用产品源码唯一在 `peanut-admin`，业务无关复用包在
+  `peanut-admin-core`；严禁建立所谓的独立单租户版人工开发源码仓。Standalone（单租户独立版）与
+  Multi-tenant（多租户平台版）两套构建物必须且只能由构建工具从唯一的 Peanut Admin 冻结
+  Release 确定性生成，不维护两套人工业务源码。
+- **Core/Application 五域与存储边界**：Settings、Storage、Crontab、ImportExport、Logs 五域的
+  owner、装配与提取门禁以
+  `docs/architecture/core-application-technical-boundary.md` 和
+  `docs/plans/storage-driver-extraction-queue.md` 为准；应用继续采用 ThinkPHP 原生
+  Model/Scope 构造注入，不新增 Repository 或洋葱式包装。
+- **升级工具防御性与业务代码无损红线**：脚手架升级器（`scaffold-upgrade`）只管理框架受管
+  文件（`managed`/`generated-managed`），绝对严禁静默覆盖或双写用户的业务代码（`app-owned`）
+  与环境秘密（如 `server/.env`）。遇到业务冲突必须 fail-closed 阻断并给出明确的人工处理入口，
+  绝不允许为了“提升升级成功率”而引入静默覆盖或强行迁移业务代码的黑魔法。
+- **外部独立系统（运维平台、DCS 等）物理隔离与零渗透规则**：跨实例应用运维平台
+  （`peanut-operations-platform`）与业务系统（如 DCS）属于同级独立派生项目，拥有独立仓库、
+  独立数据库与独立部署。严禁把运维平台 Runtime 或 DCS 私有业务模型（如商品主数据、采购、
+  库存出入库）写入 Peanut Admin 或 Core 仓库；Peanut Admin 仅提供产品中立的扩展 Module 契约
+  与出站实例协议。
+
 ## 7. 交付吞吐与防重复
 
 - 以可用交付物而不是分支、合同或检查数量衡量进度。普通可逆切片默认把必要合同、
@@ -108,7 +145,7 @@
   普通机械修复和短时等待写在现有 PR/任务状态中，不新建恢复指针 PR。更新前先读取
   远端 `dev`、Registry、开放 PR 和最新 head；新的权威指针合入后，立即关闭所有被
   替代、冲突或失真的旧指针 PR。
-- 每次领取工作前先查询远端 `dev`、开放 PR、现有 worktree 和文件 owner；不得以
+- 领取阶段队列或跨 owner 集成工作前，先查询远端 `dev`、开放 PR、现有 worktree 和文件 owner；局部已明确任务只核对相关基线与写集。不得以
   本地陈旧计划或旧 head 重复领取已完成 Gate。发现同文件多 owner 时，保留一个集成
   owner，吸收唯一必要差异并立即关闭其余候选。
 - 在实现前用调用路径、生成器输入和仓库内等价命令一次性检查白名单充分性。白名单不足
@@ -206,5 +243,9 @@
   变化开恢复指针 PR。
 - 纯文档同步变更只运行 Markdown/链接/`git diff --check` 等文档等价检查，业务测试和
   多端构建明确跳过。文档检查失败只阻塞该文档变更，不回滚或重复已经通过的业务 Gate。
+- 新增或实质修改的类和方法必须有简洁职责注释；复杂方法需说明 Tenant/授权前置、副作用、
+  异常和流/临时文件 owner。标准 CRUD、访问器和仅注入构造函数可豁免方法注释，但类职责仍须
+  保留；Tenant 权限、事务、幂等、软删和外部副作用不得豁免。Core 使用英文注释，应用沿用
+  局部语言。该规则随存储提取队列 Q4 执行，不扩展本轮其他 Runtime 域。
 - 主工作树存在用户修改时，文档同步必须从最新 `origin/dev` 的独立 worktree 完成；
   不得因为本地主分支陈旧而覆盖远端已更新事实，也不得夹带用户文档。

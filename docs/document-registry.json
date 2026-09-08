@@ -40,6 +40,86 @@
   },
   "documents": [
     {
+      "id": "pa-docs-architecture-core-application-technical-boundary",
+      "path": "docs/architecture/core-application-technical-boundary.md",
+      "title": "Core 与应用技术边界",
+      "audience": ["maintainer", "architect", "ai"],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": ["AGENTS.md", "AGENT_EXECUTION_RULES.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md"],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": ["application"],
+      "related": ["core-application-boundary", "storage", "documentation"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-storage-driver-extraction-queue",
+      "path": "docs/plans/storage-driver-extraction-queue.md",
+      "title": "Storage Driver 提取决策与后续队列",
+      "audience": ["maintainer", "architect", "ai"],
+      "content_type": "plan",
+      "authority": "interpretation",
+      "canonical_sources": ["docs/architecture/core-application-technical-boundary.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md"],
+      "owner": "architecture",
+      "status": "planned",
+      "scope": ["application"],
+      "related": ["storage", "execution-queue", "documentation"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-gemini-refactor-convergence-audit-2026-09-09",
+      "path": "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md",
+      "title": "Gemini 大重构收敛审计与执行报告（2026-09-09）",
+      "audience": ["maintainer", "architect", "operator", "ai"],
+      "content_type": "plan",
+      "authority": "interpretation",
+      "canonical_sources": ["AGENT_EXECUTION_RULES.md", "server/app/", "server/tests/", "plugins.lock", "docs/architecture/application-module-blueprint/", "commit:190d47352adcd996384fcf83cd58524204fd1844", "repo://peanut-admin-core/packages/php/"],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": ["application", "core"],
+      "related": ["application-boundary", "core-application-boundary", "module-boundary", "storage", "release-contract", "execution-queue"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-module-publication-contract",
+      "path": "docs/architecture/module-publication-contract.md",
+      "title": "Module 发布与制品合同",
+      "audience": ["maintainer", "architect", "developer", "operator", "ai"],
+      "content_type": "architecture",
+      "authority": "interpretation",
+      "canonical_sources": ["server/app/command/ModulePack.php", "server/app/command/BundlePack.php", "server/app/platform/service/plugin/PluginPackageArchiveService.php", "server/app/platform/service/plugin/ModulePackagePreflight.php", "server/resources/schemas/plugin.schema.json", "plugins.lock", "server/app/Modules/", "web/src/modules/"],
+      "owner": "release-engineering",
+      "status": "current",
+      "scope": ["application"],
+      "related": ["module-lifecycle", "release-contract", "plugin-artifact", "documentation"],
+      "site_projections": ["pa-docs-site-guide-module-development", "pa-docs-site-guide-application-module-lifecycle"],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-application-scaffold-version-contract-queue",
+      "path": "docs/plans/application-scaffold-version-contract-queue.md",
+      "title": "独立应用与脚手架版本合同执行队列",
+      "audience": ["maintainer", "architect", "ai"],
+      "content_type": "plan",
+      "authority": "interpretation",
+      "canonical_sources": ["release-versions.json", "scripts/scaffold-runtime/ScaffoldManifest.php", "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "server/database/install.php", "scripts/deploy-release", "scripts/ops-upgrade-worker", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php", "docs/architecture/consumer-module-lifecycle-contract.md", "plugins.lock", "server/app/adminapi/route/app.php", "server/app/platform/service/module/ProductTenantModuleProfileService.php"],
+      "owner": "application-maintainers",
+      "status": "current",
+      "scope": ["application"],
+      "related": ["scaffold-upgrade", "release-contract", "migration", "execution-queue"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-site-404",
       "path": "docs-site/404.md",
       "title": "页面未找到",
@@ -343,6 +423,16 @@
       "authority": "projection",
       "canonical_sources": [
         "scripts/create-app",
+        "release-versions.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/command/TenantModuleProfile.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/route/platform.php",
+        "server/app/adminapi/controller/auth/RoleController.php",
         "server/app/command/ModuleCreate.php",
         "server/app/command/ModuleCheck.php",
         "server/app/command/ModulePack.php",
@@ -350,8 +440,15 @@
         "server/app/command/ModuleUpdatePackage.php",
         "server/app/command/ModuleDisablePackage.php",
         "server/app/command/ModuleUninstallPackage.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "web/config/vite.config.base.ts",
+        "web/src/router/routes/plugin-contributions.ts",
         "docs/architecture/consumer-module-lifecycle-contract.md",
-        "scripts/scaffold-upgrade"
+        "scripts/scaffold-upgrade",
+        "RELEASE_METADATA.json"
       ],
       "owner": "developer-experience",
       "status": "current",
@@ -505,6 +602,7 @@
         "server/database/init.sql",
         "server/app/Modules",
         "server/config/console.php",
+        "server/app/adminapi/route/app.php",
         "server/app/command/ModuleCreate.php",
         "server/app/command/ModuleCheck.php",
         "server/app/command/ModulePack.php",
@@ -512,6 +610,9 @@
         "server/app/command/ModuleUpdatePackage.php",
         "server/app/command/ModuleDisablePackage.php",
         "server/app/command/ModuleUninstallPackage.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "server/app/command/OpsModuleRequest.php",
         "scripts/create-app",
         "scripts/local-stack.sh",
@@ -882,6 +983,42 @@
         "module-boundary"
       ],
       "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-architecture-application-module-blueprint-coding-standards",
+      "path": "docs/architecture/application-module-blueprint/coding-standards.md",
+      "title": "Application 与 Module 代码规范",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "accepted-target",
+      "canonical_sources": [
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/common/service/module/ModuleScaffoldGenerator.php",
+        "server/app/Modules/",
+        "server/route/",
+        "web/src/modules/"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "application-boundary",
+        "module-boundary",
+        "tenant-isolation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-module-development"
+      ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },
@@ -1399,7 +1536,7 @@
         "documentation"
       ],
       "site_projections": [],
-      "replaced_by": null,
+      "replaced_by": "pa-docs-architecture-core-application-technical-boundary",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -2163,9 +2300,23 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/create-app",
+        "scripts/scaffold-doctor",
         "scripts/build-edition-upgrades",
         "scripts/scaffold-upgrade",
         "release-versions.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/command/TenantModuleProfile.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/route/platform.php",
+        "server/app/adminapi/controller/auth/RoleController.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "scaffold/releases/"
       ],
       "owner": "application-maintainers",
@@ -2176,7 +2327,9 @@
       "related": [
         "documentation"
       ],
-      "site_projections": [],
+      "site_projections": [
+        "pa-docs-site-guide-application-module-lifecycle"
+      ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },
@@ -4416,7 +4569,23 @@
         "scripts/scaffold-upgrade",
         "scripts/create-app",
         "release-versions.json",
-        "RELEASE_METADATA.json"
+        "RELEASE_METADATA.json",
+        "server/composer.lock",
+        "web/pnpm-lock.yaml",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
+        "web/config/vite.config.base.ts",
+        "web/src/router/routes/plugin-contributions.ts",
+        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/command/TenantModuleProfile.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/route/platform.php",
+        "server/app/adminapi/controller/auth/RoleController.php",
+        "docs/architecture/consumer-module-lifecycle-contract.md"
       ],
       "owner": "application-maintainers",
       "status": "current",
@@ -4428,7 +4597,8 @@
       ],
       "site_projections": [
         "pa-docs-site-releases",
-        "pa-docs-site-guide-deployment-upgrade"
+        "pa-docs-site-guide-deployment-upgrade",
+        "pa-docs-site-guide-application-module-lifecycle"
       ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -4557,6 +4727,17 @@
         "server/database/install.php",
         "server/database/migrations/",
         "server/route/app.php",
+        "server/app/adminapi/route/app.php",
+        "release-versions.json",
+        "scripts/deploy-release",
+        "scripts/ops-upgrade-worker",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "resources/project-resources.json"
       ],
       "owner": "application-maintainers",
@@ -4587,6 +4768,10 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/deploy-release",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "scripts/check-release-consistency",
         "scripts/publish-github-release",
         "RELEASE_METADATA.json"
@@ -4626,6 +4811,86 @@
       ],
       "related": [
         "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-luna-max-source-preaudit-2026-09-08",
+      "path": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
+      "title": "Luna Max 源码预审登记（2026-09-08）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "proposal",
+      "canonical_sources": [
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/",
+        "server/route/",
+        "scripts/",
+        ".github/workflows/",
+        "web/",
+        "platform/",
+        "pc/",
+        "uniapp/",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/packages/web/",
+        "repo://peanut-admin-core/.github/workflows/"
+      ],
+      "owner": "product-architecture",
+      "status": "archived",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "architecture",
+        "qualification"
+      ],
+      "site_projections": [],
+      "replaced_by": "pa-docs-plans-luna-max-source-audit-report-2026-09-08",
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-luna-max-source-audit-report-2026-09-08",
+      "path": "docs/plans/luna-max-source-audit-report-2026-09-08.md",
+      "title": "Luna Max 源码登记高等级审计报告（2026-09-08）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/plans/luna-max-source-preaudit-2026-09-08.md",
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/",
+        "server/route/",
+        "scripts/",
+        "web/",
+        "platform/",
+        "pc/",
+        "uniapp/",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/packages/web/"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "architecture",
+        "qualification",
+        "audit"
       ],
       "site_projections": [],
       "replaced_by": null,
@@ -5087,6 +5352,77 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-reference-core-capabilities-and-application-adoption",
+      "path": "docs/reference/core-capabilities-and-application-adoption.md",
+      "title": "Peanut Admin Core 能力与独立应用采用全景",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai",
+        "developer"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "server/composer.json",
+        "server/composer.lock",
+        "server/app/AppService.php",
+        "server/app/Modules",
+        "web/package.json",
+        "platform/package.json",
+        "pc/package.json",
+        "uniapp/package.json",
+        "repo://peanut-admin-core/packages/php/composer.json",
+        "repo://peanut-admin-core/packages/web/package.json",
+        "repo://peanut-admin-core/docs/status/index.md"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-application-boundary",
+        "storage",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-reference-scaffold-core-boundary-comparison",
+      "path": "docs/reference/scaffold-core-boundary-comparison.md",
+      "title": "后台脚手架的 Core、公共模块与生成应用边界",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai",
+        "developer"
+      ],
+      "content_type": "reference",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/reference/core-capabilities-and-application-adoption.md",
+        "official repository permalinks linked in the document"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-application-boundary",
+        "storage",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-reference-product-capability-reference-matrix",
       "path": "docs/reference/product-capability-reference-matrix.md",
       "title": "Peanut Admin 产品能力与同类产品参考矩阵",
@@ -5193,6 +5529,13 @@
         "scripts/scaffold-upgrade",
         "scripts/build-edition-upgrades",
         "scripts/scaffold-runtime/EditionUpgradePackage.php",
+        "scripts/deploy-release",
+        "server/app/common/service/installation/ApplicationReleaseVersions.php",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/command/PluginReleaseComposition.php",
+        "server/app/command/PluginReconcile.php",
+        "server/app/command/PluginInstall.php",
         "scaffold/releases/",
         "scaffold/application-template-inventory.json"
       ],
@@ -5205,7 +5548,8 @@
         "documentation"
       ],
       "site_projections": [
-        "pa-docs-site-guide-deployment-upgrade"
+        "pa-docs-site-guide-deployment-upgrade",
+        "pa-docs-site-guide-application-module-lifecycle"
       ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"

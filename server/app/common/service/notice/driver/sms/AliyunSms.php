@@ -69,10 +69,17 @@ final class AliyunSms implements SmsDriver
 
         $data = json_decode((string) $resp, true);
         $receipt = is_array($data) ? $data : ['raw' => (string)$resp];
-        if (!is_array($data) || ($data['Code'] ?? '') !== 'OK') {
-            return new SmsDriverResult(false, (string)($data['Message'] ?? $resp), $receipt);
+        if (!is_array($data) || trim((string)($data['Code'] ?? '')) === '') {
+            return new SmsDriverResult(SmsDriverResult::OUTCOME_UNKNOWN, '短信服务商返回无法确认', $receipt);
+        }
+        if ($data['Code'] !== 'OK') {
+            return new SmsDriverResult(
+                SmsDriverResult::OUTCOME_FAILED,
+                (string)($data['Message'] ?? $data['Code']),
+                $receipt,
+            );
         }
 
-        return new SmsDriverResult(true, '', $receipt);
+        return new SmsDriverResult(SmsDriverResult::OUTCOME_SUCCEEDED, '', $receipt);
     }
 }

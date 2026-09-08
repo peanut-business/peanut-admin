@@ -32,7 +32,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.13 正式源码和 Standalone/Multi-tenant 双 Edition 安装基线已在 main@b6530737a17da4ace56b982ed62ba263ed47eef7 完成 P0-E 八组资格、零资源残留、annotated tag 与 GitHub Release；在线 Demo 和文档站仍保持已验证的 v3.0.12，尚未采用 v3.0.13。跨版本升级体验由下一补丁基于 v3.0.13 完成。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.13 正式源码和 Standalone/Multi-tenant 双 Edition 安装基线已在 main@b6530737a17da4ace56b982ed62ba263ed47eef7 完成 P0-E 八组资格、零资源残留、annotated tag 与 GitHub Release；v3.0.14 正在准备固定候选，用于收敛 Gemini 遗留、采用已资格的 Core Alpha.13 并恢复真实测试门禁。在线 Demo 和文档站仍保持已验证的 v3.0.12。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
 > 事实基线：`main@b6530737a17da4ace56b982ed62ba263ed47eef7`，复核日期：`2026-09-06`。
 
@@ -78,7 +78,7 @@ php scripts/check-product-capability-ledger
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-ARCH-001` | ThinkPHP/ThinkORM 统一执行与数据边界 | 已实现，待验收 | TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。 |
-| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | v3.0.13 已在 main@b6530737… 完成 P0-E 八组资格并发布正式源码、Standalone 与 Multi-tenant 两套安装包，首个正确双 Edition 安装基线已建立。在线 Demo/文档站采用与同 Edition 跨版本升级仍未完成，因此该完整能力继续保持已实现、待后续验收。 |
+| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | v3.0.13 已在 main@b6530737… 完成 P0-E 八组资格并发布正式源码、Standalone 与 Multi-tenant 两套安装包，首个正确双 Edition 安装基线已建立。v3.0.14 收敛候选已采用 Core Alpha.13、正式修复 Gemini 测试占位与 Module 发布门禁，尚待最终 main 固定候选 P0-E、Release 和生产采用。 |
 
 ### 暂缓或范围外
 

@@ -16,9 +16,11 @@ abstract class BasePlatformController extends BaseController
     use ApiResponseTrait;
 
     protected ?PlatformOperatorContext $platformContext = null;
+    protected readonly CurrentExecutionContext $executionContext;
 
-    public function __construct(App $app, private readonly CurrentExecutionContext $executionContext)
+    public function __construct(App $app, ?CurrentExecutionContext $executionContext = null)
     {
+        $this->executionContext = $executionContext ?? $app->make(CurrentExecutionContext::class);
         parent::__construct($app);
     }
 

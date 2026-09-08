@@ -6,8 +6,19 @@ namespace app\common\service\scaffold;
 use RuntimeException;
 use Throwable;
 
+/** Plan, apply, verify, and recover scaffold-owned changes with frozen application identities. */
 final class ScaffoldUpgradeRunner
 {
+    private const VERSION_CONTRACT_KEYS = [
+        'schema_version',
+        'protocol',
+        'product_release',
+        'scaffold_template',
+        'generated_application_default',
+        'core_php',
+        'core_web',
+    ];
+
     /**
      * Build the immutable scaffold plan without writing a plan file or ledger event.
      *
@@ -21,8 +32,10 @@ final class ScaffoldUpgradeRunner
         $from = ScaffoldManifest::load($fromManifestPath);
         $to = ScaffoldManifest::load($toManifestPath);
         $this->assertReleaseChain($application, $from, $to);
-        $parameters = $this->parameters($application);
-        $actions = $this->classify($root, $from, $to, $parameters);
+        [$versionContract, $versionContractDigest] = $this->versionContract($root, $application);
+        $fromParameters = $this->parameters($application, (string)$application['application']['version']);
+        $targetParameters = $this->parameters($application, (string)$versionContract['product_release']);
+        $actions = $this->classify($root, $from, $to, $fromParameters, $targetParameters, $versionContract);
         $summary = $this->summary($actions);
         $impact = $this->impact($actions);
         $appOwnedState = $this->ownershipState($root, $application, 'app-owned');
@@ -30,7 +43,12 @@ final class ScaffoldUpgradeRunner
         $identity = [
             'from' => $this->releaseIdentity($from),
             'to' => $this->releaseIdentity($to),
-            'application_version' => $application['application']['version'],
+            'application_version' => $versionContract['product_release'],
+            'adoption_application_version' => $application['application']['version'],
+            'version_contract' => $versionContract,
+            'version_contract_sha256' => $versionContractDigest,
+            'from_parameters' => $fromParameters,
+            'target_parameters' => $targetParameters,
             'application_manifest_sha256' => $applicationDigest,
             'managed_pre_sha256' => $managedState['digest'],
             'app_owned_pre_sha256' => $appOwnedState['digest'],
@@ -72,6 +90,7 @@ final class ScaffoldUpgradeRunner
         return $plan + ['plan_path' => $this->relative($root, $path)];
     }
 
+    /** Apply only the bytes and identities frozen by a fresh, ready plan. */
     public function apply(string $projectRoot, string $planPath): array
     {
         return $this->locked($projectRoot, function (string $root) use ($planPath): array {
@@ -82,6 +101,7 @@ final class ScaffoldUpgradeRunner
                 return ['status' => 'applied', 'candidate' => $plan['candidate'], 'idempotent' => true];
             }
             $this->assertPlanFresh($root, $plan);
+            $this->assertPlanRebound($root, $plan);
             $to = ScaffoldManifest::load($plan['manifest_paths']['to']);
             $this->assertManifestDigest($to, $plan['identity']['to']['manifest_sha256']);
             $recovery = $this->createRecovery($root, $plan);
@@ -104,7 +124,7 @@ final class ScaffoldUpgradeRunner
                 foreach ($plan['actions'] as $action) {
                     if (!in_array($action['action'], ['create', 'replace', 'regenerate'], true)) continue;
                     $this->assertActionFresh($root, $action);
-                    $artifact = $this->targetContent($root, $to, $action);
+                    $artifact = $this->targetContent($to, $action, $plan);
                     $this->writeFileAtomic(ScaffoldPathGuard::projectPath($root, $action['path']), $artifact, (int)$action['mode']);
                     $baseline = '.peanut/scaffold-baseline/' . $to->version() . '/files/' . $action['path'];
                     $this->writeFileAtomic(ScaffoldPathGuard::projectPath($root, $baseline), $artifact, 0644);
@@ -117,7 +137,7 @@ final class ScaffoldUpgradeRunner
                 foreach ($plan['actions'] as $action) {
                     if ($action['action'] !== 'preserve') continue;
                     $this->assertActionFresh($root, $action);
-                    $artifact = $this->targetContent($root, $to, $action);
+                    $artifact = $this->targetContent($to, $action, $plan);
                     $baseline = '.peanut/scaffold-baseline/' . $to->version() . '/files/' . $action['path'];
                     $this->writeFileAtomic(ScaffoldPathGuard::projectPath($root, $baseline), $artifact, 0644);
                 }
@@ -133,6 +153,7 @@ final class ScaffoldUpgradeRunner
         });
     }
 
+    /** Verify the target scaffold and its newly adopted current-version snapshot. */
     public function verify(string $projectRoot, string $planPath): array
     {
         return $this->locked($projectRoot, function (string $root) use ($planPath): array {
@@ -210,7 +231,18 @@ final class ScaffoldUpgradeRunner
         }
     }
 
-    private function classify(string $root, ScaffoldManifest $from, ScaffoldManifest $to, array $parameters): array
+    /**
+     * Compare the recorded adoption rendering with the live tree and render the target
+     * from the current application release frozen by preflight.
+     */
+    private function classify(
+        string $root,
+        ScaffoldManifest $from,
+        ScaffoldManifest $to,
+        array $fromParameters,
+        array $targetParameters,
+        array $versionContract,
+    ): array
     {
         if ($from->renames() !== [] || $to->renames() !== []) throw new RuntimeException('SCAFFOLD_RENAME_UNSUPPORTED');
         $old = $from->files(); $new = $to->files(); $actions = [];
@@ -224,14 +256,16 @@ final class ScaffoldUpgradeRunner
                     $actions[] = $this->action($path, $before ?? [], 'conflict', 'managed_file_missing', true, $current, null);
                     continue;
                 }
-                $oldContent = $this->renderArtifact($from, $before, $parameters);
-                $oldDigest = hash('sha256', $oldContent);
-                $actions[] = hash_equals($oldDigest, $current['sha256'])
+                $oldContent = $this->renderArtifact($from, $before, $fromParameters);
+                $currentVersionContent = $this->renderCurrentVersionArtifact($from, $before, $targetParameters, $versionContract);
+                $actions[] = (($this->renderedContentMatches($root, $path, $current, $oldContent)
+                        || $this->renderedContentMatches($root, $path, $current, $currentVersionContent))
+                    && ($current['mode'] ?? null) === ($before['mode'] ?? null))
                     ? $this->action($path, $before, 'delete', 'upstream_removed_only', false, $current, null)
                     : $this->action($path, $before, 'conflict', 'project_modified_upstream_removed', true, $current, null);
                 continue;
             }
-            $targetContent = $this->renderArtifact($to, $after, $parameters);
+            $targetContent = $this->renderCurrentVersionArtifact($to, $after, $targetParameters, $versionContract);
             $targetDigest = hash('sha256', $targetContent);
             $projectPath = ScaffoldPathGuard::projectPath($root, $path);
             $current = $this->regularFileState($projectPath, $path);
@@ -241,22 +275,26 @@ final class ScaffoldUpgradeRunner
                     : $this->action($path, $after, 'create', 'new_managed_file', false, $current, $targetDigest);
                 continue;
             }
-            $oldContent = $this->renderArtifact($from, $before, $parameters);
-            $oldDigest = hash('sha256', $oldContent);
+            $oldContent = $this->renderArtifact($from, $before, $fromParameters);
+            $currentVersionContent = $this->renderCurrentVersionArtifact($from, $before, $targetParameters, $versionContract);
+            $currentVersionDigest = hash('sha256', $currentVersionContent);
             if (!$current['present']) {
                 $actions[] = $this->action($path, $after, 'conflict', 'managed_file_missing', true, $current, $targetDigest);
                 continue;
             }
-            if (hash_equals($targetDigest, $current['sha256']) && ($current['mode'] ?? null) === ($after['mode'] ?? null)) {
+            if ($this->renderedContentMatches($root, $path, $current, $targetContent)
+                && ($current['mode'] ?? null) === ($after['mode'] ?? null)) {
                 $actions[] = $this->action($path, $after, 'preserve', 'already_at_target', false, $current, $targetDigest);
                 continue;
             }
-            $projectChanged = !hash_equals($oldDigest, $current['sha256']);
-            $upstreamChanged = !hash_equals($oldDigest, $targetDigest) || ($before['mode'] ?? null) !== ($after['mode'] ?? null);
+            $projectChanged = (!$this->renderedContentMatches($root, $path, $current, $oldContent)
+                    && !$this->renderedContentMatches($root, $path, $current, $currentVersionContent))
+                || ($current['mode'] ?? null) !== ($before['mode'] ?? null);
+            $upstreamChanged = !hash_equals($currentVersionDigest, $targetDigest)
+                || ($before['mode'] ?? null) !== ($after['mode'] ?? null);
             if ($projectChanged && $upstreamChanged) $actions[] = $this->action($path, $after, 'conflict', 'both_project_and_upstream_modified', true, $current, $targetDigest);
             elseif ($projectChanged) $actions[] = $this->action($path, $after, 'preserve', 'project_modified_only', false, $current, $targetDigest);
-            elseif ($upstreamChanged) $actions[] = $this->action($path, $after, $after['classification'] === 'generated-managed' ? 'regenerate' : 'replace', 'upstream_modified_only', false, $current, $targetDigest);
-            else $actions[] = $this->action($path, $after, 'preserve', 'unchanged', false, $current, $targetDigest);
+            else $actions[] = $this->action($path, $after, $after['classification'] === 'generated-managed' ? 'regenerate' : 'replace', $upstreamChanged ? 'upstream_modified_only' : 'application_version_projection', false, $current, $targetDigest);
         }
         return $actions;
     }
@@ -290,10 +328,41 @@ final class ScaffoldUpgradeRunner
         return $rendered;
     }
 
-    private function targetContent(string $root, ScaffoldManifest $manifest, array $action): string
+    /**
+     * Keep the application's current release and original generated default while
+     * accepting the target scaffold/Core fields from the immutable target artifact.
+     */
+    private function renderCurrentVersionArtifact(
+        ScaffoldManifest $manifest,
+        array $file,
+        array $parameters,
+        array $versionContract,
+    ): string {
+        $rendered = $this->renderArtifact($manifest, $file, $parameters);
+        if (($file['path'] ?? null) !== 'release-versions.json') {
+            return $rendered;
+        }
+        $document = $this->normalizeVersionContractDocument(
+            $rendered,
+            'SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID',
+        );
+        $document['product_release'] = $versionContract['product_release'];
+        $document['generated_application_default'] = $versionContract['generated_application_default'];
+        return json_encode(
+            $document,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        ) . "\n";
+    }
+
+    /** Render apply bytes only from the immutable parameters and version contract in the plan. */
+    private function targetContent(ScaffoldManifest $manifest, array $action, array $plan): string
     {
-        [$application] = $this->applicationManifest($root);
-        return $this->renderArtifact($manifest, $action, $this->parameters($application));
+        return $this->renderCurrentVersionArtifact(
+            $manifest,
+            $action,
+            $plan['identity']['target_parameters'],
+            $plan['identity']['version_contract'],
+        );
     }
 
     private function summary(array $actions): array
@@ -325,14 +394,94 @@ final class ScaffoldUpgradeRunner
         ];
     }
 
-    private function parameters(array $application): array
+    /** @return array{APPLICATION_VERSION:string,PACKAGE_IDENTITY:string,PRODUCT_NAME:string,SLUG:string} */
+    private function parameters(array $application, string $applicationVersion): array
     {
         return [
-            'APPLICATION_VERSION' => (string)$application['application']['version'],
+            'APPLICATION_VERSION' => $applicationVersion,
             'PACKAGE_IDENTITY' => (string)$application['application']['package_identity'],
             'PRODUCT_NAME' => (string)$application['application']['name'],
             'SLUG' => (string)$application['application']['slug'],
         ];
+    }
+
+    /**
+     * Read the live application release authority without requiring installed
+     * Composer dependencies and bind it to the currently adopted scaffold.
+     *
+     * @return array{0:array<string,int|string>,1:string}
+     */
+    private function versionContract(string $root, array $application): array
+    {
+        $path = ScaffoldPathGuard::projectPath($root, 'release-versions.json');
+        if (!is_file($path) || is_link($path)) {
+            throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_INVALID');
+        }
+        $raw = file_get_contents($path);
+        $document = $this->normalizeVersionContractDocument(
+            is_string($raw) ? $raw : '',
+            'SCAFFOLD_VERSION_CONTRACT_INVALID',
+        );
+        if ($document['scaffold_template'] !== ($application['template']['version'] ?? null)) {
+            throw new RuntimeException('SCAFFOLD_VERSION_CONTRACT_IDENTITY_MISMATCH');
+        }
+        return [$document, 'sha256:' . hash('sha256', (string)$raw)];
+    }
+
+    /** Compare the known version contract semantically while all other managed files remain byte-exact. */
+    private function renderedContentMatches(
+        string $root,
+        string $path,
+        array $current,
+        string $expected,
+    ): bool {
+        if (($current['present'] ?? false) !== true) {
+            return false;
+        }
+        if ($path !== 'release-versions.json') {
+            return hash_equals(hash('sha256', $expected), (string)$current['sha256']);
+        }
+        $actual = file_get_contents(ScaffoldPathGuard::projectPath($root, $path));
+        return is_string($actual)
+            && hash_equals(hash('sha256', $actual), (string)$current['sha256'])
+            && $this->normalizeVersionContractDocument($actual, 'SCAFFOLD_VERSION_CONTRACT_INVALID')
+                === $this->normalizeVersionContractDocument($expected, 'SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID');
+    }
+
+    /** Parse exactly the seven supported fields and return their stable semantic order. */
+    private function normalizeVersionContractDocument(string $raw, string $error): array
+    {
+        try {
+            $document = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new RuntimeException($error, 0, $exception);
+        }
+        $keys = is_array($document) ? array_keys($document) : [];
+        if (!is_array($document)
+            || count($keys) !== count(self::VERSION_CONTRACT_KEYS)
+            || array_diff($keys, self::VERSION_CONTRACT_KEYS) !== []
+            || array_diff(self::VERSION_CONTRACT_KEYS, $keys) !== []
+            || ($document['schema_version'] ?? null) !== 1
+            || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'
+        ) {
+            throw new RuntimeException($error);
+        }
+        $normalized = [];
+        foreach (self::VERSION_CONTRACT_KEYS as $key) {
+            $value = $document[$key];
+            if (!in_array($key, ['schema_version', 'protocol'], true)
+                && (!is_string($value) || !$this->isSemanticVersion($value))) {
+                throw new RuntimeException($error . ': ' . $key);
+            }
+            $normalized[$key] = $value;
+        }
+        return $normalized;
+    }
+
+    /** Accept the SemVer surface already supported by scaffold application identities. */
+    private function isSemanticVersion(string $version): bool
+    {
+        return preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D', $version) === 1;
     }
 
     private function releaseIdentity(ScaffoldManifest $manifest): array { return $manifest->release() + ['manifest_sha256' => $manifest->digest()]; }
@@ -429,16 +578,36 @@ final class ScaffoldUpgradeRunner
         if($actual!==$action['current'])throw new RuntimeException('SCAFFOLD_PLAN_PROJECT_CHANGED: '.$action['path']);
     }
 
+    /** Reject any manifest, version authority, managed, app-owned, or release drift since preflight. */
     private function assertPlanFresh(string $root, array $plan): void
     {
-        [, $manifestDigest] = $this->applicationManifest($root);
+        [$application, $manifestDigest] = $this->applicationManifest($root);
         if (!hash_equals($plan['identity']['application_manifest_sha256'], $manifestDigest)) throw new RuntimeException('SCAFFOLD_PLAN_APPLICATION_LOCK_CHANGED');
+        [$versionContract, $versionContractDigest] = $this->versionContract($root, $application);
+        if ($versionContract !== ($plan['identity']['version_contract'] ?? null)
+            || $versionContractDigest !== ($plan['identity']['version_contract_sha256'] ?? null)
+        ) {
+            throw new RuntimeException('SCAFFOLD_PLAN_VERSION_CONTRACT_CHANGED');
+        }
         $managed = $this->actionState($root, $plan['actions']);
         if (!hash_equals($plan['identity']['managed_pre_sha256'], $managed['digest'])) throw new RuntimeException('SCAFFOLD_PLAN_PROJECT_CHANGED');
         [$application] = $this->applicationManifest($root); $app = $this->ownershipState($root, $application, 'app-owned');
         if (!hash_equals($plan['identity']['app_owned_pre_sha256'], $app['digest'])) throw new RuntimeException('SCAFFOLD_PLAN_PROJECT_CHANGED');
         $this->assertManifestDigest(ScaffoldManifest::load($plan['manifest_paths']['from']), $plan['identity']['from']['manifest_sha256']);
         $this->assertManifestDigest(ScaffoldManifest::load($plan['manifest_paths']['to']), $plan['identity']['to']['manifest_sha256']);
+    }
+
+    /** Rebuild the plan from its immutable manifests so edited actions cannot claim another ownership class or path. */
+    private function assertPlanRebound(string $root, array $plan): void
+    {
+        $expected = $this->preview(
+            $root,
+            (string)$plan['manifest_paths']['from'],
+            (string)$plan['manifest_paths']['to'],
+        );
+        if (!hash_equals((string)$expected['candidate'], (string)$plan['candidate'])) {
+            throw new RuntimeException('SCAFFOLD_PLAN_MANIFEST_REBIND_FAILED');
+        }
     }
 
     private function ledger(string $root): ScaffoldUpgradeLedger { return new ScaffoldUpgradeLedger(ScaffoldPathGuard::projectPath($root, '.peanut/upgrades/ledger.ndjson')); }
@@ -490,6 +659,7 @@ final class ScaffoldUpgradeRunner
         return $this->relative($root, $path);
     }
 
+    /** Advance the scaffold identity and snapshot the current version used for this target rendering. */
     private function nextApplicationManifest(string $root, array $plan, ScaffoldManifest $to): array
     {
         [$application] = $this->applicationManifest($root);

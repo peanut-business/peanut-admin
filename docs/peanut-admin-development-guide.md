@@ -43,6 +43,22 @@ Core 只拥有通用身份、Tenant、权限和公开 Host 合同；应用拥有
 页面与产品配置；Module 只拥有自己的表、用例、权限和公开合同；Plugin 是一个或多个
 Module 的不可变交付制品，不等于 Tenant 开通或成员授权。
 
+默认部署单位是完整应用 Release。目标 Release 在任何代码根清理或数据库动作前，从自身根运行
+`php server/think plugin:release-composition --current-root=<current-physical-root>`，只读比较当前
+`plugins.lock`、安装账本和目标 lock。全新空库已包含锁定 private Package 源码时，授权部署 owner
+在标准安装后执行 `php server/think plugin:install <private-key>` 初始化表与 catalog；既有安装在
+部署后运行 `php server/think plugin:reconcile --release-locked`。后者同时处理 official 与既有
+installed private，身份不变且全部 Module 为正常 maintenance 禁用态时返回
+`preserved_disabled` 并保持禁用。三个入口都不能把在线上传 tar、通用生产 worker 或热更新推断为
+已经具备。private Module 的 `Http/routes.php` 也不会由安装命令自动注册；应用 owner 必须在
+app-owned 路由装配中显式引入它并沿用认证、Module 与权限 middleware，退役时由同一 owner 去除
+接线，不复制业务 handler 或新增在线动态 loader。
+
+签名 archive 的 `module:install-package` / `module:update-package` 入口只允许 development、debug
+Standalone。Multi-tenant 派生应用当前没有从 archive 到应用仓源码和 `plugins.lock` 的受支持采用
+命令；`plugin:install` 只初始化已经锁入 Release 的源码，不能替代这一步。该缺口留给独立合同，
+不能靠放宽 Edition 门禁解决。
+
 多租户部署还包含独立 `platform/` 前端，发布产物位于 `server/public/platform/`，入口为
 `/platform/`。Platform Host、公共 Tenant Admin Host 与 Tenant 专属绑定 Host 必须由反向代理
 保留原始 Host；Platform API 只接收 `PLATFORM_HOSTS`，绑定入口不允许切换 Tenant。
@@ -51,12 +67,12 @@ Platform 维护窗口使用 Core 的公开 Ops Console 合同，由应用的 PDO
 middleware 装配。窗口生效时，除受 `platform.ops.maintenance.manage` 权限保护的计划与关闭
 接口外，所有 HTTP 写方法都拒绝并写入 Platform 审计；不能通过菜单、前端或 Host 别名绕过。
 
-交付环境的 Module 更新、退役和 Purge 由 deployment owner 在服务器侧受限 inbox 中准备受信
-archive，并用 `ops-module:request preview/prepare` 固定登记 target 与确认计划。Platform HTTP
-只接受 `modreq_*` opaque key；`scripts/ops-module-worker --once` 才能串联新配对备份、隔离恢复、
-维护、Module 操作、smoke、审计和 recovery pointer。任何 HTTP 请求都不能提供 archive、路径、
-URL、命令、host、数据库、凭据、确认计划或目标地址；失败时维护保持 active，等待应用 owner
-按 recovery pointer 恢复或确认安全退出。
+现有 `ops-module:request preview/prepare` 与 `scripts/ops-module-worker --once` 使用受限 inbox、登记
+target 和 opaque `modreq_*` key，只证明既有 Package 源码/数据库生命周期；它们没有覆盖 Composer/
+npm、前端构建、服务重启或完整应用 Release 切换，不能代替上面的默认部署流程，也不能称为生产
+在线更新。任何 HTTP 请求都不能提供 archive、路径、URL、命令、host、数据库、凭据、确认计划或
+目标地址。若以后补齐独立运维闭环，仍须保留配对备份、隔离恢复、维护、smoke、审计和 recovery
+pointer 等原有门禁。
 
 ### Provider 生产资格合同
 
@@ -82,25 +98,35 @@ URL、Release key、命令、镜像或凭据。Deployment owner 只可以把已�
 .peanut/upgrade-target/
 ├── target.json
 ├── from/
-│   ├── scaffold-manifest.json
-│   └── files/...
+│   └── scaffold-manifest.json
 ├── to/
-│   ├── scaffold-manifest.json
-│   └── files/...
+│   └── scaffold-manifest.json
 └── release/
+    ├── .peanut/application-manifest.json
+    ├── RELEASE_METADATA.json
+    ├── release-versions.json
     ├── plugins.lock
-    ├── plugins/...
-    ├── server/app/Modules/...
-    └── web/src/modules/...
+    ├── server/...
+    ├── web/...
+    └── <应用自己的其余源码>
 ```
 
-Host 不扫描磁盘、网络或历史 Release 猜测目标。`target.json` 必须把正式 Release commit/tree、
-P0-E 资格、两份 scaffold manifest SHA-256、from/to migration 清单和目标应用组合解析后的
-`release/plugins.lock` SHA-256 与目标 Kernel 精确 SemVer 固定在同一描述符中。整个
-`release/` 是只读目标源码根，任何 symlink、特殊文件或越界解析均拒绝；Module lock、manifest、
-后端 Module、前端 contribution 和包身份只能相互解析到这棵目标树。目标 scaffold manifest 的
-`release.source_commit/source_tree` 必须分别等于描述符中的 `release.commit/tree`，不能用
-一个已资格候选的身份包装另一份目标模板。
+Host 不扫描磁盘、网络或历史 Release 猜测目标。`target.json` 必须把正式应用 Release
+commit/tree、P0-E 资格、两份 scaffold manifest SHA-256、from/to migration 清单和目标应用组合
+解析后的 `release/plugins.lock` SHA-256 与目标 Kernel 精确 SemVer 固定在同一描述符中。整个
+`release/` 是应用 owner 发布的只读、完整源码根；Host 逐文件流式重算 Git blob/tree，连同目录
+排序、普通文件与 executable mode 一起匹配 `release.tree`。任何 symlink、特殊文件、读取异常或
+越界解析均拒绝；Module lock、manifest、后端 Module、前端 contribution 和包身份只能相互解析到
+同一棵已验证的应用树。
+
+应用 Release 身份与 scaffold 来源是两条独立轴。目标 `.peanut/application-manifest.json` 的
+`application.slug/package_identity` 必须与当前应用一致；展示名称可以变化。目标
+`RELEASE_METADATA.json.application_identity` 必须等于 package identity，metadata 的
+`version/expected_tag`、`release-versions.json.product_release` 和描述符 `release.key` 必须表示
+同一个应用 owner 创建的不可变发布。生成时得到的 baseline metadata 只证明生成输入，不能直接
+当作正式应用 Release。目标 manifest 的 template 四元组与外部 `to/scaffold-manifest.json`
+绑定，当前 manifest 的 template 四元组与 `from/scaffold-manifest.json` 绑定；两者不要求等于
+应用 Release commit/tree。
 
 `target.json` 只接受以下精确字段集合；未知字段、缺项、未排序 migration、摘要不匹配、资格
 不足 7 组、存在清理残留或租约未释放均 fail closed：
@@ -113,18 +139,28 @@ P0-E 资格、两份 scaffold manifest SHA-256、from/to migration 清单和目�
 | `migrations.from/to` | `inventory_sha256`、按 `migration_id` 严格升序的 `{migration_id, sha256}` 列表 |
 | `modules` | `lock_sha256`、`kernel_version`；摘要必须匹配固定 `release/plugins.lock`，Kernel 必须是精确 SemVer |
 
-检查顺序固定为：目标 Release 描述符/资格/摘要；`.peanut/application-manifest.json` 来源身份；
-同大版本且目标版本更高；Runtime 健康、仓库干净和当前 migration；from/to migration 不删除、
-不改写、不倒序、不冲突；目标 `release/` 内 Module lock/源码、目标 Kernel/依赖和已安装 Module；与 CLI 相同的
-scaffold ownership/conflict；匹配当前 Runtime 的已验证配对备份、引用同一
-`backup_reference_key` 的恢复 evidence，以及 active `planned-upgrade` 维护窗口。跨大版本固定
-返回 `UPGRADE_FRESH_REBUILD_REQUIRED`。
+检查顺序固定为：目标 Release 描述符/资格/完整 tree 与应用身份；当前应用身份和 from scaffold
+来源；当前 `product_release` 严格小于目标应用版本；scaffold 不降级且不跨大版本；Runtime 健康、
+仓库干净和当前 migration；from/to migration 不删除、不改写、不倒序、不冲突；目标 `release/`
+内 Module lock/源码、目标 Kernel/依赖和已安装 Module；目标应用已经采用的 scaffold provenance；
+匹配当前 Runtime 的已验证配对备份、引用同一
+`backup_reference_key` 的恢复 evidence，以及 active `planned-upgrade` 维护窗口。scaffold 跨大版本
+固定返回 `UPGRADE_FRESH_REBUILD_REQUIRED`。from/to scaffold 版本相同时，只有两份 manifest
+SHA-256 完全相同才允许继续，因此可以部署不改变 scaffold 的纯
+应用升级。缺当前 application manifest 或未暂存目标时为 `configuration_required`；身份文件存在
+但格式或绑定错误时为 blocked，不从 canonical 仓库或历史名称猜测 fallback。
+
+该 readiness 中 active Module 缺失/降级检查继续保留；直接部署入口还必须在切换前运行目标
+Release 自带的 composition guard，覆盖 Plugin artifact、private Package 与异常生命周期状态。
+readiness 和 guard 是相邻门禁，不能用其中一个的通过结果代替另一个。
 
 `preflight.state` 只覆盖前七类静态检查，使 PC42 可以在静态预检通过后创建新备份并进入维护
 窗口；顶层 `state` 只有动态保护条件也满足时才为 `ready`。恢复 evidence 与最新备份不配对时
-固定返回 `UPGRADE_RESTORE_BACKUP_MISMATCH`，且不生成 recovery pointer。Scaffold 投影只返回
-动作数量、稳定原因、managed/app-owned 摘要和 app-owned 数量，不返回绝对路径或文件内容；
-`ScaffoldUpgradeRunner::preview()` 与 CLI preflight 共享分类规则，但不写 plan 或 ledger。
+固定返回 `UPGRADE_RESTORE_BACKUP_MISMATCH`，且不生成 recovery pointer。Scaffold 投影只说明目标
+完整应用 Release 已通过 provenance 绑定；其中 automatic/preserved/conflicts 等计数为 0 表示
+Runtime 没有执行 scaffold 合并动作，不是目标应用的真实文件数量。开发期的
+`ScaffoldUpgradeRunner` 采用与三方比较必须在应用 owner 形成正式应用 Release 前完成，生产
+readiness 不重复该合并。
 
 PC42 只能消费完整 `target.json`、descriptor SHA-256、readiness check 列表和 opaque recovery
 pointer。它不得重新解释 Web 输入、从移动分支推导目标，或在 blocker 存在时跳到部署/迁移。
@@ -135,14 +171,21 @@ smoke → 关闭维护或停在已记录恢复指针。跨实例升级仍属于�
 PC42 的提交接口只接受空 JSON 对象和幂等键。服务器把当前 Runtime 与 PC41 固定目标身份写入
 `ops.upgrade.execute`，登记的 `peanut-admin-production-upgrade-control-worker` 再按静态预检 →
 新备份 → 同一备份的隔离恢复验证 → planned-upgrade 维护 → `deploy-release` update → Runtime
-smoke → recovery pointer 的顺序执行。各步状态和摘要可在 Platform“运行与维护”页面观察，
-失败停在当前步骤；页面不能传入路径、命令或部署目标。
+smoke → recovery pointer 的顺序执行。task 在 claim 和首次/重入 deploy 响应中固定目标
+commit/tree；worker 把两者成对交给 `deploy-release`，后者先核对远端 annotated tag 的实际身份，
+再只从固定 commit 读取并归档。各步状态和摘要可在 Platform“运行与维护”页面观察，失败停在
+当前步骤；页面不能传入路径、命令或部署目标。
 
 实际生产执行前必须读取并核验 `resources/project-resources.json` 中的上述 worker、
 `peanut-admin-production-deployment`、`peanut-admin-production-backups` 和
 `peanut-admin-production-restore-verification-deployment`，取得具体生产动作授权及资源 lease 后，
 仅从登记的固定 checkout 运行 `scripts/ops-upgrade-worker --once`。完整边界与恢复语义见
 [`应用升级执行合同`](architecture/product-closure-upgrade-execution.md)。
+
+上述 worker 是 canonical Peanut 的固定生产实现，不构成独立应用的通用远程部署平台。独立应用
+必须由自己的 owner 提供资源登记、固定 checkout/执行器、不可变 Release 与生产授权；这些输入
+缺失时升级保持阻断。既有应用中的 app-owned Host 不会被 scaffold 自动覆盖，owner 需要审阅并
+采用新的版本合同修正。
 
 ## 开发最小路径
 

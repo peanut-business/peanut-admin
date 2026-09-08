@@ -114,7 +114,7 @@ final class FileAdministrationService implements FileAdministration
         $file->save(['name' => $name]);
     }
 
-    /** 批量删除素材及对应存储对象。 */
+    /** 逐项软删素材并删除外部对象；Driver 失败时恢复当前素材，使失败项仍可重试。 */
     public function delete(array $ids): array
     {
         $ids = $this->normalizeIds($ids);
@@ -123,22 +123,27 @@ final class FileAdministrationService implements FileAdministration
             throw new \InvalidArgumentException('包含不存在的素材');
         }
 
-        $deleted = FileTenantRepository::files()
-            ->whereIn('id', $ids)
-            ->update(['delete_time' => time()]);
-        if ($deleted !== count($ids)) {
-            throw new \RuntimeException('素材记录删除失败');
-        }
-
         $tenantId = $this->executionContext->tenantId();
+        $deleted = 0;
         $storageDeleted = 0;
         foreach ($rows as $row) {
             $fileId = (int) $row['id'];
             $fileKey = (string) $row['file_key'];
+            if (FileTenantRepository::files()->where('id', $fileId)->update(['delete_time' => time()]) !== 1) {
+                throw new \RuntimeException('素材 ' . $fileId . ' 记录删除失败');
+            }
             try {
                 $this->storage->delete($tenantId, $fileKey);
+                $deleted++;
                 $storageDeleted++;
             } catch (\Throwable $e) {
+                if (!FileTenantRepository::restoreFile($fileId)) {
+                    throw new \RuntimeException(
+                        '素材 ' . $fileId . ' 删除失败且记录恢复失败：' . $e->getMessage(),
+                        0,
+                        $e,
+                    );
+                }
                 throw new \RuntimeException('素材 ' . $fileId . ' 删除失败：' . $e->getMessage(), 0, $e);
             }
         }

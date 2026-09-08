@@ -44,4 +44,19 @@ foreach (['pa_account', 'pa_credential', 'pa_tenant_member', 'pa_member_role', '
     }
 }
 
+$admin = (string)file_get_contents($serverDir . '/app/adminapi/application/auth/AdminApplicationService.php');
+foreach (['add' => 'createAdministrator', 'edit' => 'updateAdministrator'] as $method => $command) {
+    if (!preg_match('/public function ' . $method . '\\(.*?(?=\\n    (?:\/\\*\\*|public function))/s', $admin, $match)) {
+        throw new RuntimeException("Administrator method is missing: {$method}");
+    }
+    if (!str_contains($match[0], '$service->' . $command . '(')) {
+        throw new RuntimeException("Administrator {$method} must use the Core atomic command");
+    }
+    foreach (['createPending', 'update', 'replaceRoles', 'activate', 'suspend', 'transitionStatus'] as $primitive) {
+        if (preg_match('/(?:->|::)' . $primitive . '\\(/', $match[0])) {
+            throw new RuntimeException("Administrator {$method} splits the atomic command: {$primitive}");
+        }
+    }
+}
+
 echo "Native Admin identity runtime contract passed.\n";

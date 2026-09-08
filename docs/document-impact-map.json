@@ -60,6 +60,16 @@
       "reason": "Edition packaging, package trust and application upgrade ownership must remain one documented release contract."
     },
     {
+      "id": "application-scaffold-version-contract",
+      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php", "server/app/command/PluginReleaseComposition.php", "server/app/command/PluginReconcile.php", "server/app/command/PluginInstall.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
+      "classifications": ["architecture-decision", "technical"],
+      "upstream": ["application release contract", "scaffold adoption manifest", "migration ledger and immutable SQL"],
+      "technical_docs": ["docs/plans/application-scaffold-version-contract-queue.md", "docs/create-application.md", "docs/scaffold-upgrade.md", "docs/peanut-admin-development-guide.md", "docs/peanut-admin-release-deployment.md", "docs/operations/release-and-application-lifecycle.md"],
+      "site_docs": ["docs-site/guide/application-module-lifecycle.md", "docs-site/reference.md"],
+      "generated": ["docs/reference/document-catalog.generated.md", "docs-site/reference/source-map.generated.md"],
+      "reason": "Application releases, scaffold provenance, Core locks and database migration targets are separate identities that must remain explicit across generation, upgrade and deployment."
+    },
+    {
       "id": "schema-migration-owner",
       "paths": ["server/database/**/*.sql", "server/database/**/*.php", "server/app/**/model/**/*.php", "server/app/**/module.json"],
       "classifications": ["technical", "developer-site", "architecture-decision"],
@@ -71,13 +81,23 @@
     },
     {
       "id": "module-manifest",
-      "paths": ["server/app/Modules/**/module.json", "server/app/Modules/**/Module.php"],
+      "paths": ["server/app/Modules/**/module.json", "server/app/Modules/**/Module.php", "server/app/Modules/**/ModuleProvider.php"],
       "classifications": ["technical", "developer-site"],
       "upstream": ["module.json", "module bootstrap"],
-      "technical_docs": ["docs/module-development-guide.md", "docs/architecture/module-execution-context-contract.md"],
+      "technical_docs": ["docs/module-development-guide.md", "docs/plugin-module-development.md", "docs/architecture/module-execution-context-contract.md", "docs/architecture/module-publication-contract.md"],
       "site_docs": ["docs-site/guide/module-development.md"],
       "generated": [],
       "reason": "Module identity, ownership, permission and lifecycle projections follow the manifest."
+    },
+    {
+      "id": "module-publication",
+      "paths": ["plugins.lock", "plugins/*/plugin.json", "server/app/command/ModulePack.php", "server/app/command/BundlePack.php", "server/app/platform/service/plugin/PluginPackageArchiveService.php", "server/app/platform/service/plugin/ModulePackagePreflight.php", "server/resources/schemas/plugin.schema.json", "server/tests/Productization/AllModulesPackagingTest.php"],
+      "classifications": ["architecture-decision", "technical", "developer-site"],
+      "upstream": ["Module source and manifests", "deterministic package builder", "bundled Plugin lock"],
+      "technical_docs": ["docs/architecture/module-publication-contract.md", "docs/architecture/consumer-module-lifecycle-contract.md", "docs/plugin-module-development.md", "docs/release-engineering.md"],
+      "site_docs": ["docs-site/guide/module-development.md", "docs-site/guide/application-module-lifecycle.md", "docs-site/reference.md"],
+      "generated": [],
+      "reason": "Module package contents, bundled identity, qualification and publication state must move as one explicit release contract."
     },
     {
       "id": "resource-environment",
@@ -104,9 +124,13 @@
       "paths": [
         "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
         "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
         "server/app/command/OpsUpgradeTask.php",
         "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
         "scripts/ops-upgrade-worker",
+        "scripts/deploy-release",
+        "platform/src/App.vue",
         "docs/architecture/product-closure-upgrade-execution.md"
       ],
       "classifications": ["architecture-decision", "technical", "developer-site"],

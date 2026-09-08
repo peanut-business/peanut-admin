@@ -254,34 +254,26 @@ SQL);
 
     $operationCountAfterIdempotency = (int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn();
     $jobCountAfterIdempotency = (int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn();
-    $atomicInjectionSkipped = false;
+    $auditFailureConstraint = 'chk_test_import_export_audit_failure';
+    $pdo->exec(
+        "ALTER TABLE pa_tenant_audit_event ADD CONSTRAINT {$auditFailureConstraint} "
+        . "CHECK (event_type <> 'tenant.import_export.submitted')"
+    );
     try {
-        $pdo->exec(<<<'SQL'
-CREATE TRIGGER reject_async_submit_audit BEFORE INSERT ON pa_tenant_audit_event
-FOR EACH ROW BEGIN
-  IF NEW.event_type = 'tenant.import_export.submitted' THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'injected audit failure';
-  END IF;
-END
-SQL);
-    } catch (PDOException $exception) {
-        if (!str_contains($exception->getMessage(), 'SUPER privilege') || !str_contains($exception->getMessage(), 'binary logging')) {
-            throw $exception;
-        }
-        $atomicInjectionSkipped = true;
-        echo "atomic-injection=skipped(resource privilege)\n";
-    }
-    if (!$atomicInjectionSkipped) {
         try {
-        submitOperationLogExport($runtime, $alpha, 'atomic-failure-' . $runId);
+            submitOperationLogExport($runtime, $alpha, 'atomic-failure-' . $runId);
             throw new RuntimeException('atomic failure injection unexpectedly committed');
         } catch (Throwable $exception) {
-            expectAsyncTenant(str_contains($exception->getMessage(), 'injected audit failure'), 'atomic failure injection was not reached');
+            expectAsyncTenant(
+                str_contains($exception->getMessage(), $auditFailureConstraint),
+                'deterministic audit constraint failure was not reached'
+            );
         }
-        $pdo->exec('DROP TRIGGER reject_async_submit_audit');
-        expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn() === $operationCountAfterIdempotency, 'failed submission left an operation');
-        expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === $jobCountAfterIdempotency, 'failed submission left a job');
+    } finally {
+        $pdo->exec("ALTER TABLE pa_tenant_audit_event DROP CHECK {$auditFailureConstraint}");
     }
+    expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_import_export_operation')->fetchColumn() === $operationCountAfterIdempotency, 'failed submission left an operation');
+    expectAsyncTenant((int)$pdo->query('SELECT COUNT(*) FROM pa_task_job')->fetchColumn() === $jobCountAfterIdempotency, 'failed submission left a job');
 
     $jobKey = (string)$operation->taskJobKey;
     $envelope = (string)$pdo->query("SELECT trusted_envelope FROM pa_task_job WHERE job_key = " . $pdo->quote($jobKey))->fetchColumn();

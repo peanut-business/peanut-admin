@@ -61,6 +61,7 @@ function excluded(string $path): bool
             'resources/codegraph-registry.json', 'resources/service-registry.json',
             'resources/consumer-ready-control.json',
             'scripts/create-app', 'scripts/build-application-template-inventory', 'scripts/build-scaffold-release',
+            'scripts/check-test-integrity', 'scripts/generate-all-modules-packaging-evidence',
             'scripts/build-edition-installers', 'scripts/build-edition-upgrades',
             'scripts/core-qualification-runner',
             'scripts/core-upgrade-compatibility', 'scripts/combined-upgrade-qualification',
@@ -119,6 +120,9 @@ function classification(string $path): string
         return 'excluded';
     }
     if ($path === 'server/database/seed-demo-data.php') {
+        return 'managed';
+    }
+    if ($path === 'server/app/common/service/installation/ApplicationReleaseVersions.php') {
         return 'managed';
     }
     if ($path === 'scripts/seed-demo-data') {

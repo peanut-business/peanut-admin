@@ -49,6 +49,21 @@ function scaffoldFails(callable $callback,string $message): void
 function scaffoldFresh(string $source,string $target): void
 {
     scaffoldRun(['php',$source.'/scripts/create-app','--name=Acme Console','--slug=acme-console','--package=acme/acme-console','--target='.$target]);
+    scaffoldInstallVersionContract($target);
+}
+function scaffoldInstallVersionContract(string $target,string $productRelease='0.1.0'): void
+{
+    $manifest=json_decode((string)file_get_contents($target.'/.peanut/application-manifest.json'),true,512,JSON_THROW_ON_ERROR);
+    $templateVersion=$manifest['template']['version']??null;
+    scaffoldExpect(is_string($templateVersion)&&preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D',$templateVersion)===1,'historical scaffold fixture must expose a valid template version');
+    scaffoldExpect(preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D',$productRelease)===1,'historical scaffold fixture must expose a valid product release');
+    $fixture=dirname(__DIR__,3).'/server/tests/fixtures/scaffold-upgrade/release-versions-template.json';
+    $contract=json_decode((string)file_get_contents($fixture),true,512,JSON_THROW_ON_ERROR);
+    scaffoldExpect(is_array($contract)&&($contract['scaffold_template']??null)==='__TEMPLATE_VERSION__','historical version contract fixture must retain its template placeholder');
+    $contract['scaffold_template']=$templateVersion;
+    $contract['product_release']=$productRelease;
+    $written=file_put_contents($target.'/release-versions.json',json_encode($contract,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    scaffoldExpect($written!==false,'historical scaffold fixture version contract must be written');
 }
 function scaffoldFreshAdopted(string $source,string $releasePath,string $target): void
 {
@@ -66,6 +81,7 @@ $creator=new app\common\service\scaffold\ApplicationCreator(
 $creator->create('Acme Console','acme-console','acme/acme-console',$argv[3]);
 PHP;
     scaffoldRun(['php','-r',$code,$source,$releasePath,$target]);
+    scaffoldInstallVersionContract($target);
 }
 function scaffoldCopyRelease(string $source,string $target): void { scaffoldCopy(dirname($source),$target); }
 
@@ -201,7 +217,7 @@ try{
     $legacyApp=$temporary.'/legacy-version-app';scaffoldFreshAdopted($legacySource,$nextRelease,$legacyApp);
     $legacyManifestPath=$legacyApp.'/.peanut/application-manifest.json';$legacyManifest=json_decode((string)file_get_contents($legacyManifestPath),true,512,JSON_THROW_ON_ERROR);
     scaffoldExpect(($legacyManifest['protocol']??null)==='peanut.application-scaffold.v1'&&!isset($legacyManifest['application']['version']),'v1.1.3 fixture must exercise the legacy manifest path');
-    $legacyMetadataPath=$legacyApp.'/RELEASE_METADATA.json';$legacyMetadata=json_decode((string)file_get_contents($legacyMetadataPath),true,512,JSON_THROW_ON_ERROR);$legacyMetadata['version']='2.4.6';file_put_contents($legacyMetadataPath,json_encode($legacyMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    $legacyMetadataPath=$legacyApp.'/RELEASE_METADATA.json';$legacyMetadata=json_decode((string)file_get_contents($legacyMetadataPath),true,512,JSON_THROW_ON_ERROR);$legacyMetadata['version']='2.4.6';file_put_contents($legacyMetadataPath,json_encode($legacyMetadata,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");scaffoldInstallVersionContract($legacyApp,'2.4.6');
     $legacyAppOwnedDigest=scaffoldOwnedTree($legacyApp,$legacyManifest,'app-owned');$legacyUniappDigest=hash_file('sha256',$legacyApp.'/uniapp/src/manifest.json');
     $legacyPlan=$runner->preflight($legacyApp,$nextRelease,$currentRelease);
     scaffoldExpect($legacyPlan['status']==='ready'&&($legacyPlan['identity']['application_version']??null)==='2.4.6','legacy manifest must uniquely adopt RELEASE_METADATA application version');

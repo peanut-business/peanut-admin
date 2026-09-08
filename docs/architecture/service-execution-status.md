@@ -24,7 +24,7 @@
 | 统一审计事件 | complete | AuditEvent、actor、resource、trace 和脱敏规则已统一 | Task、导入导出继续接入 |
 | 统一存储 | complete | PR #232 已合入 `dev`（merge `c63994e…`，tree 与候选一致）；真实 COS 生命周期、密文往返和迁移备份恢复均通过 | 下游继续通过统一存储合同消费；真实生产对象存储仍按后置发布流程验收 |
 | 通知与验证码 | complete | development 固定 `1234`；其他环境走真实 Provider；验证码哈希写入 `pa_notice_log` | 真实短信 Provider 验收属于后置，不阻塞本轮 |
-| 会员账户与 CRM | complete | 会员身份、资料、标签和 Tenant 隔离已合入 `dev`；文件媒体 Host 已确认头像上传继续经过 `StorageService` 和 Tenant 对象账本 | 仓库内旧 `MemberUploadTenantWiringTest` 仍检查已退出的旧路由、`uri/storage` 字段并硬编码 root；这是待维护夹具，不是当前业务阻塞 |
+| 会员账户与 CRM | complete | 会员身份、资料、标签和 Tenant 隔离已合入 `dev`；`MemberUploadTenantWiringTest` 已按现行 Consumer Controller、Execution Context、`pa_file.file_key`/`pa_file_object` 与 Local Driver 重写 | P0-E 在精确登记的 Plugin lifecycle 数据库上执行该真实上传 Gate；生产对象存储仍按 Provider 资格处理 |
 | 支付、充值与退款 | complete | 租户渠道授权、订单快照、撤销和退款账本已合入 `dev` | 真实支付 Provider 验收属于后置 |
 | OAuth 与微信渠道 | complete | state/ticket locator、Provider 绑定和 Tenant 隔离已合入 `dev`；最新候选上的 OAuth Tenant 隔离回归通过 | OAuth 头像补全继续通过统一文件合同；真实微信凭据仍属后置验收 |
 | Tenant 任务与异步执行 | complete | Task Runtime、幂等、停用负向和结果下载隔离已通过 | 导入导出继续消费 |
@@ -42,8 +42,8 @@
 
 - `PB04-FILE-MEDIA-HOST-001`：通过；上传、删除和 public/private 用途仍由统一 `StorageService`、`StorageRepository` 和对象账本负责。
 - `PB07-OAUTH-CHANNEL-HOST-001` 与 `OAuthTenantIsolationTest.php`：通过；state/ticket、Provider 绑定和 Tenant 隔离未因存储合入改变。
-- `TaskImportExportTenantIsolationTest.php`：通过；在登记 P0-E 隔离库上应用存储迁移并设置测试 JWT 密钥后，CSV 结果对象进入 `ready`，私有 URL 可生成，跨 Tenant 下载被拒绝。登记账号无 `SUPER` 时原子失败注入按规则记录为 skipped。
-- `MemberUploadTenantWiringTest.php`：未作为当前业务失败计入；该历史夹具仍断言已退出的 `route/app.php` 路由、`pa_file.uri/storage` 字段并尝试使用未登记 root 账号。当前代码路径已由文件媒体 Host 合同静态检查覆盖，夹具维护另列为低风险测试清理项。
+- `TaskImportExportTenantIsolationTest.php`：通过；在登记 P0-E 隔离库上应用存储迁移并设置测试 JWT 密钥后，CSV 结果对象进入 `ready`，私有 URL 可生成，跨 Tenant 下载被拒绝。原子失败注入不再依赖 `SUPER`/`CREATE TRIGGER` 权限：测试使用临时 CHECK 约束确定性触发失败，验证事务回滚后删除约束，不允许 privilege-based skip。
+- `MemberUploadTenantWiringTest.php`：已正式重写为现行 `ConsumerExecutionContext` 与容器 Controller 路径，校验 Local Driver、Tenant/Member owner、`pa_file.file_key`、`pa_file_object=ready` 及私有路由；`scripts/p0e-runtime-qualification` 在新建的精确 Plugin lifecycle 数据库中执行它，不再使用旧路由、旧字段或未登记 root 账号。
 
 ## 短信配置事实
 

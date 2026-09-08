@@ -13,6 +13,7 @@ use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginCatalogSyncService;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\platform\service\plugin\PluginReleaseCompositionGuard;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -24,6 +25,17 @@ function moduleBundleExpect(bool $condition, string $message): void
     if (!$condition) {
         throw new RuntimeException($message);
     }
+}
+
+function moduleBundleExpectLifecycleError(callable $operation, string $errorCode, string $message): void
+{
+    try {
+        $operation();
+    } catch (PluginLifecycleException $exception) {
+        moduleBundleExpect($exception->errorCode === $errorCode, $message . ': ' . $exception->errorCode);
+        return;
+    }
+    throw new RuntimeException($message . ': no error');
 }
 
 function moduleBundleCopyTree(string $source, string $target): void
@@ -258,7 +270,7 @@ sort($applicationMigrations, SORT_STRING);
 executeSqlFiles($pdo, $applicationMigrations);
 
 $projectRoot = dirname($serverRoot);
-$temporary = sys_get_temp_dir() . '/pa-module-bundle-' . $databaseMatch[1];
+$temporary = realpath(sys_get_temp_dir()) . '/pa-module-bundle-' . $databaseMatch[1];
 moduleBundleExpect(!file_exists($temporary), 'isolated bundle output path already exists');
 $source = $temporary . '/source';
 $target = $temporary . '/target';
@@ -266,6 +278,8 @@ $archivePath = $temporary . '/official-content-bundle.tar';
 $updateArchivePath = $temporary . '/official-content-bundle-v2.tar';
 $conflictArchivePath = $temporary . '/official-content-bundle-v2-conflict.tar';
 $recoverableArchivePath = $temporary . '/official-runtime-bundle.tar';
+$releaseV1 = $temporary . '/release-v1';
+$releaseV2 = $temporary . '/release-v2';
 $completed = false;
 
 try {
@@ -313,6 +327,7 @@ try {
     moduleBundleExpect(array_column((array)$installed['modules'], 'module_key') === ['official.article', 'official.file'], 'bundle install returned another scope');
     $unchangedInstall = $installer->install($archivePath, $packed['sha256'], null);
     moduleBundleExpect(($unchangedInstall['operation'] ?? null) === 'unchanged', 'repeated bundle install was not idempotent');
+    moduleBundleCopyTree($target, $releaseV1);
 
     $lockBeforeDryRun = (string)file_get_contents($target . '/plugins.lock');
     $databaseBeforeDryRun = (string)json_encode([
@@ -346,6 +361,74 @@ try {
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_installation WHERE plugin_key='official-content-bundle' AND installed_version='2.0.0' AND status='active'")->fetchColumn() === 1, 'bundle Package identity did not update');
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_module_installation WHERE module_key IN ('official.article','official.file') AND installed_version='2.0.0' AND status='active'")->fetchColumn() === 2, 'bundle Module identities did not update');
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN ('official.article','official.file')")->fetchColumn() === 0, 'bundle update changed TenantModule enablement');
+    moduleBundleCopyTree($target, $releaseV2);
+    $composition = (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig))->verify($releaseV2);
+    moduleBundleExpect(
+        ($composition['status'] ?? null) === 'ready'
+            && ($composition['checked'][0]['operation'] ?? null) === 'preserve',
+        'same-package application release did not pass composition verification',
+    );
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec("UPDATE pa_plugin_installation SET composer_identity_json='{}' WHERE plugin_key='official-content-bundle'");
+        moduleBundleExpectLifecycleError(
+            static fn() => (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig))->verify($releaseV2),
+            'PLUGIN_RELEASE_CURRENT_IDENTITY_INVALID',
+            'invalid installed JSON identity did not fail closed',
+        );
+    } finally {
+        $pdo->rollBack();
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec("DELETE FROM pa_plugin_module WHERE plugin_key='official-content-bundle' AND module_key='official.file'");
+        moduleBundleExpectLifecycleError(
+            static fn() => (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig))->verify($releaseV2),
+            'PLUGIN_RELEASE_PACKAGE_SCOPE_CHANGED',
+            'database Package member loss did not block release composition',
+        );
+    } finally {
+        $pdo->rollBack();
+    }
+
+    moduleBundleExpectLifecycleError(
+        static fn() => (new PluginReleaseCompositionGuard($pdo, $releaseV1, $moduleConfig))->verify($releaseV2),
+        'PLUGIN_RELEASE_PACKAGE_DOWNGRADE',
+        'application release Package downgrade was not blocked',
+    );
+
+    $missingRelease = $temporary . '/release-v2-missing';
+    moduleBundleCopyTree($releaseV2, $missingRelease);
+    $missingLockPath = $missingRelease . '/plugins.lock';
+    $missingLock = json_decode((string)file_get_contents($missingLockPath), true, 64, JSON_THROW_ON_ERROR);
+    $missingLock['plugins'] = [];
+    file_put_contents($missingLockPath, json_encode($missingLock, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    moduleBundleExpectLifecycleError(
+        static fn() => (new PluginReleaseCompositionGuard($pdo, $missingRelease, $moduleConfig))->verify($releaseV2),
+        'PLUGIN_RELEASE_PACKAGE_REMOVED',
+        'application release Package removal was not blocked',
+    );
+
+    $identityConflictRelease = $temporary . '/release-v2-identity-conflict';
+    moduleBundleCopyTree($releaseV2, $identityConflictRelease);
+    $conflictLockPath = $identityConflictRelease . '/plugins.lock';
+    $conflictLock = json_decode((string)file_get_contents($conflictLockPath), true, 64, JSON_THROW_ON_ERROR);
+    $conflictEntry = &$conflictLock['plugins'][0];
+    $conflictManifestPath = $identityConflictRelease . '/' . $conflictEntry['manifest'];
+    $conflictManifest = json_decode((string)file_get_contents($conflictManifestPath), true, 64, JSON_THROW_ON_ERROR);
+    $conflictManifest['trust']['license']['identifier'] = 'MIT';
+    $conflictEntry['trust']['license']['identifier'] = 'MIT';
+    file_put_contents($conflictManifestPath, json_encode($conflictManifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    $conflictEntry['manifest_sha256'] = hash_file('sha256', $conflictManifestPath);
+    unset($conflictEntry);
+    file_put_contents($conflictLockPath, json_encode($conflictLock, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    moduleBundleExpectLifecycleError(
+        static fn() => (new PluginReleaseCompositionGuard($pdo, $identityConflictRelease, $moduleConfig))->verify($releaseV2),
+        'PLUGIN_RELEASE_PACKAGE_IDENTITY_CHANGED',
+        'same-version Package identity change was not blocked',
+    );
     try {
         $installer->update($archivePath, $packed['sha256'], null, false);
         throw new RuntimeException('bundle downgrade unexpectedly executed');
@@ -529,6 +612,20 @@ try {
         !in_array('business_dependency', array_column($disabledDependentPreview['blockers'], 'kind'), true),
         'disabled business dependent continued to block its provider Bundle',
     );
+    $disabledCurrentRelease = $temporary . '/release-disabled-current';
+    $disabledTargetRelease = $temporary . '/release-disabled-target';
+    moduleBundleCopyTree($target, $disabledCurrentRelease);
+    moduleBundleCopyTree($target, $disabledTargetRelease);
+    $disabledComposition = (new PluginReleaseCompositionGuard(
+        $pdo,
+        $disabledTargetRelease,
+        $moduleConfig,
+    ))->verify($disabledCurrentRelease);
+    $disabledOperations = array_column($disabledComposition['checked'], 'operation', 'key');
+    moduleBundleExpect(
+        ($disabledOperations['official-runtime-bundle'] ?? null) === 'preserve-disabled',
+        'same-identity application release did not preserve a disabled Package',
+    );
 
     $recoverableGovernance = new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig);
     $recoverableRetirePreview = $recoverableGovernance->preview('official.task', false);
@@ -618,6 +715,49 @@ try {
         );
     moduleBundleExpect(($repeatPurge['operation'] ?? null) === 'unchanged', 'repeated bundle purge was not idempotent');
 
+    $privateArchive = $temporary . '/private-fixture.tar';
+    $privatePackage = (new PluginPackageArchiveService($projectRoot . '/server'))->packModule('fixture.delivery-record', $privateArchive);
+    (new PluginPackageInstaller($pdo, $target . '/server', $moduleConfig, []))->install($privateArchive, $privatePackage['sha256'], null);
+    $privateLock = new \app\platform\service\plugin\PluginLockResolver($target . '/server', '../plugins.lock');
+    $profile = new \app\platform\service\module\ProductTenantModuleProfileService(
+        $pdo,
+        new \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager($pdo),
+        new \PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository($pdo, true),
+        new \app\platform\service\module\PdoModuleGovernanceProvider($pdo, $target . '/server', $moduleConfig + ['plugin_lock' => '../plugins.lock']),
+        \app\common\service\audit\AuditContractHost::fromPdo($pdo),
+    );
+    foreach ([
+        [['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::MultiTenant, 'PRIVATE_TENANT_MODULE_STANDALONE_REQUIRED'],
+        [['official.file'], \app\common\service\instance\DeploymentMode::Standalone, 'PRIVATE_TENANT_MODULE_NOT_LOCKED'],
+        [['acme.absent'], \app\common\service\instance\DeploymentMode::Standalone, 'PRIVATE_TENANT_MODULE_NOT_LOCKED'],
+    ] as [$selection, $edition, $error]) {
+        try {
+            $profile->applyAdditionalInstallationSelection($selection, $edition, $privateLock);
+            throw new RuntimeException('invalid private selection was accepted');
+        } catch (\PeanutAdmin\Kernel\Module\ModuleException $exception) {
+            moduleBundleExpect($exception->errorCode === $error, 'private selection boundary changed');
+        }
+    }
+    $rbacBefore = $pdo->query('SELECT * FROM pa_role_permission ORDER BY role_id,permission_id')->fetchAll();
+    $tenantRevision = $pdo->query("SELECT authorization_revision FROM pa_tenant WHERE code='default'")->fetchColumn();
+    // A real database failure after enable proves row/revision/audit changes share the transaction.
+    $pdo->exec("ALTER TABLE pa_tenant_audit_event ADD CONSTRAINT private_adoption_audit_failure CHECK (event_type <> 'tenant-module.profile-enabled')");
+    try {
+        $profile->applyAdditionalInstallationSelection(['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::Standalone, $privateLock);
+        throw new RuntimeException('private additive audit failure was not injected');
+    } catch (\PDOException $exception) {
+        moduleBundleExpect(str_contains($exception->getMessage(), 'private_adoption_audit_failure'), 'unexpected additive failure');
+    } finally {
+        $pdo->exec('ALTER TABLE pa_tenant_audit_event DROP CHECK private_adoption_audit_failure');
+    }
+    moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchColumn() === 0, 'failed additive enable left a TenantModule row');
+    moduleBundleExpect($pdo->query("SELECT authorization_revision FROM pa_tenant WHERE code='default'")->fetchColumn() === $tenantRevision, 'failed additive enable changed Tenant revision');
+    $selection = $profile->applyAdditionalInstallationSelection(['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::Standalone, $privateLock);
+    moduleBundleExpect($selection['binding_count'] === 1, 'private additive selection was not enabled');
+    $openingBefore = $pdo->query("SELECT * FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchAll();
+    moduleBundleExpect($profile->applyAdditionalInstallationSelection(['fixture.delivery-record'], \app\common\service\instance\DeploymentMode::Standalone, $privateLock)['binding_count'] === 0, 'private selection rewrote an effective opening');
+    moduleBundleExpect($pdo->query("SELECT * FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchAll() === $openingBefore, 'private selection changed existing opening configuration');
+    moduleBundleExpect($pdo->query('SELECT * FROM pa_role_permission ORDER BY role_id,permission_id')->fetchAll() === $rbacBefore, 'private selection granted RBAC');
     $completed = true;
     echo "MODULE-BUNDLE-LIFECYCLE-001 passed database={$database} content_sha256={$packed['sha256']} recoverable_sha256={$recoverablePacked['sha256']}\n";
 } finally {

@@ -11,6 +11,9 @@ function freshSchemaExpect(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
 $installer = (string)file_get_contents($serverRoot . '/database/install.php');
+$installationHost = (string)file_get_contents(
+    $serverRoot . '/app/common/service/installation/InstallationExecutionHost.php'
+);
 $guard = (string)file_get_contents($serverRoot . '/database/environment-guard.php');
 preg_match_all('/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`([^`]+)`/i', $schema, $matches);
 $applicationTables = array_values(array_unique($matches[1] ?? []));
@@ -40,6 +43,12 @@ freshSchemaExpect(str_contains($installer, 'BootstrapService'), 'installer does 
 freshSchemaExpect(str_contains($installer, "'default'"), 'installer does not create the formal default Tenant');
 freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer health contract does not verify the native owner role');
 freshSchemaExpect(str_contains($installer, "'--migrate'"), 'application migration runner is not available');
+freshSchemaExpect(
+    str_contains($installer, 'applicationReleaseVersions($serverDir)')
+        && str_contains($installer, "\$releaseIdentity['peanut_release']")
+        && str_contains($installationHost, '$this->migrationTargetVersion()'),
+    'fresh install and migration selection do not use the scaffold version contract'
+);
 $migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
 // These migrations reached the shared ledger before the release marker became mandatory.
 // Their raw bytes are immutable because the application ledger hashes the complete SQL file.

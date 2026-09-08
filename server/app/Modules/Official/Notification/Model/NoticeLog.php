@@ -20,6 +20,8 @@ class NoticeLog extends TenantOwnedModel
     public const STATUS_SUCCESS = 1;
     /** 状态：发送失败 */
     public const STATUS_FAIL = 2;
+    /** 状态：Provider 结果未知，不得立即重试 */
+    public const STATUS_UNKNOWN = 3;
 
     /** 渠道：短信 */
     public const CHANNEL_SMS = 1;

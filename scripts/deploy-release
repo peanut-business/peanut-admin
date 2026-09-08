@@ -18,6 +18,8 @@ OVERLAY=""
 EDITION_PACKAGE=""
 EDITION_MANIFEST=""
 CONFIRM_DESTROY=""
+EXPECTED_COMMIT=""
+EXPECTED_TREE=""
 ADMIN_EMAIL="${PEANUT_GENERATED_ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
 PLATFORM_EMAIL="${PEANUT_GENERATED_PLATFORM_EMAIL:-}"
@@ -36,6 +38,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/deploy-release <vX.Y.Z> --target <production|production-candidate> \
   (--install | --update | --fresh) [--apply | --dry-run] [--ssh-alias <alias>] \
+  [--expected-commit <sha1> --expected-tree <sha1>] \
   [--edition-package <installer.tar.gz> --edition-manifest <manifest.json>] \
   [--overlay <demo-patch.tar>] \
   [--confirm-destroy <target>]
@@ -55,6 +58,8 @@ instance. It never guesses a host, path, port, database or fallback target.
              external manifest shipped beside --edition-package
   --confirm-destroy
              required for --fresh; value must exactly equal the target
+  --expected-commit, --expected-tree
+             pin a caller-bound release commit and tree; both are required together
 
 Routine updates preserve the database and apply append-only application
 migrations from server/database/migrations. Fresh installation uses the
@@ -181,12 +186,22 @@ while [[ $# -gt 0 ]]; do
     --confirm-destroy)
       [[ $# -ge 2 ]] || fail '--confirm-destroy requires a value'
       CONFIRM_DESTROY="$2"; shift 2 ;;
+    --expected-commit)
+      [[ $# -ge 2 ]] || fail '--expected-commit requires a value'
+      EXPECTED_COMMIT="$2"; shift 2 ;;
+    --expected-tree)
+      [[ $# -ge 2 ]] || fail '--expected-tree requires a value'
+      EXPECTED_TREE="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
     *) usage >&2; exit 64 ;;
   esac
 done
 
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'tag must be an immutable vX.Y.Z release tag'
+[[ -z "$EXPECTED_COMMIT" || "$EXPECTED_COMMIT" =~ ^[a-f0-9]{40}$ ]] || fail 'expected commit must be a full lowercase SHA-1'
+[[ -z "$EXPECTED_TREE" || "$EXPECTED_TREE" =~ ^[a-f0-9]{40}$ ]] || fail 'expected tree must be a full lowercase SHA-1'
+[[ -z "$EXPECTED_COMMIT" && -z "$EXPECTED_TREE" || -n "$EXPECTED_COMMIT" && -n "$EXPECTED_TREE" ]] \
+  || fail '--expected-commit and --expected-tree must be provided together'
 [[ "$TARGET" == production || "$TARGET" == production-candidate ]] || fail 'target must be production or production-candidate'
 [[ $((INSTALL + UPDATE + FRESH)) -eq 1 ]] || fail 'choose exactly one of --install, --update or --fresh'
 [[ $((APPLY + DRY_RUN)) -eq 1 ]] || fail 'choose exactly one of --apply or --dry-run'
@@ -275,11 +290,22 @@ fi
 tag_commit="$(git rev-parse "$TAG^{commit}")"
 remote_commit="$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk 'NR == 1 { print $1 }')"
 [[ -n "$remote_commit" && "$remote_commit" == "$tag_commit" ]] || fail "$TAG local and remote commit identities differ"
+[[ -z "$EXPECTED_COMMIT" || "$tag_commit" == "$EXPECTED_COMMIT" ]] \
+  || fail "$TAG commit differs from the caller-bound expected commit"
+# All release reads and the source archive use this resolved immutable commit, never the tag name again.
+release_ref="$tag_commit"
+tag_tree="$(git rev-parse "$release_ref^{tree}")"
+[[ -z "$EXPECTED_TREE" || "$tag_tree" == "$EXPECTED_TREE" ]] \
+  || fail "$TAG tree differs from the caller-bound expected tree"
 version="${TAG#v}"
-metadata_version="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.version // empty')"
-metadata_tag="$(git show "$TAG:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
+metadata_version="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r '.version // empty')"
+metadata_tag="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
 [[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || fail "RELEASE_METADATA.json does not match $TAG"
-tag_tree="$(git rev-parse "$TAG^{tree}")"
+contract_product_version="$(git show "$release_ref:release-versions.json" | jq -r '.product_release // empty')"
+scaffold_migration_version="$(git show "$release_ref:release-versions.json" | jq -r '.scaffold_template // empty')"
+[[ "$contract_product_version" == "$version" ]] || fail "release-versions.json product_release does not match $TAG"
+[[ "$scaffold_migration_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+  || fail 'release-versions.json scaffold_template is invalid'
 archive_kind=source
 if [[ -n "$EDITION_PACKAGE" ]]; then
   archive_kind=edition
@@ -368,8 +394,8 @@ fi
 mode=install
 [[ "$UPDATE" == 1 ]] && mode=update
 [[ "$FRESH" == 1 ]] && mode=fresh
-printf 'release=%s\ncommit=%s\ntarget=%s\nmode=%s\nssh=%s\nremote_root=%s\ncompose_project=%s\norigin_port=%s\ndatabase_resource=%s\ndeployment_mode=%s\n' \
-  "$TAG" "$tag_commit" "$TARGET" "$mode" "$SSH_ALIAS" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode"
+printf 'release=%s\ncommit=%s\nscaffold_migration_version=%s\ntarget=%s\nmode=%s\nssh=%s\nremote_root=%s\ncompose_project=%s\norigin_port=%s\ndatabase_resource=%s\ndeployment_mode=%s\n' \
+  "$TAG" "$tag_commit" "$scaffold_migration_version" "$TARGET" "$mode" "$SSH_ALIAS" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode"
 printf 'deployment_artifact=%s\n' "$archive_kind"
 [[ -z "$overlay_sha256" ]] || printf 'overlay_sha256=%s\n' "$overlay_sha256"
 
@@ -397,7 +423,7 @@ trap 'rm -f "$archive_file" "$secrets_file"' EXIT
 if [[ "$archive_kind" == edition ]]; then
   cp "$EDITION_PACKAGE" "$archive_file"
 else
-  git archive --format=tar "$TAG" -o "$archive_file"
+  git archive --format=tar "$release_ref" -o "$archive_file"
 fi
 archive_sha256="$(shasum -a 256 "$archive_file" | awk '{print $1}')"
 [[ "$archive_sha256" =~ ^[0-9a-f]{64}$ ]] || fail 'cannot calculate release archive SHA-256'
@@ -432,7 +458,7 @@ fi
 # remote control script through the registered non-interactive sudo boundary so
 # its preflight, Compose and filesystem operations all observe the same target.
 ssh -o BatchMode=yes "${SSH_KEEPALIVE_OPTS[@]}" "$SSH_ALIAS" sudo -n bash -s -- \
-  "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" "$archive_kind" <<'REMOTE_SCRIPT'
+  "$TAG" "$tag_commit" "$TARGET" "$mode" "$remote_root" "$compose_project" "$origin_port" "$database_id" "$deployment_mode" "$remote_archive" "$remote_secrets" "$(encode_remote_arg "$remote_overlay")" "$(encode_remote_arg "$overlay_sha256")" "$archive_sha256" "$archive_kind" "$scaffold_migration_version" <<'REMOTE_SCRIPT'
 set -Eeuo pipefail
 
 decode_remote_arg() {
@@ -454,8 +480,9 @@ overlay="$(decode_remote_arg "${12:-__PEANUT_EMPTY__}")"
 expected_overlay_sha="$(decode_remote_arg "${13:-__PEANUT_EMPTY__}")"
 expected_archive_sha="${14:-}"
 archive_kind="${15:-}"
+scaffold_migration_version="${16:-}"
 version="${tag#v}"
-migration_target_version="$version"
+migration_target_version="$scaffold_migration_version"
 
 fail() { printf 'remote deploy: %s\n' "$1" >&2; exit 1; }
 version_greater_than() {
@@ -475,6 +502,8 @@ version_greater_than() {
 [[ "$target" == production || "$target" == production-candidate ]] || fail 'unregistered deployment target'
 [[ "$mode" == install || "$mode" == update || "$mode" == fresh ]] || fail 'unregistered deployment mode'
 [[ "$archive_kind" == source || "$archive_kind" == edition ]] || fail 'unregistered deployment artifact kind'
+[[ "$scaffold_migration_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+  || fail 'unregistered scaffold migration version'
 [[ -d "$root" && -f "$root/compose.yaml" && -f "$root/.env" && -f "$root/server/.env" ]] \
   || fail "deployment files or split environments are missing under $root"
 [[ -f "$secrets" ]] || fail 'deployment credential payload is missing'
@@ -500,9 +529,16 @@ if [[ "$mode" == update ]]; then
   current_tag="$(sudo -n sh -c 'cat .release-tag 2>/dev/null || true' | tr -d '\r\n')"
   [[ "$current_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'routine update requires a registered current .release-tag'
   current_version="${current_tag#v}"
-  current_major="${current_version%%.*}"
-  target_major="${version%%.*}"
-  [[ "$current_major" == "$target_major" ]] || fail "major release change ${current_tag} -> ${tag} requires --fresh"
+  current_scaffold_version="$(jq -r '.scaffold_template // empty' release-versions.json)"
+  [[ "$current_scaffold_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+    || fail 'routine update requires a valid current scaffold identity'
+  if version_greater_than "$current_scaffold_version" "$scaffold_migration_version"; then
+    fail "scaffold downgrade ${current_scaffold_version} -> ${scaffold_migration_version} is forbidden"
+  fi
+  current_scaffold_major="${current_scaffold_version%%.*}"
+  target_scaffold_major="${scaffold_migration_version%%.*}"
+  [[ "$current_scaffold_major" == "$target_scaffold_major" ]] \
+    || fail "scaffold major change ${current_scaffold_version} -> ${scaffold_migration_version} requires --fresh"
   [[ "$(printf '%s\n%s\n' "$current_version" "$version" | sort -V | tail -n 1)" == "$version" && "$current_version" != "$version" ]] || fail "target release ${tag} must be newer than current ${current_tag}"
   running_services="$("${current_compose[@]}" ps --status running --services | sort | tr '\n' ' ')"
   [[ "$running_services" == *php* && "$running_services" == *nginx* && "$running_services" == *cron* ]] \
@@ -546,10 +582,10 @@ if [[ -n "$overlay" ]]; then
   migration_target_version="$(jq -r '.migration_target_version // empty' "$overlay_metadata")"
   [[ "$migration_target_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
     || fail 'demo overlay migration target version is invalid'
-  if version_greater_than "$version" "$migration_target_version"; then
-    fail 'demo overlay migration target version predates its base release'
+  if version_greater_than "$scaffold_migration_version" "$migration_target_version"; then
+    fail 'demo overlay migration target version predates its base scaffold'
   fi
-  computed_migration_target="$version"
+  computed_migration_target="$scaffold_migration_version"
   while IFS= read -r migration_path; do
     [[ "$migration_path" =~ ^server/database/migrations/[0-9]{8}-[a-z0-9][a-z0-9_-]*\.sql$ ]] \
       || fail 'demo overlay contains an invalid migration path'
@@ -591,6 +627,15 @@ jq -e '.status == "ready" and .code == "INSTALL_PREFLIGHT_READY"' <<<"$candidate
 "${candidate_compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:lock --check </dev/null \
   || fail 'candidate Plugin lock is not canonical before target replacement'
 printf 'candidate_installation_preflight=ready\ncandidate_plugin_lock=valid\n'
+
+if [[ "$mode" == update ]]; then
+  "${candidate_compose[@]}" run -T --rm --no-deps \
+    --volume "$root:/run/peanut-current-release:ro" \
+    --entrypoint php php server/think plugin:release-composition \
+    --current-root=/run/peanut-current-release </dev/null \
+    || fail 'candidate Plugin composition would remove, downgrade, or replace an installed package unsafely'
+  printf 'candidate_plugin_composition=ready\n'
+fi
 
 verify_paired_backup() {
   local backup_root="$root/backups" backup_dir
@@ -706,9 +751,9 @@ if [[ "$mode" == update ]]; then
   # Runtime code is copied to the deployment root only; persistent volumes are
   # never written by this script. MySQL is deliberately excluded from recreate.
   "${compose[@]}" up -d --wait mysql
-  migration_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$version" </dev/null)" || fail "database migration failed: $migration_result"
+  migration_result="$("${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$scaffold_migration_version" </dev/null)" || fail "database migration failed: $migration_result"
   printf '%s\n' "$migration_result"
-  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
+  "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --release-locked </dev/null
   demo_mode_enabled=0
   if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
     demo_mode_enabled=1
@@ -741,7 +786,7 @@ fi
 unset ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$migration_target_version" </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/environment-guard.php --current </dev/null
-"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --official-locked </dev/null
+"${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --release-locked </dev/null
 demo_mode_enabled=0
 if sudo -n grep -Fqx 'PEANUT_DEMO_MODE=enabled' server/.env; then
   demo_mode_enabled=1

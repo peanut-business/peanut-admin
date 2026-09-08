@@ -77,6 +77,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
         return $this->accessData($tenantContext, $admin)->permissions;
     }
 
+    /** Authorizes only active permissions owned by the application or an installed and enabled Module. */
     public function decide(
         ?TenantContext $tenantContext,
         AdminPrincipal $admin,
@@ -95,7 +96,7 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
 
         $bridge = $this->moduleAdmin;
         $registered = [
-            ...$bridge->registeredSystemMenuPermissions($tenantContext->tenantId),
+            ...$bridge->registeredPermissions($tenantContext->tenantId),
         ];
         $registered = array_values(array_diff(
             array_unique($registered),
