@@ -36,6 +36,18 @@ Composer 与 npm Registry、Marketplace 不是当前已开放的独立交付通�
 | Plugin 交付身份 | `plugins/<package.key>/plugin.json` | 打包时重新生成并纳入 inventory | bundled 身份另由根 `plugins.lock` 固定 |
 | 测试、临时脚本、工作区证据 | `server/tests/`、临时目录 | 否 | 测试和证据不进入交付 tar；不得把临时脚本提交为 Runtime |
 
+Bundled 与独立 Package 使用不同的不可变身份。Bundled Module 的最终身份是完整应用 Release 的
+commit/tree、根 `plugins.lock` digest 和其中的 canonical contents digest；在它尚未签发独立 Package 时，
+Module version 是兼容性标签，修复源码不等于发布了同版本 Registry 包。任何进入后端或前端 canonical
+root 的修改，都必须在同一提交重新生成对应 `plugins/<key>/plugin.json` 和根 `plugins.lock`，并让
+`plugin:lock --check`、完整应用生成与全官方 Module 打包门禁通过；只改源码或只手填 lock 均为阻断。
+
+Self-contained Package 从首次形成 `package-candidate` 起，以 `(package key, version, tar SHA-256)` 冻结。
+同一 version 不得换 digest、覆盖旧 tar 或复用 published identity；内容再次变化必须提升 Module、PHP 与
+前端组件的共同版本，并生成新的候选。尚未形成 Package 的 bundled-only 修复可保留兼容性版本，但不能
+沿用旧应用 Release 的 contents digest，也不能据此声称独立 Package 已更新。这个区分允许应用安全修复
+按应用版本交付，同时避免 Composer、npm 或 Marketplace 出现“同版本不同内容”。
+
 单 Module Package 的 package key 必须等于唯一 Module key。Bundle 必须包含至少两个 Module，package
 key 不得冒充成员；安装、停用、退役和 Purge 均以完整 Package 为原子边界。
 

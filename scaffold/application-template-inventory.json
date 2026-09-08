@@ -4368,7 +4368,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "df4c0b7e03d7b1b3c16869616f71d806da6a445c27120dc5bcd9cf645769856e"
+            "source_sha256": "b785549b637ea578dbf12ea2b1f6a410c7e2b0db129c5eddd62067de7a9cd750"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -4436,7 +4436,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e4a777a563cbd7a9c497028b06059b10d5eede38723b76a3efd4ae074a2fb44e"
+            "source_sha256": "9f676ba07c7b5161f8c4e1b8803d5130691983d056eb4b62ce81ca214b118d1e"
         },
         {
             "path": "plugins/official.import-export/plugin.json",
@@ -4464,7 +4464,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "31ad4ab7776c233895c023cafef5c9ee8cfd6f34fdf93d86badcdcac003f1d7f"
+            "source_sha256": "57700e4ea5841705b74ecd300c058d82e2b56e0a18538cfc59fff101a65e386d"
         },
         {
             "path": "plugins/official.notification/plugin.json",
@@ -4478,7 +4478,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8762046c5b55f930ae8a680f1b1abef6f6b7673c56976a00a8ecf90724ec43fd"
+            "source_sha256": "302023ef1e3ebaaed54b47f410a925ba5ff3e209a1ac05916144724530fd6fb3"
         },
         {
             "path": "plugins/official.oauth/plugin.json",
