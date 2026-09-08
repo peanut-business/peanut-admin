@@ -1233,6 +1233,24 @@ class Runner:
 
     def plugin_lifecycle(self) -> None:
         log = self.group_log("plugin-lifecycle")
+        database = self.plan["databases"]["plugin_lifecycle"]
+        service_gates = [
+            (
+                "server/tests/Multitenancy/MemberUploadTenantWiringTest.php",
+                {},
+            ),
+            (
+                "server/tests/Multitenancy/TaskImportExportTenantIsolationTest.php",
+                {"ASYNC_PRIVATE_ROOT": str(self.cache / "task-import-export-private")},
+            ),
+        ]
+        for test, additions in service_gates:
+            self.create_database(database)
+            with self.backend_process_environment(ROOT, database, "multi-tenant") as env:
+                env.update(additions)
+                command(["php", test], cwd=ROOT, env=env, log=log)
+            self.drop_database(database)
+
         generated = self.generated["multi-tenant"]
         lock = generated / "plugins.lock"
         original_lock = lock.read_bytes()
@@ -1311,6 +1329,7 @@ class Runner:
             "status": "passed",
             "application_root": str(generated),
             "database": self.plan["databases"]["plugin_lifecycle"],
+            "source_service_gates": [test for test, _ in service_gates],
             "plugin_lock_restored_sha256": sha256(lock),
             "fixture_removed": True,
             "app_owned_before_sha256": before["tree_sha256"],
