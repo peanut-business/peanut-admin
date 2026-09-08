@@ -15,7 +15,7 @@ use app\common\support\PositiveIds;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 
-/** Compatibility Admin CRUD backed by native accounts and TenantMembers. */
+/** 管理员界面编排；账户、成员资料、角色及状态由 Core 聚合命令原子写入。 */
 final class AdminApplicationService
 {
     private const EXPORT_MAX_ROWS = 25000;
@@ -98,6 +98,7 @@ final class AdminApplicationService
         return [];
     }
 
+    /** 使用可信租户上下文提交一次 Core 命令；任一步失败由 Core 回滚全部写入。 */
     public function add(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
@@ -108,52 +109,25 @@ final class AdminApplicationService
             }
             $department = self::firstId($params['dept_id'] ?? []);
             $service = $this->tenantAdmins->members();
-            $member = $service->createPending(
+            $service->createAdministrator(
                 $context->tenantId,
                 (string)$params['account'],
                 (string)$params['name'],
                 (string)$params['password'],
-                $context->memberId,
-                $context->accountId,
-                $context->requestId,
-            );
-            if ($department !== null) {
-                $member = $service->update(
-                    $context->tenantId,
-                    (int)$member['id'],
-                    (string)$params['name'],
-                    $department,
-                    (int)$member['revision'],
-                    $context->memberId,
-                    $context->accountId,
-                    $context->requestId,
-                );
-            }
-            $member = $service->replaceRoles(
-                $context->tenantId,
-                (int)$member['id'],
+                $department,
                 $roles,
-                (int)$member['revision'],
+                (int)$params['disable'] === 0,
                 $context->memberId,
                 $context->accountId,
                 $context->requestId,
             );
-            if ((int)$params['disable'] === 0) {
-                $service->activate(
-                    $context->tenantId,
-                    (int)$member['id'],
-                    (int)$member['revision'],
-                    $context->memberId,
-                    $context->accountId,
-                    $context->requestId,
-                );
-            }
             return true;
         } catch (\Throwable $e) {
             throw $e;
         }
     }
 
+    /** 先验证表单，再携带成员版本提交 Core 原子编辑；禁止代改账户密码。 */
     public function edit(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
@@ -167,26 +141,18 @@ final class AdminApplicationService
             }
             $service = $this->tenantAdmins->members();
             $member = $service->get($context->tenantId, (int)$params['id']);
-            $member = $service->update(
+            $service->updateAdministrator(
                 $context->tenantId,
                 (int)$member['id'],
                 (string)$params['name'],
                 self::firstId($params['dept_id'] ?? []),
-                (int)$member['revision'],
-                $context->memberId,
-                $context->accountId,
-                $context->requestId,
-            );
-            $member = $service->replaceRoles(
-                $context->tenantId,
-                (int)$member['id'],
                 $roles,
+                (int)$params['disable'] === 0,
                 (int)$member['revision'],
                 $context->memberId,
                 $context->accountId,
                 $context->requestId,
             );
-            self::transitionStatus($service, $context, $member, (int)$params['disable']);
             return true;
         } catch (\Throwable $e) {
             throw $e;
