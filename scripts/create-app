@@ -53,7 +53,7 @@ try {
         $options['target'],
         $options['edition'],
         $options['application-version'] ?? null,
-        $options['profile'] ?? 'full'
+        $options['profile'] ?? 'standard'
     );
     fwrite(STDOUT, json_encode([
         'status' => 'created',

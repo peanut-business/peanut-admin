@@ -46,7 +46,7 @@ final class ApplicationCreator
         string $target,
         string $edition,
         ?string $applicationVersion = null,
-        string $profile = 'full'
+        string $profile = 'standard'
     ): array
     {
         $journal = $this->sourceRoot . '/.local/module-source-adoption/journal.json';

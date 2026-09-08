@@ -46,7 +46,7 @@ foreach ($actions as $action) {
 }
 
 $system = (string)file_get_contents($serverRoot . '/app/adminapi/controller/system/SystemController.php');
-foreach (['info' => 'SystemApplicationService::getInfo', 'clearCache' => 'SystemApplicationService::clearCache'] as $action => $effect) {
+foreach (['info' => '$this->system->getInfo', 'clearCache' => '$this->system->clearCache'] as $action => $effect) {
     instanceToolExpect(
         preg_match(
             '/public function ' . $action . '\(\)\s*\{\s*\$denial = \$this->instanceToolAccessDenial\(\);\s*if \(\$denial !== null\).*?return \$denial;.*?' . preg_quote($effect, '/') . '\(/s',

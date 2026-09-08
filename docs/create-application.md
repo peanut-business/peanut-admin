@@ -16,8 +16,8 @@ php scripts/create-app \
 `--edition` 必须明确选择 `standalone` 或 `multi-tenant`。这不是运行时开关：生成器会从同一份
 Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、索引、Tenant/Platform 能力和
 升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。当前正式
-生成器与命令默认采用 `full` 配置；`minimal`/`standard` 必须显式选择。完整应用 Release 的发布清单
-采用 full 配置，示例显式传入 `--profile=full`。
+当前正式发布清单采用 full 配置，示例显式传入 `--profile=full`；省略 `--profile` 时仍采用
+`standard`，需要完整应用能力时必须显式选择 `--profile=full`。
 
 四种版本身份各自拥有事实源：
 

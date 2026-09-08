@@ -22,16 +22,34 @@ foreach (array_slice($argv, 1) as $argument) {
 }
 foreach (['version','source-commit','output'] as $required) if (!isset($options[$required])) releaseUsage();
 try {
-    $contract = json_decode((string)file_get_contents($root.'/release-versions.json'), true, 512, JSON_THROW_ON_ERROR);
     $parser = new \Composer\Semver\VersionParser();
     $actual = $parser->normalize($options['version']);
-    $expected = $parser->normalize((string)($contract['scaffold_template'] ?? ''));
-    if (!\Composer\Semver\Comparator::equalTo($actual, $expected)) {
-        releaseUsage();
-    }
 } catch (Throwable) { releaseUsage(); }
 if (preg_match('/^[a-f0-9]{40}$/D',$options['source-commit'])!==1 || !str_starts_with($options['output'],'/')
     || (isset($options['edition']) && !in_array($options['edition'], ['standalone', 'multi-tenant'], true))) releaseUsage();
+
+// A normal build can only create the currently declared scaffold template.
+// Historical releases are still checked from their immutable artifact below;
+// their source commits predate the current release-versions contract and must
+// not be rejected merely because the current template version is newer.
+if (!$check) {
+    try {
+        $contract = json_decode((string)file_get_contents($root.'/release-versions.json'), true, 512, JSON_THROW_ON_ERROR);
+        $expected = $parser->normalize((string)($contract['scaffold_template'] ?? ''));
+        if (!\Composer\Semver\Comparator::equalTo($actual, $expected)) {
+            releaseUsage();
+        }
+    } catch (Throwable) { releaseUsage(); }
+} else {
+    $existingManifestPath = rtrim($options['output'], '/') . '/scaffold-manifest.json';
+    try {
+        $existing = json_decode((string)file_get_contents($existingManifestPath), true, 512, JSON_THROW_ON_ERROR);
+        $existingVersion = $parser->normalize((string)($existing['release']['version'] ?? ''));
+        if (!\Composer\Semver\Comparator::equalTo($actual, $existingVersion)) {
+            releaseUsage();
+        }
+    } catch (Throwable) { releaseUsage(); }
+}
 
 function releaseRun(array $command, ?string $cwd = null): string
 {

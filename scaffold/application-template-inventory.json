@@ -4368,7 +4368,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fc99691cf251e33037215207f1c5f936117360613200d4b94bb4a007e67be8bc"
+            "source_sha256": "df4c0b7e03d7b1b3c16869616f71d806da6a445c27120dc5bcd9cf645769856e"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -4422,7 +4422,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5e8e501738950c5b67fe1e2e4bfcc837d380a7ea318482e01dbadf38d2916a8c"
+            "source_sha256": "11781286a991e53e8f169074ce8d10c90646bd034b3278fade35b6266a46521e"
         },
         {
             "path": "plugins/official.file/plugin.json",
@@ -4767,16 +4767,15 @@
         {
             "path": "scripts/check-test-integrity",
             "target": "scripts/check-test-integrity",
-            "classification": "managed",
-            "owner": "scaffold",
-            "transform": "text",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
             "mode": 493,
             "profiles": [
                 "minimal",
                 "standard",
                 "full"
-            ],
-            "source_sha256": "e23a9d1b3fd37b81738a55c61910f05db88ca879f71c6cc6b8c7544d54b3aa0b"
+            ]
         },
         {
             "path": "scripts/check-thinkphp-architecture",
@@ -4925,6 +4924,19 @@
                 "full"
             ],
             "source_sha256": "732bda48c9287aa4107051a9fd6179419eadff037b98cc5f0a4f5b71bbc275fb"
+        },
+        {
+            "path": "scripts/generate-all-modules-packaging-evidence",
+            "target": "scripts/generate-all-modules-packaging-evidence",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
         },
         {
             "path": "scripts/generate-release-legal.mjs",

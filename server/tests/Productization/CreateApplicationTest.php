@@ -70,6 +70,42 @@ function createApplicationFails(callable $operation, string $prefix): void
     }
 }
 
+/** @param list<string> $command */
+function createApplicationRun(array $command, ?string $cwd = null): string
+{
+    $pipes = [];
+    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $cwd);
+    if (!is_resource($process)) {
+        throw new RuntimeException('unable to start application scaffold command');
+    }
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $code = proc_close($process);
+    if ($code !== 0) {
+        throw new RuntimeException('application scaffold command failed(' . $code . '): ' . trim((string)$stderr));
+    }
+    return (string)$stdout;
+}
+
+function createApplicationBuildCurrentRelease(string $root, string $version, string $output): string
+{
+    $commit = trim(createApplicationRun(['git', '-C', $root, 'rev-parse', 'HEAD']));
+    createApplicationExpect(
+        preg_match('/^[a-f0-9]{40}$/D', $commit) === 1,
+        'current scaffold source identity must be a full commit'
+    );
+    createApplicationRun([
+        'php',
+        $root . '/scripts/build-scaffold-release',
+        '--version=' . $version,
+        '--source-commit=' . $commit,
+        '--output=' . $output,
+    ]);
+    return $commit;
+}
+
 /** @param array{commit:string,tree:string} $identity */
 function createApplicationTamperedReleaseFails(
     string $root,
@@ -141,16 +177,30 @@ foreach ([
 }
 $templateVersion = (string)($inventory['template_version'] ?? '');
 createApplicationExpect(preg_match('/^\d+\.\d+\.\d+$/D', $templateVersion) === 1, 'inventory template version must be SemVer');
-$releasePath = $root . '/scaffold/releases/v' . $templateVersion . '/scaffold-manifest.json';
+$releaseRoot = $temporary . '/current-scaffold-release';
+$releasePath = $releaseRoot . '/scaffold-manifest.json';
 $identity = ['commit' => str_repeat('a', 40), 'tree' => str_repeat('b', 40)];
 
 try {
+    createApplicationBuildCurrentRelease($root, $templateVersion, $releaseRoot);
+    $standardTarget = $temporary . '/standard-default';
+    $standardManifest = (new ApplicationCreator($root, $inventoryPath, $identity))->create(
+        'Acme Console',
+        'acme-console',
+        'acme/acme-console',
+        $standardTarget,
+        'multi-tenant',
+    );
+    createApplicationExpect(
+        ($standardManifest['application']['profile'] ?? null) === 'standard',
+        'ApplicationCreator must retain standard as the implicit profile'
+    );
     $creator = new ApplicationCreator($root, $inventoryPath, $identity, $releasePath);
     $first = $temporary . '/first';
     $second = $temporary . '/second';
     $other = $temporary . '/other';
     $standalone = $temporary . '/standalone';
-    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, 'multi-tenant');
+    $manifestOne = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $first, 'multi-tenant', null, 'full');
     $manifestTwo = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $second, 'multi-tenant', null, 'full');
     $manifestOther = $creator->create('Beta Workspace', 'beta-workspace', 'beta/beta-workspace', $other, 'multi-tenant', null, 'full');
     $standaloneManifest = $creator->create('Acme Console', 'acme-console', 'acme/acme-console', $standalone, 'standalone', null, 'full');
