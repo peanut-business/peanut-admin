@@ -75,8 +75,9 @@ key 不得冒充成员；安装、停用、退役和 Purge 均以完整 Package 
 
 ## 5. `official.rich-text` 当前裁定（2026-09-09）
 
-- 源码、Module manifest、前端贡献和 bundled Plugin identity 已进入 Peanut Admin v3.0.13 source
-  Release，故状态为 **bundled-locked**；在线 Demo 仍是 v3.0.12，不能用来证明该 Module 已部署；
+- 源码、Module manifest、前端贡献和 bundled Plugin identity 已进入 Peanut Admin v3.0.13 完整应用
+  Release（源码与两种 Edition 安装包），故 bundled 状态为 **bundled-locked**；在线 Demo 仍是 v3.0.12，
+  不能用来证明该 Module 已部署；
 - `plugins.lock` 明确记录 archive/signature/SBOM `not-issued`、review `not-reviewed`、漏洞响应
   `not-configured`、Marketplace `blocked`；因此它不是 independently published Package；
 - 前端 `@peanut-admin/official-rich-text` 保持 `private: true`，PHP `peanut-business/official-rich-text`
@@ -86,6 +87,11 @@ key 不得冒充成员；安装、停用、退役和 Purge 均以完整 Package 
   服务与后续资格的能力，不能标记为可发布完成；
 - 当前全官方 Module 打包合同改为从 `plugins.lock` 自动发现 official keys，Rich Text 以及未来新增的
   bundled official Module 不再能被硬编码清单漏掉。
+
+本次在固定源码提交 `23c6c31ff4468fb2a5c389f38092adb3ffd0ed24` 上运行 `module:check`，八项检查
+全部通过；随后生成未签名本地候选 `/private/tmp/official.rich-text-1.0.0-unsigned.tar`，SHA-256 为
+`9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`。这使独立包通道达到
+**package-candidate（local/unsigned）**，不改变 bundled 通道状态，也不满足 qualified 或 published。
 
 下一次要推进 Rich Text 独立发布，最低缺口是：专用浏览器行为、协同服务认证/隔离、signed tar
 verify、SBOM、review、漏洞响应 owner 和明确目标渠道。完成前维持 bundled-only。

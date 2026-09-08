@@ -130,9 +130,12 @@ package 保持 `private: true`，Marketplace 仍 blocked。
 `AllModulesPackagingTest` 不再硬编码 8 个 Module，而是从 `plugins.lock` 自动发现全部 `official.*`
 Module。`official.rich-text` 因而进入打包资格，未来新增 official Module 也不能静默漏测。
 
-Rich Text 当前只达到 **bundled-locked**：源码随 v3.0.13 source Release 冻结；archive、签名、SBOM
-未签发，review/漏洞响应未建立，线上 Demo 仍是 v3.0.12。Tiptap/ProseMirror/Yjs 客户端已实现，仓库没有
-Hocuspocus 服务端；原专用浏览器会话未完成。它不能被描述为独立 published 或生产协同编辑已可用。
+Rich Text 的 bundled 通道达到 **bundled-locked**：源码随 v3.0.13 完整应用 Release（源码与两种
+Edition 安装包）冻结；线上 Demo 仍是 v3.0.12。固定提交 `23c6c31f` 的 `module:check` 八项全部通过，
+并生成未签名本地 tar（SHA-256 `9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`），
+所以独立包通道达到 **package-candidate（local/unsigned）**。签名、SBOM、review/漏洞响应未建立；
+Tiptap/ProseMirror/Yjs 客户端已实现，仓库没有 Hocuspocus 服务端，原专用浏览器会话未完成。它不能被
+描述为 independently published 或生产协同编辑已可用。
 
 ## 8. 媒体与厂商支持
 
@@ -208,7 +211,7 @@ Application `190d4735` 可从当前 dev 快进；Core `22f6a6c` 可从当前 Cor
 | 两仓大迁移只读审计 | 已完成 | Terra/Luna/GPT-6 交叉复核；已定位确定解析、类、Tenant、事务和文档问题 |
 | Module 发布合同 | 已完成（开发候选） | 文档登记、公开投影、动态 official Module 打包清单 |
 | 测试占位防回归 | 已完成（开发候选） | `TEST-INTEGRITY-001` 通过；尚待合入 dev |
-| Rich Text 独立发布 | 部分完成 | bundled-locked；浏览器、协同服务、签名/SBOM/review/渠道未完成 |
+| Rich Text 独立发布 | 部分完成 | bundled-locked + local unsigned package-candidate；浏览器、协同服务、签名/SBOM/review/渠道未完成 |
 | `590e6183` 拉平 | 已完成 | 新身份 `64460af8`；依赖发布阻塞采用 |
 | 厂商 Storage 可用性 | 部分完成 | 四 provider 源码保留；Core 发布/应用 lock/真实 provider Gate 未完成 |
 | Luna 修复收敛 | 进行中 | 13 项候选已在分支；剩余停止线正在分批处理 |
