@@ -38,12 +38,12 @@
 import { computed, defineComponent, h, onMounted, onUnmounted, provide, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, ElOption, ElSelect } from 'element-plus';
 import { createOpsConsoleRuntime, OpsConsolePage, opsConsoleRuntimeKey } from '@peanut-admin/admin/ops-console';
-import { api, createPlatformOpsTransport, hasPlatformSession, type AuditEvent, type EntryBinding, type Invitation, type InvitationInspection, type ModuleState, type Operator, type OpsBackupCenterSnapshot, type OpsUpgradeCenterSnapshot, type OpsUpgradeReadinessSnapshot, type OpsUpgradeReadinessState, type Permission, type PlatformRole, type ProviderQualificationSnapshot, type StorageSnapshot, type StorageSpace, type Tenant, type TenantOwner } from './api/platform';
+import { api, createPlatformOpsTransport, hasPlatformSession, onPlatformSessionChange, type AuditEvent, type EntryBinding, type Invitation, type InvitationInspection, type ModuleState, type Operator, type OpsBackupCenterSnapshot, type OpsUpgradeCenterSnapshot, type OpsUpgradeReadinessSnapshot, type OpsUpgradeReadinessState, type Permission, type PlatformRole, type ProviderQualificationSnapshot, type StorageSnapshot, type StorageSpace, type Tenant, type TenantOwner } from './api/platform';
 import ProviderQualificationCard from './components/ProviderQualificationCard.vue';
 
 const tokenFromUrl = new URLSearchParams(window.location.search).get('invitation');
 const invitationToken = ref(tokenFromUrl || ''); const invitation = ref<InvitationInspection | null>(null); const acceptPassword = ref('');
-const authenticated = ref(!!localStorage.getItem('peanut-platform-token')); const loading = ref(false); const error = ref(''); const view = ref('overview'); const tenants = ref<Tenant[]>([]); const invitations = ref<Invitation[]>([]); const bindings = ref<EntryBinding[]>([]); const modules = ref<ModuleState[]>([]); const operators = ref<Operator[]>([]); const roles = ref<PlatformRole[]>([]); const permissions = ref<Permission[]>([]); const audits = ref<AuditEvent[]>([]); const storage = ref<StorageSnapshot>({accounts:[],spaces:[],routes:[],purposes:[]}); const owner = ref<TenantOwner | null>(null); const targetTenantId = ref<number | null>(null); const provisionDialog = ref(false); const permissionSelection = ref<string[]>([]); const permissionRole = ref<PlatformRole | null>(null);
+const authenticated = ref(hasPlatformSession()); const loading = ref(false); const error = ref(''); const view = ref('overview'); const tenants = ref<Tenant[]>([]); const invitations = ref<Invitation[]>([]); const bindings = ref<EntryBinding[]>([]); const modules = ref<ModuleState[]>([]); const operators = ref<Operator[]>([]); const roles = ref<PlatformRole[]>([]); const permissions = ref<Permission[]>([]); const audits = ref<AuditEvent[]>([]); const storage = ref<StorageSnapshot>({accounts:[],spaces:[],routes:[],purposes:[]}); const owner = ref<TenantOwner | null>(null); const targetTenantId = ref<number | null>(null); const provisionDialog = ref(false); const permissionSelection = ref<string[]>([]); const permissionRole = ref<PlatformRole | null>(null);
 const platformPermissions = ref<string[]>([]);
 const diagnosticLoading = ref(false);
 const backupCenter = ref<OpsBackupCenterSnapshot | null>(null);
@@ -55,6 +55,10 @@ const upgradeCenterLoading = ref(false);
 const upgradeSubmitting = ref(false);
 const providerQualifications = ref<ProviderQualificationSnapshot | null>(null);
 const providerQualificationsLoading = ref(false);
+const stopPlatformSessionSync = onPlatformSessionChange((present) => {
+  authenticated.value = present;
+  if (!present) platformPermissions.value = [];
+});
 const can = (permission: string) => platformPermissions.value.includes(permission);
 const opsRuntime = createOpsConsoleRuntime({ transport: createPlatformOpsTransport(), providers: [{ key: 'peanut.paired-db-files', backup: true, restoreTargets: ['isolated-new-target'] }], maintenanceReasons: ['planned-upgrade', 'database-maintenance', 'security-maintenance'], logSources: [], canRead: () => can('platform.ops.read'), canBackup: () => can('platform.ops.backup.manage'), canRestore: () => can('platform.ops.restore.manage'), canMaintain: () => can('platform.ops.maintenance.manage'), canReadLogs: () => false });
 provide(opsConsoleRuntimeKey, opsRuntime);
@@ -112,6 +116,6 @@ async function editRole(item: PlatformRole) { try { const name = await ElMessage
 function editPermissions(item: PlatformRole) { permissionRole.value = item; permissionSelection.value = [...item.permission_keys]; }
 async function savePermissions() { if (!permissionRole.value) return; try { const reason = await ElMessageBox.prompt('变更原因', `保存 ${permissionRole.value.name} 的权限`, { inputPattern: /\S+/, inputErrorMessage: '必须填写原因' }); await run(() => api.replaceRolePermissions(permissionRole.value!, permissionSelection.value, reason.value), '角色权限已更新'); } catch (cause) { if (cause !== 'cancel' && cause !== 'close') error.value = message(cause); } }
 async function archiveRole(item: PlatformRole) { try { await ElMessageBox.confirm(`归档 ${item.name}？`, '确认归档', { type: 'warning' }); const reason = await ElMessageBox.prompt('变更原因', '变更原因', { inputPattern: /\S+/, inputErrorMessage: '必须填写原因' }); await run(() => api.archiveRole(item, reason.value), '平台角色已归档'); } catch (cause) { if (cause !== 'cancel' && cause !== 'close') error.value = message(cause); } }
-onMounted(async () => { if (invitationToken.value) await inspectInvitation(); else if (authenticated.value) { await loadSessionInfo(); await loadView(); } });
-onUnmounted(() => opsRuntime.dispose());
+onMounted(async () => { try { if (invitationToken.value) await inspectInvitation(); else if (authenticated.value) { await loadSessionInfo(); await loadView(); } } catch (cause) { error.value = message(cause); } });
+onUnmounted(() => { stopPlatformSessionSync(); opsRuntime.dispose(); });
 </script>

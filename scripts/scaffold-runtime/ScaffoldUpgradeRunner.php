@@ -101,6 +101,7 @@ final class ScaffoldUpgradeRunner
                 return ['status' => 'applied', 'candidate' => $plan['candidate'], 'idempotent' => true];
             }
             $this->assertPlanFresh($root, $plan);
+            $this->assertPlanRebound($root, $plan);
             $to = ScaffoldManifest::load($plan['manifest_paths']['to']);
             $this->assertManifestDigest($to, $plan['identity']['to']['manifest_sha256']);
             $recovery = $this->createRecovery($root, $plan);
@@ -594,6 +595,19 @@ final class ScaffoldUpgradeRunner
         if (!hash_equals($plan['identity']['app_owned_pre_sha256'], $app['digest'])) throw new RuntimeException('SCAFFOLD_PLAN_PROJECT_CHANGED');
         $this->assertManifestDigest(ScaffoldManifest::load($plan['manifest_paths']['from']), $plan['identity']['from']['manifest_sha256']);
         $this->assertManifestDigest(ScaffoldManifest::load($plan['manifest_paths']['to']), $plan['identity']['to']['manifest_sha256']);
+    }
+
+    /** Rebuild the plan from its immutable manifests so edited actions cannot claim another ownership class or path. */
+    private function assertPlanRebound(string $root, array $plan): void
+    {
+        $expected = $this->preview(
+            $root,
+            (string)$plan['manifest_paths']['from'],
+            (string)$plan['manifest_paths']['to'],
+        );
+        if (!hash_equals((string)$expected['candidate'], (string)$plan['candidate'])) {
+            throw new RuntimeException('SCAFFOLD_PLAN_MANIFEST_REBIND_FAILED');
+        }
     }
 
     private function ledger(string $root): ScaffoldUpgradeLedger { return new ScaffoldUpgradeLedger(ScaffoldPathGuard::projectPath($root, '.peanut/upgrades/ledger.ndjson')); }

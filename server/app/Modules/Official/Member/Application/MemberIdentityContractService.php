@@ -10,6 +10,7 @@ use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepositor
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
+/** Owns member credential creation, verification, and identity snapshots within one Tenant. */
 final class MemberIdentityContractService implements MemberIdentityCommands
 {
     public function register(TenantSystemContext $context, string $account, string $password, string $avatar): void
@@ -21,7 +22,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         MemberTenantRepository::createMember($context, [
             'sn' => $sn,
             'account' => $account,
-            'password' => $this->passwordHashWithTimeSalt($password),
+            'password' => $this->passwordHash($password),
             'nickname' => '用户' . substr($sn, -6),
             'avatar' => $avatar,
             'status' => 1,
@@ -41,6 +42,10 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         }
         if (!$this->passwordMatches((string)$member->password, $password)) {
             throw new \RuntimeException('密码错误');
+        }
+        if (password_needs_rehash((string)$member->password, PASSWORD_ARGON2ID)) {
+            // A successful legacy login is the only point where the plaintext is available for one-time migration.
+            $member->password = $this->passwordHash($password);
         }
         $member->login_time = time();
         $member->login_ip = $loginIp;
@@ -85,7 +90,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         if ($member->isEmpty()) {
             throw new \RuntimeException('手机号未绑定账号');
         }
-        $member->password = $this->passwordHashWithRandomSalt($password);
+        $member->password = $this->passwordHash($password);
         $member->save();
     }
 
@@ -116,7 +121,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         if (!$this->passwordMatches((string)$member->password, $oldPassword)) {
             throw new \RuntimeException('原密码错误');
         }
-        $member->password = $this->passwordHashWithTimeSalt($newPassword);
+        $member->password = $this->passwordHash($newPassword);
         $member->save();
     }
 
@@ -164,20 +169,26 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 
     private function passwordMatches(string $stored, string $password): bool
     {
+        if (($info = password_get_info($stored))['algoName'] !== 'unknown') {
+            return password_verify($password, $stored);
+        }
+
         [$hash, $salt] = array_pad(explode(':', $stored, 2), 2, '');
-        return md5(md5($password) . $salt) === $hash;
+        if (preg_match('/^[a-f0-9]{32}$/D', $hash) !== 1
+            || preg_match('/^[a-f0-9]{8}$/D', $salt) !== 1) {
+            return false;
+        }
+        return hash_equals($hash, md5(md5($password) . $salt));
     }
 
-    private function passwordHashWithTimeSalt(string $password): string
+    /** Creates the only supported hash format for new or changed member passwords. */
+    private function passwordHash(string $password): string
     {
-        $salt = substr(md5((string)time()), 0, 8);
-        return md5(md5($password) . $salt) . ':' . $salt;
-    }
-
-    private function passwordHashWithRandomSalt(string $password): string
-    {
-        $salt = substr(md5(uniqid((string)mt_rand(), true)), 0, 8);
-        return md5(md5($password) . $salt) . ':' . $salt;
+        $hash = password_hash($password, PASSWORD_ARGON2ID);
+        if (!is_string($hash)) {
+            throw new \RuntimeException('密码安全处理失败');
+        }
+        return $hash;
     }
 
     private static function snapshot(object $member): MemberIdentitySnapshot

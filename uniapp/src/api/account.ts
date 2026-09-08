@@ -22,7 +22,7 @@ export interface LoginResult {
 
 /** POST api/login/register */
 export function register(data: RegisterParams) {
-  return http.post<LoginResult>('api/login/register', data, false)
+  return http.post<void>('api/login/register', data, false)
 }
 
 /** POST api/login/account */

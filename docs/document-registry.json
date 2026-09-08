@@ -955,6 +955,38 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-architecture-application-module-blueprint-coding-standards",
+      "path": "docs/architecture/application-module-blueprint/coding-standards.md",
+      "title": "核心代码规范与认知模型统一指南",
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "accepted-target",
+      "canonical_sources": [
+        "docs/architecture/application-module-blueprint/README.md",
+        "docs/architecture/application-module-blueprint/module-conventions.md",
+        "server/app/Modules/",
+        "server/route/"
+      ],
+      "owner": "architecture",
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "documentation",
+        "application-boundary",
+        "module-boundary"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-application-module-blueprint-target-architecture",
       "path": "docs/architecture/application-module-blueprint/target-architecture.md",
       "title": "目标架构与完整执行流程",
@@ -4774,7 +4806,7 @@
         "repo://peanut-admin-core/.github/workflows/"
       ],
       "owner": "product-architecture",
-      "status": "planned",
+      "status": "archived",
       "scope": [
         "application",
         "core"
@@ -4783,6 +4815,46 @@
         "documentation",
         "architecture",
         "qualification"
+      ],
+      "site_projections": [],
+      "replaced_by": "pa-docs-plans-luna-max-source-audit-report-2026-09-08",
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-plans-luna-max-source-audit-report-2026-09-08",
+      "path": "docs/plans/luna-max-source-audit-report-2026-09-08.md",
+      "title": "Luna Max 源码登记高等级审计报告（2026-09-08）",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "interpretation",
+      "canonical_sources": [
+        "docs/plans/luna-max-source-preaudit-2026-09-08.md",
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/",
+        "server/route/",
+        "scripts/",
+        "web/",
+        "platform/",
+        "pc/",
+        "uniapp/",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/packages/web/"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "architecture",
+        "qualification",
+        "audit"
       ],
       "site_projections": [],
       "replaced_by": null,

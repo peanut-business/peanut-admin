@@ -161,6 +161,10 @@ final class AdminApplicationService
             if (!empty($params['password'])) {
                 throw BusinessException::forbidden('ADMIN_PASSWORD_SELF_SERVICE_REQUIRED', '密码只能由账号本人修改');
             }
+            $roles = self::normalizeIds($params['role_id'] ?? []);
+            if ($roles === []) {
+                throw BusinessException::invalid('ADMIN_ROLE_REQUIRED', '请选择角色');
+            }
             $service = $this->tenantAdmins->members();
             $member = $service->get($context->tenantId, (int)$params['id']);
             $member = $service->update(
@@ -173,10 +177,6 @@ final class AdminApplicationService
                 $context->accountId,
                 $context->requestId,
             );
-            $roles = self::normalizeIds($params['role_id'] ?? []);
-            if ($roles === []) {
-                throw BusinessException::invalid('ADMIN_ROLE_REQUIRED', '请选择角色');
-            }
             $member = $service->replaceRoles(
                 $context->tenantId,
                 (int)$member['id'],

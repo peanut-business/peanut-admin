@@ -12,6 +12,7 @@ use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
+/** Serves public article reads and authenticated member collection commands. */
 final class PublicArticleService implements PublicArticleQueries
 {
     public function __construct(
@@ -87,6 +88,7 @@ final class PublicArticleService implements PublicArticleQueries
         return $article;
     }
 
+    /** Idempotently enables a collection, including a concurrent first insert. */
     public function add(int $articleId, int $memberId): void
     {
         $article = ArticleTenantRepository::articles()->where('id', $articleId)
@@ -100,11 +102,26 @@ final class PublicArticleService implements PublicArticleQueries
             ->where('article_id', $articleId)
             ->findOrEmpty();
         if ($collect->isEmpty()) {
-            ArticleTenantRepository::createCollection([
-                'member_id' => $memberId,
-                'article_id' => $articleId,
-                'status' => 1,
-            ]);
+            try {
+                ArticleTenantRepository::createCollection([
+                    'member_id' => $memberId,
+                    'article_id' => $articleId,
+                    'status' => 1,
+                ]);
+                return;
+            } catch (\Throwable $exception) {
+                // A concurrent insert is successful only when the exact Tenant-scoped collection now exists.
+                $collect = ArticleTenantRepository::collections()->where('member_id', $memberId)
+                    ->where('article_id', $articleId)
+                    ->findOrEmpty();
+                if ($collect->isEmpty()) {
+                    throw $exception;
+                }
+            }
+            if ((int)$collect->status !== 1) {
+                $collect->status = 1;
+                $collect->save();
+            }
         } else {
             $collect->status = 1;
             $collect->save();

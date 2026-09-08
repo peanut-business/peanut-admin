@@ -10,6 +10,8 @@ use app\api\controller\PcController as ApiPcController;
 use app\api\controller\DecorationController as ApiDecorationController;
 use app\api\middleware\CheckTokenMiddleware;
 use app\api\middleware\PublicTenantModuleMiddleware;
+use app\common\service\module\OfficialModuleMiddleware;
+use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
 use think\facade\Route;
 
 if (($peanutRouteApplication ?? null) !== 'api') {
@@ -67,4 +69,5 @@ Route::group(function () {
     Route::post('article/cancelCollect', [ApiArticleController::class, 'cancelCollect']);
     Route::get('article/collect',        [ApiArticleController::class, 'collect']);
 
-})->middleware([CheckTokenMiddleware::class]);
+})->middleware(CheckTokenMiddleware::class)
+    ->middleware(OfficialModuleMiddleware::class, (new ArticleModuleProvider())->moduleKey(), 'http.member');

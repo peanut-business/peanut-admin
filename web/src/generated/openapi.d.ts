@@ -68,7 +68,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/official.file.upload.file": {
+    "/adminapi/official.file.upload.file": {
         parameters: {
             query?: never;
             header?: never;
@@ -101,7 +101,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/official.file.list": {
+    "/adminapi/official.file.list": {
         parameters: {
             query?: never;
             header?: never;

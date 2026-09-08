@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-plans-luna-max-source-preaudit-2026-09-08`
 
-Status: `planned`
+Status: `archived`
 
 Owner: `product-architecture`
 
@@ -12,8 +12,9 @@ Upstream: Peanut Admin Application `e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d`、
 Peanut Admin Core `9358686fee873dd235489c8794abf556fd70ec4f`、当前仓库执行规则、CI 与
 文档合同。
 
-> 本文是供后续高等级模型复核的候选问题登记，不是缺陷定案、修复授权、能力账本或 Release
-> 资格证据。优先级只表示复核顺序；在完成调用链、运行时和合同语义验证前，不据此直接改代码。
+> 本文是 Luna Max 的原始候选问题登记，不是缺陷定案、能力账本或 Release 资格证据。高等级
+> 复核、逐项裁定和修复候选状态已经收敛到
+> [源码登记高等级审计报告](luna-max-source-audit-report-2026-09-08.md)；后续不得再从本文直接领取工作。
 
 ## 1. 阅读范围与方法
 
