@@ -101,7 +101,16 @@ try {
     $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,$edition!==null);
     $create=new ReflectionMethod($creator,'create');
     $createParameters=array_map(static fn(ReflectionParameter $parameter):string=>$parameter->getName(),$create->getParameters());
-    if($createParameters===['productName','slug','packageIdentity','target','applicationVersion']) {
+    if($createParameters===['productName','slug','packageIdentity','target']) {
+        // The earliest immutable releases predate generated application
+        // versions; their v2 manifests intentionally contain only three tokens.
+        $manifest=$creator->create(
+            RELEASE_PRODUCT_TOKEN,
+            RELEASE_SLUG_TOKEN,
+            RELEASE_PACKAGE_TOKEN,
+            $application
+        );
+    } elseif($createParameters===['productName','slug','packageIdentity','target','applicationVersion']) {
         // Immutable pre-edition releases accepted the application version as
         // argument five. Passing today's edition there corrupts their check.
         $manifest=$creator->create(
