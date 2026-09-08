@@ -111,6 +111,8 @@ Core package 本身继续通过显式 PDO/transaction handle 保持产品中立�
 
 本批新增 `scripts/check-test-integrity` 并接入 `scripts/ci-server-check.sh` 的 fast/full 入口。它拒绝非
 fixture 测试中短小、无控制/断言、无条件输出 pass 后 `exit(0)` 的占位形态；canonical 当前检查通过。
+全官方 Module 打包证据生成器也已固定 `CI=1` 与 `HUSKY=0`：非交互执行不得在 pnpm 的
+`node_modules` 重建提示处以 exit 0 提前结束、随后再让生产构建因缺少 `vue-tsc` 失败。
 
 后续恢复规则：
 

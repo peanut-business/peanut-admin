@@ -195,7 +195,7 @@ foreach ($moduleKeys as $moduleKey) {
 packagingEvidenceRun(
     ['pnpm', '--dir', 'web', 'install', '--frozen-lockfile'],
     $root,
-    ['HUSKY' => '0'],
+    ['HUSKY' => '0', 'CI' => '1'],
 );
 packagingEvidenceRun(['pnpm', '--dir', 'web', 'build'], $root);
 $distFacts = packagingEvidenceDistFacts($root . '/web/dist');
@@ -207,7 +207,7 @@ $evidence = [
     'production_build' => [
         'command' => 'pnpm --dir web build',
         'install_command' => 'pnpm --dir web install --frozen-lockfile',
-        'install_environment' => ['HUSKY' => '0'],
+        'install_environment' => ['HUSKY' => '0', 'CI' => '1'],
         'candidate' => $candidate,
         'source_tree' => $sourceTree,
         'exit_code' => 0,
