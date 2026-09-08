@@ -1088,6 +1088,19 @@
             ]
         },
         {
+            "path": "docs/architecture/application-module-blueprint/coding-standards.md",
+            "target": "docs/architecture/application-module-blueprint/coding-standards.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/architecture/application-module-blueprint/module-conventions.md",
             "target": "docs/architecture/application-module-blueprint/module-conventions.md",
             "classification": "excluded",
@@ -2963,6 +2976,32 @@
             ]
         },
         {
+            "path": "docs/plans/luna-max-source-audit-report-2026-09-08.md",
+            "target": "docs/plans/luna-max-source-audit-report-2026-09-08.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
+            "target": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": "docs/plans/multi-tenancy-platform-management-plan.md",
             "target": "docs/plans/multi-tenancy-platform-management-plan.md",
             "classification": "excluded",
@@ -3897,7 +3936,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cf246fc7a424c9882f32343610c7a102f7e7653c6e0c375659d327096c519105"
+            "source_sha256": "1560498275ba58af9702add8be78d180718dcad9581e5f11758d197f62744509"
         },
         {
             "path": "pc/pages/oauth/callback.vue",
@@ -4217,7 +4256,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "6e15cba7cdc20158ff43871a27e78296f7b0e77cc0703a546954b2201e749ed9"
+            "source_sha256": "bee7f69ca9751f7bff1e0db5011be354f1c03881af6769136e94b23f68b9d4ff"
         },
         {
             "path": "platform/src/api/platform.ts",
@@ -4229,7 +4268,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "ebfd7ec8e5c8dedba6eb2fec94c8c3ead3cfb31659299e95be74a7a8a472981f"
+            "source_sha256": "f67787573225c0e18890f091ba2e36fd694bb3ee71c58bf2df496f6bc0ecbbd9"
         },
         {
             "path": "platform/src/components/ProviderQualificationCard.vue",
@@ -5666,7 +5705,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bf703aebd8bd66b0fe29ce0a5b30be1b24305c4500060dab51b1e40ffe90f469"
+            "source_sha256": "b041b337e81bce860b2dfb1038cce04d20077356041aa902e7cd58966fdf2657"
         },
         {
             "path": "server/app/Modules/Official/Article/Contracts/ArticleAdministration.php",
@@ -5988,7 +6027,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8ac4f2d0bc7ecfae67c5c591695ed3c01149650eb9c76ffeb2b9b8f9a0a47564"
+            "source_sha256": "5d584ec06050e8fbbd0cc0a0c90a54c0a8782ec26993b6fd77bd6a422c5a4cb2"
         },
         {
             "path": "server/app/Modules/Official/File/Application/FileUploadService.php",
@@ -6114,7 +6153,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2b125ceaea01091b634234674023cae7d2dbd57e6b37886abaa2197ad5a5a356"
+            "source_sha256": "32ffbf266439afabb218c9302c7eb5ecbc46c03fb2a45b812d01135ec96436d1"
         },
         {
             "path": "server/app/Modules/Official/File/Model/File.php",
@@ -6786,7 +6825,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e6b599a289360c19e24bc565f4c75abba0f23681bac8e5dfdfa76584a6d87712"
+            "source_sha256": "d24c40f23b80435e7e7c6c3e38a21242a68364974421fb8c69b424ddb567af7c"
         },
         {
             "path": "server/app/Modules/Official/Member/Application/MemberProfileContractService.php",
@@ -9264,7 +9303,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1eccb1734853c53121d838c69bc817ee010141aaa67e5895206abbc415246f01"
+            "source_sha256": "94bcdbe65da02ad5a54e43a0c2b8b7b165efc8245b3c0a12767a80dae87e2ed6"
         },
         {
             "path": "server/app/adminapi/application/auth/LoginApplicationService.php",
@@ -9502,7 +9541,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "db956d5704f9625cf7cf58dd56205cba3aab83a8118f1b7499d39c9bfa0f3907"
+            "source_sha256": "7e9932dc5969c0bfe154c6088e4d0c22c312c66b1ebe3e80a8ff32d525a16762"
         },
         {
             "path": "server/app/adminapi/controller/WorkbenchController.php",
@@ -10244,7 +10283,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "96635923391eca692dea14ef886d52d9be2f5d84e3de4098fc031a8ddb64e4f1"
+            "source_sha256": "d8ee8229dc623191a333d2a431367da920d80fb25f19cf15faf840a3b499a697"
         },
         {
             "path": "server/app/api/controller/DecorationController.php",
@@ -14665,7 +14704,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f20f51bcb8c542f3fbf000c2962f3ff2923ecc94dad783185906176b87635bb4"
+            "source_sha256": "3209faf97fcd28aea404cbb5dc57795451e7686d3e9722109306e1d48a03e2c4"
         },
         {
             "path": "server/app/platform/controller/PlatformAccessController.php",
@@ -17348,7 +17387,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4d5c60c45a3dae499d4d9c39937000458973f50d4a007105c2d26532f7996266"
+            "source_sha256": "eb2b9a0235a75eabb8f82c4b69a0fc38f6920f15b73601b0bd56140401a805c6"
         },
         {
             "path": "server/route/registry_source.php",
@@ -17499,6 +17538,19 @@
         {
             "path": "server/tests/Multitenancy/ChannelBindingTenantContractTest.php",
             "target": "server/tests/Multitenancy/ChannelBindingTenantContractTest.php",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/Multitenancy/ControllerContextOptionalInjectionTest.php",
+            "target": "server/tests/Multitenancy/ControllerContextOptionalInjectionTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -19189,7 +19241,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4bb1d665f98ad7b0a10f2c64c1f4a13646932aecacc776936b4ee91280426a4c"
+            "source_sha256": "d87b382ab17c7c468f20b7baf1e135cf4a280869b91e298947f1700e73f29310"
         },
         {
             "path": "uniapp/src/api/index.ts",
@@ -19566,7 +19618,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ca5bc7274c8a97691a27435af23915ad58161536184b93c050e2cb743e01ad0a"
+            "source_sha256": "16bcca3e8c4b3156ec83ba68797084b40f2f6410223441e0b6d3d47d887d8fbd"
         },
         {
             "path": "uniapp/src/pages/search/search.vue",
@@ -20131,7 +20183,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "37be035507c48a73e5df129993008a76c6969464cddd0f9d9201c665ce0c129b"
+            "source_sha256": "440ebb7e0f7ba761353a1dde129f4f7a6b037f6b266764770d0067fb6f2fec39"
         },
         {
             "path": "web/config/vite.config.dev.ts",
@@ -20987,7 +21039,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d0e45b73528cf77a6499f3d93fd620a17cc29c1932fcd906ec35ec3646ea113a"
+            "source_sha256": "2d627f2a98dc9860d65b222a770c55ae15866726bff425ef292ba11fa3a14ef4"
         },
         {
             "path": "web/src/hooks/chart-option.ts",
@@ -23952,7 +24004,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a3052b76f726f16cf3f44c712603c2223328efb7087a2be2124eb2b13d00c204"
+            "source_sha256": "f2b0b10c9e7b0dc7eea012813f79d4ddb19e92db746e5a0fa54cbb775c5b3db4"
         },
         {
             "path": "web/tests/Productization/navbar-avatar-fallback.test.mjs",

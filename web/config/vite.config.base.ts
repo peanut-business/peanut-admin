@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, readFileSync, realpathSync } from 'fs';
+import { isAbsolute, relative, resolve, sep } from 'path';
 import {
   defineConfig,
   loadEnv,
@@ -32,6 +32,30 @@ function lockedAdminContributions(): string[] {
     .sort();
 }
 
+// Normalize locked entries only after keeping them inside the real web source tree.
+function resolveContributionImport(entry: unknown): string {
+  if (typeof entry !== 'string' || isAbsolute(entry)) {
+    throw new Error('Plugin contribution entry is invalid');
+  }
+  const projectRoot = resolve(__dirname, '../..');
+  const webRoot = resolve(projectRoot, 'web');
+  const sourceRoot = resolve(webRoot, 'src');
+  const entryPath = resolve(projectRoot, entry);
+  const sourceRelativePath = relative(sourceRoot, entryPath);
+  if (
+    sourceRelativePath === '' ||
+    sourceRelativePath === '..' ||
+    sourceRelativePath.startsWith(`..${sep}`) ||
+    isAbsolute(sourceRelativePath)
+  ) {
+    throw new Error(`Plugin contribution is outside web/src: ${entry}`);
+  }
+  if (!existsSync(entryPath) || realpathSync(entryPath) !== entryPath) {
+    throw new Error(`Plugin contribution is unavailable or a symlink: ${entry}`);
+  }
+  return `/${relative(webRoot, entryPath).split(sep).join('/')}`;
+}
+
 function pluginContributionManifest(entriesForBuild: () => string[]): Plugin {
   const virtualId = 'virtual:peanut-plugin-contributions';
   const resolvedId = `\0${virtualId}`;
@@ -44,11 +68,8 @@ function pluginContributionManifest(entriesForBuild: () => string[]): Plugin {
       if (id !== resolvedId) return null;
       const entries = entriesForBuild();
       const imports = entries.map((entry, index) => {
-        if (!entry.startsWith('web/src/')) {
-          throw new Error(`Plugin contribution is outside web/src: ${entry}`);
-        }
         return `import contribution${index} from ${JSON.stringify(
-          `/${entry.slice('web/'.length)}`
+          resolveContributionImport(entry)
         )};`;
       });
       return `${imports.join('\n')}\nexport default [${entries

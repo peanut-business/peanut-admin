@@ -5,10 +5,11 @@ import {
   readdirSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'fs';
 import { tmpdir } from 'os';
-import { resolve } from 'path';
+import { resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { loadConfigFromFile } from 'vite';
 
@@ -43,6 +44,37 @@ async function virtualSource() {
   expect(plugin, 'plugin contribution virtual module is missing');
   const resolvedId = await plugin.resolveId(virtualId);
   return plugin.load(resolvedId);
+}
+
+async function productionVirtualSource(entries) {
+  const probeDirectory = mkdtempSync(
+    resolve(tmpdir(), 'pa-module-production-contribution-')
+  );
+  const probe = resolve(probeDirectory, 'vite.config.ts');
+  try {
+    writeFileSync(
+      probe,
+      `import { createBaseConfig } from ${JSON.stringify(
+        resolve(webRoot, 'config/vite.config.base.ts')
+      )};\nexport default createBaseConfig({ command: 'build', mode: 'production' }, () => ${JSON.stringify(
+        entries
+      )});\n`
+    );
+    const loaded = await loadConfigFromFile(
+      { command: 'build', mode: 'production' },
+      probe,
+      probeDirectory
+    );
+    expect(loaded !== null, 'production Vite config could not be loaded');
+    const plugin = loaded.config.plugins?.find(
+      (candidate) => candidate.name === 'peanut-plugin-contribution-manifest'
+    );
+    expect(plugin, 'production contribution virtual module is missing');
+    const resolvedId = await plugin.resolveId(virtualId);
+    return await plugin.load(resolvedId);
+  } finally {
+    rmSync(probeDirectory, { recursive: true, force: true });
+  }
 }
 
 const first = await virtualSource();
@@ -82,6 +114,51 @@ expect(
     ),
   'development Vite config still depends on plugins.lock'
 );
+
+const normalizedProductionSource = await productionVirtualSource([
+  'web/src/modules/official-article/../official-article/contribution.ts',
+]);
+expect(
+  normalizedProductionSource.includes(
+    JSON.stringify('/src/modules/official-article/contribution.ts')
+  ),
+  'production Vite did not normalize a legal contribution path'
+);
+
+for (const [entry, expectedError] of [
+  ['web/src/../../package.json', 'outside web/src'],
+]) {
+  let rejected = false;
+  try {
+    await productionVirtualSource([entry]);
+  } catch (error) {
+    rejected = String(error).includes(expectedError);
+  }
+  expect(rejected, `production Vite accepted unsafe contribution: ${entry}`);
+}
+
+const symlinkDirectory = mkdtempSync(
+  resolve(webRoot, 'src/.pa-module-contribution-symlink-')
+);
+try {
+  symlinkSync(
+    resolve(webRoot, 'src/modules/official-article/contribution.ts'),
+    resolve(symlinkDirectory, 'contribution.ts')
+  );
+  const symlinkEntry = `web/src/${symlinkDirectory
+    .slice(resolve(webRoot, 'src').length + 1)
+    .split(sep)
+    .join('/')}/contribution.ts`;
+  let rejected = false;
+  try {
+    await productionVirtualSource([symlinkEntry]);
+  } catch (error) {
+    rejected = String(error).includes('unavailable or a symlink');
+  }
+  expect(rejected, 'production Vite accepted a symlinked contribution');
+} finally {
+  rmSync(symlinkDirectory, { recursive: true, force: true });
+}
 
 const temporary = mkdtempSync(resolve(tmpdir(), 'pa-module-dev-discovery-'));
 try {
