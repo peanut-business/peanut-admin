@@ -42,7 +42,7 @@ Peanut Admin 的目标是让新应用可安装、可诊断、可备份、可恢�
 | 内容与装修 | 文章、分类、收藏/计数、移动端/PC/Tabbar 装修 | Article 与 Application 装修 Host |
 | 会员与财务 | 会员、标签、余额、流水、充值入账和退款 | Member / Payment Module |
 | 文件与素材 | 素材分类、文件对象、Local/对象存储 Provider provenance | File Module；实例存储由 Platform 配置 |
-| 通知 | 通知场景、模板/日志、阿里云和腾讯云短信 | Notification Module |
+| 通知 | 通知场景、模板/日志、阿里云和腾讯云短信；验证码发送以数据库 reservation 防并发重放，服务商结果未知时保留窗口且不自动重试 | Notification Module |
 | OAuth 与公众号 | 小程序、公众号、开放平台配置、OAuth exchange 和回调 Tenant 路由 | OAuth Module |
 | 支付 | 微信/支付宝配置、预付、验签、回调、退款和幂等 | Payment Module |
 | 任务与导入导出 | Crontab、后台任务、XLSX 数据导入导出、schema 化配置包 | Task / ImportExport Module |

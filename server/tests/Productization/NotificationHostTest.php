@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
 use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
+use app\common\service\scaffold\EditionProfile;
+use app\common\service\scaffold\EditionProjector;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -92,7 +94,11 @@ expectNotificationHost(
 $verificationService = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Notification/Application/VerificationCodeService.php'
 );
-foreach (['$this->sender->send', "['code' => '****']", 'verify_code_hash', 'NoticeTenantRepository::createLog'] as $marker) {
+foreach ([
+    '$this->sender->send', "['code' => '****']", 'verify_code_hash',
+    'NoticeTenantRepository::createLog', 'markProviderAttemptStarted',
+    'SmsDriverResult::OUTCOME_UNKNOWN', 'reservation_active',
+] as $marker) {
     expectNotificationHost(str_contains($verificationService, $marker), 'verification boundary missing: ' . $marker);
 }
 $applicationSender = (string)file_get_contents(
@@ -123,7 +129,7 @@ expectNotificationHost(
     'SMS Host still reads or writes the global config table'
 );
 expectNotificationHost(
-    str_contains($verificationService, "\$this->sender->send(\n            \$context,"),
+    preg_match('/\$this->sender->send\(\s*\$context,/', $verificationService) === 1,
     'verification flow does not pass its trusted Tenant context to the SMS Host'
 );
 expectNotificationHost(
@@ -174,6 +180,62 @@ expectNotificationHost(
         && !str_contains($schema, "REPLACE(`content`, `verify_code`, '****')"),
     'fresh Schema still contains legacy verification-code transition SQL'
 );
+$smsReservationMigration = (string)file_get_contents(
+    $serverRoot . '/database/migrations/20260909-notification-sms-reservation.sql'
+);
+foreach ([
+    'uk_notice_sms_idempotency',
+    'uk_notice_sms_active_receiver',
+    'reservation_until',
+    'MAX(`id`) AS `id`',
+    'GROUP BY `tenant_id`, `channel`, `receiver`',
+    'ADD COLUMN `idempotency_key_hash` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL',
+    'ADD COLUMN `reservation_active` TINYINT UNSIGNED NULL',
+    "`status` IN (0, 1, 3)",
+] as $marker) {
+    expectNotificationHost(
+        str_contains($smsReservationMigration, $marker),
+        'SMS reservation Schema invariant missing: ' . $marker,
+    );
+}
+expectNotificationHost(
+    !str_contains($verificationService, 'sentRecently('),
+    'verification flow still uses check-then-act rate limiting',
+);
+$migrationPath = 'server/database/migrations/20260909-notification-sms-reservation.sql';
+$projectionStage = sys_get_temp_dir() . '/pa-notification-edition-' . bin2hex(random_bytes(8));
+$projectionEntry = [
+    'path' => $migrationPath,
+    'target' => $migrationPath,
+    'mode' => 0644,
+    'classification' => 'app-owned',
+    'owner' => 'application',
+];
+try {
+    $projector = new EditionProjector();
+    $standaloneProfile = EditionProfile::load(
+        $repositoryRoot . '/scaffold/edition-profiles.json',
+        'standalone',
+    );
+    $projector->project($projectionStage, $projectionEntry, $smsReservationMigration, $standaloneProfile);
+    $projectedMigration = (string)file_get_contents($projectionStage . '/' . $migrationPath);
+    expectNotificationHost(
+        !str_contains($projectedMigration, '`tenant_id`')
+            && str_contains($projectedMigration, 'SELECT `channel`, `receiver`, MAX(`id`) AS `id`')
+            && str_contains($projectedMigration, 'GROUP BY `channel`, `receiver`')
+            && str_contains($projectedMigration, '(`channel`, `receiver_hash`, `reservation_active`)'),
+        'Standalone SMS reservation migration projection is not tenantless',
+    );
+} finally {
+    $projectedPath = $projectionStage . '/' . $migrationPath;
+    if (is_file($projectedPath)) {
+        unlink($projectedPath);
+        rmdir(dirname($projectedPath));
+        rmdir(dirname(dirname($projectedPath)));
+        rmdir(dirname(dirname(dirname($projectedPath))));
+        rmdir($projectionStage);
+    }
+}
 
 foreach ([
     'api-db-summary.json' => [

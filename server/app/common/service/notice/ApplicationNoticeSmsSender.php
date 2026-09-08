@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\notice;
 
 use app\common\execution\CurrentExecutionContext;
+use app\common\service\notice\driver\sms\SmsDriverResult;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
@@ -31,6 +32,7 @@ final class ApplicationNoticeSmsSender implements NoticeSmsSender
 
             return [
                 'success' => true,
+                'outcome' => SmsDriverResult::OUTCOME_SUCCEEDED,
                 'provider' => 'development',
                 'error' => '',
                 'result' => ['delivery' => 'simulated'],

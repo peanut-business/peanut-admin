@@ -7329,7 +7329,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2f2d6d0fa84d7e100e4a779cd2c91d98eec1d649536f932ddbadab278ca8f0a0"
+            "source_sha256": "61d9e3c82fc495e1690c7a72c2f2918661cebb41641bf79d86c71d32388cfecb"
         },
         {
             "path": "server/app/Modules/Official/Notification/Contracts/DeliveryResult.php",
@@ -7497,7 +7497,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7247fe6351047490cd3060ea1ebe386f69655fc5e27f516a694fc6b04e866fa6"
+            "source_sha256": "c804f2d55e928daacf13d34903484bf9f92ee4e623bba868d119c351997417fc"
         },
         {
             "path": "server/app/Modules/Official/Notification/Model/NoticeLog.php",
@@ -7511,7 +7511,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ec39be174853da7842aee320c61a38e2ce7d867473ed256b43172508eae76fb4"
+            "source_sha256": "a4a0c09cf1f9544dcd6dda1a9d31de2f752787195e70a80a88c35584540af3dc"
         },
         {
             "path": "server/app/Modules/Official/Notification/Model/NoticeScene.php",
@@ -13308,7 +13308,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "91263301c4ab47179341f43163d5eacecf240f5f87ffa326a765843f3c0669b8",
+            "source_sha256": "3dc82748d3578aa916af33465c984a33fa2e32e1b5432b9097ad6db3fffe1bab",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -13323,7 +13323,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "04a3945c6c797933b589819dd26c4533ef5143c653be7aa1a522ac3c17ea0227",
+            "source_sha256": "e56939e91d43abd0ad2d7cf9560142ae2ceacdc5a1c9531c7ba1794bcc073b2f",
             "adapter_kind": "framework-adapter"
         },
         {
@@ -13353,7 +13353,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ac8d004627e07a8b90d59444258d140311409257863bdc6a752662bd6d03a930",
+            "source_sha256": "2900f9320b158ca3b5ed1c3002103359d5206dc86cbbbff11d53a53b3452b366",
             "adapter_kind": "application-provider"
         },
         {
@@ -13383,7 +13383,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "87b746a1d83cfcf7ba6b7a7bc2afba51efdf3439cbb86678cbcb003a48fe905d"
+            "source_sha256": "61cd94442a057393afa2683863da35af0863684139cd5713194a2bd7167ac62e"
         },
         {
             "path": "server/app/common/service/notice/driver/sms/TencentSms.php",
@@ -13397,7 +13397,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b6b9cfb6bfcb55f62029c67384b6ae70b0e4ac1fafd57036892288e5f7529b6b",
+            "source_sha256": "1df7d2153ac33c42f48a7e1a422be88d8ff19bd486e86766dcbb36a3097dbc73",
             "adapter_kind": "application-provider"
         },
         {
@@ -16749,6 +16749,20 @@
                 "full"
             ],
             "source_sha256": "c3dd53b9ace9837c3721fde969e3dcac6b1cad2b02fb4cc850d49afa5925d573"
+        },
+        {
+            "path": "server/database/migrations/20260909-notification-sms-reservation.sql",
+            "target": "server/database/migrations/20260909-notification-sms-reservation.sql",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "4446c1feb1d3226de810682f79e246c327f1d631b22f507ad725ae960f151753"
         },
         {
             "path": "server/database/seed-demo-data.php",

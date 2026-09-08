@@ -35,7 +35,7 @@
           "pa_member_balance_log": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},
           "pa_member_tag": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},
           "pa_member_tag_relation": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},
-          "pa_notice_log": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},
+          "pa_notice_log": {"action":"strip_tenant_column","sources":["server/database/init.sql","server/database/migrations/20260909-notification-sms-reservation.sql"]},
           "pa_notice_scene": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},
           "pa_notice_template": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},
           "pa_oauth_attempt": {"action":"strip_tenant_column","sources":["server/database/init.sql"]},

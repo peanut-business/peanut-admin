@@ -11,6 +11,7 @@ use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRep
 use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
 use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 use app\Modules\Official\Notification\Application\VerificationCodeService;
+use app\common\service\notice\driver\sms\SmsDriverResult;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -74,11 +75,48 @@ SQL);
     $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
     expectNoticeTenant($schema !== '', 'canonical application schema is missing');
     $pdo->exec($schema);
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_notice_log
+  (tenant_id, scene_id, channel, receiver, status, send_time, create_time)
+VALUES
+  (101, 1, 1, '13800000999', 1, UNIX_TIMESTAMP() - 30, UNIX_TIMESTAMP() - 30),
+  (101, 1, 1, '13800000999', 1, UNIX_TIMESTAMP() - 10, UNIX_TIMESTAMP() - 10),
+  (101, 0, 2, 'fixture@example.invalid', 1, UNIX_TIMESTAMP() - 10, UNIX_TIMESTAMP() - 10);
+SQL);
+    $reservationMigration = (string)file_get_contents(
+        $serverRoot . '/database/migrations/20260909-notification-sms-reservation.sql'
+    );
+    expectNoticeTenant($reservationMigration !== '', 'SMS reservation migration is missing');
+    $pdo->exec($reservationMigration);
+    $backfilled = $pdo->query(<<<'SQL'
+SELECT id, reservation_active
+FROM pa_notice_log
+WHERE tenant_id = 101 AND receiver = '13800000999'
+ORDER BY id
+SQL)->fetchAll(PDO::FETCH_ASSOC);
+    expectNoticeTenant(
+        count($backfilled) === 2
+            && $backfilled[0]['reservation_active'] === null
+            && (int)$backfilled[1]['reservation_active'] === 1,
+        'SMS reservation migration did not activate only the latest recent success',
+    );
+    $unrelated = $pdo->query(<<<'SQL'
+SELECT reservation_key, idempotency_key_hash, request_digest, receiver_hash,
+       reservation_until, reservation_active
+FROM pa_notice_log
+WHERE tenant_id = 101 AND receiver = 'fixture@example.invalid'
+SQL)->fetch(PDO::FETCH_ASSOC);
+    expectNoticeTenant(
+        is_array($unrelated) && count(array_filter($unrelated, static fn(mixed $value): bool => $value !== null)) === 0,
+        'nullable SMS reservation columns changed a non-verification notice log',
+    );
+    $pdo->exec("DELETE FROM pa_notice_log WHERE receiver IN ('13800000999', 'fixture@example.invalid')");
 }
 
 final class SuccessfulNoticeSender implements NoticeSmsSender
 {
     public int $calls = 0;
+    public ?Closure $barrier = null;
 
     public function send(
         TenantContext|TenantSystemContext $context,
@@ -91,7 +129,47 @@ final class SuccessfulNoticeSender implements NoticeSmsSender
         if ($beforeSend !== null) {
             $beforeSend('fixture-provider');
         }
-        return ['success' => true, 'provider' => 'fixture-provider', 'error' => '', 'result' => []];
+        if ($this->barrier !== null) {
+            $barrier = $this->barrier;
+            $this->barrier = null;
+            $barrier();
+        }
+        return [
+            'success' => true,
+            'outcome' => SmsDriverResult::OUTCOME_SUCCEEDED,
+            'provider' => 'fixture-provider',
+            'error' => '',
+            'result' => [],
+        ];
+    }
+}
+
+final class OutcomeNoticeSender implements NoticeSmsSender
+{
+    public int $calls = 0;
+
+    public function __construct(private readonly string $outcome)
+    {
+    }
+
+    public function send(
+        TenantContext|TenantSystemContext $context,
+        string $mobile,
+        string $templateId,
+        array $variables,
+        ?callable $beforeSend = null
+    ): array {
+        $this->calls++;
+        if ($beforeSend !== null) {
+            $beforeSend('fixture-provider');
+        }
+        return [
+            'success' => $this->outcome === SmsDriverResult::OUTCOME_SUCCEEDED,
+            'outcome' => $this->outcome,
+            'provider' => 'fixture-provider',
+            'error' => $this->outcome === SmsDriverResult::OUTCOME_FAILED ? 'fixture rejected' : '',
+            'result' => [],
+        ];
     }
 }
 
@@ -255,6 +333,91 @@ SQL);
         (int)$pdo->query("SELECT COUNT(*) FROM pa_notice_log WHERE tenant_id = 101 AND receiver = '13800000001'")->fetchColumn() === 0,
         'Beta send log leaked into Alpha'
     );
+    $replayedSend = runNoticeTenant(
+        $beta,
+        'test.notice.verification.send.replay',
+        fn() => $service->send($beta, 'login_code', '13800000001'),
+    );
+    expectNoticeTenant($replayedSend->success, 'same request identity did not replay its successful delivery');
+    expectNoticeTenant($sender->calls === 1, 'successful idempotency replay called the Provider again');
+
+    $betaRateLimited = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-rate-limited');
+    $rateLimitedSend = runNoticeTenant(
+        $betaRateLimited,
+        'test.notice.verification.send.rate-limited',
+        fn() => $service->send($betaRateLimited, 'login_code', '13800000001'),
+    );
+    expectNoticeTenant(!$rateLimitedSend->success, 'active successful reservation allowed another request identity');
+    expectNoticeTenant($sender->calls === 1, 'active successful reservation called the Provider again');
+
+    $barrierSender = new SuccessfulNoticeSender();
+    $barrierService = new VerificationCodeService($barrierSender, new PdoTransactionManager($pdo), $contexts, false);
+    $barrierOwner = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-barrier-owner');
+    $barrierContender = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-barrier-contender');
+    $contendingResult = null;
+    $barrierSender->barrier = function () use (
+        &$contendingResult,
+        $barrierService,
+        $barrierContender,
+    ): void {
+        $contendingResult = runNoticeTenant(
+            $barrierContender,
+            'test.notice.verification.send.barrier-contender',
+            fn() => $barrierService->send($barrierContender, 'login_code', '13800000005'),
+        );
+    };
+    $barrierOwnerResult = runNoticeTenant(
+        $barrierOwner,
+        'test.notice.verification.send.barrier-owner',
+        fn() => $barrierService->send($barrierOwner, 'login_code', '13800000005'),
+    );
+    expectNoticeTenant($barrierOwnerResult->success, $barrierOwnerResult->error);
+    expectNoticeTenant($contendingResult instanceof \app\Modules\Official\Notification\Contracts\DeliveryResult
+        && !$contendingResult->success, 'Provider barrier contender was not rejected');
+    expectNoticeTenant($barrierSender->calls === 1, 'Provider barrier allowed duplicate delivery');
+    expectNoticeTenant(
+        (int)$pdo->query("SELECT COUNT(*) FROM pa_notice_log WHERE tenant_id = 202 AND receiver = '13800000005'")->fetchColumn() === 1,
+        'Provider barrier produced duplicate reservations'
+    );
+
+    $failedSender = new OutcomeNoticeSender(SmsDriverResult::OUTCOME_FAILED);
+    $failedService = new VerificationCodeService($failedSender, new PdoTransactionManager($pdo), $contexts, false);
+    foreach (['first', 'retry'] as $attempt) {
+        $failedContext = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-failed-' . $attempt);
+        $failedResult = runNoticeTenant(
+            $failedContext,
+            'test.notice.verification.send.failed-' . $attempt,
+            fn() => $failedService->send($failedContext, 'login_code', '13800000006'),
+        );
+        expectNoticeTenant(!$failedResult->success, 'explicit Provider failure was reported as success');
+    }
+    expectNoticeTenant($failedSender->calls === 2, 'explicit Provider failure did not release the reservation');
+
+    $unknownSender = new OutcomeNoticeSender(SmsDriverResult::OUTCOME_UNKNOWN);
+    $unknownService = new VerificationCodeService($unknownSender, new PdoTransactionManager($pdo), $contexts, false);
+    $unknownOwner = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-unknown-owner');
+    $unknownResult = runNoticeTenant(
+        $unknownOwner,
+        'test.notice.verification.send.unknown-owner',
+        fn() => $unknownService->send($unknownOwner, 'login_code', '13800000007'),
+    );
+    expectNoticeTenant(!$unknownResult->success, 'unknown Provider result was reported as success');
+    $unknownContender = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-unknown-contender');
+    $unknownBlocked = runNoticeTenant(
+        $unknownContender,
+        'test.notice.verification.send.unknown-contender',
+        fn() => $unknownService->send($unknownContender, 'login_code', '13800000007'),
+    );
+    expectNoticeTenant(!$unknownBlocked->success, 'unknown Provider result released the reservation');
+    expectNoticeTenant($unknownSender->calls === 1, 'unknown Provider result was retried inside the reservation window');
+    $unknownRow = $pdo->query(
+        "SELECT status,reservation_active FROM pa_notice_log WHERE tenant_id = 202 AND receiver = '13800000007' ORDER BY id DESC LIMIT 1"
+    )->fetch(PDO::FETCH_ASSOC);
+    expectNoticeTenant(
+        (int)($unknownRow['status'] ?? -1) === NoticeLog::STATUS_UNKNOWN
+            && (int)($unknownRow['reservation_active'] ?? 0) === 1,
+        'unknown Provider result lost its durable state or active reservation'
+    );
 
     $alphaScene = (int)runNoticeTenant(
         $alpha,
@@ -338,7 +501,7 @@ SQL);
     $alphaLogs = runNoticeTenant($alpha, 'test.notice.logs.alpha', fn() => $notifications->logs(['page' => 1, 'limit' => 50]));
     $betaLogs = runNoticeTenant($beta, 'test.notice.logs.beta', fn() => $notifications->logs(['page' => 1, 'limit' => 50]));
     expectNoticeTenant($alphaLogs->total === 3, 'Alpha admin log list crossed Tenant boundary');
-    expectNoticeTenant($betaLogs->total === 2, 'Beta admin log list crossed Tenant boundary');
+    expectNoticeTenant($betaLogs->total === 6, 'Beta admin log list crossed Tenant boundary');
     $betaLogId = (int)runNoticeTenant(
         $beta,
         'test.notice.logs.beta.latest',
@@ -353,6 +516,7 @@ SQL);
         'schema' => 'fresh-canonical',
         'tenant_isolation' => ['scene', 'template_key', 'send_log', 'verification', 'admin_log'],
         'provider_credentials' => 'application_host_only',
+        'sms_reservation' => ['idempotent_replay', 'provider_barrier', 'failure_release', 'unknown_hold'],
     ], JSON_UNESCAPED_SLASHES) . PHP_EOL;
 } finally {
     $admin->exec("DROP DATABASE IF EXISTS `{$database}`");

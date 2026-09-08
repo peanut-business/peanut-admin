@@ -18,8 +18,8 @@ Fixed inputs: Peanut Admin Application `e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d
 
 ## 1. 结论
 
-- `confirmed`：19 项。其中 13 项已形成完整候选修复，`LMA-002` 只关闭了先写后校验窗口，
-  其跨 Core 多调用原子性仍未关闭；另有 5 项进入专项队列。
+- `confirmed`：19 项。其中 14 项已形成完整候选修复，`LMA-002` 只关闭了先写后校验窗口，
+  其跨 Core 多调用原子性仍未关闭；另有 4 项进入专项队列。
 - `rejected`：6 项。调用链或现行合同不支持预审中的风险推断，不应继续作为缺陷传播。
 - `accepted-risk`：6 项。代码形态存在，但现行本地资格、发布分层或采用边界已经限定其影响；
   暂不以扩大改动换取形式一致。
@@ -49,7 +49,7 @@ Fixed inputs: Peanut Admin Application `e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d
 | `LMA-017` | `confirmed` | `candidate-fixed`：文章收藏组在会员认证后追加 Article Module 生命周期中间件；模块停用时写入口与读取入口一致 fail-closed。 |
 | `LMA-018` | `rejected` | `createBalanceLog` 的 context 参数由 current execution context 约束；同仓 `tenantId()` helper 只返回 id，并不会额外绑定查询。增加一次无效果调用只会制造安全错觉。 |
 | `LMA-019` | `confirmed` | `outstanding`：`web/src/../../...` 可通过字符串前缀并在解析时逃出目标根。修复会改变生产构建输入及 scaffold inventory，必须作为独立 L2 构建边界任务验证 traversal/symlink 后再 reseal。 |
-| `LMA-020` | `confirmed` | `outstanding`：短信发送为 check-then-provider-call-then-log，没有预占状态或窗口唯一约束。需要 Schema、幂等身份与未知 Provider 结果设计，不能用进程锁或吞异常替代。 |
+| `LMA-020` | `confirmed` | `candidate-fixed`：验证码发送先提交 `pa_notice_log` 活动 reservation，再跨 Provider 边界；Tenant/手机号唯一活动键关闭并发双发，同请求身份只重放既存结果。调用前持久化 `unknown`，仅明确失败释放窗口，成功与未知结果均保留 60 秒防重放。Schema 只追加 migration，未改 `init.sql`。 |
 | `LMA-021` | `confirmed` | `candidate-fixed`：并发首次收藏撞唯一约束后，只在同 Tenant 精确记录已存在时视为成功，否则重抛原异常。 |
 | `LMA-022` | `rejected` | unscoped gateway 用于建立 current Tenant 之前的会员主体解析及 scheduler discovery；行为测试明确要求空 execution context 可用，能力只注入有限基础设施服务并记录审计。 |
 | `LMA-023` | `confirmed` | `candidate-fixed`（Core）：七牛上传只有在返回 key 与请求 object key 完全一致时成功，防止对象账本分叉。 |
@@ -68,6 +68,9 @@ Fixed inputs: Peanut Admin Application `e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d
 
 - 身份：会员密码改为 Argon2id，并保留仅用于成功登录迁移的旧 hash 读取路径。
 - 数据一致性：文件删除失败恢复当前软删记录；文章收藏并发首次写入收敛为幂等成功。
+- 通知：验证码发送采用数据库 reservation、请求幂等摘要和 `reserved → unknown → success|failed`
+  状态机；Provider 异常或不可判定回执保持 unknown，禁止立即重发。新 migration 进入 Edition profile，
+  Multi-tenant 保留 Tenant 复合键，Standalone 由既有投影器去除回填分组与索引中的 `tenant_id`。
 - 入口与合同：文章收藏补 Module 边界；OpenAPI 文件路径对齐 `/adminapi`。
 - 客户端：UniApp 注册、PC 死链接、Platform 会话状态同步。
 - 升级安全：scaffold plan 在 apply 前与目标 manifest 重新绑定。
@@ -89,9 +92,7 @@ Core 修复只在独立分支处理，不合并、不发布、不更新 Applicat
    Integration 使用 Core 资源登记，不能猜端口。
 3. `LMA-019`：production Vite contribution 路径做规范化、根边界和 symlink fixture；该任务改变构建和
    scaffold 输入，完成聚焦验证后才允许 inventory/release reseal。
-4. `LMA-020`：设计验证码发送 reservation、幂等窗口和 Provider 未知结果状态；Schema 迁移 append-only，
-   不在应用进程内加锁冒充并发保证。
-5. `LMA-029`：用户若批准治理规则变更，只登记 `ThinkPhpTenantSettingsProvider` 的精确窄例外，不得扩展到
+4. `LMA-029`：用户若批准治理规则变更，只登记 `ThinkPhpTenantSettingsProvider` 的精确窄例外，不得扩展到
    普通 Tenant-owned Model。
 
 ## 5. 验证结果与限制
