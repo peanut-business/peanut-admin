@@ -466,10 +466,39 @@ final class PluginPackageArchiveService
                 throw new PluginPackageException('MODULE_PACKAGE_SOURCE_INVALID', 'Module package source contains an unsupported member.');
             }
             $relative = ltrim(substr($file->getPathname(), strlen($this->projectRoot())), '/');
+            $this->assertPublishableSourcePath($relative);
             if (isset($entries[$relative])) {
                 throw new PluginPackageException('MODULE_PACKAGE_DUPLICATE_PATH', 'Module package source path is duplicated.');
             }
             $entries[$relative] = ['source' => $file->getPathname()];
+        }
+    }
+
+    private function assertPublishableSourcePath(string $relative): void
+    {
+        $segments = array_map('strtolower', explode('/', $relative));
+        $basename = (string)end($segments);
+        $forbiddenDirectories = [
+            '.cache', '.git', '.hg', '.idea', '.local', '.svn', '.vscode',
+            'build', 'coverage', 'dist', 'node_modules', 'tmp', 'vendor',
+        ];
+        foreach (array_slice($segments, 0, -1) as $segment) {
+            if (in_array($segment, $forbiddenDirectories, true)) {
+                throw new PluginPackageException(
+                    'MODULE_PACKAGE_SOURCE_FORBIDDEN',
+                    'Module package source contains a Host, dependency or workspace directory.',
+                );
+            }
+        }
+        $forbiddenFiles = ['.npmrc', '.yarnrc', 'auth.json', 'credentials.json', 'secrets.json'];
+        if (str_starts_with($basename, '.env')
+            || in_array($basename, $forbiddenFiles, true)
+            || preg_match('/\.(?:jks|key|keystore|p12|pem|pfx)$/D', $basename) === 1
+            || preg_match('/^id_(?:dsa|ecdsa|ed25519|rsa)(?:\.pub)?$/D', $basename) === 1) {
+            throw new PluginPackageException(
+                'MODULE_PACKAGE_SOURCE_FORBIDDEN',
+                'Module package source contains an environment or credential file.',
+            );
         }
     }
 

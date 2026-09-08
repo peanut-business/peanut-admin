@@ -30,8 +30,8 @@ Composer 与 npm Registry、Marketplace 不是当前已开放的独立交付通�
 | 内容 | 权威路径 | 是否进入单 Module tar | 规则 |
 | --- | --- | --- | --- |
 | Module 身份、依赖、owned tables、资源入口 | `server/app/Modules/<Vendor>/<Module>/module.json` | 是 | key、version、Kernel 约束和派生路径必须通过 schema/preflight |
-| 后端实现、migration、权限、菜单 | 同一后端 Module 根目录 | 是 | 不得包含环境密钥；migration identity/checksum 不可漂移 |
-| 前端贡献与组件 | `web/src/modules/<slug>/` | 有 `frontend.entry` 时是 | `contribution.ts` 路径由 Module key 派生 |
+| 后端实现、migration、权限、菜单 | 同一后端 Module 根目录 | 是 | 不得包含环境密钥、私钥、Host/依赖/工作区目录；migration identity/checksum 不可漂移 |
+| 前端贡献与组件 | `web/src/modules/<slug>/` | 有 `frontend.entry` 时是 | `contribution.ts` 路径由 Module key 派生；不得打包 `node_modules`、构建或缓存目录 |
 | PHP/npm 组件身份 | Module 内 `composer.json`、前端 `package.json` | 是 | 只描述包内组件，不表示 Registry 已发布 |
 | Plugin 交付身份 | `plugins/<package.key>/plugin.json` | 打包时重新生成并纳入 inventory | bundled 身份另由根 `plugins.lock` 固定 |
 | 测试、临时脚本、工作区证据 | `server/tests/`、临时目录 | 否 | 测试和证据不进入交付 tar；不得把临时脚本提交为 Runtime |
@@ -70,6 +70,11 @@ key 不得冒充成员；安装、停用、退役和 Purge 均以完整 Package 
 所有 Gate 必须运行真实断言。输出 `PASSED` 后无条件 `exit(0)` 的测试占位文件、注释掉的断言或未
 命中声明路径的较弱测试均不是证据。暂时不能运行的数据库、浏览器或 Provider Gate 应登记为具体
 停止线，只阻塞依赖它的状态推进。
+
+打包器对 `.env*`、常见凭据/私钥文件以及 `.git`、`.local`、`vendor`、`node_modules`、`dist`、
+`build`、`coverage`、缓存和临时目录执行 fail-closed 拒绝；发现后返回
+`MODULE_PACKAGE_SOURCE_FORBIDDEN`，不能静默忽略后继续签发不完整制品。真正的运行凭据只能由 Host
+在安装或部署时注入，不属于 Module source package。
 
 ## 4. 发布流程
 

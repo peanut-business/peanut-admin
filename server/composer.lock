@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2a6c47ecd780fc4be00134d3dad4c827",
+    "content-hash": "b208de94bac09e5dd322313b64f168b5",
     "packages": [
         {
             "name": "aliyuncs/oss-sdk-php",
@@ -1478,16 +1478,16 @@
         },
         {
             "name": "peanut-admin/core",
-            "version": "0.1.0-alpha.12",
+            "version": "0.1.0-alpha.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
-                "reference": "9017212da0da63f445d693be94d533f681c6dc92"
+                "reference": "61f40dc2412338b4dfdcf7d2cd7514da45ea773a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/9017212da0da63f445d693be94d533f681c6dc92",
-                "reference": "9017212da0da63f445d693be94d533f681c6dc92",
+                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/61f40dc2412338b4dfdcf7d2cd7514da45ea773a",
+                "reference": "61f40dc2412338b4dfdcf7d2cd7514da45ea773a",
                 "shasum": ""
             },
             "require": {
@@ -1501,6 +1501,11 @@
             },
             "require-dev": {
                 "phpunit/phpunit": "^12.5.31"
+            },
+            "suggest": {
+                "aliyuncs/oss-sdk-php": "Required by hosts that construct AliyunStorageDriver.",
+                "qcloud/cos-sdk-v5": "Required by hosts that construct QcloudStorageDriver.",
+                "qiniu/php-sdk": "Required by hosts that construct QiniuStorageDriver."
             },
             "type": "library",
             "autoload": {
@@ -1539,10 +1544,10 @@
             ],
             "description": "Peanut Admin reusable administration runtime packages",
             "support": {
-                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.12",
+                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.13",
                 "issues": "https://github.com/peanut-opensource/peanut-admin-core-php/issues"
             },
-            "time": "2026-09-06T00:09:23+00:00"
+            "time": "2026-09-08T22:03:00+00:00"
         },
         {
             "name": "psr/container",

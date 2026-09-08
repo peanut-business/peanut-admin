@@ -1,27 +1,29 @@
 # Storage Driver 提取决策与后续队列
 
-> 当前状态：Core 源码候选已实现，独立应用仍使用原实现；发布和 Runtime 迁移暂停在全景审计后的方案决定之前。
+> 当前状态：采用决定已经执行到应用收敛候选。Core `0.1.0-alpha.13` 已完成不可变发布，应用已更新 Composer/npm lock 并完成四 Provider 真实构造验证；应用 `dev/main`、固定候选资格与真实云账号资格仍未完成。
 >
 > 本次“先审计、后决定”是用户调整的当前工作顺序，不是永久人工 Gate。本文记录候选和恢复条件，不把未合 worktree、未发布源码或测试结果写成正式采用。
 
-## 为什么先暂停采用
+## 采用决定
 
-用户当前要先理解 Core 是技术工具集还是公共后台底座、独立应用到底用了哪些能力，以及主流后台脚手架如何划分公共机制与生成应用，然后再决定 Storage Driver 是否正式提取。现有判断依据集中在：
+全景审计已经确认 Storage Driver 属于产品无关低层技术机制，而账户/空间、凭据、Tenant、用途、授权、
+对象账本、补偿和业务生命周期继续由应用拥有。因此采用窄 Core Driver，且不把高层 FileMedia、Schema
+或 Provider SDK 装配移入 Core。判断依据集中在：
 
 - [Core 能力与独立应用采用全景](../reference/core-capabilities-and-application-adoption.md)：两个 aggregate、内部能力域、Core 参考宿主、独立应用真实调用和数据 owner。
 - [后台脚手架的 Core、公共模块与生成应用边界](../reference/scaffold-core-boundary-comparison.md)：LikeAdmin、FastAdmin、MineAdmin、RuoYi-Vue-Plus 的固定源码机制链与受限启示。
 - [Core 与应用技术边界](../architecture/core-application-technical-boundary.md)：若采用 Storage Driver 时必须保留的低层合同和应用职责。
 
-暂停只影响新的 package 发布、应用 lock 和 Runtime 迁移。Core 已合入的 Storage Driver 源码不回滚；应用旧候选继续保留供复审，本轮不合入。
+旧暂停决定已经解除。Core 先完成固定候选资格与 Alpha.13 发布，应用随后锁定公开包并吸收拉平后的
+单提交采用差异；该顺序避免了 class-not-found 和 path repository 假集成。
 
 ## 当前仓库事实
 
 | 产物 | 固定身份 | 当前状态 | 能证明什么 |
 | --- | --- | --- | --- |
-| Core Storage Driver 源码 | `peanut-admin-core` `9358686fee873dd235489c8794abf556fd70ec4f` | 已在 Core `dev` | 四操作合同、对象 key、HTTP transport 和四个 Driver 已实现；不证明已发布或被独立应用采用 |
-| 独立应用 canonical | `peanut-admin` `e38e45d0e564361832bc50839be68f165a409229` | 当前 `dev` | 仍装配应用自己的 StorageDriver/四 Driver，锁定 Core/Web `0.1.0-alpha.12` |
-| 独立应用采用候选 | `peanut-admin` `64460af8`（由旧 `590e6183` 重放） | 已拉平到当前 `dev`，独立 worktree 保留 | 保留当前 Edition-aware ledger/tenant owner 逻辑并改用 Core Driver；未更新 Composer lock，不能加载 alpha.12 不含的类，禁止合入或运行时采用 |
-| 已发布 Core | source `9089516a18f19e19a048683594087e0b4ffc5455`；Composer split `9017212da0da63f445d693be94d533f681c6dc92` | `0.1.0-alpha.12` | 是当前应用锁身份；不含 `9358686` 新增的 Storage Driver |
+| Core Storage Driver Release | source `a949a77728f2940153c6cfd76b104d5d8bb183e3`；Composer split `61f40dc2412338b4dfdcf7d2cd7514da45ea773a` | `0.1.0-alpha.13` 已发布到 GitHub/npm/Packagist | 四操作合同、对象 key、HTTP transport 与四个 Driver 的不可变发布身份 |
+| 独立应用 canonical | `peanut-admin` `dev@e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d` | 合入前基线 | 仍是旧应用 Driver 与 Core Alpha.12，不能代表本轮候选 |
+| 独立应用收敛候选 | 分支 `feat/refactor-convergence-remediation`，Storage 提交 `563df8c4` | 已锁 Core PHP/Web Alpha.13，应用低层重复 Driver 已删除 | 四 Provider 可从当前 Composer vendor 实际构造，凭据按次解析；待合入与固定候选资格 |
 
 ## 候选边界
 
@@ -38,11 +40,11 @@ Core 的 `StorageObjectKey` 只做技术 key 校验。Local、Aliyun、Qcloud、
 
 独立应用继续拥有 provider SDK 依赖与装配、账户/space 路由、凭据解密、用途、授权、对象账本、`ObservedStorageDriver`、补偿和产品生命周期。对象 prefix 不代替授权，不新增 fallback；整文件 HTTP 下载仍是独立优化议题。
 
-`64460af8` 的 `StorageDriverFactory` 仍保留 Local、Aliyun OSS、Tencent COS 与 Qiniu 四种 provider；
-提取的目标是移动低层驱动所有权，不是减少厂商支持。Core 修复候选 `22f6a6c` 另修正七牛返回 key
-一致性和删除 endpoint，但尚未进入 Core `dev` 或已发布包。Provider “源码存在”与“可用”也必须分开：
-只有应用锁定包含这些类的新 Core 不可变版本，并在同一候选上完成每个受影响 provider 的装配、上传、下载、
-删除、错误补偿与凭据隔离验证后，才能把对应 provider 标记为可用。
+当前 `StorageDriverFactory` 仍保留 Local、Aliyun OSS、Tencent COS 与 Qiniu 四种 provider；提取的目标是
+移动低层驱动所有权，不是减少厂商支持。Alpha.13 已包含七牛返回 key 一致性与删除 endpoint 修复。
+应用同一候选上的 Composer autoload、四 Provider 构造、Host adapter 和按次凭据解析已经验证；Core 的
+Driver 行为合同已在 Alpha.13 固定资格中执行。真实厂商账号的上传、下载、删除、补偿与凭据轮换尚未在
+本应用候选重新资格，因此只阻塞对应厂商的生产可用声明，不撤销源码支持或 Local 开发能力。
 
 采用 Core `LocalStorageDriver` 时必须重新审定路径与符号链接边界、原子写入和失败补偿。此前在“应用尚未采用
 Core LocalDriver”前提下接受的风险不能自动继承给 `64460af8`。
@@ -68,11 +70,11 @@ object key、quota reservation、scan/quarantine、derivative、retention/legal 
 | 顺序 | 任务 | 写集/禁止项 | 验收 | 规则、owner 与模型 | 当前状态 |
 | --- | --- | --- | --- | --- | --- |
 | D0a | 盘点 Core、应用采用和脚手架边界，形成建议 | 只改本轮登记文档；不改 Runtime | 每域说明用途、入口、宿主责任、data owner、采用与证据限制 | 文档/CodeGraph 规则；Terra/medium 只读研究，Sol/high 合成，根代理审计 | 盘点与建议已完成 |
-| D0b | 形成有依据的采用建议和具体写集 | 只做决定和必要文档；不自动改 Runtime | 建议对应 D0a 的真实调用、data owner、宿主责任与维护成本；保持现有窄 Driver 候选，不扩大高层 FileMedia | 根代理负责方向/审计；未授权范围变化或正式发布按适用规则确认，无独立执行模型 | 采用建议已形成；正式推进待发布范围与依赖条件 |
-| D1 | 若采用或调整，冻结最终公共合同与发布粒度 | Core Storage 文件、必要 dependency decision；不扩展高层 FileMedia/Schema | API、可选 SDK、兼容关系和 owner 明确 | 公共合同与依赖规则；Sol/high | 等待 D0b |
-| D2 | 生成新的不可变 PHP split 身份 | Core 版本/发布元数据按正式发布流程；不得用 branch、path repository 或 vendor 复制替代 | 固定 source/tree/split、包可见性和 Composer metadata 一致，并完成 Core 正式发布所要求的固定候选资格与授权 | 发布规则；Sol/high，根代理审计 | 等待 D1 |
-| D3 | 在独立应用基于最新 `dev` 重放最小采用 diff，并更新 Composer lock | `AppService`、`common/service/storage`、现有 FileMedia Host gate 与精确 lock；不新建兼容桥/第二生命周期 | lock 指向 D2；provider 装配、对象 key、观测、账本/授权/补偿语义保持 | 应用边界与不可变依赖规则；Sol/high | 等待 D2 |
-| D4 | 完成应用日常开发验证并合入 | 运行受影响 PHP lint、现有 FileMedia Host/直接 Tenant 安全组和文档检查；不主动扩大到无关开发组 | 同一应用候选上通过，失败按项目一次诊断/一次重跑规则 | 日常开发 §7.1；安全/合同组 Sol/high，机械静态组 Luna/max，根代理终审 | 等待 D3 |
+| D0b | 形成有依据的采用建议和具体写集 | 只做决定和必要文档；不自动改 Runtime | 建议对应 D0a 的真实调用、data owner、宿主责任与维护成本；保持现有窄 Driver 候选，不扩大高层 FileMedia | 根代理负责方向/审计 | 已完成：采用窄低层合同 |
+| D1 | 冻结最终公共合同与发布粒度 | Core Storage 文件、必要 dependency decision；不扩展高层 FileMedia/Schema | API、可选 SDK、兼容关系和 owner 明确 | 公共合同与依赖规则；高能力模型复核 | 已完成并进入 Alpha.13 |
+| D2 | 生成新的不可变 PHP split 身份 | Core 版本/发布元数据按正式发布流程；不得用 branch、path repository 或 vendor 复制替代 | 固定 source/tree/split、包可见性和 Composer metadata 一致，并完成 Core 正式发布所要求的固定候选资格 | 发布规则；根代理终审 | 已完成：source/split/tag/Registry 均固定 |
+| D3 | 在独立应用基于最新 `dev` 重放最小采用 diff，并更新 Composer lock | `AppService`、`common/service/storage`、现有 FileMedia Host gate 与精确 lock；不新建兼容桥/第二生命周期 | lock 指向 D2；provider 装配、对象 key、观测、账本/授权/补偿语义保持 | 应用边界与不可变依赖规则 | 已完成（收敛候选） |
+| D4 | 完成应用日常开发验证并合入 | 运行受影响 PHP lint、现有 FileMedia Host/直接 Tenant 安全组和文档检查；不主动扩大到无关开发组 | 同一应用候选上通过，失败按项目一次诊断/一次重跑规则 | 日常开发 §7.1；根代理终审 | 进行中：聚焦检查已通过，待合入与正式 P0-E |
 
 如果决定保留应用实现，D1-D4 不执行，只把 Core driver 标为未采用公共候选，并另外决定 Core 是否继续保留它。这个分支不要求删除已完成研究或伪造迁移证据。
 
@@ -86,4 +88,6 @@ Core 当前只有 `peanut-admin/core` 与 `@peanut-admin/admin` 两个 aggregate
 
 ## 不属于本轮完成状态
 
-本轮不修改 Core/Application Runtime、Composer/npm manifest 或 lock，不发布包、不运行数据库/云 provider/浏览器资格，也不修 `CrossProductAdoptionHost` 的 Collaboration 失效引用。后者已在全景文档登记为“桥接源码存在、仅测试 caller、当前 Core 无该能力”，应由独立的删除或能力重建决定处理。
+本页不把尚未执行的真实云 Provider、应用 P0-E、正式应用 Release 或生产部署标记为完成。高容量媒体
+Spike 继续是隔离设计输入；`CrossProductAdoptionHost` 的 Collaboration 失效引用仍由独立删除或能力
+重建决定处理，不借 Storage 采用扩大范围。

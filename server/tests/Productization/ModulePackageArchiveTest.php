@@ -191,6 +191,17 @@ try {
     file_put_contents($firstManifestPath, json_encode($firstManifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
     $bundleService = new PluginPackageArchiveService($bundleRoot . '/server');
     $bundlePath = $temporary . '/acme-bundle.tar';
+    foreach (['.env.production', 'id_ed25519', 'node_modules/vendor-runtime.js'] as $forbiddenRelative) {
+        $forbiddenSource = $bundleRoot . '/server/app/Modules/Acme/First/' . $forbiddenRelative;
+        if (!is_dir(dirname($forbiddenSource))) mkdir(dirname($forbiddenSource), 0700, true);
+        file_put_contents($forbiddenSource, "VENDOR_SECRET=must-not-be-packed\n");
+        modulePackageRejects(
+            static fn() => $bundleService->packBundle('acme.bundle', '1.0.0', ['acme.first', 'acme.second'], $bundlePath),
+            'MODULE_PACKAGE_SOURCE_FORBIDDEN',
+        );
+        unlink($forbiddenSource);
+        if ($forbiddenRelative === 'node_modules/vendor-runtime.js') rmdir(dirname($forbiddenSource));
+    }
     $bundleResult = $bundleService->packBundle('acme.bundle', '1.0.0', ['acme.first', 'acme.second'], $bundlePath);
     $bundleEntries = $tar->scan($bundlePath);
     $bundleExtracted = $temporary . '/bundle-extracted';
@@ -389,7 +400,10 @@ try {
             fclose($pipes[1]); fclose($pipes[2]);
             modulePackageExpect(proc_close($process) !== 0, 'invalid journal boot unexpectedly succeeded');
             if ($arguments[0] === 'module:adopt-package') {
-                modulePackageExpect(trim($output) === '{"error":"MODULE_PACKAGE_RECOVERY_REQUIRED"}', 'recovery CLI could not boot without Module composition');
+                modulePackageExpect(
+                    trim($output) === '{"error":"MODULE_PACKAGE_RECOVERY_REQUIRED"}',
+                    'recovery CLI could not boot without Module composition: ' . trim($output),
+                );
             } else {
                 modulePackageExpect(str_contains($output, 'Run module:adopt-package --recover'), 'ordinary Runtime consumed incomplete source');
             }

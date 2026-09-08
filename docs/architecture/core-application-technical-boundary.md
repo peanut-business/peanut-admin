@@ -1,6 +1,6 @@
 # Core 与应用技术边界
 
-> 状态：planned；本页记录 Core/Application 边界与 Storage Driver 候选事实。当前先完成全景审计，再决定是否正式采用，不声称应用 Runtime 已完成迁移。
+> 状态：current；Storage Driver 低层合同已经采用到应用收敛候选并锁定 Core `0.1.0-alpha.13`。本页区分开发候选、正式应用 Release 与真实 Provider 资格，不把源码装配测试写成生产厂商验收。
 >
 > 适用范围：Peanut Admin 应用仓与 `peanut-admin-core` 的共享技术边界。
 
@@ -15,7 +15,7 @@
 | 域 | Core | 应用 | 本轮状态 |
 | --- | --- | --- | --- |
 | Settings | typed、secret、scope、产品无关 Settings Schema/PDO 等中立能力 | setting definition 的 key/value schema/default、业务设置含义和 ThinkPHP 宿主装配 | 只冻结复用规则，不重建实现 |
-| Storage | `StorageDriver`、对象 key 规则和低层文件传输机制 | Provider SDK 装配、凭据解密、用途、授权、对象账本、补偿和产品生命周期 | Core 源码已实现；应用采用候选待全景审计后决定 |
+| Storage | `StorageDriver`、对象 key 规则和低层文件传输机制 | Provider SDK 装配、凭据解密、用途、授权、对象账本、补偿和产品生命周期 | Core Alpha.13 已发布；应用收敛候选已采用，待应用固定候选资格与 Release |
 | Crontab | 产品无关执行机制与 `TaskJob` | Cron 业务规则、授权和宿主装配 | 共用 `TaskJob`，不建第二套队列 |
 | ImportExport | 产品无关导入导出机制与 `TaskJob` | 格式、业务授权和宿主装配 | 共用 `TaskJob`，不建第二套队列 |
 | Logs | 诊断机制及明示技术状态 | 业务审计、业务用途和可信 Tenant；两类日志分开 | 不扩展本轮 Runtime |
@@ -41,15 +41,17 @@ localPath(objectKey)
 
 `ObservedStorageDriver`、账户空间路由、凭据解密、用途、授权、对象账本和补偿均归应用。Core 不引用应用仓、不启用现有另一条 FileMedia 生命周期/Schema、不改表。整文件 HTTP 下载属于后续建议，不进入本执行队列。
 
-Core 仓 commit `9358686fee873dd235489c8794abf556fd70ec4f` 已实现上述低层合同和四个 Driver；它晚于已发布 alpha.12，未形成独立应用可锁定的新 immutable split。
+Core 固定 source candidate `a949a77728f2940153c6cfd76b104d5d8bb183e3` 已通过 Alpha.13 的 Q01/D05
+资格；Composer split `61f40dc2412338b4dfdcf7d2cd7514da45ea773a` 与 source candidate 的
+`packages/php` tree 相同。`v0.1.0-alpha.13` 已发布到 GitHub、npm 与 Packagist，应用可以用不可变
+Registry 身份锁定，不再依赖 branch、path repository 或复制 vendor。
 
-独立应用 canonical `dev` commit `72fcf7b9bfbae62aa5329f99c49ec1356435e633` 仍在
-`server/app/AppService.php` 与 `server/app/common/service/storage/` 装配应用自己的
-`StorageDriverFactory`、`ObservedStorageDriver`、`StoragePath`、`StorageRepository`、
-`StorageDriver.php` 和 `driver/{Local,Aliyun,Qcloud,Qiniu}StorageDriver.php`。因此“应用旧
-Driver 已删除”不是 canonical 事实。
-
-应用 commit `590e61830d0e62c0bf25425dfe43d69ae894b726` 是独立 worktree 中保留的采用候选：该候选删除旧 Driver、加入 `QiniuStorageHttpTransport` 并完成当时允许的静态 Host 检查，但没有合入 canonical `dev`，也没有修改 Composer/lock。它只能作为方案复审输入，不能写成应用已经正式消费 Core Storage Driver。
+旧应用 commit `590e61830d0e62c0bf25425dfe43d69ae894b726` 是基于过时 `dev` 的单提交采用
+实验，不是 merge。它先重放为 `64460af8`，再以 `563df8c4` 进入统一收敛分支；冲突处理保留了最新
+Edition-aware ledger、Tenant ownership、凭据解析和 Host adapter，只删除应用重复的四个低层 Driver。
+同一收敛候选现已把 PHP/npm manifest 与 lock 更新到 Core Alpha.13，并实际构造 Local、Aliyun OSS、
+Tencent COS、Qiniu 四种 Driver。它在合入应用 `dev/main` 和通过应用固定候选资格前仍是开发候选，不能
+描述为应用正式 Release 或真实云账号生产可用。
 
 完整 Core 能力、应用实际调用和版本限制见[Core 能力与独立应用采用全景](../reference/core-capabilities-and-application-adoption.md)；脚手架职责样本见[后台脚手架的 Core、公共模块与生成应用边界](../reference/scaffold-core-boundary-comparison.md)。
 

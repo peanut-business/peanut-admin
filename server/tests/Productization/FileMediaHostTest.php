@@ -25,6 +25,7 @@ namespace {
     $serverRoot = dirname(__DIR__, 2);
     $repositoryRoot = dirname($serverRoot);
 
+    require_once $serverRoot . '/vendor/autoload.php';
     require $serverRoot . '/app/common/service/FileService.php';
 
     $apiEvidence = json_decode((string)file_get_contents(
@@ -181,6 +182,65 @@ namespace {
             );
         }
     }
+
+    // Verify the application can actually assemble every retained provider from
+    // the installed Core package. The sealed historical evidence above does not
+    // prove that current Composer autoloading or constructor contracts still work.
+    $credentialResolver = new class implements \app\common\service\storage\StorageCredentialResolver {
+        /** @var list<string> */
+        public array $resolvedDrivers = [];
+
+        public function resolve(array $account): array
+        {
+            $this->resolvedDrivers[] = (string)($account['driver'] ?? '');
+            return ['access_key' => 'fixture-access-key', 'secret_key' => 'fixture-secret-key'];
+        }
+    };
+    $outboundTransport = new class implements \app\common\service\http\OutboundHttpTransport {
+        public function send(\app\common\service\http\OutboundHttpRequest $request): \app\common\service\http\OutboundHttpResponse
+        {
+            throw new RuntimeException('provider assembly must not perform network I/O');
+        }
+    };
+    $factory = new \app\common\service\storage\StorageDriverFactory(
+        $credentialResolver,
+        new \app\common\service\storage\QiniuStorageHttpTransport($outboundTransport),
+        new \app\common\service\storage\AliyunStorageClientFactory(),
+        new \app\common\service\storage\QcloudStorageClientFactory(),
+        new \app\common\execution\CurrentExecutionContext(new \app\common\execution\ExecutionContextStore()),
+        new \think\App($serverRoot . DIRECTORY_SEPARATOR),
+    );
+    $delegateProperty = new ReflectionProperty(\app\common\service\storage\ObservedStorageDriver::class, 'delegate');
+    foreach ([
+        'local' => [
+            ['driver' => 'local'],
+            ['local_path' => 'private/storage', 'access_type' => \app\common\service\storage\StorageAccess::PRIVATE],
+            \PeanutAdmin\FileMedia\Storage\Driver\LocalStorageDriver::class,
+        ],
+        'qiniu' => [
+            ['driver' => 'qiniu'],
+            ['bucket' => 'fixture', 'endpoint' => '', 'access_domain' => 'https://cdn.example.test/'],
+            \PeanutAdmin\FileMedia\Storage\Driver\QiniuStorageDriver::class,
+        ],
+        'aliyun' => [
+            ['driver' => 'aliyun'],
+            ['bucket' => 'fixture', 'endpoint' => 'https://oss-cn-hangzhou.aliyuncs.com'],
+            \PeanutAdmin\FileMedia\Storage\Driver\AliyunStorageDriver::class,
+        ],
+        'qcloud' => [
+            ['driver' => 'qcloud'],
+            ['bucket' => 'fixture-1250000000', 'region' => 'ap-guangzhou'],
+            \PeanutAdmin\FileMedia\Storage\Driver\QcloudStorageDriver::class,
+        ],
+    ] as $provider => [$account, $space, $expectedDriver]) {
+        $driver = $factory->make($account, $space);
+        expectFileMedia($driver instanceof \PeanutAdmin\FileMedia\Storage\StorageDriver, $provider . ' did not produce a Core driver');
+        expectFileMedia($delegateProperty->getValue($driver) instanceof $expectedDriver, $provider . ' application assembly drifted');
+    }
+    expectFileMedia(
+        $credentialResolver->resolvedDrivers === ['qiniu', 'aliyun', 'qcloud'],
+        'cloud credentials must resolve per assembly while local storage remains credential-free',
+    );
 
     echo "PB04-FILE-MEDIA-HOST-001 passed\n";
 }

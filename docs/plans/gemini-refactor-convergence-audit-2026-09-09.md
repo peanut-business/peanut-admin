@@ -9,10 +9,9 @@ Owner: `product-architecture`
 Audience: `maintainer, architect, operator, ai`
 
 Fixed inputs: Peanut Admin `dev@e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d`、Application
-quarantine commit `5fbcf043ff45ba85290ceac1d3b52c4440c79e3e`、Peanut Admin Core
-`dev@9358686fee873dd235489c8794abf556fd70ec4f`、Core quarantine commit
-`9d5f03e79c4790c652106b9376f87a5cb9fd89ac`、Luna remediation candidates
-`190d47352adcd996384fcf83cd58524204fd1844` / `22f6a6cc5ae5bb56aefd8b625c86f9cdcf630aea`。
+quarantine snapshot `1b2b66cd`、Peanut Admin Core Alpha.13 source candidate
+`a949a77728f2940153c6cfd76b104d5d8bb183e3`、Core quarantine snapshot `90bf92f`、
+Application convergence branch `feat/refactor-convergence-remediation`（Storage adoption `563df8c4`）。
 
 > 本报告把 Gemini 的机械处理视为未完成迁移工件，而不是动机错误或可继承的通过证据。目标是吸收有
 > 价值的设计与行为，正式重做缺失实现和测试，再清理隔离现场。用户已授权后续发布、生产与精确破坏性
@@ -37,17 +36,18 @@ quarantine commit `5fbcf043ff45ba85290ceac1d3b52c4440c79e3e`、Peanut Admin Core
 | 仓库/产物 | 身份 | 状态 | 裁定 |
 | --- | --- | --- | --- |
 | Application canonical | `dev@e38e45d0` | 与 `origin/dev` 对齐 | 后续收敛基线 |
-| Application quarantine | commit `5fbcf043` + 440 tracked/148 untracked | 647 文件提交；当前现场扩大到 814 个差异文件 | 保留证据，禁止整体合入 |
-| Core canonical | `dev@9358686` | 与 `origin/dev` 对齐 | Core 修复与发布基线 |
-| Core quarantine | commit `9d5f03e` + 444 tracked/182 untracked | 154 文件提交；当前现场含未登记模块树 | 保留证据，禁止整体合入 |
-| Application Luna | `190d4735` | 基于当前 Application dev，2 commits ahead | 可继续收敛，未完成全部停止线 |
-| Core Luna | `22f6a6c` | 基于当前 Core dev，1 commit ahead | 可继续收敛，未发布 |
-| Storage adoption | `64460af8` | 旧 `590e6183` 已重放到当前 dev，1 commit ahead | 依赖版本阻塞，禁止现在合入 |
+| Application quarantine | `1b2b66cd` | tracked 与临时脚本现场已完整固化到 quarantine branch | 保留取证，禁止整体合入 |
+| Core canonical | source candidate `a949a777`；release evidence `9e630548` | Alpha.13 已经 Q01/D05、tag、GitHub Release、npm、Packagist | 新应用依赖基线 |
+| Core quarantine | `90bf92f` | tracked/untracked 现场已完整固化到 quarantine branch | 保留取证，禁止整体合入 |
+| Application Luna | `190d4735` 已进入统一收敛分支 | 后续停止线以独立提交继续修复 | 不再单独合并旧分支 |
+| Core Luna | 修复已吸收到 Alpha.13 固定候选 | 已发布 | 不再保留为未发布候选 |
+| Storage adoption | `563df8c4`（由 `590e6183 → 64460af8` 收敛） | 已锁 Core Alpha.13 并通过当前装配检查 | 进入应用收敛候选，待应用 Release |
 | High-capacity media spike | `quarantine/high-capacity-media-storage-spike-20260831@e915bea7` | 已恢复显式引用，未进入 dev/main | 设计输入，不是产品能力 |
 
 Application quarantine 的 148 个未跟踪文件含 139 个 Python 和 9 个 PHP；已提交根目录还含 22 个
-迁移/修复脚本。Core 实际未跟踪文件是 182 个，不是早先报告中的 28 个，其中包括 18 个 `module.json`
-和 14 个无法解析的 ModuleProvider。清理前必须以包含未跟踪清单的恢复证据重新固定一次。
+迁移/修复脚本。Core 未跟踪现场实际是 182 个文件，其中包括 18 个 `module.json` 和 14 个无法解析的
+ModuleProvider。两边现已分别用 `1b2b66cd`、`90bf92f` 固定，不再依赖易失工作树；是否删除 branch 仍须
+等独有价值吸收/弃用登记完成。
 
 ## 3. 已合入 Gemini 变更
 
@@ -151,54 +151,47 @@ Tiptap/ProseMirror/Yjs 客户端已实现，仓库没有 Hocuspocus 服务端，
 
 ### 8.2 Storage Driver 与厂商
 
-Core `9358686` 和 Application adoption `64460af8` 均保留 Local、Aliyun OSS、Tencent COS、Qiniu 四种
-driver。Luna Core `22f6a6c` 修正七牛上传返回 key 一致性和删除 endpoint。厂商支持不会因为提取而删除。
+Core Alpha.13 与 Application adoption `563df8c4` 均保留 Local、Aliyun OSS、Tencent COS、Qiniu 四种
+driver；Alpha.13 包含七牛上传返回 key 一致性和删除 endpoint 修复。厂商支持没有因提取而删除。
 
-“保留源码”不等于“可用”：Application 仍锁定不含新 Driver 的 Core alpha.12。必须先合入/资格 Core 修复、
-发布新的不可变 Core 包、更新 Application Composer lock，再采用 `64460af8`，并分别验证四 provider 的装配、
-凭据隔离、上传/下载/删除和失败补偿。LocalDriver 还需补路径/symlink、原子写入和失败恢复合同。
+Application PHP/npm manifest 与 lock 已升级为 Alpha.13；Composer autoload、四 Provider 的应用 Factory
+实际构造、Local 免凭据和三种云端按次凭据解析均通过，关闭了此前 class-not-found 阻断。Core 固定资格
+已覆盖低层 Driver 行为。真实厂商账号的上传/下载/删除、补偿和轮换仍是 Provider-specific 后置资格：它只
+阻塞对应生产可用声明，不应通过删除 Provider 或继续使用应用重复 Driver 来规避。
 
 ## 9. `590e6183` 的准确解释
 
-`590e6183` 原本是基于旧 Application dev 的“消费 Core Storage Driver”单提交分支，落后当前 dev 21 个提交。
-本批已把它重放到 `e38e45d0`，解决 `AppService` 和 `StorageRepository` 冲突，保留最新 Edition-aware
-storage ledger/tenant ownership，生成新提交 `64460af8`。分支现在相对 dev 为 0 behind/1 ahead，旧 SHA
-只保留为历史来源，不能再与新提交叠加。
+`590e6183` 原本是基于旧 Application dev 的“消费 Core Storage Driver”单提交分支，不是多个媒体分支的
+merge。它先被重放到 `e38e45d0` 成为 `64460af8`，再作为 `563df8c4` 进入统一收敛分支；冲突处理保留
+最新 Edition-aware storage ledger、Tenant ownership、凭据解析与应用观测，旧 SHA 只保留为历史来源，
+不能再与新提交叠加。
 
-聚焦 PHP lint 和现有 `FileMediaHostTest` 通过，但该测试主要是源码字符串合同，且工作树没有安装 vendor；
-应用 `server/composer.json` 仍锁 `peanut-admin/core 0.1.0-alpha.12`，该版本不含被 import 的 Storage 类。
-所以这次“拉平”只解决 Git/源码冲突，没有解决依赖可加载性。现在合入会制造运行时 class-not-found，故保持
-阻塞，等待新的 Core 发布身份。
+此前拉平只解决 Git/源码冲突，确实会因 Alpha.12 缺类而阻断。现在 Core Alpha.13 已发布，应用锁与 vendor
+均指向 Composer split `61f40dc2`；改进后的 `FileMediaHostTest` 不再只检查字符串，还会实际构造四种
+Provider Driver 并检查按次凭据解析。因此 class-not-found 与应用构造合同停止线已关闭，真实云账号资格
+仍按厂商分别保留。
 
 ## 10. Luna 修复与剩余停止线
 
-Application `190d4735` 可从当前 dev 快进；Core `22f6a6c` 可从当前 Core dev 快进，但两者都只是修复
-候选。已完成项包括 Argon2id 平滑迁移、文件删除失败恢复、scaffold plan 重绑定、AuthException 映射、
-客户端状态修复、文章 Module guard/并发幂等和七牛修复。
+Application `190d4735` 及其后续停止线修复已经收敛到统一分支；Core 修复已进入 Alpha.13。已完成项包括
+Argon2id 平滑迁移、文件删除失败恢复、scaffold plan 重绑定、AuthException 映射、客户端状态修复、
+文章 Module guard/并发幂等、七牛修复、管理员聚合原子命令、Core 聚合测试入口、Vite 路径边界、短信发送
+reservation、Tenant settings 窄例外登记，以及旧测试脚本的正式替换。
 
 仍需正式关闭：
 
-- 管理员创建/编辑跨多个 Core command 的单事务原子性；
-- Core PHP/Web 测试入口遗漏；
-- Vite contribution 路径规范化、根边界和 symlink；
-- 短信发送 reservation、幂等窗口和未知 Provider 结果；
-- `ThinkPhpTenantSettingsProvider` 与 Tenant 红线的精确架构裁定（已以 §6.2 唯一窄例外关闭）；
-- scaffold 固定 fixture 缺 `release-versions.json` 的门禁漂移；
-- Storage adoption 后重新打开的 LocalDriver 安全合同。
-
-本轮已经开始收敛 Core 测试入口和 Vite 路径边界；其结果合入本报告的后续提交。其余项目按安全/事务
-影响排序，不因已有 Luna 分支而标记完成。
+- 全官方 Module 打包证据必须在最终应用源码身份上重新生成；
+- Rich Text 独立发布仍缺浏览器、协同服务、签名、SBOM、review/漏洞响应 owner 与明确渠道；
+- 应用最终 `main` 固定候选必须按 L2 只运行一次 P0-E；
+- 真实云 Provider 和生产部署按各自登记资源与资格执行。
 
 ## 11. 集成、发布、生产与清理顺序
 
-1. 在干净 Application/Core dev 分支完成 Luna 候选与本报告列出的真实停止线；
-2. 每个微批次运行最低充分聚焦验证，恢复/保留真实断言；
-3. Core 先完成固定候选资格并发布含 Storage contract 的不可变版本；
-4. Application 更新 lock 后采用 `64460af8` 的唯一有效差异，完成四 provider 与 FileMedia 验证；
-5. 所有实现和依赖冻结后 seal Application 候选，运行一次 L2 P0-E，检查零残留；
-6. 合入 `dev`，再按 `dev → main` 人工审核形成正式 Release；
-7. 生产只消费该 Release，在已登记目标上完成 migration dry-run、可恢复备份、部署和线上 smoke；
-8. 只有独有价值均已吸收或明确弃用、没有活跃 owner/租约，且未跟踪文件清单已有恢复证据，才精确删除
+1. 完成当前应用收敛分支的聚焦验证、官方 Module 打包证据和文档同步；
+2. 合入并推送 `dev`，再按 `dev → main` 人工审核固定正式应用 source commit/tree；
+3. 在该最终 `origin/main` 身份运行一次 L2 P0-E，不继承旧候选或旧媒体证据；
+4. 资格通过后签发应用 Release；生产只消费该 Release，在登记目标完成 migration dry-run、可恢复备份、部署和线上 smoke；
+5. 只有独有价值均已吸收或明确弃用、没有活跃 owner/租约，且未跟踪文件清单已有恢复证据，才精确删除
    quarantine worktree、临时脚本和失效分支。不得用广域 reset/clean 删除未知内容或共享数据。
 
 源码发布与生产部署继续是两个状态。用户授权允许执行到生产，但任何中间 Gate 失败只阻塞其直接下游，
@@ -212,9 +205,10 @@ Application `190d4735` 可从当前 dev 快进；Core `22f6a6c` 可从当前 Cor
 | Module 发布合同 | 已完成（开发候选） | 文档登记、公开投影、动态 official Module 打包清单 |
 | 测试占位防回归 | 已完成（开发候选） | `TEST-INTEGRITY-001` 通过；尚待合入 dev |
 | Rich Text 独立发布 | 部分完成 | bundled-locked + local unsigned package-candidate；浏览器、协同服务、签名/SBOM/review/渠道未完成 |
-| `590e6183` 拉平 | 已完成 | 新身份 `64460af8`；依赖发布阻塞采用 |
-| 厂商 Storage 可用性 | 部分完成 | 四 provider 源码保留；Core 发布/应用 lock/真实 provider Gate 未完成 |
-| Luna 修复收敛 | 进行中 | 13 项候选已在分支；剩余停止线正在分批处理 |
+| `590e6183` 拉平 | 已完成并吸收 | `590e6183 → 64460af8 → 563df8c4`；不是 merge，Core Alpha.13 依赖已锁定 |
+| 厂商 Storage 可用性 | 源码与装配完成、真实资格后置 | 四 provider 源码/依赖/Factory 保留且构造通过；真实账号生产资格未冒充完成 |
+| Luna/Gemini 收敛 | 开发候选完成 | 已吸收正式实现与真实测试修复；原机械现场仅留 quarantine 取证 |
 | High-capacity media | 已审计/隔离 | 不进入 Runtime；后续独立能力任务 |
-| 正式发布与生产 | 未开始 | 依赖实现、资格、Release 与登记生产目标尚未闭合 |
-| quarantine 破坏性清理 | 未开始 | 等独有差异吸收、恢复证据和 owner/租约核验 |
+| Core 正式发布 | 已完成 | Alpha.13 source/split/tag/GitHub Release/npm/Packagist 已一致 |
+| 应用正式发布与生产 | 未完成 | 待合入 main、最终应用 P0-E、Release 与登记生产 smoke |
+| quarantine 破坏性清理 | 可恢复证据已固定、暂不删 branch | `1b2b66cd` / `90bf92f`；待独有价值最终登记后精确清理 |
