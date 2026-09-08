@@ -1,32 +1,43 @@
 # 模块开发指南
 
-> 本指南已精简重构。详细的模块架构约定与认知模型，请参考 [用 Module 开发独立业务](plugin-module-development.md)。
+本指南是 Module 作者的短入口；当前真实布局、架构纪律和完整工作流见
+[用 Module 开发独立业务](plugin-module-development.md)，交付状态见
+[Module 发布与制品合同](architecture/module-publication-contract.md)。
 
-## 新建模块
+## 新建与检查
+
+在 `server/` 目录执行：
 
 ```bash
-php think module:create <module.key>
-```
-该命令会生成符合最新“全栈自闭环”规范的前后端骨架。生成后，模块将物理存放于 `modules/<module.key>/` 目录下。
-请注意，旧版本的 `Application/`、`Domain/` 等目录结构已被废弃，新脚手架将生成规范的 `server/controller/`、`server/service/` 等极简结构。
-
-## 开发期工作流
-
-1. 修改模块根目录的 `module.json` 以及资源文件（如菜单和权限定义）。
-2. 在 `server/routes.php` 中声明你的路由和权限绑定。
-3. 编写业务逻辑：
-   - 入口出参交由 `server/controller/` 处理。
-   - 核心规则交由 `server/service/` 处理，错误一律抛出 `BusinessException`。
-   - 数据库交互交由继承了租户隔离基类的 `server/model/` 处理。
-4. 同步并生效配置：
-   ```bash
-   php think module:sync --module=<module.key>
-   ```
-
-## 规范检查器
-
-在打包或提交前，务必运行：
-```bash
+php think module:create <module.key> [--vendor=<Vendor>]
 php think module:check <module.key>
 ```
-命令会自动执行静态分析，验证路由映射、命名空间规范以及安全性隔离，确保你的模块符合宿主的接入要求。
+
+生成器会创建：
+
+- `server/app/Modules/<Vendor>/<Module>/` 后端、manifest 和 migration 骨架；
+- `web/src/modules/<module-slug>/` 前端贡献；
+- `server/tests/Modules/<Vendor>/<Module>/` Tenant 安全测试骨架。
+
+它不会创建 `modules/<slug>/{server,web}`，也不会生成全小写 PHP namespace。后端模块使用
+`app\\Modules\\<Vendor>\\<Module>` PSR-4 namespace。
+
+## 开发约束
+
+- `module.json` 是 Module 业务身份、依赖、资源和 owned tables 的事实源；
+- `Http/routes.php` 是 ThinkPHP 路由并必须挂载宿主要求的认证、Module 和权限中间件；
+- Tenant-owned Model 依赖全局 TenantScope，业务代码禁止手写 tenant 过滤或绕过 Scope；
+- Application Service 直接使用 ThinkPHP Model/Query/Scope 和构造函数注入，不新增仅用于隔离框架
+  的 Repository/Port/Adapter；
+- `Contracts/` 只承载真实的跨 Module 公共合同。
+
+## 同步、测试与打包
+
+```bash
+php think module:sync --module=<module.key>
+php think module:check <module.key>
+php think module:pack <module.key> --output=<absolute-path>/<module>-<version>.tar
+```
+
+`module:check` 只是作者静态预检。发布前仍需运行该 Module 的真实行为、Tenant/RBAC、migration、
+前端或浏览器测试，并按交付通道满足签名、摘要和资格要求。测试占位脚本不能作为通过证据。

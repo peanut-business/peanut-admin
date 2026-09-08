@@ -11,6 +11,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-2026-08-05-core-packages-production-claude-review-result` | `docs/2026-08-05-core-packages-production-claude-review-RESULT.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-architecture-application-module-blueprint-adoption-roadmap` | `docs/architecture/application-module-blueprint/adoption-roadmap.md` | `planned` | `plan` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-coding-standards` | `docs/architecture/application-module-blueprint/coding-standards.md` | `current` | `decision` | `architecture` |
+| `pa-docs-architecture-application-module-blueprint-coding-standards` | `docs/architecture/application-module-blueprint/coding-standards.md` | `current` | `decision` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-index` | `docs/architecture/application-module-blueprint/README.md` | `current` | `index` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-module-conventions` | `docs/architecture/application-module-blueprint/module-conventions.md` | `current` | `decision` | `architecture` |
 | `pa-docs-architecture-application-module-blueprint-reference-research` | `docs/architecture/application-module-blueprint/reference-research.md` | `current` | `reference` | `architecture` |
@@ -27,6 +28,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-architecture-module-architecture-refinement-appendix` | `docs/architecture/module-architecture-refinement-appendix.md` | `deprecated` | `architecture` | `architecture` |
 | `pa-docs-architecture-module-development-release-separation-plan` | `docs/architecture/module-development-release-separation-plan.md` | `deprecated` | `plan` | `product-architecture` |
 | `pa-docs-architecture-module-execution-context-contract` | `docs/architecture/module-execution-context-contract.md` | `current` | `architecture` | `architecture` |
+| `pa-docs-architecture-module-publication-contract` | `docs/architecture/module-publication-contract.md` | `current` | `architecture` | `release-engineering` |
 | `pa-docs-architecture-mt02-article-tenant-ownership-contract` | `docs/architecture/mt02-article-tenant-ownership-contract.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-mt02-default-tenant-bootstrap-contract` | `docs/architecture/mt02-default-tenant-bootstrap-contract.md` | `archived` | `architecture` | `architecture` |
 | `pa-docs-architecture-mt03-nonsql-tenant-isolation-contract` | `docs/architecture/mt03-nonsql-tenant-isolation-contract.md` | `archived` | `architecture` | `architecture` |
@@ -153,6 +155,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-peanut-admin-user-manual` | `docs/peanut-admin-user-manual.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-plans-application-scaffold-version-contract-queue` | `docs/plans/application-scaffold-version-contract-queue.md` | `current` | `plan` | `application-maintainers` |
 | `pa-docs-plans-consumer-ready-product-plan` | `docs/plans/consumer-ready-product-plan.md` | `current` | `plan` | `product-architecture` |
+| `pa-docs-plans-gemini-refactor-convergence-audit-2026-09-09` | `docs/plans/gemini-refactor-convergence-audit-2026-09-09.md` | `current` | `plan` | `product-architecture` |
 | `pa-docs-plans-luna-max-source-audit-report-2026-09-08` | `docs/plans/luna-max-source-audit-report-2026-09-08.md` | `current` | `evidence` | `product-architecture` |
 | `pa-docs-plans-luna-max-source-preaudit-2026-09-08` | `docs/plans/luna-max-source-preaudit-2026-09-08.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-plans-multi-tenancy-platform-management-plan` | `docs/plans/multi-tenancy-platform-management-plan.md` | `planned` | `plan` | `product-architecture` |

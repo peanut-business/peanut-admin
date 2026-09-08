@@ -81,13 +81,23 @@
     },
     {
       "id": "module-manifest",
-      "paths": ["server/app/Modules/**/module.json", "server/app/Modules/**/Module.php"],
+      "paths": ["server/app/Modules/**/module.json", "server/app/Modules/**/Module.php", "server/app/Modules/**/ModuleProvider.php"],
       "classifications": ["technical", "developer-site"],
       "upstream": ["module.json", "module bootstrap"],
-      "technical_docs": ["docs/module-development-guide.md", "docs/architecture/module-execution-context-contract.md"],
+      "technical_docs": ["docs/module-development-guide.md", "docs/plugin-module-development.md", "docs/architecture/module-execution-context-contract.md", "docs/architecture/module-publication-contract.md"],
       "site_docs": ["docs-site/guide/module-development.md"],
       "generated": [],
       "reason": "Module identity, ownership, permission and lifecycle projections follow the manifest."
+    },
+    {
+      "id": "module-publication",
+      "paths": ["plugins.lock", "plugins/*/plugin.json", "server/app/command/ModulePack.php", "server/app/command/BundlePack.php", "server/app/platform/service/plugin/PluginPackageArchiveService.php", "server/app/platform/service/plugin/ModulePackagePreflight.php", "server/resources/schemas/plugin.schema.json", "server/tests/Productization/AllModulesPackagingTest.php"],
+      "classifications": ["architecture-decision", "technical", "developer-site"],
+      "upstream": ["Module source and manifests", "deterministic package builder", "bundled Plugin lock"],
+      "technical_docs": ["docs/architecture/module-publication-contract.md", "docs/architecture/consumer-module-lifecycle-contract.md", "docs/plugin-module-development.md", "docs/release-engineering.md"],
+      "site_docs": ["docs-site/guide/module-development.md", "docs-site/guide/application-module-lifecycle.md", "docs-site/reference.md"],
+      "generated": [],
+      "reason": "Module package contents, bundled identity, qualification and publication state must move as one explicit release contract."
     },
     {
       "id": "resource-environment",

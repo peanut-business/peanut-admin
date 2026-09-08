@@ -19,8 +19,8 @@
 | 产物 | 固定身份 | 当前状态 | 能证明什么 |
 | --- | --- | --- | --- |
 | Core Storage Driver 源码 | `peanut-admin-core` `9358686fee873dd235489c8794abf556fd70ec4f` | 已在 Core `dev` | 四操作合同、对象 key、HTTP transport 和四个 Driver 已实现；不证明已发布或被独立应用采用 |
-| 独立应用 canonical | `peanut-admin` `72fcf7b9bfbae62aa5329f99c49ec1356435e633` | 当前 `dev` | 仍装配应用自己的 StorageDriver/四 Driver，锁定 Core/Web `0.1.0-alpha.12` |
-| 独立应用采用候选 | `peanut-admin` `590e61830d0e62c0bf25425dfe43d69ae894b726` | 独立 worktree 保留 | 曾完成指向 Core 新边界的源码改造和聚焦静态检查；未合 canonical、未更新 lock、未形成正式消费 |
+| 独立应用 canonical | `peanut-admin` `e38e45d0e564361832bc50839be68f165a409229` | 当前 `dev` | 仍装配应用自己的 StorageDriver/四 Driver，锁定 Core/Web `0.1.0-alpha.12` |
+| 独立应用采用候选 | `peanut-admin` `64460af8`（由旧 `590e6183` 重放） | 已拉平到当前 `dev`，独立 worktree 保留 | 保留当前 Edition-aware ledger/tenant owner 逻辑并改用 Core Driver；未更新 Composer lock，不能加载 alpha.12 不含的类，禁止合入或运行时采用 |
 | 已发布 Core | source `9089516a18f19e19a048683594087e0b4ffc5455`；Composer split `9017212da0da63f445d693be94d533f681c6dc92` | `0.1.0-alpha.12` | 是当前应用锁身份；不含 `9358686` 新增的 Storage Driver |
 
 ## 候选边界
@@ -37,6 +37,31 @@ localPath(objectKey)
 Core 的 `StorageObjectKey` 只做技术 key 校验。Local、Aliyun、Qcloud、Qiniu Driver 接受宿主装配的必要根目录、SDK client 或 HTTP transport。Core 不读取当前 Tenant 的全局可变配置，不缓存 Tenant/account 可变 client，不取得应用文件生命周期或高层 FileMedia Schema 的 owner。
 
 独立应用继续拥有 provider SDK 依赖与装配、账户/space 路由、凭据解密、用途、授权、对象账本、`ObservedStorageDriver`、补偿和产品生命周期。对象 prefix 不代替授权，不新增 fallback；整文件 HTTP 下载仍是独立优化议题。
+
+`64460af8` 的 `StorageDriverFactory` 仍保留 Local、Aliyun OSS、Tencent COS 与 Qiniu 四种 provider；
+提取的目标是移动低层驱动所有权，不是减少厂商支持。Core 修复候选 `22f6a6c` 另修正七牛返回 key
+一致性和删除 endpoint，但尚未进入 Core `dev` 或已发布包。Provider “源码存在”与“可用”也必须分开：
+只有应用锁定包含这些类的新 Core 不可变版本，并在同一候选上完成每个受影响 provider 的装配、上传、下载、
+删除、错误补偿与凭据隔离验证后，才能把对应 provider 标记为可用。
+
+采用 Core `LocalStorageDriver` 时必须重新审定路径与符号链接边界、原子写入和失败补偿。此前在“应用尚未采用
+Core LocalDriver”前提下接受的风险不能自动继承给 `64460af8`。
+
+## 高容量媒体 Spike 的来源与处置
+
+高容量实验已固定在本地分支 `quarantine/high-capacity-media-storage-spike-20260831`，head
+`e915bea74cba1d6d646212d51014474a94f5e1fe`。它不是当前 `dev`/`main` 的祖先，也不是多个产品功能分支
+合并后的 Runtime；Git 谱系是基于旧应用提交 `4e047485` 的三个连续实验提交：`e3c940ea`、`a5b2f604`、
+`e915bea7`。
+
+实验目录验证了 SeaweedFS 4.44 S3 thin adapter、multipart intent/part/complete、checksum/range、Tenant/ACL/
+object key、quota reservation、scan/quarantine、derivative、retention/legal hold/deletion 以及容量/成本模型。
+现有证据只覆盖约 5 MB 单节点样本和 11 项实验检查；没有证明并发配额、GB/TB 性能、HA、Object Lock/KMS、
+生产安全或与 `official.file`/Rich Text 的正式生命周期集成。
+
+因此当前处置是：保留 quarantine 分支作为设计与测试输入，不合入产品 Runtime，不部署实验 SeaweedFS，
+也不把它写成厂商存储支持的一部分。后续若领取大媒体能力，应从当前 `dev` 新建纵向微批次，复用已经验证的
+协议语义，并重新接入 FileMedia/Storage owner、Tenant/RBAC、配额、扫描、补偿和真实容量资格。
 
 ## 决定后的最小队列
 

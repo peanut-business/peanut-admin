@@ -72,6 +72,10 @@ php think module:pack acme.inventory \
 通过独立受信渠道交付 archive SHA-256、签名 key ID 和公钥配置；不要提交私钥或把它放入诊断包。
 直接分发受信 archive 是当前支持面。Marketplace、自动下载、在线上传和远程命令不在支持面。
 
+`module:pack` 只生成 package candidate，不会发布 archive、修改 `plugins.lock`、开通 TenantModule，
+也不能证明 PHP/npm 组件名已存在于外部 Registry。bundled Module、独立 qualified Package 和外部
+published Package 是三个不同状态。
+
 ## 4. 安装 Package
 
 开发态的 Standalone 派生应用可以直接验证源码和数据库生命周期：

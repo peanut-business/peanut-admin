@@ -1,0 +1,45 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+$root = realpath(dirname(__DIR__));
+if (!is_string($root)) {
+    fwrite(STDERR, "ERROR: project root is unavailable\n");
+    exit(2);
+}
+
+$testsRoot = $root . '/server/tests';
+$violations = [];
+$iterator = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($testsRoot, FilesystemIterator::SKIP_DOTS),
+);
+
+foreach ($iterator as $entry) {
+    if (!$entry->isFile() || $entry->isLink() || $entry->getExtension() !== 'php') {
+        continue;
+    }
+    $relative = substr($entry->getPathname(), strlen($root) + 1);
+    if (str_starts_with($relative, 'server/tests/fixtures/')) {
+        continue;
+    }
+    $source = file_get_contents($entry->getPathname());
+    if (!is_string($source) || strlen($source) > 1024) {
+        continue;
+    }
+    $hasUnconditionalSuccessExit = preg_match('/\becho\b[\s\S]*\bpass(?:ed)?\b[\s\S]*\b(?:exit|die)\s*(?:\(\s*0\s*\)|0)\s*;/i', $source) === 1;
+    $hasRealControlOrAssertion = preg_match('/\b(?:if|foreach|for|while|function|class|interface|trait|throw|assert)\b/', $source) === 1;
+    if ($hasUnconditionalSuccessExit && !$hasRealControlOrAssertion) {
+        $violations[] = $relative;
+    }
+}
+
+sort($violations, SORT_STRING);
+if ($violations !== []) {
+    fwrite(STDERR, "ERROR: unconditional test pass stubs are forbidden:\n");
+    foreach ($violations as $path) {
+        fwrite(STDERR, "  {$path}\n");
+    }
+    exit(1);
+}
+
+echo "TEST-INTEGRITY-001 passed\n";

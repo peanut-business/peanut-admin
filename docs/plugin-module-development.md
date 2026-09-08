@@ -1,73 +1,89 @@
 # 用 Module 开发独立业务
 
-> 本文是 Peanut Admin 模块开发的官方指南。本文已经过彻底重构，去除了历史中的 DDD 与代码分裂包袱。请仔细阅读并遵循本文所描述的“全栈自闭环”与“实用主义”心智模型。
+> 本文描述当前源码与生成器真实支持的 Module 结构。发布状态和交付门禁见
+> [Module 发布与制品合同](architecture/module-publication-contract.md)。
 
-## 5 分钟速读
+## 1. Module、Plugin 与租户授权
 
-Peanut Admin 把四件事分开：
+Peanut Admin 把四层事实分开：
 
-- **Module** 是业务代码、前端资产、路由和数据的**全栈自闭环** owner。
-- **Plugin** 是一个或多个 Module 的不可变安装包（通常表现为 `modules/<plugin-name>` 目录）。
-- **Host**（宿主应用如 `adminapi`）负责校验 Plugin、执行 Module migration、并在运行时**强行接管鉴权**。
-- **TenantModule** 表示某个 Tenant 是否开通 Module；成员权限是另一层判断。
+- **Module** 拥有业务代码、数据表、权限、菜单、路由和前端贡献；
+- **Plugin Package** 是一个或多个 Module 的不可变交付包；
+- **TenantModule** 决定租户是否开通 Module；
+- **RBAC** 决定租户成员是否可以执行具体能力。
 
-一个功能真正可用，需要同时满足：
+安装 Package 不会自动开通 TenantModule，也不会授予 RBAC。受保护 HTTP 路由必须经过宿主登录、
+Module 生命周期和权限中间件，不能把 `module.json` 中的权限声明当作运行时鉴权。
 
-```text
-Plugin active
-  -> TenantModule enabled
-      -> TenantMember 拥有功能权限和数据权限
-          -> Host 中间件拦截并组装 TenantContext
-              -> 放行到 Module Controller
-```
+## 2. 当前真实目录
 
-## 真实目录与所有权（全栈自闭环）
-
-一个标准的业务模块（如 `official-article`）物理布局如下：
+`module:create` 使用 `ModuleHostLayout` 生成三个 key 派生根目录。以 `official.article` 为例：
 
 ```text
-modules/official-article/
-├── module.json                 # 唯一身份、依赖、资源声明
-├── server/                     # 后端自闭环代码
-│   ├── routes.php              # 声明式路由映射（纯数组，不含鉴权拦截代码）
-│   ├── controller/             # 按宿主端口划分，如 adminapi/, api/
-│   ├── service/                # 业务逻辑、用例、事务边界
-│   ├── model/                  # 继承 TenantOwnedModel 等基类的模型
-│   ├── validate/               # 请求白名单与格式验证
-│   └── database/migrations/    # 模块自有表的结构变更
-└── web/                        # 前端独立页面与组件
-    ├── package.json
-    └── src/
-        ├── api/                # 本模块专有的前端 API 定义
-        └── views/              # Vue 页面组件
+server/app/Modules/Official/Article/
+├── module.json
+├── ModuleProvider.php
+├── Contracts/
+├── Http/routes.php
+├── Http/Controller/
+├── Application/
+├── Infrastructure/Persistence/
+├── Model/
+├── Resources/
+├── Database/Migrations/
+└── composer.json
+
+web/src/modules/official-article/
+├── contribution.ts
+├── api.ts
+├── views/
+└── package.json
+
+server/tests/Modules/<Vendor>/<Module>/
+├── TenantSecurityDriver.php
+└── TenantSecurityTest.php
 ```
 
-> **绝对禁止**在模块中创建 `Application/`、`Domain/`、`Infrastructure/` 这类带有深重 DDD 历史包袱的目录。统一回归 `controller -> service -> model` 的极简心智。
+Plugin 身份另存于 `plugins/<module.key>/plugin.json`，bundled 部署身份由根目录 `plugins.lock`
+固定。当前 Runtime 不使用 `modules/<slug>/{server,web}` 布局，也不使用全小写 PHP namespace。
 
-## 开发与心智规范
+## 3. 实现边界
 
-为了保证所有模块的开发体验一致，所有开发者必须遵循《[核心代码规范与认知模型统一指南](architecture/application-module-blueprint/coding-standards.md)》中的黄金法则：
+- Controller 只负责 HTTP 输入输出；Application Service 负责用例和事务边界；Model 继承适用的
+  `TenantOwnedModel` 并依赖全局 TenantScope。
+- 应用服务直接使用 ThinkPHP Model、Query 和 Scope，并通过组合根完成构造函数注入。不得仅为了
+  隔离 ThinkPHP 而新增 Repository、Port、Persistence Adapter 或兼容桥。
+- `Contracts/` 只用于 Module 对外公开且确有跨 Module 消费者的稳定命令/查询合同；不得把每个内部
+  Service 镜像成 Interface。
+- `Infrastructure/` 只容纳确有必要的外部系统或技术适配。Module 自有表仍由本 Module 的 Model/Scope
+  管理，不通过通用 Repository 包装。
+- 业务代码不得手写 `where('tenant_id', ...)`、`forTenant()` 或绕过全局 Scope；可信 Tenant 上下文
+  缺失时必须 fail-closed。
+- `Http/routes.php` 是可执行的 ThinkPHP 路由文件，并负责挂载宿主要求的中间件。当前管理端接口形如
+  `/adminapi/official.article.list`；URL 不要求与物理目录逐段同名。
 
-1. **命名空间与物理目录全小写**：
-   - 文件目录：`controller/adminapi/`
-   - 命名空间：`namespace modules\official_article\controller\adminapi;`
-2. **鉴权分离**：
-   - `routes.php` 只是声明 `'permission' => 'official.article.list'`，绝不在此写 `LoginMiddleware`。
-   - 宿主在启动时会自动读取并包裹拦截器。
-3. **数据隔离透明化**：
-   - 模块的模型直接继承 `app\common\model\TenantOwnedModel`。
-   - 模块开发者无需在代码中手动拼接 `WHERE tenant_id = ?`，底层 Global Scope 会全自动执行“Fail-Closed”拦截。
-4. **服务异常阻断**：
-   - 业务校验失败时，直接在 `service/` 层抛出：`throw new BusinessException('库存不足');`。
-   - 绝不返回错误数组让 Controller 去 `if-else`。
-5. **URL 绝对映射**：
-   - 接口路径 `/[端]/[模块名]/[业务名词]/[动作]` 必须精确映射物理目录。
-   - 例：`/adminapi/official_article/article/add` -> `modules/official-article/server/controller/adminapi/ArticleController.php@add`。
+## 4. 开发工作流
 
-## 安装与打包规则
-
-打包与分发命令仍然使用标准的 CLI 工具：
 ```bash
-php think module:pack <module.key>
+cd server
+php think module:create <module.key> [--vendor=<Vendor>]
+php think module:check <module.key>
+php think module:sync --module=<module.key>
 ```
-安装包不会自动开通 `TenantModule`，也不会给租户成员授予 RBAC 权限。这一切都由宿主和租户管理员在运行时决定。
+
+`module:check` 是只读作者预检，覆盖 manifest、版本、依赖、权限、菜单、migration、前端入口和
+Package。它不是业务行为、Tenant 隔离、浏览器或厂商集成测试的替代品。
+
+实现完成后，运行该 Module 的真实聚焦测试；不得把测试正文替换成输出 `PASSED` 后 `exit(0)` 的
+占位脚本。需要暂缓的 Gate 应记录为明确停止线，不能伪装成通过。
+
+## 5. 打包与交付
+
+```bash
+cd server
+php think module:pack <module.key> --output=<absolute-path>/<module>-<version>.tar
+```
+
+用于跨环境交付时应同时提供 Ed25519 签名选项，并通过可信渠道传递 archive SHA-256、公钥身份和
+兼容性信息。`composer.json` 与前端 `package.json` 是 Package 内的组件身份，不代表已经分别发布到
+Composer/npm Registry。完整状态、资格和 Rich Text 当前结论见发布合同。

@@ -17,16 +17,31 @@ function allModulesPackagingExpect(bool $condition, string $message): void
 $serverRoot = dirname(__DIR__, 2);
 $projectRoot = dirname($serverRoot);
 $resultsPath = $argv[1] ?? '/tmp/module-packages-test/packaging-results.json';
-$expectedModules = [
-    'official.article',
-    'official.file',
-    'official.task',
-    'official.notification',
-    'official.member',
-    'official.payment',
-    'official.oauth',
-    'official.import-export',
-];
+$pluginLock = json_decode(
+    (string)file_get_contents($projectRoot . '/plugins.lock'),
+    true,
+    64,
+    JSON_THROW_ON_ERROR,
+);
+allModulesPackagingExpect(
+    is_array($pluginLock['plugins'] ?? null) && array_is_list($pluginLock['plugins']),
+    'Bundled Plugin lock is invalid',
+);
+$expectedModules = [];
+foreach ($pluginLock['plugins'] as $plugin) {
+    allModulesPackagingExpect(is_array($plugin), 'Bundled Plugin lock entry is invalid');
+    foreach ($plugin['modules'] ?? [] as $module) {
+        $moduleKey = is_array($module) ? ($module['key'] ?? null) : null;
+        if (!is_string($moduleKey) || !str_starts_with($moduleKey, 'official.')) {
+            continue;
+        }
+        allModulesPackagingExpect(!isset($expectedModules[$moduleKey]), "Bundled official Module is duplicated: {$moduleKey}");
+        $expectedModules[$moduleKey] = true;
+    }
+}
+$expectedModules = array_keys($expectedModules);
+sort($expectedModules, SORT_STRING);
+allModulesPackagingExpect($expectedModules !== [], 'Bundled official Module inventory is empty');
 
 allModulesPackagingExpect(is_file($resultsPath), "Packaging result evidence is missing: {$resultsPath}");
 $evidence = json_decode((string)file_get_contents($resultsPath), true, 64, JSON_THROW_ON_ERROR);
@@ -46,7 +61,9 @@ foreach ($results as $result) {
     allModulesPackagingExpect(is_string($moduleKey) && !isset($resultsByModule[$moduleKey]), 'Packaging result identity is invalid');
     $resultsByModule[$moduleKey] = $result;
 }
-allModulesPackagingExpect(array_keys($resultsByModule) === $expectedModules, 'Official Module packaging evidence is incomplete or reordered');
+$resultModules = array_keys($resultsByModule);
+sort($resultModules, SORT_STRING);
+allModulesPackagingExpect($resultModules === $expectedModules, 'Official Module packaging evidence is incomplete or contains an unknown Module');
 
 $availableVersions = [];
 $sourcePreflight = new ModulePackagePreflight($projectRoot);

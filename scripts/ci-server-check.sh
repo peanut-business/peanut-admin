@@ -19,6 +19,7 @@ if [[ "$mode" != '--fast' && "$mode" != '--full' ]]; then
 fi
 
 php scripts/check-admin-api-permissions.php
+php scripts/check-test-integrity
 
 lint_php() {
   local path

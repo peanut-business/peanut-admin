@@ -43,7 +43,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `php scripts/create-app --name=<name> --slug=<slug> --package=<vendor/name> --target=<absolute-path> --edition=standalone\|multi-tenant [--application-version=<semver>] [--profile=minimal\|standard\|full]` | 从当前不可变 scaffold 创建指定 Edition 的全新应用；目标必须是新的绝对路径 |
 | `php think module:create <module.key> [--vendor=<Vendor>]` | 按 Module key 生成唯一 backend/frontend/Tenant 安全骨架；已存在目标时不覆盖 |
 | `php think module:check <module.key> [--kernel-version=<semver>] [--package=<tar>] [--sha256=<hash>]` | 作者与自动化共用的八项只读 preflight；不连接数据库 |
-| `php think module:pack <module.key> [--output=<tar>] [--signing-key-id=<id> --signing-secret-key-file=<file>]` | 生成确定性自包含 tar 和 SHA-256；可选 Ed25519 签名，私钥不得进入仓库 |
+| `php think module:pack <module.key> [--output=<tar>] [--signing-key-id=<id> --signing-secret-key-file=<file>]` | 生成确定性 package candidate 和 SHA-256；可选 Ed25519 签名，不会发布或修改 `plugins.lock` |
 | `php think module:install-package <tar> [--sha256=<hash>] [--signature-key-id=<id>]` | development/debug/Standalone 中验证并安装；对同一不可变制品重复执行是 reactivation，不开通 Tenant 或授权成员 |
 | `php think module:update-package <tar> [--sha256=<hash>] [--signature-key-id=<id>] --dry-run` | development/debug/Standalone 中验证并计划同一 Package 的显式更新，产品状态零写入 |
 | `php think module:update-package <tar> [--sha256=<hash>] [--signature-key-id=<id>]` | 应用严格更高的不可变版本；不是生产 HTTP 上传入口 |
