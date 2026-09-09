@@ -53,6 +53,14 @@ Application quarantine 的 148 个未跟踪文件含 139 个 Python 和 9 个 PH
 ModuleProvider。两边现已分别用 `1b2b66cd`、`90bf92f` 固定，不再依赖易失工作树；是否删除 branch 仍须
 等独有价值吸收/弃用登记完成。
 
+最终收敛清理已经删除 14 个 Application 临时 worktree、4 个 Core 临时 worktree、9 个已被 Application
+`dev` 完整包含或补丁等价吸收的本地 feature branch，以及 4 个已被 Core `dev` 吸收的本地 feature
+branch。远端两仓均只存在 `dev/main`，没有遗留 feature branch。旧的
+`feat/private-package-development-adoption@151a1bd5` 仍含 9 个没有补丁等价进入 `dev` 的旧设计提交，不能
+当作“已合并”强删；它已改名为
+`quarantine/superseded-private-package-development-adoption-20260909`，与两个原始大重构 quarantine 一并
+保留取证。P0-E 的三组持久证据已移动到忽略路径 `.local/evidence/v3014/`，不再依赖已删除 worktree。
+
 ## 3. 已合入 Gemini 变更
 
 ### 3.1 `687da34a`：Controller Context 可选注入
@@ -248,8 +256,10 @@ Registry 安装、不对公网暴露开发服务器、生产只发布构建输�
 1. 已完成的 v3.0.14 收敛、P0-E、Release 和多租户 Demo 采用保持不可变证据；
 2. 依赖安全升级进入新的开发候选，不回写已发布 tag 或复用 v3.0.14 资格；
 3. Rich Text 独立发布、真实 Provider 资格与高容量媒体产品化分别使用独立 Gate，不互相冒充；
-4. 只有独有价值均已吸收或明确弃用、没有活跃 owner/租约，且未跟踪文件清单已有恢复证据，才精确删除
-   quarantine worktree、临时脚本和失效分支。不得用广域 reset/clean 删除未知内容或共享数据。
+4. 最终清理已按分支补丁等价、租约和运行资源逐项核验：两个过期租约已清除；本轮 5 个远端 staging
+   目录和 3 组失败的 v3.0.14 候选镜像已精确删除。当前候选
+   `3.0.14-demo-153dba557cd5`、正式 Standalone `3.0.5`、历史镜像缓存和数据库卷均未触碰；不得用广域
+   reset/clean/prune 删除未知内容或共享数据。
 
 源码发布与生产部署继续是两个状态。用户授权允许执行到生产，但任何中间 Gate 失败只阻塞其直接下游，
 不能通过缩减测试、沿用旧资格或把 Spike 证据升级命名来绕过。
@@ -269,4 +279,5 @@ Registry 安装、不对公网暴露开发服务器、生产只发布构建输�
 | Core 正式发布 | 已完成 | Alpha.13 source/split/tag/GitHub Release/npm/Packagist 已一致 |
 | 应用正式发布与生产 | 部分完成 | v3.0.14 已发布；登记的 disposable multi-tenant production-candidate 已全新部署并通过回执、103 表、四容器和四域 HTTPS smoke；既有 Standalone production 未升级，认证浏览器 smoke 未获单独凭据出站授权 |
 | 前端依赖安全 | 已完成可修项（带期限例外） | `1c836651` / `2803cdc6` 已使 Platform、PC、Web high 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 按上文 accepted-risk 至 2026-10-09 复核；v3.0.14 不描述为漏洞清零 |
-| quarantine 破坏性清理 | 可恢复证据已固定、暂不删 branch | `1b2b66cd` / `90bf92f`；待独有价值最终登记后精确清理 |
+| 临时资源与分支收敛 | 已完成当前可安全清理项 | 14+4 临时 worktree、9+4 已吸收 feature branch、2 个过期租约、5 个远端 staging 目录和 3 组失败候选镜像已清理；当前运行资源未触碰 |
+| quarantine 取证保留 | 已固定、禁止整体合入 | `1b2b66cd` / `90bf92f` / `151a1bd5` 仍含未吸收历史，只保留 branch，不保留脏 worktree |
