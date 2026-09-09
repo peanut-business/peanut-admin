@@ -222,6 +222,21 @@ annotated `v3.0.14`；双 Edition 安装包和 3.0.13 → 3.0.14 同 Edition 升
 `main@20a284d7bf4acc88313f29b8fe094033bf635c5c` 补齐严格 `DEPLOYMENT_RECEIPT.json`：宿主与运行镜像必须
 逐字一致，备份与无 Git Runtime 不再消费发布前必然为 pending 的嵌入 metadata。
 
+发布后依赖复核没有停在报告层。GPT-6 候选 `1c836651` 将 Platform 的 Axios/Vite、PC 的
+nanoid/SVGO、Web 的 Axios/Vite/Tiptap 和 UniApp 可独立升级的 i18n/解析/压缩/网络依赖正式更新；
+主控 follow-up `2803cdc6` 用仓内静态属性顺序表替代零维护且携带 PostCSS 7 的
+`stylelint-config-rational-order`，没有删除样式规则或降低 audit 等级。四端冻结安装和生产构建均通过；
+在线最终审计为 Platform `0 high / 3 moderate`、PC `0`、Web `0 high / 5 moderate`、UniApp
+`1 high / 16 moderate / 38 low`。不同包管理器的计数口径不可直接相加。
+
+唯一剩余 high 是 UniApp 的 `vite@5.2.8`：当前采用的 DCloud Vue 3 工具链及 2026-09-09 查询到的
+最新同系列包都把它精确声明为 peer，强行覆盖会脱离厂商支持矩阵。风险 owner 为 `frontend/uniapp`；
+范围仅是受控本地/CI 构建与开发服务器，不进入 PHP/静态生产 Runtime；补偿措施是锁文件冻结、只从登记
+Registry 安装、不对公网暴露开发服务器、生产只发布构建输出。该窄例外状态为 **accepted-risk**，
+最迟在 `2026-10-09` 或下一个应用 Release 固定候选前（以先到者为准）复核 DCloud/Vite 支持矩阵；
+到期未关闭时阻断新 Release 的“漏洞清零”与安全资格声明，但不回写或撤销已经发布的 v3.0.14。
+其余 moderate/low 由各前端 owner 在同一复核窗口处理，不得通过 ignore、skip 或 audit-level 降级消失。
+
 仍需正式关闭：
 
 - Rich Text 独立发布仍缺浏览器、协同服务、签名、SBOM、review/漏洞响应 owner 与明确渠道；
@@ -253,5 +268,5 @@ annotated `v3.0.14`；双 Edition 安装包和 3.0.13 → 3.0.14 同 Edition 升
 | High-capacity media | 已审计/隔离 | 不进入 Runtime；后续独立能力任务 |
 | Core 正式发布 | 已完成 | Alpha.13 source/split/tag/GitHub Release/npm/Packagist 已一致 |
 | 应用正式发布与生产 | 部分完成 | v3.0.14 已发布；登记的 disposable multi-tenant production-candidate 已全新部署并通过回执、103 表、四容器和四域 HTTPS smoke；既有 Standalone production 未升级，认证浏览器 smoke 未获单独凭据出站授权 |
-| 前端依赖安全 | 修复中 | v3.0.14 日志确认遗留 high/moderate advisory，已启动下一候选正式升级；不得把 v3.0.14 描述为漏洞清零 |
+| 前端依赖安全 | 已完成可修项（带期限例外） | `1c836651` / `2803cdc6` 已使 Platform、PC、Web high 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 按上文 accepted-risk 至 2026-10-09 复核；v3.0.14 不描述为漏洞清零 |
 | quarantine 破坏性清理 | 可恢复证据已固定、暂不删 branch | `1b2b66cd` / `90bf92f`；待独有价值最终登记后精确清理 |
