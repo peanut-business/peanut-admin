@@ -59,7 +59,7 @@ scripts/p0e-runtime-qualification plan \
   --cache-dir "/Users/xing/.cache/peanut-admin/p0e-${run_id}"
 ```
 
-claim 必须精确绑定固定 resource/environment/container endpoint、六个数据库、两种 deployment mode、
+claim 必须精确绑定固定 resource/environment、Host 与 container 两个 endpoint、六个数据库、两种 deployment mode、
 HTTP/Docs/数据库隧道三个端口、隧道身份、worktree、candidate tree、compose project、browser session、output/cache 路径和
 lease proof 目录。`plan` 会在 claim 前检查固定 Browser CLI 的可执行性和版本；缺项或多项都拒绝运行，
 不会启动数据库、容器或生成应用。准备本地工具：
@@ -128,7 +128,8 @@ scripts/p0e-runtime-qualification run "${common[@]}"
 scripts/p0e-runtime-qualification resume "${common[@]}"
 ```
 
-resume 跳过已通过 group，只重跑失败或未完成组。需要生产 Compose 时，runner 先启动自己持有的
+Host 上执行的安装、Schema、Module 与服务测试只消费 Host endpoint；生产 Compose 只消费 container
+endpoint。resume 跳过已通过 group，只重跑失败或未完成组。需要生产 Compose 时，runner 先启动自己持有的
 回环 SSH 隧道并验证端口可达；失败与成功终态都会终止该精确子进程。八组全部通过后，runner 停止 Docs listener，
 删除本 run_id 的六个数据库、Compose containers/volumes/local images 和 cache，核验所有残留为
 零，保留脱敏 output evidence，最后 release lease。失败终态不会自动 release 或清理取证资源。

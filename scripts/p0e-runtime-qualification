@@ -458,6 +458,11 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         ("consumer", "container"),
         (
             "endpoint",
+            f"{registered['upstream_endpoint']['host']}:"
+            f"{registered['upstream_endpoint']['port']}",
+        ),
+        (
+            "endpoint",
             f"{registered['container_endpoint']['host']}:"
             f"{registered['container_endpoint']['port']}",
         ),
@@ -924,7 +929,11 @@ class Runner:
         path = self.backend_env_path(project_root)
         if path.is_symlink():
             fail(f"P0-E backend environment must not be a symlink: {path}")
-        values = self.backend_values(database, mode)
+        values = self.backend_values(
+            database,
+            mode,
+            consumer="container" if container_runtime else "host",
+        )
         if container_runtime:
             values["PEANUT_RESOURCE_LEASE_PROOF"] = self.plan["lease_proof_container_path"]
         temporary = path.with_suffix(path.suffix + ".tmp")

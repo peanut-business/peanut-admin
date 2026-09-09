@@ -152,12 +152,13 @@ foreach ($plan['lease_resources'] ?? [] as $resource) {
     $type = (string)($resource['type'] ?? '');
     $resourceCounts[$type] = ($resourceCounts[$type] ?? 0) + 1;
 }
-$expect(count($plan['lease_resources'] ?? []) === 29, 'manual lease resources must have 29 exact rows');
+$expect(count($plan['lease_resources'] ?? []) === 30, 'manual lease resources must have 30 exact rows');
 $expect(($resourceCounts['mysql-db'] ?? null) === 6, 'claim must bind six exact fresh-only databases');
 $expect(($resourceCounts['deployment-mode'] ?? null) === 2, 'claim must bind both deployment modes');
 $expect(($resourceCounts['port'] ?? null) === 3, 'claim must bind all generic port conflicts');
 $expect(($resourceCounts['database-tunnel'] ?? null) === 1, 'claim must bind the database tunnel');
 $expect(($resourceCounts['browser-host'] ?? null) === 2, 'claim must bind the separate browser Host boundaries');
+$expect(($resourceCounts['endpoint'] ?? null) === 2, 'claim must bind Host and container database endpoints');
 
 $runnerSource = (string)file_get_contents($runner);
 $unsupportedRunnerFragments = [

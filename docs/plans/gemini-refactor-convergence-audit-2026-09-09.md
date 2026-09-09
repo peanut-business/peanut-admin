@@ -140,6 +140,12 @@ cache、output 与 lease 均为零残留。首次失败候选的 evidence 保留
 纳入版本化合同；因为资格基础设施和生成应用中的环境门禁均改变，`f023760c/v3014g` 只保留失败证据，
 不得 resume 或继承为新候选资格。
 
+新合同的首轮完整运行 `dd3db2d8/v3014h` 随后在 `standalone-fresh` 揭示同一边界的另一半：宿主 PHP
+安装仍沿用历史 `container` consumer。旧地址相同时这一错误被掩盖，端点分离后即按预期 fail-closed。
+处置不再增加例外，而是把 Host 与 Container 两个 endpoint 同时纳入 lease：所有宿主安装/Schema/
+Module 测试显式消费 Host endpoint，生产 Compose 显式消费隧道 endpoint，环境门禁分别核验登记地址。
+这会再次形成新候选；`v3014h` 只保留生成应用组通过和边界失败证据。
+
 后续恢复规则：
 
 1. 不复制 quarantine 的 74 个测试文件；以 `dev` 原测试作为断言源；
