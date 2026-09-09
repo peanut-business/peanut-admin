@@ -79,6 +79,8 @@ Core 首次固定候选 `ff3a58088d93ba08a3382dfdc941a92b22ba02ce` 在供应链�
 
 公开投影使用 Application 已登记的 Cloudflare Pages 文档站。Core 的源码与编辑链接已修正到实际 `peanut-opensource/peanut-admin-core` 仓库；其 GitHub Pages 配置查询返回 404，缺少可确认的现行公开托管入口，因此不猜新域名或把旧 VitePress base/sitemap 当在线证明。Core 文档本身继续由版本化源码与本地构建验证。
 
+公开投影已从固定 Application 提交 `25e96a3b5e05cc5f17618782acf9072490c34d3e` 发布到 [Cloudflare 不可变部署](https://1f6d0a93.peanut-admin-docs.pages.dev)，并核验自定义域名的版本说明和 Release 页面内容摘要一致。102 个构建文件与四项 HTTPS 核验见[独立文档部署回执](fact-audit-2026-09-09/docs-deployment-receipt.json)。首次带 `.html` 请求得到预期的 clean-URL 308 空响应，改用规范地址后核验通过，未重新部署。页面继续以 v3.0.14 为已发布事实；此回执不代表 3.1.0 源码或实例发布。
+
 版本语义与依赖顺序已经稳定，[当前事实入口](../governance/current-state.md)已给出 non-blocking checkpoint，解除临时审计等待。新包、应用采用及双 Edition 发布各自的真实 Gate 继续生效。
 
 ## 后续审计收口
