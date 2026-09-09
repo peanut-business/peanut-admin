@@ -122,7 +122,10 @@ const fromTag = (path) => cp.execFileSync('git', ['show', `${TAG}:${path}`], { e
 const candidateLock = JSON.parse(fs.readFileSync(`${OUTPUT_DIR}/RELEASE_CANDIDATE_LOCK.json`, 'utf8'))
 const metadataText = fromTag('RELEASE_METADATA.json')
 const metadata = JSON.parse(metadataText)
-if (metadata.version !== VERSION || metadata.expected_tag !== TAG) {
+const metadataVersion = metadata.schema_version === 2 && metadata.protocol === 'peanut.release-metadata.v2'
+  ? (metadata.instance_version ?? metadata.source_product_version)
+  : metadata.version
+if (metadataVersion !== VERSION || metadata.expected_tag !== TAG) {
   throw new Error('tag and embedded release metadata differ')
 }
 const digest = (value) => crypto.createHash('sha256').update(value).digest('hex')

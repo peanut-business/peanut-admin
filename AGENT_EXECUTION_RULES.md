@@ -69,6 +69,8 @@
 
 ## 6. 技术纪律
 
+- 产品版本以 `docs/architecture/product-version-identity-adr.md` 为准：Peanut Admin Application、Core PHP/Web 与同源双 Edition 共用产品版本；Module 与客户 Instance 分别独立编号。实例必须分字段记录来源产品版本和实例版本。旧 Application v3.0.14/Core Alpha.13 是不可变历史，新同号发布必须经过真实包发布、精确依赖采用和对应固定候选 Gate，不通过改文档数字制造一致。
+
 - 修改前读取同层级实现，遵循现有技术栈、命名、错误处理和调用模式。
 - 不顺手重构、升级依赖或扩大功能；新增依赖必须有明确用例和已接受的依赖决定。
 - 数据库、缓存、队列和文件资源使用项目 namespace；一次性测试资源使用唯一 run ID，不得清理其他项目资源。

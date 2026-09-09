@@ -389,7 +389,7 @@ final class ApplicationCreator
         }
         $versions = $this->versionContract();
         $versions->assertSame((string)$inventory['template_version'], $versions->scaffoldTemplate(), 'CREATE_APP_INVENTORY_TEMPLATE_VERSION_MISMATCH');
-        $versions->assertSame((string)$inventory['application']['version'], $versions->generatedApplicationDefault(), 'CREATE_APP_INVENTORY_APPLICATION_VERSION_MISMATCH');
+        $versions->assertSame((string)$inventory['application']['version'], $versions->generatedInstanceDefault(), 'CREATE_APP_INVENTORY_APPLICATION_VERSION_MISMATCH');
         $variables = $inventory['variables'];
         sort($variables, SORT_STRING);
         if ($variables !== self::VARIABLES) {
@@ -798,6 +798,22 @@ PHP;
     private function releaseMetadata(array $parameters): string
     {
         $versions = $this->versionContract();
+        if ($versions->isV2()) {
+            return json_encode([
+                'schema_version' => 2,
+                'protocol' => 'peanut.release-metadata.v2',
+                'product' => $parameters['PRODUCT_NAME'],
+                'application_identity' => $parameters['PACKAGE_IDENTITY'],
+                'source_product_version' => $versions->sourceProductVersion(),
+                'instance_version' => $parameters['APPLICATION_VERSION'],
+                'status' => 'generated-application-baseline',
+                'release_policy' => 'replace this metadata from an immutable application release candidate before publishing',
+                'public_runtime_dependencies' => [
+                    'composer' => 'peanut-admin/core@' . $versions->corePhp(),
+                    'frontend' => '@peanut-admin/admin@' . $versions->coreWeb(),
+                ],
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+        }
         $metadata = [
             'schema_version' => 1,
             'product' => $parameters['PRODUCT_NAME'],
@@ -817,6 +833,18 @@ PHP;
     private function versionContractDocument(array $parameters): string
     {
         $versions = $this->versionContract();
+        if ($versions->isV2()) {
+            return json_encode([
+                'schema_version' => 2,
+                'protocol' => 'peanut.release-versions.v2',
+                'source_product_version' => $versions->sourceProductVersion(),
+                'instance_version' => $parameters['APPLICATION_VERSION'],
+                'scaffold_template' => $versions->scaffoldTemplate(),
+                'generated_instance_default' => $versions->generatedInstanceDefault(),
+                'core_php' => $versions->corePhp(),
+                'core_web' => $versions->coreWeb(),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+        }
         return json_encode([
             'schema_version' => 1,
             'protocol' => 'peanut.release-versions.v1',

@@ -284,7 +284,7 @@ $inventory = [
     'schema_version' => 2,
     'template_version' => $versions->scaffoldTemplate(),
     'protocol' => 'peanut.create-app-inventory.v2',
-    'application' => ['version' => $versions->generatedApplicationDefault()],
+    'application' => ['version' => $versions->generatedInstanceDefault()],
     'variables' => ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'],
     'untracked_exclusions' => [
         '.git/**', '.local/**', '.env', 'server/.env', '**/vendor/**', '**/node_modules/**',

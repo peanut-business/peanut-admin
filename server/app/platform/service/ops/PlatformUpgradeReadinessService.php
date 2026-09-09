@@ -256,12 +256,18 @@ final readonly class PlatformUpgradeReadinessService
             $this->sourceFile('RELEASE_METADATA.json'),
             'UPGRADE_SOURCE_RELEASE_METADATA_INVALID',
         );
-        $productRelease = $versions->productRelease();
+        $productRelease = $versions->releaseSequenceVersion();
+        $metadataVersion = ($metadata['schema_version'] ?? null) === 2
+            && ($metadata['protocol'] ?? null) === 'peanut.release-metadata.v2'
+            ? ($metadata['instance_version'] ?? $metadata['source_product_version'] ?? null)
+            : ($metadata['version'] ?? null);
         if (!is_string($metadata['application_identity'] ?? null)
-            || !is_string($metadata['version'] ?? null)
+            || !is_string($metadataVersion)
             || !is_string($metadata['expected_tag'] ?? null)
             || !hash_equals($packageIdentity, $metadata['application_identity'])
-            || $metadata['version'] !== $productRelease
+            || $metadataVersion !== $productRelease
+            || (($metadata['schema_version'] ?? null) === 2
+                && ($metadata['source_product_version'] ?? null) !== $versions->sourceProductVersion())
             || $metadata['expected_tag'] !== 'v' . $productRelease
             || $versions->scaffoldTemplate() !== $template['version']) {
             throw new RuntimeException('UPGRADE_SOURCE_RELEASE_METADATA_INVALID');

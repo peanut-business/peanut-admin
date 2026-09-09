@@ -6,6 +6,8 @@
 
 > 本页回答两个问题：Core 现在能做什么，以及独立 `peanut-admin` 应用实际上用了什么。它是静态源码审计，不是生产运行、完整资格或发布完成证明。
 
+版本术语以[版本身份 ADR](../architecture/product-version-identity-adr.md)为准：Peanut 产品 Application/Core/双 Edition 共用产品号，客户 Instance 才有独立发布序列。本文固定提交和旧 lock 的数值是历史实物，不回写为新版本；新同号候选须另有 Registry、消费锁和资格证据。
+
 ## 先看四条真实调用链
 
 Core 既不是几个工具函数，也不是安装后自动得到完整后台的成品应用。它提供后端服务、合同、Schema 和前端运行时；Alpha.13 源码仍有 PDO persistence 实现，但正式方向是与 Application 一起收敛到 ThinkPHP 8。独立应用仍负责 ThinkPHP/Vue 宿主、路由、可信身份、业务数据和产品生命周期。当前最容易理解的采用例子是：
@@ -38,7 +40,7 @@ Kernel 是公共后台运行底座，不只是基础 DTO。当前开发基线在
 | HTTP 边界 | 认证 endpoint/response、refresh cookie、权限 middleware | ThinkPHP 8 的 route/middleware 适配 |
 | 执行上下文 | Tenant、平台、系统和授权操作上下文 | 从认证态建立可信上下文，拒绝客户端任意 Tenant id |
 | 租户运行 | availability、scope、workspace query、cache/lock namespace、计划任务上下文 | 入口绑定、部署模式和实际 cache/lock backend |
-| 持久化 | ThinkPHP Model/Query/Db/Transaction、TenantScope、Kernel Schema；Alpha.13 PDO 路径待按 ADR 迁移 | ThinkPHP bootstrap、迁移和业务表 owner |
+| 持久化 | 当前源码为 PDO persistence、TenantScope、Kernel Schema；ThinkPHP Model/Query/Db/Transaction 是待实施方向 | 可信 bootstrap、同连接事务、迁移和业务表 owner；迁移后使用正式 ThinkPHP 边界 |
 | 功能权限 | RBAC、角色管理、权限目录同步、revision cache、数据权限桥 | 装配目录和仓储，并在业务动作前执行授权 |
 | 审计 | 按 audience 写入和查询 audit event | 业务 use case 决定何时写，宿主映射 HTTP |
 | 身份 | Account/Credential、邮箱、密码 hash、自助服务 | 密码政策、credential repository 和 endpoint |

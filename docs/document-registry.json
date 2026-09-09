@@ -40,6 +40,122 @@
   },
   "documents": [
     {
+      "id": "pa-site-version-identity",
+      "path": "docs-site/guide/version-identity.md",
+      "title": "产品与实例版本",
+      "audience": [
+        "developer",
+        "operator"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/architecture/product-version-identity-adr.md"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-fact-convergence-audit-2026-09-09",
+      "path": "docs/maintenance/fact-convergence-audit-2026-09-09.md",
+      "title": "Peanut Admin 全量事实收敛审计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "bounded-audit",
+      "canonical_sources": [
+        "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md",
+        "release-versions.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-current-state",
+      "path": "docs/governance/current-state.md",
+      "title": "Peanut Admin 当前事实入口",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "index",
+      "authority": "authoritative-index",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json",
+        "docs/architecture/product-version-identity-adr.md",
+        "resources/project-resources.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-version-identity-adr",
+      "path": "docs/architecture/product-version-identity-adr.md",
+      "title": "产品、发行版、Module 与 Instance 版本身份",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "accepted-decision",
+      "canonical_sources": [
+        "release-versions.json",
+        "repo://peanut-admin-core/packages/php/composer.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-site-version-identity"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-core-thinkphp-runtime-direction-adr",
       "path": "docs/architecture/core-thinkphp-runtime-direction-adr.md",
       "title": "Core ThinkPHP 8 运行时收敛方向 ADR",

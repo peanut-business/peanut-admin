@@ -1,5 +1,7 @@
 # 发布工程
 
+新发行采用[产品版本身份合同](architecture/product-version-identity-adr.md)：Peanut 产品、Core PHP/Web 与双 Edition 同号，客户 Instance 和 Module 各自独立。根合同与发布元数据分开记录源产品和实例版本；必须先有真实 Core Registry 身份再更新消费锁，不能修改历史包或 tag 来对齐。
+
 ## Consumer-ready 准备检查
 
 在版本准备、scaffold seal、固定资格或正式发布前，先运行内部只读入口

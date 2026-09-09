@@ -8,9 +8,16 @@ $releaseVersions = json_decode(
     (string)file_get_contents(dirname(__DIR__, 2) . '/release-versions.json'),
     true,
 );
-$defaultVersion = is_string($releaseVersions['product_release'] ?? null)
-    && preg_match('/^\d+\.\d+\.\d+$/D', $releaseVersions['product_release']) === 1
-    ? $releaseVersions['product_release']
+$declaredReleaseVersion = $releaseVersions['instance_version']
+    ?? $releaseVersions['source_product_version']
+    ?? $releaseVersions['product_release']
+    ?? null;
+$versionPattern = ($releaseVersions['schema_version'] ?? null) === 2
+    ? '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D'
+    : '/^\d+\.\d+\.\d+$/D';
+$defaultVersion = is_string($declaredReleaseVersion)
+    && preg_match($versionPattern, $declaredReleaseVersion) === 1
+    ? $declaredReleaseVersion
     : throw new RuntimeException('产品版本配置格式错误');
 
 return [

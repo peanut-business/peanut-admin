@@ -96,9 +96,12 @@ final readonly class PlatformUpgradeTarget
         $metadata = self::releaseMetadata(
             self::fixedFile($releaseRoot, 'RELEASE_METADATA.json'),
         );
-        $productRelease = $versions->productRelease();
+        $productRelease = $versions->releaseSequenceVersion();
+        $metadataVersion = $metadata['release_version'];
         if ($release['key'] !== 'v' . $productRelease
-            || $metadata['version'] !== $productRelease
+            || $metadataVersion !== $productRelease
+            || (($metadata['schema_version'] ?? null) === 2
+                && ($metadata['source_product_version'] ?? null) !== $versions->sourceProductVersion())
             || $metadata['expected_tag'] !== $release['key']
             || !hash_equals($application['package_identity'], $metadata['application_identity'])
             || !self::sameScaffoldRelease($application['template'], $targetScaffoldRelease)
@@ -530,25 +533,36 @@ final readonly class PlatformUpgradeTarget
         ];
     }
 
-    /** @return array{application_identity:string,version:string,expected_tag:string} */
+    /** @return array{application_identity:string,release_version:string,source_product_version:?string,expected_tag:string,schema_version:int,protocol:?string} */
     private static function releaseMetadata(string $path): array
     {
         $metadata = self::json($path, 'UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
-        foreach (['application_identity', 'version', 'expected_tag'] as $key) {
+        foreach (['application_identity', 'expected_tag'] as $key) {
             if (!is_string($metadata[$key] ?? null)) {
                 throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
             }
         }
+        $v2 = ($metadata['schema_version'] ?? null) === 2
+            && ($metadata['protocol'] ?? null) === 'peanut.release-metadata.v2';
+        $releaseVersion = $v2
+            ? ($metadata['instance_version'] ?? $metadata['source_product_version'] ?? null)
+            : ($metadata['version'] ?? null);
+        $sourceProductVersion = $v2 ? ($metadata['source_product_version'] ?? null) : null;
         if (strlen($metadata['application_identity']) > 120
             || preg_match(self::PACKAGE_IDENTITY, $metadata['application_identity']) !== 1
-            || preg_match(self::VERSION, $metadata['version']) !== 1
+            || !is_string($releaseVersion) || preg_match(self::VERSION, $releaseVersion) !== 1
+            || ($v2 && (!is_string($sourceProductVersion)
+                || preg_match(self::VERSION, $sourceProductVersion) !== 1))
             || preg_match(self::RELEASE_KEY, $metadata['expected_tag']) !== 1) {
             throw new RuntimeException('UPGRADE_TARGET_RELEASE_IDENTITY_INVALID');
         }
         return [
             'application_identity' => $metadata['application_identity'],
-            'version' => $metadata['version'],
+            'release_version' => $releaseVersion,
+            'source_product_version' => $sourceProductVersion,
             'expected_tag' => $metadata['expected_tag'],
+            'schema_version' => $v2 ? 2 : 1,
+            'protocol' => $v2 ? 'peanut.release-metadata.v2' : null,
         ];
     }
 

@@ -22,8 +22,18 @@ const expectedCounts = {
 const readJson = (relativePath) => JSON.parse(readFileSync(resolve(rootDir, relativePath), 'utf8'))
 const versionContract = readJson('release-versions.json')
 const releaseMetadata = readJson('RELEASE_METADATA.json')
-const releaseVersion = versionContract.product_release
-if (releaseMetadata.version !== releaseVersion || releaseMetadata.expected_tag !== `v${releaseVersion}`) {
+const releaseVersion = versionContract.schema_version === 2
+  ? versionContract.source_product_version
+  : versionContract.product_release
+const metadataVersion = releaseMetadata.schema_version === 2
+  && releaseMetadata.protocol === 'peanut.release-metadata.v2'
+  ? (releaseMetadata.instance_version ?? releaseMetadata.source_product_version)
+  : releaseMetadata.version
+if (metadataVersion !== releaseVersion
+  || (versionContract.schema_version === 2
+    && (releaseMetadata.source_product_version !== releaseVersion
+      || releaseMetadata.instance_version !== null))
+  || releaseMetadata.expected_tag !== `v${releaseVersion}`) {
   throw new Error(`RELEASE_METADATA version contract mismatch: expected ${releaseVersion}`)
 }
 const releaseTag = releaseMetadata.expected_tag

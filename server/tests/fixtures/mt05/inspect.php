@@ -47,9 +47,10 @@ function indexExists(PDO $pdo, string $table, string $index): bool
 /** @return list<string> */
 function expectedApplicationMigrationIds(string $serverRoot): array
 {
-    $metadataRaw = file_get_contents(dirname($serverRoot) . '/RELEASE_METADATA.json');
-    $metadata = is_string($metadataRaw) ? json_decode($metadataRaw, true) : null;
-    $targetVersion = is_array($metadata) ? ($metadata['version'] ?? null) : null;
+    require_once $serverRoot . '/app/common/service/installation/ApplicationReleaseVersions.php';
+    $targetVersion = \app\common\service\installation\ApplicationReleaseVersions::load(
+        dirname($serverRoot) . '/release-versions.json'
+    )->scaffoldTemplate();
     expectInvariant(
         is_string($targetVersion)
             && preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $targetVersion) === 1,

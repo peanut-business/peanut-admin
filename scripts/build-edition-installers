@@ -100,8 +100,16 @@ try {
     (new PharData($sourceArchive))->extractTo($source);
 
     $versions = json_decode((string)file_get_contents($source . '/release-versions.json'), true, 32, JSON_THROW_ON_ERROR);
-    if (($versions['product_release'] ?? null) !== $options['version']
-        || ($versions['scaffold_template'] ?? null) !== $options['version']) {
+    if (($versions['schema_version'] ?? null) !== 2
+        || ($versions['protocol'] ?? null) !== 'peanut.release-versions.v2'
+        || ($versions['source_product_version'] ?? null) !== $options['version']
+        || !array_key_exists('instance_version', $versions)
+        || $versions['instance_version'] !== null
+        || ($versions['core_php'] ?? null) !== $options['version']
+        || ($versions['core_web'] ?? null) !== $options['version']
+        || ($versions['scaffold_template'] ?? null) !== $options['version']
+        || !is_string($versions['generated_instance_default'] ?? null)
+        || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D', $versions['generated_instance_default']) !== 1) {
         throw new RuntimeException('EDITION_BUILD_VERSION_IDENTITY_MISMATCH');
     }
     require $source . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';

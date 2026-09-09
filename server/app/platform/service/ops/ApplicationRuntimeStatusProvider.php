@@ -273,7 +273,10 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
     /** @param array<string,mixed> $metadata */
     private function releaseKey(array $metadata): ?string
     {
-        $version = (string)($metadata['version'] ?? '');
+        $version = ($metadata['schema_version'] ?? null) === 2
+            && ($metadata['protocol'] ?? null) === 'peanut.release-metadata.v2'
+            ? (string)($metadata['instance_version'] ?? $metadata['source_product_version'] ?? '')
+            : (string)($metadata['version'] ?? '');
         return preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version) === 1
             ? 'v' . $version
             : null;
@@ -431,7 +434,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         if (!is_array($overlay)
             || ($overlay['schema_version'] ?? null) !== 1
             || ($overlay['kind'] ?? null) !== 'peanut-admin-demo-site-overlay'
-            || ($overlay['base_tag'] ?? null) !== 'v' . $versions->productRelease()
+            || ($overlay['base_tag'] ?? null) !== 'v' . $versions->sourceProductVersion()
             || !is_array($overlay['files'] ?? null)
             || !is_string($target)
             || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $target) !== 1

@@ -20,6 +20,8 @@ claim 资源、连接数据库、启动端口/容器/浏览器、运行 P0-E、�
 
 ## 当前功能
 
+新候选使用 `peanut.release-versions.v2` 和 `peanut.release-metadata.v2`，显式核对 `source_product_version` 与 `instance_version`。产品根的实例字段为 null，产品、scaffold、Core PHP/Web 同号；四个前端及实际 Core locks 也必须匹配。历史 V1 的旧 tag 可由 release consistency 只读核验，但不能用于准备新候选。版本对象定义见[版本身份 ADR](../architecture/product-version-identity-adr.md)。
+
 控制器提供一个命令和四个检查阶段：
 
 ```bash

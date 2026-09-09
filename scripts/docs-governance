@@ -696,6 +696,46 @@ def report(errors: list[str], success: str) -> int:
     return 0
 
 
+def fact_register_errors() -> list[str]:
+    """Keep cross-domain dispositions typed and sourced without duplicating domain ledgers."""
+    register = load_json(ROOT / "docs/governance/fact-register.json")
+    errors: list[str] = []
+    statuses = {"verified-fact", "current-decision", "planned", "blocked", "accepted-risk", "superseded", "trace-only"}
+    records = register.get("records", [])
+    if register.get("schema_version") != 1 or register.get("visibility") != "internal" or not isinstance(records, list):
+        return ["fact register must use internal schema 1 with a records list"]
+    ids: set[str] = set()
+    for record in records:
+        if not isinstance(record, dict):
+            errors.append("fact register record must be an object")
+            continue
+        identity = record.get("id", "")
+        if not isinstance(identity, str) or not identity or identity in ids:
+            errors.append("fact register IDs must be non-empty and unique")
+        else:
+            ids.add(identity)
+        for key in ("category", "owner", "statement", "scope"):
+            if not isinstance(record.get(key), str) or not record[key].strip():
+                errors.append(f"{identity}: missing fact {key}")
+        if record.get("status") not in statuses:
+            errors.append(f"{identity}: invalid fact status")
+        sources = record.get("sources", [])
+        if not isinstance(sources, list) or not sources:
+            errors.append(f"{identity}: direct source references are required")
+        else:
+            for source in sources:
+                if not isinstance(source, str) or not source or source.startswith("/") or ".." in Path(source).parts or not (ROOT / source).exists():
+                    errors.append(f"{identity}: source must name an existing repository path")
+        if record.get("status") in {"blocked", "accepted-risk"} and not record.get("recovery"):
+            errors.append(f"{identity}: blocked or accepted-risk needs a recovery condition")
+        if record.get("status") == "accepted-risk" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(record.get("review_by", ""))):
+            errors.append(f"{identity}: accepted-risk needs a review date")
+    for record in records:
+        if isinstance(record, dict) and record.get("status") == "superseded" and record.get("superseded_by") not in ids:
+            errors.append(f"{record.get('id')}: superseded fact must point to an existing replacement")
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -788,6 +828,7 @@ def main() -> int:
         return 0
     registry = load_json(REGISTRY_PATH)
     errors = validate_registry(registry)
+    errors.extend(fact_register_errors())
     errors.extend(generate(True))
     errors.extend(run_scenarios(impact))
     errors.extend(impact_target_errors(impact, registry))

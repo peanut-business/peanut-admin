@@ -440,16 +440,17 @@ function applicationMigrationFiles(string $databaseDir): array
 }
 
 /**
- * Read the independent application release and scaffold migration axes from the root contract.
+ * Read source product, instance release-sequence and scaffold migration axes from the root contract.
  *
- * @return array{product_release:string,scaffold_template:string}
+ * @return array{source_product_version:string,release_sequence_version:string,scaffold_template:string}
  */
 function applicationReleaseVersions(string $serverDir): array
 {
     loadCoreRuntime($serverDir);
     $contract = ApplicationReleaseVersions::load(dirname($serverDir) . '/release-versions.json');
     return [
-        'product_release' => $contract->productRelease(),
+        'source_product_version' => $contract->sourceProductVersion(),
+        'release_sequence_version' => $contract->releaseSequenceVersion(),
         'scaffold_template' => $contract->scaffoldTemplate(),
     ];
 }
@@ -457,7 +458,7 @@ function applicationReleaseVersions(string $serverDir): array
 /**
  * Resolve the SQL target from this scaffold and its optional deployment-verified demo overlay.
  *
- * @param array{product_release:string,scaffold_template:string} $versions
+ * @param array{source_product_version:string,release_sequence_version:string,scaffold_template:string} $versions
  */
 function applicationMigrationTargetVersion(string $serverDir, array $versions): string
 {
@@ -477,7 +478,7 @@ function applicationMigrationTargetVersion(string $serverDir, array $versions): 
     if (!is_array($overlay)
         || ($overlay['schema_version'] ?? null) !== 1
         || ($overlay['kind'] ?? null) !== 'peanut-admin-demo-site-overlay'
-        || ($overlay['base_tag'] ?? null) !== 'v' . $versions['product_release']
+        || ($overlay['base_tag'] ?? null) !== 'v' . $versions['source_product_version']
         || !is_array($overlay['files'] ?? null)
         || !is_string($overlay['migration_target_version'] ?? null)
         || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $overlay['migration_target_version']) !== 1
@@ -491,7 +492,7 @@ function applicationMigrationTargetVersion(string $serverDir, array $versions): 
 /**
  * Refuse a caller-provided SQL target that differs from the adopted scaffold/overlay identity.
  *
- * @param array{product_release:string,scaffold_template:string} $versions
+ * @param array{source_product_version:string,release_sequence_version:string,scaffold_template:string} $versions
  */
 function validatedMigrationTargetVersion(string $serverDir, string $targetVersion, array $versions): string
 {
@@ -566,7 +567,7 @@ function migrateDatabase(string $serverDir, string $targetVersion, bool $dryRun 
                 throw new RuntimeException('迁移文件为空：' . $id);
             }
             $checksum = hash('sha256', $sql);
-            $releaseIdentity = migrationReleaseIdentity($sql, $versions['product_release']);
+            $releaseIdentity = migrationReleaseIdentity($sql, $versions['release_sequence_version']);
             $releaseVersion = $releaseIdentity['release_version'];
             if ($releaseIdentity['peanut_release'] && version_compare($releaseVersion, $targetVersion, '>')) {
                 continue;

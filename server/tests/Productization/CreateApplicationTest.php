@@ -411,7 +411,11 @@ try {
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"), 'generated deployment must enable its scaffold-owned official Plugin lock');
     $releaseMetadata = json_decode((string)file_get_contents($first . '/RELEASE_METADATA.json'), true, 512, JSON_THROW_ON_ERROR);
-    createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $releaseMetadata['version'] === '0.1.0', 'release metadata must be regenerated for the new application');
+    $generatedReleaseVersion = ($releaseMetadata['schema_version'] ?? null) === 2
+        && ($releaseMetadata['protocol'] ?? null) === 'peanut.release-metadata.v2'
+        ? ($releaseMetadata['instance_version'] ?? null)
+        : ($releaseMetadata['version'] ?? null);
+    createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $generatedReleaseVersion === '0.1.0', 'release metadata must be regenerated for the new application');
     createApplicationExpect(str_contains((string)file_get_contents($first . '/CHANGELOG.md'), "## 0.1.0\n"), 'changelog must use application.version');
     $sbom = json_decode((string)file_get_contents($first . '/RELEASE_SBOM.spdx.json'), true, 512, JSON_THROW_ON_ERROR);
     $sbomRoots = array_values(array_filter(

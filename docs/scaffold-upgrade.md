@@ -72,7 +72,7 @@ php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/applicatio
 `--fresh`（配对备份、显式确认和重建空库）。升级前先运行 `preflight`，看到 `status=ready`
 且冲突为 0 后再 apply。
 
-当前应用发布版本读取根 `release-versions.json.product_release`；`.peanut/application-manifest.json`
+已发布 v1 合同的客户实例版本读取根 `release-versions.json.product_release`；该历史字段不是新规则下的 Peanut 产品版本。新合同以 `instance_version` 和 `source_product_version` 分开记录；具体行为须与采用的正式制品匹配。`.peanut/application-manifest.json`
 中的 `application.version` 保留最近一次采用 scaffold 时的渲染快照。preflight 分别用快照重现旧
 baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标渲染参数写入不可变 plan；apply
 只使用 plan 中冻结的目标参数，不在替换 `release-versions.json` 后重读 live 文件。因此应用从
@@ -90,8 +90,8 @@ baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标
 生产 Runtime 再次合并 scaffold。应用 `product_release` 可以在 `scaffold_template` 不变时独立
 递增；这种纯应用升级要求 from/to scaffold manifest 摘要完全一致。
 
-下一次正式发布窗口起，`scaffold_template`、`peanut-admin/core` 与 `@peanut-admin/admin` 使用
-同一个基础发行号，预发布后缀同步；`product_release` 仍由应用独立决定。正式顺序是先发布并验证
+下一次正式发布窗口起，Peanut 产品 Application、`scaffold_template`、`peanut-admin/core` 与 `@peanut-admin/admin` 使用
+同一个产品发行号，预发布后缀同步；客户 `instance_version` 独立决定，Module 也保持自己的版本。正式顺序是先发布并验证
 同号 PHP/Web Core 包，再让应用锁定两份依赖并完成消费检查，最后完成同号 scaffold 资格与发布。
 任何一步失败都不能把整套基础发行标记为 ready。版本号一致不能替代 manifest、lock、包引用和
 兼容证据，也不能把 alpha 自动视为稳定版；未变化的 Core 也要产生同号不可变包。当前 `3.0.14`

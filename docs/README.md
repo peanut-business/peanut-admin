@@ -6,6 +6,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 
 | Need | Entry | Lifecycle |
 | --- | --- | --- |
+| Answer what the product is, where it stands, why and what comes next | [Current fact entry](governance/current-state.md), [version identity ADR](architecture/product-version-identity-adr.md) and [fact convergence audit](maintenance/fact-convergence-audit-2026-09-09.md) | canonical navigation, accepted decision and bounded audit; never substitute for release evidence |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
 | Understand Core capabilities and actual application adoption | [Core 能力与独立应用采用全景](reference/core-capabilities-and-application-adoption.md), [Core 与应用技术边界](architecture/core-application-technical-boundary.md) and [Storage Driver 提取队列](plans/storage-driver-extraction-queue.md) | fixed-source audit, planned boundary and decision queue; not Runtime completion evidence |

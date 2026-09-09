@@ -6,15 +6,27 @@ namespace app\common\service\installation;
 use JsonException;
 use RuntimeException;
 
-/** Read the independent application and scaffold versions from one strict runtime contract. */
+/** Read a deployed root or generated-instance contract while keeping source and instance identities separate. */
 final readonly class ApplicationReleaseVersions
 {
-    private const KEYS = [
+    private const STRICT_SEMVER = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D';
+    private const V1_VERSION = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D';
+    private const V1_KEYS = [
         'schema_version',
         'protocol',
         'product_release',
         'scaffold_template',
         'generated_application_default',
+        'core_php',
+        'core_web',
+    ];
+    private const V2_KEYS = [
+        'schema_version',
+        'protocol',
+        'source_product_version',
+        'instance_version',
+        'scaffold_template',
+        'generated_instance_default',
         'core_php',
         'core_web',
     ];
@@ -35,33 +47,61 @@ final readonly class ApplicationReleaseVersions
             throw new RuntimeException('APPLICATION_RELEASE_VERSIONS_INVALID', 0, $exception);
         }
         $keys = is_array($document) ? array_keys($document) : [];
-        if (!is_array($document)
-            || count($keys) !== count(self::KEYS)
-            || array_diff($keys, self::KEYS) !== []
-            || array_diff(self::KEYS, $keys) !== []
-            || ($document['schema_version'] ?? null) !== 1
-            || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'
-        ) {
+        $v2 = is_array($document)
+            && ($document['schema_version'] ?? null) === 2
+            && ($document['protocol'] ?? null) === 'peanut.release-versions.v2';
+        $expectedKeys = $v2 ? self::V2_KEYS : self::V1_KEYS;
+        if (!is_array($document) || count($keys) !== count($expectedKeys)
+            || array_diff($keys, $expectedKeys) !== [] || array_diff($expectedKeys, $keys) !== []
+            || (!$v2 && (($document['schema_version'] ?? null) !== 1
+                || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'))) {
             throw new RuntimeException('APPLICATION_RELEASE_VERSIONS_INVALID');
         }
         $values = [];
-        foreach (self::KEYS as $key) {
+        foreach ($expectedKeys as $key) {
             $value = $document[$key];
+            if ($key === 'instance_version' && $value === null) {
+                $values[$key] = null;
+                continue;
+            }
             if (!in_array($key, ['schema_version', 'protocol'], true)
-                && (!is_string($value) || preg_match(
-                    '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D',
-                    $value,
-                ) !== 1)) {
+                && (!is_string($value)
+                    || preg_match($v2 ? self::STRICT_SEMVER : self::V1_VERSION, $value) !== 1)) {
                 throw new RuntimeException('APPLICATION_RELEASE_VERSIONS_INVALID: ' . $key);
             }
             $values[$key] = $value;
         }
+        if ($v2 && ($values['source_product_version'] !== $values['core_php']
+                || $values['source_product_version'] !== $values['core_web']
+                || $values['source_product_version'] !== $values['scaffold_template'])) {
+            throw new RuntimeException('APPLICATION_RELEASE_VERSIONS_PRODUCT_CORE_MISMATCH');
+        }
         return new self($values);
     }
 
-    public function productRelease(): string
+    public function sourceProductVersion(): string
     {
-        return $this->values['product_release'];
+        return $this->values['schema_version'] === 2
+            ? $this->values['source_product_version']
+            : $this->values['product_release'];
+    }
+
+    public function instanceVersion(): ?string
+    {
+        return $this->values['schema_version'] === 2 ? $this->values['instance_version'] : null;
+    }
+
+    public function releaseSequenceVersion(): string
+    {
+        return $this->instanceVersion() ?? $this->sourceProductVersion();
+    }
+
+    /** Default version for a new instance; it is never the running instance identity. */
+    public function generatedInstanceDefault(): string
+    {
+        return $this->values['schema_version'] === 2
+            ? $this->values['generated_instance_default']
+            : $this->values['generated_application_default'];
     }
 
     public function scaffoldTemplate(): string
@@ -69,7 +109,7 @@ final readonly class ApplicationReleaseVersions
         return $this->values['scaffold_template'];
     }
 
-    /** @return array<string,int|string> */
+    /** @return array<string,int|string|null> */
     public function toArray(): array
     {
         return $this->values;

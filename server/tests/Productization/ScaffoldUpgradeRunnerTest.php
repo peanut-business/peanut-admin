@@ -65,6 +65,23 @@ function scaffoldInstallVersionContract(string $target,string $productRelease='0
     $written=file_put_contents($target.'/release-versions.json',json_encode($contract,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
     scaffoldExpect($written!==false,'historical scaffold fixture version contract must be written');
 }
+function scaffoldInstallV2VersionContract(string $target,string $instanceVersion,?string $coreVersion=null): void
+{
+    $manifest=json_decode((string)file_get_contents($target.'/.peanut/application-manifest.json'),true,512,JSON_THROW_ON_ERROR);
+    $sourceVersion=$manifest['template']['version']??null;
+    scaffoldExpect(is_string($sourceVersion),'v2 fixture source product version must be available');
+    $contract=[
+        'schema_version'=>2,
+        'protocol'=>'peanut.release-versions.v2',
+        'source_product_version'=>$sourceVersion,
+        'instance_version'=>$instanceVersion,
+        'scaffold_template'=>$sourceVersion,
+        'generated_instance_default'=>'0.1.0',
+        'core_php'=>$coreVersion??$sourceVersion,
+        'core_web'=>$sourceVersion,
+    ];
+    file_put_contents($target.'/release-versions.json',json_encode($contract,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+}
 function scaffoldFreshAdopted(string $source,string $releasePath,string $target): void
 {
     $code=<<<'PHP'
@@ -225,6 +242,8 @@ try{
     scaffoldExpect($legacyApply['status']==='applied'&&$legacyVerify['status']==='verified','v1.1.3 to v1.1.4 apply/verify must complete');
     $legacyApplied=json_decode((string)file_get_contents($legacyManifestPath),true,512,JSON_THROW_ON_ERROR);
     scaffoldExpect(($legacyApplied['schema_version']??null)===2&&($legacyApplied['protocol']??null)==='peanut.application-scaffold.v2'&&($legacyApplied['application']['version']??null)==='2.4.6','upgrade must normalize the application manifest without changing application.version');
+    $legacyAppliedVersions=json_decode((string)file_get_contents($legacyApp.'/release-versions.json'),true,512,JSON_THROW_ON_ERROR);
+    scaffoldExpect(($legacyAppliedVersions['product_release']??null)==='2.4.6'&&($legacyAppliedVersions['generated_application_default']??null)==='0.1.0','v1 upgrade must preserve the template default while retaining the instance release sequence');
     scaffoldExpect(hash_equals($legacyAppOwnedDigest,scaffoldOwnedTree($legacyApp,$legacyApplied,'app-owned')),'v1.1.4 upgrade must preserve all app-owned bytes');
     scaffoldExpect(hash_equals((string)$legacyUniappDigest,(string)hash_file('sha256',$legacyApp.'/uniapp/src/manifest.json')),'upgrade must preserve existing UniApp versionName/versionCode bytes');
     foreach(['web/package.json','pc/package.json','uniapp/package.json','server/config/project.php']as$versionPath)scaffoldExpect(str_contains((string)file_get_contents($legacyApp.'/'.$versionPath),'2.4.6'),'managed application version surface was not preserved: '.$versionPath);
@@ -235,6 +254,12 @@ try{
     $currentIdentity=json_decode((string)file_get_contents($currentRelease),true,512,JSON_THROW_ON_ERROR)['release'];
     $runtimeSource=$temporary.'/runtime-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$runtimeSource]);scaffoldRun(['git','checkout','--quiet','--detach',$currentIdentity['source_commit']],$runtimeSource);
     $runtimeApp=$temporary.'/runtime-app';scaffoldFreshAdopted($runtimeSource,$currentRelease,$runtimeApp);
+    scaffoldInstallV2VersionContract($runtimeApp,'2.4.6',$currentIdentity['version'].'+different-spelling');
+    scaffoldFails(fn()=>$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease),'product-core-version-mismatch');
+    scaffoldInstallV2VersionContract($runtimeApp,'2.4.6');
+    $v2Plan=$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease);
+    scaffoldExpect(($v2Plan['identity']['application_version']??null)==='2.4.6'&&($v2Plan['identity']['version_contract']['source_product_version']??null)===$currentIdentity['version']&&($v2Plan['identity']['version_contract']['generated_instance_default']??null)==='0.1.0','v2 upgrade must consume separate source, instance and default identities');
+    scaffoldInstallVersionContract($runtimeApp);
     $runtimeAppOwnedPath='server/config/peanut.php';file_put_contents($runtimeApp.'/'.$runtimeAppOwnedPath,(string)file_get_contents($runtimeApp.'/'.$runtimeAppOwnedPath)."\n// v1.1.5 preservation proof\n");$runtimeAppOwnedDigest=hash_file('sha256',$runtimeApp.'/'.$runtimeAppOwnedPath);
     $runtimeBefore=scaffoldFileTree($runtimeApp);
     $runtimePlan=$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease);scaffoldExpect($runtimePlan['status']==='ready'&&$runtimePlan['summary']['conflicts']===0,'v1.1.4 to v1.1.5 plan must be ready');

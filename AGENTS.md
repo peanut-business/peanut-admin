@@ -10,6 +10,7 @@
 
 | 当前任务 | 事实源与入口 |
 | --- | --- |
+| 当前事实、版本身份与历史冲突 | `docs/governance/current-state.md`、`docs/architecture/product-version-identity-adr.md`、`docs/maintenance/fact-convergence-audit-2026-09-09.md` |
 | 项目运行资源、连接、启动、迁移、测试、部署 | `resources/project-resources.json`；源仓 P0-E 专用资格工具另见 `resources/p0e-runtime-qualification.json` |
 | 服务层或跨 Module 调用改造 | `resources/service-registry.json`、`docs/architecture/service-layer-registry.md`；Module 自有表以对应 `module.json` 为准 |
 | 服务执行状态或交接 | `docs/architecture/service-execution-status.md` |

@@ -25,6 +25,7 @@ const installUpgrade = [
 ]
 
 const delivery = [
+  { text: '产品与实例版本', link: '/guide/version-identity' },
   { text: '在线演示', link: '/demo-access' },
   { text: '创建应用与交付 Module', link: '/guide/application-module-lifecycle' },
   { text: '测试与排错', link: '/guide/testing' },

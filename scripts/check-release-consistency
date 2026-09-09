@@ -91,6 +91,11 @@ let inventory = null
 let scaffold = null
 let fixture = null
 let version = ''
+let declaredCorePhp = ''
+let declaredCoreWeb = ''
+let declaredClientVersions = {}
+let declaredClientCoreVersions = {}
+let lockedCoreVersions = {}
 
 const show = (path) => execFileSync('git', ['show', `${reference}:${path}`], {
   encoding: 'utf8',
@@ -113,20 +118,77 @@ try {
   versionContract = JSON.parse(versionContractText)
   ledger = JSON.parse(ledgerText)
   inventory = JSON.parse(inventoryText)
-  version = metadata.version ?? ''
+  version = metadata.schema_version === 2 && metadata.protocol === 'peanut.release-metadata.v2'
+    ? (metadata.instance_version ?? metadata.source_product_version ?? '')
+    : (metadata.version ?? '')
   scaffoldText = show(`scaffold/releases/v${version}/scaffold-manifest.json`)
   fixtureText = show('server/tests/fixtures/p0e-runtime-qualification/matrix.json')
   scaffold = JSON.parse(scaffoldText)
   fixture = JSON.parse(fixtureText)
+  declaredCorePhp = JSON.parse(show('server/composer.json'))?.require?.['peanut-admin/core'] ?? ''
+  for (const client of ['web', 'platform', 'pc', 'uniapp']) {
+    const packageJson = JSON.parse(show(`${client}/package.json`))
+    declaredClientVersions[client] = packageJson?.version ?? ''
+    declaredClientCoreVersions[client] = packageJson?.dependencies?.['@peanut-admin/admin'] ?? ''
+  }
+  declaredCoreWeb = declaredClientCoreVersions.web
+  const composerLock = JSON.parse(show('server/composer.lock'))
+  lockedCoreVersions.composer = composerLock?.packages?.find((pkg) => pkg?.name === 'peanut-admin/core')?.version ?? ''
+  const webCoreLock = show('web/pnpm-lock.yaml').match(/      '@peanut-admin\/admin':\n        specifier: ([^\n]+)\n        version: ([^\n(]+)/)
+  lockedCoreVersions.webSpecifier = webCoreLock?.[1] ?? ''
+  lockedCoreVersions.web = webCoreLock?.[2] ?? ''
+  for (const client of ['platform', 'pc', 'uniapp']) {
+    const packageLock = JSON.parse(show(`${client}/package-lock.json`))
+    lockedCoreVersions[client] = packageLock?.packages?.['node_modules/@peanut-admin/admin']?.version ?? ''
+    lockedCoreVersions[`${client}Specifier`] = packageLock?.packages?.['']?.dependencies?.['@peanut-admin/admin'] ?? ''
+  }
 } catch (error) {
   failures.push(`candidate contents are unreadable: ${error.message}`)
 }
 
 const expectedTag = `v${version}`
-if (versionContract && (!/^\d+\.\d+\.\d+$/.test(versionContract.product_release ?? '')
-  || versionContract.product_release !== metadata?.version
-  || versionContract.scaffold_template !== inventory?.template_version)) {
+const strictSemver = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
+const historicalV1 = options.tag && versionContract?.schema_version === 1
+  && versionContract?.protocol === 'peanut.release-versions.v1'
+const currentV2 = versionContract?.schema_version === 2
+  && versionContract?.protocol === 'peanut.release-versions.v2'
+  && versionContract?.instance_version === null
+const contractProductVersion = currentV2
+  ? versionContract?.source_product_version
+  : historicalV1 ? versionContract?.product_release : ''
+const metadataV2 = metadata?.schema_version === 2
+  && metadata?.protocol === 'peanut.release-metadata.v2'
+const metadataSourceVersion = metadataV2 ? metadata?.source_product_version : null
+const metadataInstanceVersion = metadataV2 ? metadata?.instance_version : null
+const metadataReleaseVersion = metadataV2
+  ? (metadataInstanceVersion ?? metadataSourceVersion ?? '')
+  : (metadata?.version ?? '')
+if (versionContract && ((!historicalV1 && !currentV2)
+  || !/^\d+\.\d+\.\d+$/.test(contractProductVersion ?? '')
+  || contractProductVersion !== (currentV2 ? metadataSourceVersion : metadataReleaseVersion)
+  || versionContract.scaffold_template !== inventory?.template_version
+  || (currentV2 && versionContract.generated_instance_default !== inventory?.application?.version)
+  || (currentV2 && !strictSemver.test(versionContract.generated_instance_default ?? ''))
+  || (currentV2 && (versionContract.core_php !== contractProductVersion
+    || versionContract.core_web !== contractProductVersion
+    || versionContract.scaffold_template !== contractProductVersion
+    || declaredCorePhp !== contractProductVersion
+    || declaredCoreWeb !== contractProductVersion
+    || Object.values(declaredClientVersions).some((value) => value !== contractProductVersion)
+    || Object.values(declaredClientCoreVersions).some((value) => value !== contractProductVersion)
+    || Object.values(lockedCoreVersions).some((value) => value !== contractProductVersion)
+    || metadata?.public_runtime_dependencies?.composer !== `peanut-admin/core@${contractProductVersion}`
+    || metadata?.public_runtime_dependencies?.web_npm !== `@peanut-admin/admin@${contractProductVersion}`
+    || metadata?.public_runtime_dependencies?.platform_npm !== `@peanut-admin/admin@${contractProductVersion}`
+    || metadata?.public_runtime_dependencies?.pc_npm !== `@peanut-admin/admin@${contractProductVersion}`
+    || metadata?.public_runtime_dependencies?.uniapp_npm !== `@peanut-admin/admin@${contractProductVersion}`)))) {
   failures.push('release version contract does not match metadata and inventory')
+}
+if (currentV2 && (!metadataV2
+    || metadataSourceVersion !== versionContract?.source_product_version
+    || metadataInstanceVersion !== versionContract?.instance_version
+    || metadataReleaseVersion !== version)) {
+  failures.push('release metadata does not preserve the source product and root instance identities')
 }
 if (!/^\d+\.\d+\.\d+$/.test(version)) failures.push(`metadata version is invalid: ${version || 'missing'}`)
 if (metadata && metadata.expected_tag !== expectedTag) failures.push(`metadata expected_tag does not match ${expectedTag}`)

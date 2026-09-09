@@ -9,6 +9,37 @@
   },
   "rules": [
     {
+      "id": "product-instance-version-identity",
+      "paths": [
+        "release-versions.json",
+        "release-versions.schema.json",
+        "docs/architecture/product-version-identity-adr.md",
+        "docs/governance/current-state.md"
+      ],
+      "classifications": [
+        "architecture-decision",
+        "technical",
+        "developer-site",
+        "generated"
+      ],
+      "upstream": [
+        "explicit product and Instance identity contract; immutable release and package identities"
+      ],
+      "technical_docs": [
+        "docs/architecture/product-version-identity-adr.md",
+        "docs/governance/current-state.md",
+        "docs/plans/application-scaffold-version-contract-queue.md"
+      ],
+      "site_docs": [
+        "docs-site/guide/version-identity.md"
+      ],
+      "generated": [
+        "docs/reference/document-catalog.generated.md",
+        "docs-site/reference/source-map.generated.md"
+      ],
+      "reason": "Product/Core/Edition shared identity and independent Module/Instance versions must remain explicit; historical snapshots never receive retroactive version changes."
+    },
+    {
       "id": "internal-refactor",
       "paths": ["server/app/**/*.php", "web/src/**/*", "platform/src/**/*", "pc/**/*", "uniapp/src/**/*"],
       "classifications": ["none"],

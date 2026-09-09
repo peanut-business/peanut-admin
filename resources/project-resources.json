@@ -11,6 +11,28 @@
   "resources": {
     "tooling": [
       {
+        "stable_resource_id": "peanut-admin-docs-cloudflare-pages-cli",
+        "purpose": "authenticated public documentation build upload and immutable Pages deployment verification",
+        "environments": ["development", "production"],
+        "owner": "Peanut Admin documentation owner",
+        "host": "api.cloudflare.com",
+        "port": 443,
+        "database": null,
+        "schema": null,
+        "namespace": "peanut-admin-docs",
+        "service_type": "Cloudflare Pages API via Wrangler CLI",
+        "version": "wrangler 3.114.14; Node 24.13.0",
+        "command": "npx --yes wrangler@3.114.14 pages deploy docs-site/.vitepress/dist --project-name peanut-admin-docs --branch main",
+        "credential_ref": "operator-managed local Wrangler OAuth session or environment token; never read or persist token values",
+        "data_source": "reviewed public docs-site build; CLI version follows the existing docs-site.yml publication entry",
+        "freshness_requirement": "wrangler whoami succeeds, build has no private resource or credential content, and uploaded commit/tree is fixed",
+        "health_check": "npx --yes wrangler@3.114.14 whoami; verify custom domain and returned immutable deployment over HTTPS",
+        "fallback": "none",
+        "cache_namespace": "/private/tmp/peanut-admin-docs-publish-npm-cache-1044",
+        "lifecycle": "temporary CLI cache for fact-convergence publication; Pages project remains persistent",
+        "cleanup_responsibility": "fact-convergence documentation owner removes only the registered temporary CLI cache after publication verification"
+      },
+      {
         "stable_resource_id": "peanut-admin-host-php-development",
         "purpose": "default daily development API runtime",
         "environments": ["development"],

@@ -64,6 +64,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-core-packages-release-status` | `docs/core-packages-release-status.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-core-upgrade-compatibility` | `docs/core-upgrade-compatibility.md` | `archived` | `reference` | `application-maintainers` |
 | `pa-docs-create-application` | `docs/create-application.md` | `current` | `reference` | `application-maintainers` |
+| `pa-docs-current-state` | `docs/governance/current-state.md` | `current` | `index` | `product-architecture` |
 | `pa-docs-design-saas-enhancement-blueprint` | `docs/design/saas-enhancement-blueprint.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-design-saas-roadmap-dcs-integration-19-dcs-architecture-backflow-calibration` | `docs/design/saas-roadmap/dcs-integration/19-dcs-architecture-backflow-calibration.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-design-saas-roadmap-dcs-integration-i01-dcs-integration-mapping` | `docs/design/saas-roadmap/dcs-integration/I01-dcs-integration-mapping.md` | `planned` | `plan` | `product-architecture` |
@@ -118,6 +119,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-development-database-resource` | `docs/development-database-resource.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-development-local-core-composer` | `docs/development/local-core-composer.md` | `current` | `guide` | `application-maintainers` |
 | `pa-docs-development-local-environment-probe` | `docs/development/local-environment-probe.md` | `current` | `guide` | `application-maintainers` |
+| `pa-docs-fact-convergence-audit-2026-09-09` | `docs/maintenance/fact-convergence-audit-2026-09-09.md` | `current` | `evidence` | `product-architecture` |
 | `pa-docs-impact-policy` | `docs/governance/docs-impact.md` | `current` | `guide` | `documentation-architecture` |
 | `pa-docs-index` | `docs/README.md` | `authoritative` | `index` | `documentation-architecture` |
 | `pa-docs-lifecycle` | `docs/governance/document-lifecycle.md` | `current` | `guide` | `documentation-architecture` |
@@ -174,6 +176,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-product-status-product-closure-observability` | `docs/product-status/product-closure-observability.md` | `current` | `evidence` | `product-architecture` |
 | `pa-docs-product-status-readme` | `docs/product-status/README.md` | `current` | `index` | `release-qualification` |
 | `pa-docs-product-status-releases-readme` | `docs/product-status/releases/README.md` | `current` | `index` | `release-qualification` |
+| `pa-docs-product-version-identity-adr` | `docs/architecture/product-version-identity-adr.md` | `current` | `decision` | `product-architecture` |
 | `pa-docs-productization-baseline-plan` | `docs/productization-baseline-plan.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-reference-core-capabilities-and-application-adoption` | `docs/reference/core-capabilities-and-application-adoption.md` | `current` | `reference` | `architecture` |
 | `pa-docs-reference-product-capability-reference-matrix` | `docs/reference/product-capability-reference-matrix.md` | `current` | `reference` | `product-architecture` |
@@ -207,3 +210,4 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-site-getting-started` | `docs-site/getting-started.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-site-index` | `docs-site/index.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-site-source-map` | `docs-site/reference/source-map.generated.md` | `generated` | `generated` | `developer-experience` |
+| `pa-site-version-identity` | `docs-site/guide/version-identity.md` | `current` | `public-projection` | `product-architecture` |

@@ -9,12 +9,23 @@ use Throwable;
 /** Plan, apply, verify, and recover scaffold-owned changes with frozen application identities. */
 final class ScaffoldUpgradeRunner
 {
-    private const VERSION_CONTRACT_KEYS = [
+    private const STRICT_SEMVER = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D';
+    private const VERSION_CONTRACT_V1_KEYS = [
         'schema_version',
         'protocol',
         'product_release',
         'scaffold_template',
         'generated_application_default',
+        'core_php',
+        'core_web',
+    ];
+    private const VERSION_CONTRACT_V2_KEYS = [
+        'schema_version',
+        'protocol',
+        'source_product_version',
+        'instance_version',
+        'scaffold_template',
+        'generated_instance_default',
         'core_php',
         'core_web',
     ];
@@ -34,7 +45,8 @@ final class ScaffoldUpgradeRunner
         $this->assertReleaseChain($application, $from, $to);
         [$versionContract, $versionContractDigest] = $this->versionContract($root, $application);
         $fromParameters = $this->parameters($application, (string)$application['application']['version']);
-        $targetParameters = $this->parameters($application, (string)$versionContract['product_release']);
+        $instanceVersion = $this->instanceVersion($versionContract);
+        $targetParameters = $this->parameters($application, $instanceVersion);
         $actions = $this->classify($root, $from, $to, $fromParameters, $targetParameters, $versionContract);
         $summary = $this->summary($actions);
         $impact = $this->impact($actions);
@@ -43,7 +55,7 @@ final class ScaffoldUpgradeRunner
         $identity = [
             'from' => $this->releaseIdentity($from),
             'to' => $this->releaseIdentity($to),
-            'application_version' => $versionContract['product_release'],
+            'application_version' => $instanceVersion,
             'adoption_application_version' => $application['application']['version'],
             'version_contract' => $versionContract,
             'version_contract_sha256' => $versionContractDigest,
@@ -346,8 +358,12 @@ final class ScaffoldUpgradeRunner
             $rendered,
             'SCAFFOLD_VERSION_CONTRACT_TARGET_INVALID',
         );
-        $document['product_release'] = $versionContract['product_release'];
-        $document['generated_application_default'] = $versionContract['generated_application_default'];
+        if ($document['schema_version'] === 2) {
+            $document['instance_version'] = $this->instanceVersion($versionContract);
+        } else {
+            $instanceVersion = $this->instanceVersion($versionContract);
+            $document['product_release'] = $instanceVersion;
+        }
         return json_encode(
             $document,
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
@@ -409,7 +425,7 @@ final class ScaffoldUpgradeRunner
      * Read the live application release authority without requiring installed
      * Composer dependencies and bind it to the currently adopted scaffold.
      *
-     * @return array{0:array<string,int|string>,1:string}
+     * @return array{0:array<string,int|string|null>,1:string}
      */
     private function versionContract(string $root, array $application): array
     {
@@ -457,31 +473,62 @@ final class ScaffoldUpgradeRunner
             throw new RuntimeException($error, 0, $exception);
         }
         $keys = is_array($document) ? array_keys($document) : [];
-        if (!is_array($document)
-            || count($keys) !== count(self::VERSION_CONTRACT_KEYS)
-            || array_diff($keys, self::VERSION_CONTRACT_KEYS) !== []
-            || array_diff(self::VERSION_CONTRACT_KEYS, $keys) !== []
-            || ($document['schema_version'] ?? null) !== 1
-            || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'
-        ) {
+        $v2 = is_array($document)
+            && ($document['schema_version'] ?? null) === 2
+            && ($document['protocol'] ?? null) === 'peanut.release-versions.v2';
+        $expectedKeys = $v2 ? self::VERSION_CONTRACT_V2_KEYS : self::VERSION_CONTRACT_V1_KEYS;
+        if (!is_array($document) || count($keys) !== count($expectedKeys)
+            || array_diff($keys, $expectedKeys) !== [] || array_diff($expectedKeys, $keys) !== []
+            || (!$v2 && (($document['schema_version'] ?? null) !== 1
+                || ($document['protocol'] ?? null) !== 'peanut.release-versions.v1'))) {
             throw new RuntimeException($error);
         }
         $normalized = [];
-        foreach (self::VERSION_CONTRACT_KEYS as $key) {
+        foreach ($expectedKeys as $key) {
             $value = $document[$key];
+            if ($key === 'instance_version' && $value === null) {
+                $normalized[$key] = null;
+                continue;
+            }
             if (!in_array($key, ['schema_version', 'protocol'], true)
-                && (!is_string($value) || !$this->isSemanticVersion($value))) {
+                && (!is_string($value)
+                    || !($v2 ? $this->isStrictSemanticVersion($value) : $this->isSemanticVersion($value)))) {
                 throw new RuntimeException($error . ': ' . $key);
             }
             $normalized[$key] = $value;
         }
+        if ($v2 && ($normalized['source_product_version'] !== $normalized['core_php']
+                || $normalized['source_product_version'] !== $normalized['core_web']
+                || $normalized['source_product_version'] !== $normalized['scaffold_template'])) {
+            throw new RuntimeException($error . ': product-core-version-mismatch');
+        }
         return $normalized;
+    }
+
+    /** Resolve only the customer instance sequence used by scaffold apply/verify plans. */
+    private function instanceVersion(array $versionContract): string
+    {
+        $version = $versionContract['schema_version'] === 2
+            ? ($versionContract['instance_version'] ?? null)
+            : ($versionContract['product_release'] ?? null);
+        if (!is_string($version)
+            || !($versionContract['schema_version'] === 2
+                ? $this->isStrictSemanticVersion($version)
+                : $this->isSemanticVersion($version))) {
+            throw new RuntimeException('SCAFFOLD_INSTANCE_VERSION_INVALID');
+        }
+        return $version;
     }
 
     /** Accept the SemVer surface already supported by scaffold application identities. */
     private function isSemanticVersion(string $version): bool
     {
         return preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:[-+][0-9A-Za-z.-]+)?$/D', $version) === 1;
+    }
+
+    private function isStrictSemanticVersion(string $version): bool
+    {
+        return preg_match(self::STRICT_SEMVER, $version) === 1;
     }
 
     private function releaseIdentity(ScaffoldManifest $manifest): array { return $manifest->release() + ['manifest_sha256' => $manifest->digest()]; }
@@ -522,6 +569,12 @@ final class ScaffoldUpgradeRunner
             throw new RuntimeException('SCAFFOLD_LEGACY_APPLICATION_VERSION_UNAVAILABLE', 0, $exception);
         }
         $candidates = [];
+        if (is_array($metadata)
+            && ($metadata['schema_version'] ?? null) === 2
+            && ($metadata['protocol'] ?? null) === 'peanut.release-metadata.v2'
+            && is_string($metadata['instance_version'] ?? null)) {
+            $candidates[] = $metadata['instance_version'];
+        }
         if (is_array($metadata) && is_string($metadata['version'] ?? null)) {
             $candidates[] = $metadata['version'];
         }

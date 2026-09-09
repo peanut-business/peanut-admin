@@ -28,10 +28,12 @@ Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、�
 | Core 依赖 | Composer/npm 精确包版本与 lock | 应用实际安装的后端/前端 Core 身份 |
 | Module | Module manifest、archive SHA-256/签名与安装账本 | 可独立版本化的业务源码 contribution 及其依赖和 migration |
 
-这四种身份不会因为其中一项变化而自动同步。下一次正式发布起，scaffold 与 PHP/Web Core 使用
-同一个基础发行号（包括同步的预发布后缀），但相同号码不替代各自的 manifest、lock、不可变包
-引用或兼容证据；应用版本继续独立，共同号码也不能把 alpha 自动说成稳定版。当前 `3.0.14`
-scaffold 已锁定并验证 `0.1.0-alpha.13` Core，但仍是两个独立版本轴。Module 可独立开发和分发，
+表中 `product_release` 是已发布 v1 合同对客户实例版本的历史命名。新合同明确分为
+`source_product_version` 与 `instance_version`；客户独立版本不等于 Peanut 产品版本。
+下一次正式发布起，Peanut 产品 Application、scaffold 与 PHP/Web Core 使用同一个产品发行号
+（包括同步的预发布后缀），但相同号码不替代 manifest、lock、不可变包引用或兼容证据。
+当前 `3.0.14` / `0.1.0-alpha.13` 是保持不变的历史组合；新版本通过资格并发布之前不改安装指令。
+现行规则见[版本身份 ADR](architecture/product-version-identity-adr.md)。Module 可独立开发和分发，
 继续使用自己的版本与 archive SHA-256，并由应用仓采用、固定依赖、构建和验收，最后随应用自己的
 完整 Release 部署；Module archive 不是生产实例部署单位。
 

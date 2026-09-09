@@ -4,6 +4,8 @@
 
 ## 对 Peanut Admin 的直接结论
 
+本文中的独立应用宿主不表示 Peanut 产品 Application 与 Core 可以独立编号。现行[版本身份 ADR](../architecture/product-version-identity-adr.md)要求产品/Core/双 Edition 同号；客户 Instance 与 Module 独立编号。分仓、分包和版本对象是不同维度。
+
 四个脚手架没有给出唯一正确的分包方式。它们提供了三种可核实的边界样本：
 
 - LikeAdmin 以 **project 仓**承载后台和项目内 common；FastAdmin 的 CRUD command/stubs 把产物写回 project。二者都不能仅凭公共目录或模板名称视为可独立升级的 Core。
