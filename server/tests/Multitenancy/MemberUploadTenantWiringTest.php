@@ -7,7 +7,6 @@ use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
-use think\file\UploadedFile;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -39,7 +38,7 @@ function memberUploadSchema(PDO $pdo, string $serverRoot): void
 INSERT INTO pa_tenant
   (id, code, name, display_name, status, activated_at, created_at, updated_at)
 VALUES
-  (101, 'alpha', 'Alpha', 'Alpha', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
+  (101, 'default', 'Alpha', 'Alpha', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
 SQL);
     $schema = (string)file_get_contents($serverRoot . '/database/init.sql');
     expectMemberUpload($schema !== '', 'canonical application schema is missing');
@@ -49,11 +48,21 @@ SQL);
     );
     expectMemberUpload($storageMigration !== '', 'canonical storage migration is missing');
     $pdo->exec($storageMigration);
+    $pdo->exec(<<<'SQL'
+INSERT INTO pa_account
+  (id, display_name, status, created_at, updated_at)
+VALUES
+  (1001, 'Alpha member', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
+INSERT INTO pa_tenant_member
+  (id, tenant_id, account_id, member_no, display_name, status, joined_at, created_at, updated_at)
+VALUES
+  (501, 101, 1001, 'member-upload-501', 'Alpha member', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3));
+SQL);
 }
 
 $serverRoot = dirname(__DIR__, 2);
 $routeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/File/Http/routes.php');
-$uploadRoute = "Route::post('api/upload/image', [ApiUploadController::class, 'image'])";
+$uploadRoute = "Route::post('upload/image', [ApiUploadController::class, 'image'])";
 expectMemberUpload(substr_count($routeSource, $uploadRoute) === 1, 'member upload route is missing or duplicated');
 expectMemberUpload(
     str_contains(
@@ -89,6 +98,14 @@ try {
 
     $app = new think\App($serverRoot);
     $app->initialize();
+    set_exception_handler(static function (Throwable $exception): never {
+        fwrite(STDERR, sprintf(
+            "MT03-MEMBER-UPLOAD-TENANT-WIRING-001 failed: %s: %s\n",
+            $exception::class,
+            $exception->getMessage(),
+        ));
+        exit(1);
+    });
     $request = $app->request;
     $request->withPost([
         'cid' => 0,
@@ -104,7 +121,13 @@ try {
         base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true)
     );
     $request->withFiles([
-        'file' => new UploadedFile($temporaryUpload, 'member-avatar.png', 'image/png', UPLOAD_ERR_OK, true),
+        'file' => [
+            'name' => 'member-avatar.png',
+            'type' => 'image/png',
+            'tmp_name' => $temporaryUpload,
+            'error' => UPLOAD_ERR_OK,
+            'size' => filesize($temporaryUpload),
+        ],
     ]);
     $app->instance('request', $request);
 

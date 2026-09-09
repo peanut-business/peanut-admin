@@ -574,6 +574,9 @@ class Runner:
             "P0E_ADMIN_INITIAL_PASSWORD",
             "P0E_PLATFORM_INITIAL_EMAIL",
             "P0E_PLATFORM_INITIAL_PASSWORD",
+            "P0E_JWT_SECRET",
+            "P0E_TENANT_IDENTIFIER_HMAC_KEY",
+            "P0E_PLATFORM_IDENTIFIER_HMAC_KEY",
         }
         if resume:
             values = read_private_environment(self.runtime_credentials, names)
@@ -586,6 +589,9 @@ class Runner:
                 "P0E_ADMIN_INITIAL_PASSWORD": "P0eOwner" + secrets.token_urlsafe(18) + "9",
                 "P0E_PLATFORM_INITIAL_EMAIL": f"platform-{suffix}@p0e.invalid",
                 "P0E_PLATFORM_INITIAL_PASSWORD": "P0ePlatform" + secrets.token_urlsafe(18) + "9",
+                "P0E_JWT_SECRET": secrets.token_hex(32),
+                "P0E_TENANT_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
+                "P0E_PLATFORM_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
             }
             self.runtime_credentials.write_text(
                 "".join(f"{name}={values[name]}\n" for name in sorted(values)),
@@ -789,6 +795,9 @@ class Runner:
             "DB_PASS": required_environment("P0E_DB_PASSWORD"),
             "DB_PREFIX": "pa_",
             "DEPLOYMENT_MODE": mode,
+            "JWT_SECRET": required_environment("P0E_JWT_SECRET"),
+            "TENANT_IDENTIFIER_HMAC_KEY": required_environment("P0E_TENANT_IDENTIFIER_HMAC_KEY"),
+            "PLATFORM_IDENTIFIER_HMAC_KEY": required_environment("P0E_PLATFORM_IDENTIFIER_HMAC_KEY"),
         })
         return values
 
@@ -1395,9 +1404,9 @@ class Runner:
         backend_values.update({
             "PLATFORM_HOSTS": self.plan["browser_hosts"]["platform"],
             "TENANT_ADMIN_HOSTS": self.plan["browser_hosts"]["tenant_admin"],
-            "JWT_SECRET": secrets.token_hex(32),
-            "TENANT_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
-            "PLATFORM_IDENTIFIER_HMAC_KEY": secrets.token_hex(32),
+            "JWT_SECRET": required_environment("P0E_JWT_SECRET"),
+            "TENANT_IDENTIFIER_HMAC_KEY": required_environment("P0E_TENANT_IDENTIFIER_HMAC_KEY"),
+            "PLATFORM_IDENTIFIER_HMAC_KEY": required_environment("P0E_PLATFORM_IDENTIFIER_HMAC_KEY"),
             "PEANUT_RESOURCE_LEASE_PROOF": self.plan["lease_proof_container_path"],
         })
         temporary_backend = self.compose_backend_env.with_suffix(self.compose_backend_env.suffix + ".tmp")
