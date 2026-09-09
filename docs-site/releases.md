@@ -20,7 +20,12 @@ Peanut Admin 的源码 Release、正式安装包、升级包和派生应用版�
 
 ## 双 Edition 正式附件
 
-正式版本号和附件列表以 [GitHub Releases](https://github.com/peanut-business/peanut-admin/releases) 页面为准。本文不预填尚未正式发布的版本；下面的 `X.Y.Z` 是明确占位符，实际值必须直接采用 Release 页面显示的值。
+当前正式版本是 [`v3.0.14`](https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.14)。它从同一冻结源码提供
+Standalone 与 Multi-tenant 安装包，并分别提供从 `3.0.13` 到 `3.0.14` 的同 Edition 升级包；不得跨 Edition
+套用，也不得用完整安装包覆盖已有应用。每个 archive 都必须与 Release 中的 manifest、`SHA256SUMS`
+或 `SHA256SUMS.upgrades` 核对。
+
+正式版本号和附件列表以 [GitHub Releases](https://github.com/peanut-business/peanut-admin/releases) 页面为准。下面的 `X.Y.Z` 是文件命名示意，实际值必须直接采用 Release 页面显示的值。
 
 从首个正确 Edition 分发基线开始，每个正式 Release 会随附件提供以下两套安装物：
 

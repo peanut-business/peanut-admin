@@ -166,8 +166,9 @@ package 保持 `private: true`，Marketplace 仍 blocked。
 `AllModulesPackagingTest` 不再硬编码 8 个 Module，而是从 `plugins.lock` 自动发现全部 `official.*`
 Module。`official.rich-text` 因而进入打包资格，未来新增 official Module 也不能静默漏测。
 
-Rich Text 的 bundled 通道达到 **bundled-locked**：源码随 v3.0.13 完整应用 Release（源码与两种
-Edition 安装包）冻结；线上 Demo 仍是 v3.0.12。固定提交 `882182e7` 的 `module:check` 八项全部通过，
+Rich Text 的 bundled 通道达到 **bundled-locked**：源码随 v3.0.14 完整应用 Release（源码、两种
+Edition 安装包和升级包）冻结，并已随 v3.0.14 基础源码加独立 seed-only overlay 部署到多租户 Demo。
+固定提交 `882182e7` 的 `module:check` 八项全部通过，
 并重新生成/复验未签名本地 tar（SHA-256 `9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`）；
 同一提交的动态清单资格已打包 9 个官方 Module 并完成生产 Web 构建，
 所以独立包通道达到 **package-candidate（local/unsigned）**。签名、SBOM、review/漏洞响应未建立；
@@ -215,20 +216,24 @@ Argon2id 平滑迁移、文件删除失败恢复、scaffold plan 重绑定、Aut
 文章 Module guard/并发幂等、七牛修复、管理员聚合原子命令、Core 聚合测试入口、Vite 路径边界、短信发送
 reservation、Tenant settings 窄例外登记，以及旧测试脚本的正式替换。
 
+应用收敛主体已经完成：固定 `main@e30b667bbfc25d70281ddf1864b99883850afa24` / tree
+`c956641c976ce4e35d7a1abdc159bb3ee2fd958e` 以 run `v3014i` 通过 P0-E 8/8、零资源残留并发布
+annotated `v3.0.14`；双 Edition 安装包和 3.0.13 → 3.0.14 同 Edition 升级包均已签发。随后
+`main@20a284d7bf4acc88313f29b8fe094033bf635c5c` 补齐严格 `DEPLOYMENT_RECEIPT.json`：宿主与运行镜像必须
+逐字一致，备份与无 Git Runtime 不再消费发布前必然为 pending 的嵌入 metadata。
+
 仍需正式关闭：
 
-- 全官方 Module 打包证据必须在最终应用源码身份上重新生成；
 - Rich Text 独立发布仍缺浏览器、协同服务、签名、SBOM、review/漏洞响应 owner 与明确渠道；
-- 资格测试修复合入最终 `main` 后，应用固定候选必须重新运行 L2 P0-E；旧候选仅保留失败取证；
-- 真实云 Provider 和生产部署按各自登记资源与资格执行。
+- v3.0.14 安装日志暴露的前端 high/moderate 依赖告警必须在下一不可变候选正式升级或以有 owner/期限的例外裁定；
+- 真实云 Provider 和第三方业务生产部署按各自登记资源与资格执行。
 
 ## 11. 集成、发布、生产与清理顺序
 
-1. 完成当前应用收敛分支的聚焦验证、官方 Module 打包证据和文档同步；
-2. 合入并推送 `dev`，再按 `dev → main` 人工审核固定正式应用 source commit/tree；
-3. 在该最终 `origin/main` 身份运行一次 L2 P0-E，不继承旧候选或旧媒体证据；
-4. 资格通过后签发应用 Release；生产只消费该 Release，在登记目标完成 migration dry-run、可恢复备份、部署和线上 smoke；
-5. 只有独有价值均已吸收或明确弃用、没有活跃 owner/租约，且未跟踪文件清单已有恢复证据，才精确删除
+1. 已完成的 v3.0.14 收敛、P0-E、Release 和多租户 Demo 采用保持不可变证据；
+2. 依赖安全升级进入新的开发候选，不回写已发布 tag 或复用 v3.0.14 资格；
+3. Rich Text 独立发布、真实 Provider 资格与高容量媒体产品化分别使用独立 Gate，不互相冒充；
+4. 只有独有价值均已吸收或明确弃用、没有活跃 owner/租约，且未跟踪文件清单已有恢复证据，才精确删除
    quarantine worktree、临时脚本和失效分支。不得用广域 reset/clean 删除未知内容或共享数据。
 
 源码发布与生产部署继续是两个状态。用户授权允许执行到生产，但任何中间 Gate 失败只阻塞其直接下游，
@@ -239,13 +244,14 @@ reservation、Tenant settings 窄例外登记，以及旧测试脚本的正式�
 | 工作项 | 状态 | 当前证据/缺口 |
 | --- | --- | --- |
 | 两仓大迁移只读审计 | 已完成 | Terra/Luna/GPT-6 交叉复核；已定位确定解析、类、Tenant、事务和文档问题 |
-| Module 发布合同 | 已完成（开发候选） | 文档登记、公开投影、动态 official Module 打包清单 |
+| Module 发布合同 | 已完成并进入 main | 文档登记、公开投影、动态 official Module 打包清单，v3.0.14 正式制品已消费 |
 | 测试占位防回归 | 已完成并进入 main | `TEST-INTEGRITY-001` 通过；Module 打包非交互假阳性已关闭 |
 | Rich Text 独立发布 | 部分完成 | bundled-locked + local unsigned package-candidate；浏览器、协同服务、签名/SBOM/review/渠道未完成 |
 | `590e6183` 拉平 | 已完成并吸收 | `590e6183 → 64460af8 → 563df8c4`；不是 merge，Core Alpha.13 依赖已锁定 |
 | 厂商 Storage 可用性 | 源码与装配完成、真实资格后置 | 四 provider 源码/依赖/Factory 保留且构造通过；真实账号生产资格未冒充完成 |
-| Luna/Gemini 收敛 | 主体与首轮资格修复进入 main；容器端点修复在 dev | PR #434/#435 已合并；`fd35bc67` 关闭测试边界，`f023760c/v3014g` 暴露并定位 Docker Desktop 端点事实错误 |
+| Luna/Gemini 收敛 | 已完成主体与发布闭环 | PR #434 及后续修复已进入 main；真实测试门禁、Docker 端点和部署回执边界均已关闭 |
 | High-capacity media | 已审计/隔离 | 不进入 Runtime；后续独立能力任务 |
 | Core 正式发布 | 已完成 | Alpha.13 source/split/tag/GitHub Release/npm/Packagist 已一致 |
-| 应用正式发布与生产 | 未完成 | 待容器端点合同修复、重新 seal、最终应用 P0-E、Release 与登记生产 smoke |
+| 应用正式发布与生产 | 部分完成 | v3.0.14 已发布；登记的 disposable multi-tenant production-candidate 已全新部署并通过回执、103 表、四容器和四域 HTTPS smoke；既有 Standalone production 未升级，认证浏览器 smoke 未获单独凭据出站授权 |
+| 前端依赖安全 | 修复中 | v3.0.14 日志确认遗留 high/moderate advisory，已启动下一候选正式升级；不得把 v3.0.14 描述为漏洞清零 |
 | quarantine 破坏性清理 | 可恢复证据已固定、暂不删 branch | `1b2b66cd` / `90bf92f`；待独有价值最终登记后精确清理 |

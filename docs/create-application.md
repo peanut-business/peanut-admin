@@ -30,8 +30,8 @@ Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、�
 
 这四种身份不会因为其中一项变化而自动同步。下一次正式发布起，scaffold 与 PHP/Web Core 使用
 同一个基础发行号（包括同步的预发布后缀），但相同号码不替代各自的 manifest、lock、不可变包
-引用或兼容证据；应用版本继续独立，共同号码也不能把 alpha 自动说成稳定版。当前 `3.0.13`
-scaffold 与 `0.1.0-alpha.12` Core 是历史真实身份，不能回写成已对齐。Module 可独立开发和分发，
+引用或兼容证据；应用版本继续独立，共同号码也不能把 alpha 自动说成稳定版。当前 `3.0.14`
+scaffold 已锁定并验证 `0.1.0-alpha.13` Core，但仍是两个独立版本轴。Module 可独立开发和分发，
 继续使用自己的版本与 archive SHA-256，并由应用仓采用、固定依赖、构建和验收，最后随应用自己的
 完整 Release 部署；Module archive 不是生产实例部署单位。
 

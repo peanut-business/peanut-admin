@@ -1,7 +1,7 @@
 # 用 Module 开发独立业务
 
 > 本文描述当前源码与生成器真实支持的 Module 结构。发布状态和交付门禁见
-> [Module 发布与制品合同](architecture/module-publication-contract.md)。
+> 公开使用路径见 [Application 与 Module 生命周期](/guide/application-module-lifecycle)；维护者的完整状态机与制品门禁见仓库内 `docs/architecture/module-publication-contract.md`。
 
 ## 1. Module、Plugin 与租户授权
 

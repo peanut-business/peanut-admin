@@ -94,9 +94,9 @@ baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标
 同一个基础发行号，预发布后缀同步；`product_release` 仍由应用独立决定。正式顺序是先发布并验证
 同号 PHP/Web Core 包，再让应用锁定两份依赖并完成消费检查，最后完成同号 scaffold 资格与发布。
 任何一步失败都不能把整套基础发行标记为 ready。版本号一致不能替代 manifest、lock、包引用和
-兼容证据，也不能把 alpha 自动视为稳定版；未变化的 Core 也要产生同号不可变包。当前 `3.0.13`
-与 Core `0.1.0-alpha.12` 保持其真实历史身份，本规则不修改既有 Release、依赖锁或本页记录的
-Development 验证输入。
+兼容证据，也不能把 alpha 自动视为稳定版；未变化的 Core 也要产生同号不可变包。当前 `3.0.14`
+scaffold 已锁定并验证 Core `0.1.0-alpha.13`，但本规则不修改既有 Release、依赖锁或本页记录的
+历史 Development 验证输入。
 
 Module manifest/archive/安装账本是第四种独立身份。Module 可以独立开发和分发，但默认由应用仓
 采用并随完整应用 Release 部署；当前 Module 安装/更新入口不执行 Composer/npm、前端构建或服务

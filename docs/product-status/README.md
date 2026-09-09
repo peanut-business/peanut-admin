@@ -32,9 +32,9 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.13 正式源码和 Standalone/Multi-tenant 双 Edition 安装基线已在 main@b6530737a17da4ace56b982ed62ba263ed47eef7 完成 P0-E 八组资格、零资源残留、annotated tag 与 GitHub Release；v3.0.14 正在准备固定候选，用于收敛 Gemini 遗留、采用已资格的 Core Alpha.13 并恢复真实测试门禁。在线 Demo 和文档站仍保持已验证的 v3.0.12。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.14 固定源码完成 P0-E 八组、零资源残留、annotated tag/GitHub Release、双 Edition 安装与同 Edition 升级包；多租户 Demo 已用正式基础源码加可追溯 overlay 全新部署并通过部署回执、数据库、容器和四域 HTTPS 验证。既有 Standalone 演示未升级。发布后复核确认前端依赖仍有 high/moderate advisory，下一候选正在正式升级，故 v3.0.14 不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
-> 事实基线：`main@b6530737a17da4ace56b982ed62ba263ed47eef7`，复核日期：`2026-09-06`。
+> 事实基线：`main@20a284d7bf4acc88313f29b8fe094033bf635c5c`，复核日期：`2026-09-09`。
 
 ### 已验证可用
 
@@ -72,13 +72,13 @@ php scripts/check-product-capability-ledger
 | `PA-TENANCY-002` | Tenant 停用全局 Fail-Closed | 已验证 | CR13 已由 PR #344 合入 dev：管理/API/PC/H5 与公开内容继续通过 active Tenant/Host context；全部 Tenant 文件 URL 统一为短期签名应用交付，读取时重新查询 active Tenant 与 ready 对象，生产和开发 Nginx 的历史 `/storage/` 直出固定 404。登记 MySQL 聚焦验证证明已签发 URL 在 suspend 后拒绝、reactivate 后只恢复 ready 对象，archived 对象与 suspended 异步任务不复活。 |
 | `PA-DELIVERY-005` | 正式可消费源码交付 | 已验证 | CR01—CR40 保持完成；部署闭包 hotfix 的最终 main@fe328a320b7c68b3c2f47512f2aa4afcad43c630（tree b5be33c5bd180e6b89f00d49002cd4fa96aeb523）以 p0e3012a 通过正式 create-app、双模式 fresh、Plugin/Module 生命周期、Compose/浏览器和零残留八组资格，并已发布 annotated v3.0.12 与同名 GitHub Release。 |
 | `PA-DELIVERY-006` | 3.0.12 部署闭包 Hotfix | 已验证 | PR #371 已将生产候选镜像的安装预检与 Plugin lock 校验前置到目标替换之前，补齐镜像内发布身份和 Plugin schema，并在 migration 后收敛 official Plugin；main@fe328a320b7c68b3c2f47512f2aa4afcad43c630 已以 p0e3012a 通过 P0-E 8/8、发布 v3.0.12，并由同提交 demo 与公开文档入口完成采用验证。 |
+| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已验证 | v3.0.14 已在 main@e30b667b… 完成 P0-E 八组并发布正式源码、Standalone/Multi-tenant 安装包及从 3.0.13 开始的同 Edition 升级包；Gemini 测试占位、Module 发布门禁和 Core Alpha.13 采用已正式收敛。多租户 Demo 由 v3.0.14 基础源码加可追溯 overlay 全新部署并通过运行验证；前端依赖 advisory 作为下一候选阻断单独登记。 |
 
 ### 已实现或正在验收
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
 | `PA-ARCH-001` | ThinkPHP/ThinkORM 统一执行与数据边界 | 已实现，待验收 | TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。 |
-| `PA-DELIVERY-007` | 双 Edition 安装与升级分发 | 已实现，待验收 | v3.0.13 已在 main@b6530737… 完成 P0-E 八组资格并发布正式源码、Standalone 与 Multi-tenant 两套安装包，首个正确双 Edition 安装基线已建立。v3.0.14 收敛候选已采用 Core Alpha.13、正式修复 Gemini 测试占位与 Module 发布门禁，尚待最终 main 固定候选 P0-E、Release 和生产采用。 |
 
 ### 暂缓或范围外
 

@@ -36,8 +36,8 @@ manifest、archive 摘要和签名对应业务模块。升级其中一项不会�
 下一次正式发布起，Peanut Admin 的 scaffold、PHP Core 和 Web Core 采用同一个基础发行号，
 包括同步的预发布后缀；应用版本仍按自身节奏递增。这项规则不改变四种身份：相同版本号不能代替
 manifest、lock、不可变包引用或兼容验证，共同版本号也不能把 alpha 自动说成稳定版。第三方或
-私有 Module 继续使用自己的版本和 archive SHA-256。当前 `3.0.13` scaffold 与
-`0.1.0-alpha.12` Core 是既有真实身份，不能回写成已经对齐。后续发布必须依次完成同号 Core 包
+私有 Module 继续使用自己的版本和 archive SHA-256。当前 `3.0.14` scaffold 已采用正式发布的
+`0.1.0-alpha.13` Core；两者仍是独立版本轴，后续不能靠改 manifest 假装对齐，必须依次完成 Core 包
 发布与验证、应用锁定消费、同号 scaffold 资格；任一步失败时，整套基础发行不能标记为 ready。
 
 ## 2. 创建并检查 Module

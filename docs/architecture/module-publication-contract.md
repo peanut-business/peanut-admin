@@ -129,9 +129,9 @@ Standalone 部署 owner 可另行执行 `php think tenant-module:enable-locked-p
 
 ## 6. `official.rich-text` 当前裁定（2026-09-09）
 
-- 源码、Module manifest、前端贡献和 bundled Plugin identity 已进入 Peanut Admin v3.0.13 完整应用
-  Release（源码与两种 Edition 安装包），故 bundled 状态为 **bundled-locked**；在线 Demo 仍是 v3.0.12，
-  不能用来证明该 Module 已部署；
+- 源码、Module manifest、前端贡献和 bundled Plugin identity 已进入 Peanut Admin v3.0.14 完整应用
+  Release（源码、两种 Edition 安装包和同 Edition 升级包），故 bundled 状态为 **bundled-locked**；
+  当前多租户 Demo 也已从该 Release 加 seed-only overlay 安装并通过运行验证，但 Demo 不替代独立 Package 资格；
 - `plugins.lock` 明确记录 archive/signature/SBOM `not-issued`、review `not-reviewed`、漏洞响应
   `not-configured`、Marketplace `blocked`；因此它不是 independently published Package；
 - 前端 `@peanut-admin/official-rich-text` 保持 `private: true`，PHP `peanut-business/official-rich-text`

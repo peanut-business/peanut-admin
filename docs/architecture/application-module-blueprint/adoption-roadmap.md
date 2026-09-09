@@ -10,9 +10,8 @@
 - **实施前核验**：必须用框架、精确 Core identity 或源码证明，未通过前不得开始依赖它的 Runtime 修改；
 - **完成证据**：固定 diff/commit/tree 与当前候选验证；计划、开放 PR、旧候选和文档本身都不是实现证据。
 
-正式可消费源码、Tag、GitHub Release 和登记 Demo 仍是 `v3.0.12`。`v3.0.13` 只有 pending 元数据：未产生最终
-candidate commit/tree、未通过 P0-E、未 Tag、未 Release、未部署，也未被 Demo/文档站采用。架构实施不能继承或
-提前改写这两个状态。
+正式可消费源码、Tag、GitHub Release 和登记的多租户 Demo 已更新到 `v3.0.14`；版本状态不改变本路线图中
+尚未完成的 Runtime 架构迁移。架构实施不能继承 Release 资格或用部署状态提前改写实现状态。
 
 ## 2. 当前基础与必须退出项
 
@@ -28,8 +27,8 @@ candidate commit/tree、未通过 P0-E、未 Tag、未 Release、未部署，也
 | Core Task Job/Attempt/lease/fencing、幂等、Audit、Outbound HTTP 基础 | 复用并校准 | 不把基础机制当成共享受众语义 |
 | 服务登记、资源登记、文档治理和发布控制 | 保留 | 不替代 Module、Schema、Release 或 Runtime 事实源 |
 
-应用已锁定 `peanut-admin/core@0.1.0-alpha.12`，source reference 为
-`9017212da0da63f445d693be94d533f681c6dc92`。Alpha.12 的规范 schema 已移除 `backend.routes`，
+应用已锁定 `peanut-admin/core@0.1.0-alpha.13`，source reference 为
+`a949a77728f2940153c6cfd76b104d5d8bb183e3`。Alpha.13 的规范 schema 已移除 `backend.routes`，
 应用 manifest 与唯一生成模板已同步删除该字段；目标 multi-app 装配仍需单独实现和验证。
 
 ### 2.2 最终必须退出
