@@ -66,8 +66,19 @@
     "@peanut-admin/admin": "0.1.0-alpha.13",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
-    "vue-i18n": "^9.1.9",
+    "vue-i18n": "9.14.5",
     "vue-router": "4.4.4"
+  },
+  "overrides": {
+    "@intlify/core-base": "9.14.5",
+    "@intlify/message-resolver": "9.1.11",
+    "adm-zip": "0.6.0",
+    "@dcloudio/uni-nvue-styler": {
+      "postcss": "8.5.28"
+    },
+    "ws@^8.0.0": "8.21.0",
+    "jpeg-js": "0.4.4",
+    "path-to-regexp": "0.1.13"
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.8",
