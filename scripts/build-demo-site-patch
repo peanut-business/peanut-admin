@@ -26,6 +26,9 @@ cd "$ROOT_DIR"
   || fail "$BASE_TAG must be an annotated local tag"
 
 files=(
+  plugins.lock
+  plugins/official.notification/plugin.json
+  plugins/official.task/plugin.json
   server/app/Modules/Official/Notification/Application/NotificationBootstrapDefaults.php
   server/app/Modules/Official/Notification/Infrastructure/Persistence/PdoNotificationBootstrapService.php
   server/app/Modules/Official/Task/Infrastructure/Persistence/PdoTaskBootstrapService.php
