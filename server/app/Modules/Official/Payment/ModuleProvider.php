@@ -40,9 +40,9 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             PaymentServiceFactory::class => fn(App $app): PaymentServiceFactory => new PaymentServiceFactory(
                 $app->make(ExternalTenantResolver::class),
             ),
-            RechargeCommands::class => fn(App $app): RechargeCommands => $app->make(RechargeApplicationService::class),
-            RechargeQueries::class => fn(App $app): RechargeQueries => $app->make(RechargeApplicationService::class),
-            RefundReconciliationCommands::class => fn(App $app): RefundReconciliationCommands => $app->make(ThinkPhpRefundReconciliationCommands::class),
+            RechargeCommands::class => RechargeApplicationService::class,
+            RechargeQueries::class => RechargeApplicationService::class,
+            RefundReconciliationCommands::class => ThinkPhpRefundReconciliationCommands::class,
         ];
     }
 }

@@ -46,8 +46,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             ThinkPhpExternalTenantBindingRepository::class => fn(App $app): ThinkPhpExternalTenantBindingRepository => new ThinkPhpExternalTenantBindingRepository(
                 $app->make(OAuthCallbackLocator::class),
             ),
-            ExternalTenantBindingRepository::class => fn(App $app): ExternalTenantBindingRepository => $app->make(ThinkPhpExternalTenantBindingRepository::class),
-            ExternalChannelBindingStore::class => fn(App $app): ExternalChannelBindingStore => $app->make(ThinkPhpExternalTenantBindingRepository::class),
+            ExternalTenantBindingRepository::class => ThinkPhpExternalTenantBindingRepository::class,
+            ExternalChannelBindingStore::class => ThinkPhpExternalTenantBindingRepository::class,
             ExternalTenantResolver::class => fn(App $app): ExternalTenantResolver => new ExternalTenantResolver(
                 $app->make(ExternalTenantBindingRepository::class),
                 $app->make(ExternalTenantAudit::class),
@@ -70,7 +70,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(OAuthTransport::class),
                 (string)$app->config->get('project.default_image.user_avatar', ''),
             ),
-            OAuthQueries::class => fn(App $app): OAuthQueries => new OAuthQueryService($app->make(OAuthPersistence::class)),
+            OAuthQueries::class => OAuthQueryService::class,
         ];
     }
 }

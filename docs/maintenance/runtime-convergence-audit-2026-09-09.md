@@ -12,7 +12,7 @@ Reviewed at: 2026-09-09
 
 两仓正式技术栈已经确定为 ThinkPHP 8，但运行时收敛尚未完成。当前事实不是“框架中立已保留”，也不是“PDO 已移除”：Application 仍把 ThinkPHP 连接降为 PDO 并注入旧 persistence；Core 发布包仍以 PDO persistence 为公共实现。历史 Gemini 大重构及其被短路的测试没有进入当前 `dev`，应作为隔离证据保留，不应整体恢复或合并。
 
-本轮完成了一个不改变业务语义的首批修正：Application 三个 ModuleProvider 中 6 个确定无参数的闭包绑定改为接口到实现类的直接映射，删除了 Member Provider 中仅服务于这些闭包的 4 个辅助工厂方法。改动已保留在本任务分支，待本轮最终验证后合入 `dev`。
+本轮完成了两个不改变业务语义的 Provider 修正批次：Application 四个 ModuleProvider 中 16 个确定无参数或纯别名闭包绑定改为接口到实现类的直接映射，删除了 Member Provider 中仅服务于这些闭包的 4 个辅助工厂方法。两批已合入并推送 `dev`。
 
 ## 固定基线与证据范围
 
@@ -31,7 +31,7 @@ Reviewed at: 2026-09-09
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `RUNTIME-APP-001` | ADR §2.2；Gemini handover | `server/app/AppService.php` 的 `PDO::class`、`PdoTransactionManager`、`IdempotencyRuntimeFactory::forPdo` | ThinkPHP 连接被降级为 PDO；阻碍统一事务与公共 Runtime 收敛 | application-runtime | `AppService.php`、事务/幂等组合根及受影响调用者 | `rg -n -- 'PDO::class|PdoTransactionManager|forPdo' server/app`；对应域真实测试 | `open` |
 | `RUNTIME-APP-002` | ADR §2.3；Core/Application 边界审计 | Article、Task、ImportExport Provider 仍构造 `Pdo*` 和 `CoreTenantRepositoryFactory` | 重复 persistence 图；不能通过改名或兼容桥解决 | application-runtime | 按固定顺序逐域替换并删除旧 PDO 路径 | 对应域测试、Tenant/事务/两 Edition 门禁 | `open` |
-| `RUNTIME-APP-003` | ADR §2.5；本轮源码盘点 | 现有 7 个 `*RuntimeFactory.php`、223 处生产 `->make(`；本轮后 Provider 闭包由 50 减为 44 | 仅移除确定无参数工厂；其余闭包需按配置、SDK、回调、Worker 语义逐项裁定 | application-composition | `server/app/Modules/**/ModuleProvider.php`，逐批 | `php -l`；Provider 装载探针；现有 Module 合同 | `open` |
+| `RUNTIME-APP-003` | ADR §2.5；本轮源码盘点 | 现有 7 个 `*RuntimeFactory.php`、213 处生产 `->make(`；本轮后 55 个 Provider binding 中 21 个直接类映射、34 个闭包，Provider 内显式 `make()` 为 95 处 | 仅移除确定无参数或纯别名工厂；其余闭包需按配置、SDK、回调、Worker 语义逐项裁定 | application-composition | `server/app/Modules/**/ModuleProvider.php`，逐批 | `php -l`；Provider 装载探针；现有 Module 合同 | `open` |
 | `RUNTIME-CORE-001` | Core `docs/architecture/index.md`；Core Runtime ADR | `packages/php/*/src` 555 个 PHP 文件、82 个涉及 PDO、35 个 `Pdo*` 文件、47 个 Repository 中 26 个 `Pdo*Repository`，ThinkPHP 命中 0 | Core 公共 persistence 仍是 PDO；直接阻塞 3.1.0 Runtime 采用 | core-runtime | Core 按 ReferenceCodes → Identity/Tenant/RBAC 微批次修改 | Core 对应域测试；固定候选资格 | `open` |
 | `RUNTIME-CORE-002` | Core host 盘点；ADR §2.4 | `backend`/`starter` 有 106 个 ThinkPHP 文件、89 个涉及 PDO，并保留多处 RuntimeFactory | 宿主已由 ThinkPHP 启动不等于公共包已迁移；需清理重复装配 | core-runtime | Core host composition root、ModuleProvider 与域实现 | Core host 静态检查及真实测试 | `open` |
 | `BOOTSTRAP-001` | ADR §2.4、§7 | Application `server/database/environment-guard.php`、`install.php`、`seed-multi-tenant-demo.php` 仍是独立 PDO 入口；Core 安装/升级/健康/Worker 也有独立路径 | CLI、安装、迁移、Worker、Cron 尚未共用一个正式 ThinkPHP bootstrap | bootstrap-owner | 按 bootstrap 合同单独设计并在对应域原子落地 | 安装/迁移/Worker/双 Edition 真实门禁 | `open` |
@@ -45,11 +45,14 @@ Reviewed at: 2026-09-09
 
 ## 已执行批次
 
-`RUNTIME-APP-003A`：只把以下确定无参数构造或无参数辅助工厂改成直接类映射：
+`RUNTIME-APP-003A/B`：只把以下确定无参数构造或纯别名工厂改成直接类映射：
 
 - Article `ArticleQueries → ArticleQueryService`；
 - Member 四个 `*Commands → *ContractService`，并删除未被其他代码调用的四个 Provider 辅助方法；
-- OAuth `OAuthCallbackLocator → ThinkPhpOAuthCallbackLocator`。
+- OAuth `OAuthCallbackLocator → ThinkPhpOAuthCallbackLocator`；`ExternalTenantBindingRepository`、`ExternalChannelBindingStore` 和 `OAuthQueries` 的纯别名；
+- Article `PublicArticleQueries → PublicArticleService`；
+- Notification 三个查询/命令合同 → `NotificationApplicationService`；
+- Payment `RechargeCommands`、`RechargeQueries`、`RefundReconciliationCommands` 的纯别名。
 
 未改动任何 PDO、事务、Tenant、测试断言、版本、发布或外部资源。带配置、SDK、Console callback、动态 Worker 或仍需 PDO 的闭包保留，避免把“减少闭包”误当作 Runtime 迁移。
 

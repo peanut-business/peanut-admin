@@ -35,7 +35,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(ProductAssetReferenceService::class),
                 $app->make(RichTextResourceService::class),
             ),
-            PublicArticleQueries::class => fn(App $app): PublicArticleQueries => $app->make(PublicArticleService::class),
+            PublicArticleQueries::class => PublicArticleService::class,
             ArticleAdministration::class => fn(App $app): ArticleAdministration => new ArticleAdministrationService(
                 $app->make(CurrentExecutionContext::class),
                 $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),

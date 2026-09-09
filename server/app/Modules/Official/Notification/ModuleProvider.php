@@ -53,10 +53,10 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                 $app->make(VerificationCodeService::class),
                 $app->make(NoticeChannelService::class),
             ),
-            NotificationCommands::class => fn(App $app): NotificationCommands => $app->make(NotificationApplicationService::class),
+            NotificationCommands::class => NotificationApplicationService::class,
             NotificationBootstrapCommands::class => NotificationBootstrapService::class,
-            NotificationQueries::class => fn(App $app): NotificationQueries => $app->make(NotificationApplicationService::class),
-            VerificationCodeCommands::class => fn(App $app): VerificationCodeCommands => $app->make(NotificationApplicationService::class),
+            NotificationQueries::class => NotificationApplicationService::class,
+            VerificationCodeCommands::class => NotificationApplicationService::class,
         ];
     }
 }
