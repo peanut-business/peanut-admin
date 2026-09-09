@@ -111,6 +111,9 @@ $expect(
 );
 $overlayBuilder = $read($root . '/scripts/build-demo-site-patch');
 $overlayFiles = [
+    'plugins.lock',
+    'plugins/official.notification/plugin.json',
+    'plugins/official.task/plugin.json',
     'server/app/Modules/Official/Notification/Application/NotificationBootstrapDefaults.php',
     'server/app/Modules/Official/Notification/Infrastructure/Persistence/PdoNotificationBootstrapService.php',
     'server/app/Modules/Official/Task/Infrastructure/Persistence/PdoTaskBootstrapService.php',

@@ -93,7 +93,9 @@ migration 后，再运行 `php server/think plugin:reconcile --release-locked`�
 
 演示补丁不改正式 tag，也不进入普通生产默认行为。overlay 只能包含合成数据 seed 以及该 seed
 在未启动 ThinkPHP 容器时所需的窄 PDO bootstrap adapters；这些 adapter 仍位于各自 Module/应用 owner
-边界内，并与框架内实现共享默认值来源。先从干净提交生成 overlay，再用 fresh
+边界内，并与框架内实现共享默认值来源。adapter 改变官方 Module 内容时，overlay 还必须携带同一干净
+提交重新生成的 canonical Plugin manifests 与 `plugins.lock`，否则镜像构建的服务发现应当 fail-closed。
+先从干净提交生成 overlay，再用 fresh
 重建可丢弃的 `production-candidate`；脚本会核对 base tag、overlay SHA-256、登记路径和
 数据库资源。overlay 元数据同时绑定 base tag/commit、overlay commit 和从所含 application
 migration 自动推导的 `migration_target_version`；部署端会在构建镜像以及任何数据库/卷
