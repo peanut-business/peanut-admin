@@ -12,7 +12,8 @@ Fixed inputs: Peanut Admin clean baseline `dev@e38e45d07752cd6b4834fbe4483bfd2dc
 quarantine snapshot `1b2b66cd`、Peanut Admin Core Alpha.13 source candidate
 `a949a77728f2940153c6cfd76b104d5d8bb183e3`、Core quarantine snapshot `90bf92f`、
 Application convergence `main@f61d41ffb7137447e7be0b8ae2f7f9aaf4e27f7f`（PR #434；Storage adoption
-`563df8c4`）及其资格测试修复 `dev@fd35bc67e60d1a3c0d1055ee85fa175286cbee26`。
+`563df8c4`）、资格测试修复 `dev@fd35bc67e60d1a3c0d1055ee85fa175286cbee26`，以及合入 PR #435 后的
+第二个正式候选 `main@f023760caf7c253aa2282282d5700336fec783d3`。
 
 > 本报告把 Gemini 的机械处理视为未完成迁移工件，而不是动机错误或可继承的通过证据。目标是吸收有
 > 价值的设计与行为，正式重做缺失实现和测试，再清理隔离现场。用户已授权后续发布、生产与精确破坏性
@@ -130,6 +131,15 @@ P0-E 则把三项随机密钥写入仅存于 lease cache 的 `0600` 恢复文件
 cache、output 与 lease 均为零残留。首次失败候选的 evidence 保留，数据库、Compose、监听、cache 和 lease
 已按精确 run ID 清理，未沿用为新候选通过证据。
 
+第二个正式候选 `f023760c` 的 P0-E `v3014g` 已真实通过生成应用、双 Edition 空库、Plugin lifecycle
+和消费方 Module 正式采用五组；`production-compose` 的三端构建及 PHP/Nginx 镜像也成功。随后 PHP
+健康门禁发现容器无法连接数据库：宿主访问登记的 `192.168.192.2:20183` 正常，而 Docker Desktop
+容器访问同址超时。根因是资源登记把宿主专用网卡的直连地址错误声明为容器可达，不是产品数据库或镜像
+构建错误。聚焦取证已证明 `host.docker.internal` 经仅绑定 `127.0.0.1` 的 SSH local forward 可达同一
+登记 MySQL。当前修复把容器端点、`20189` 监听、隧道工具、lease 资源、启动/健康/失败与成功清理统一
+纳入版本化合同；因为资格基础设施和生成应用中的环境门禁均改变，`f023760c/v3014g` 只保留失败证据，
+不得 resume 或继承为新候选资格。
+
 后续恢复规则：
 
 1. 不复制 quarantine 的 74 个测试文件；以 `dev` 原测试作为断言源；
@@ -226,8 +236,8 @@ reservation、Tenant settings 窄例外登记，以及旧测试脚本的正式�
 | Rich Text 独立发布 | 部分完成 | bundled-locked + local unsigned package-candidate；浏览器、协同服务、签名/SBOM/review/渠道未完成 |
 | `590e6183` 拉平 | 已完成并吸收 | `590e6183 → 64460af8 → 563df8c4`；不是 merge，Core Alpha.13 依赖已锁定 |
 | 厂商 Storage 可用性 | 源码与装配完成、真实资格后置 | 四 provider 源码/依赖/Factory 保留且构造通过；真实账号生产资格未冒充完成 |
-| Luna/Gemini 收敛 | 主体进入 main；资格修复在 dev | PR #434 已合并；`fd35bc67` 关闭首次 P0-E 暴露的测试边界 |
+| Luna/Gemini 收敛 | 主体与首轮资格修复进入 main；容器端点修复在 dev | PR #434/#435 已合并；`fd35bc67` 关闭测试边界，`f023760c/v3014g` 暴露并定位 Docker Desktop 端点事实错误 |
 | High-capacity media | 已审计/隔离 | 不进入 Runtime；后续独立能力任务 |
 | Core 正式发布 | 已完成 | Alpha.13 source/split/tag/GitHub Release/npm/Packagist 已一致 |
-| 应用正式发布与生产 | 未完成 | 待资格修复再次进入 main、最终应用 P0-E、Release 与登记生产 smoke |
+| 应用正式发布与生产 | 未完成 | 待容器端点合同修复、重新 seal、最终应用 P0-E、Release 与登记生产 smoke |
 | quarantine 破坏性清理 | 可恢复证据已固定、暂不删 branch | `1b2b66cd` / `90bf92f`；待独有价值最终登记后精确清理 |
