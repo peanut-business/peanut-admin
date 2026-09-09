@@ -244,6 +244,10 @@ $expect(
         && str_contains($deploy, '"$tag_tree" == "$EXPECTED_TREE"'),
     'deployment does not read and archive the caller-bound immutable commit/tree'
 );
+$expect(
+    !str_contains($deploy, 'Demo overlay deployment must consume the formal Multi-tenant Edition installer'),
+    'project-owned demo deployment still requires a consumer Edition registry that cannot name private production resources'
+);
 $upgradeWorker = $read($root . '/scripts/ops-upgrade-worker');
 $expect(
     str_contains($upgradeWorker, '.result.target_commit == $commit')
