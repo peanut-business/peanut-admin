@@ -50,7 +50,8 @@
       "content_type": "public-projection",
       "authority": "projection",
       "canonical_sources": [
-        "docs/architecture/product-version-identity-adr.md"
+        "docs/architecture/product-version-identity-adr.md",
+        "docs/architecture/core-thinkphp-runtime-direction-adr.md"
       ],
       "owner": "product-architecture",
       "status": "current",
@@ -59,6 +60,7 @@
       ],
       "related": [
         "release",
+        "core-thinkphp-runtime-direction",
         "documentation"
       ],
       "site_projections": [],
@@ -165,10 +167,12 @@
       "canonical_sources": [
         "server/composer.json",
         "server/app/AppService.php",
+        "server/app/common/execution/",
         "server/app/Modules/",
         "repo://peanut-admin-core/composer.json",
         "repo://peanut-admin-core/packages/php/composer.json",
-        "repo://peanut-admin-core/packages/php/kernel/src/",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/backend/app/AppService.php",
         "AGENT_EXECUTION_RULES.md"
       ],
       "owner": "product-architecture",

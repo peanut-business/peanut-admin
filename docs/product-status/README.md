@@ -32,7 +32,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.14 固定源码完成 P0-E 八组、零资源残留、annotated tag/GitHub Release、双 Edition 安装与同 Edition 升级包；多租户 Demo 已用正式基础源码加可追溯 overlay 全新部署并通过部署回执、数据库、容器和四域 HTTPS 验证。既有 Standalone 演示未升级。发布后依赖补丁已使 Platform、PC、Web 的 high advisory 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 以受控构建、无公网开发服务器和 2026-10-09 到期复核作窄例外，故 v3.0.14 仍不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.14 固定源码完成 P0-E 八组、零资源残留、annotated tag/GitHub Release、双 Edition 安装与同 Edition 升级包；多租户 Demo 已用正式基础源码加可追溯 overlay 全新部署并通过部署回执、数据库、容器和四域 HTTPS 验证。既有 Standalone 演示未升级。Application 的 ThinkPHP 执行与 Tenant 数据边界基础已实现，但 Core/Application 全面删除公共 PDO 路径、重复 RuntimeFactory 和手工装配的收敛仅完成方向登记，尚未实施。发布后依赖补丁已使 Platform、PC、Web 的 high advisory 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 以受控构建、无公网开发服务器和 2026-10-09 到期复核作窄例外，故 v3.0.14 仍不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
 > 事实基线：`main@48c1a86b5e964ca0721757897d56a810455f1e54`，复核日期：`2026-09-09`。
 
@@ -78,7 +78,13 @@ php scripts/check-product-capability-ledger
 
 | ID | 能力 | 状态 | 当前事实 |
 |---|---|---|---|
-| `PA-ARCH-001` | ThinkPHP/ThinkORM 统一执行与数据边界 | 已实现，待验收 | TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。 |
+| `PA-ARCH-001` | Application ThinkPHP/ThinkORM 执行与 Tenant 数据边界基础 | 已实现，待验收 | TPQ00—TPQ53 已由 PR #380 合入 dev：Application 已形成由可信 ExecutionContext 驱动的 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。本项不代表 Core 公共 PDO API、重复 RuntimeFactory、CLI PDO 路径或手工装配已经迁移。 |
+
+### 计划中或受阻
+
+| ID | 能力 | 状态 | 当前事实 |
+|---|---|---|---|
+| `PA-ARCH-002` | Core/Application ThinkPHP 8 Runtime 全面收敛 | 计划中 | 方向已接受并完成双仓源码盘点与文档登记；Runtime 迁移尚未开始。后续按 ModuleProvider、Core 数据边界和十二个领域批次原子替换并删除旧 PDO 路径，不建立长期双实现、兼容桥或双写。 |
 
 ### 暂缓或范围外
 

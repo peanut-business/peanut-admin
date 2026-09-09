@@ -26,6 +26,7 @@ This page answers “where must this fact be changed first?”. Explanations and
 | Commands, compatibility and configuration | executable `--help`, checked scripts, lifecycle services, `.env.example` files and configuration loaders | public consumer task, command index and support guides that invoke them |
 | Package and scaffold identity | package manifests, lock files, application/scaffold manifests and immutable release snapshots | release and upgrade guides |
 | Application/Core boundary | fixed Core dependency identity, module manifests, service registry and accepted architecture contracts | capability graph and developer projections |
+| Application/Core PHP Runtime direction | `docs/architecture/core-thinkphp-runtime-direction-adr.md`, fixed two-repository source snapshots and the accepted product version identity | `docs/architecture/core-application-technical-boundary.md`, `docs/governance/current-state.md` and Core's architecture projection; current PDO source remains migration input until an implementation batch passes its gates |
 | Documentation identity and lifecycle | `docs/document-registry.json` | this page and the generated catalog |
 | Documentation impact | `docs/document-impact-map.json` | `docs/governance/docs-impact.md` |
 

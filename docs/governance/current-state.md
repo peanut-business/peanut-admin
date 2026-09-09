@@ -11,6 +11,7 @@ Owner: `product-architecture`
 | 要回答的问题 | 唯一事实入口 |
 | --- | --- |
 | 产品是什么、谁拥有哪些职责 | [Core/Application 技术边界](../architecture/core-application-technical-boundary.md)、[原生多租户基线](../architecture/clean-native-multitenancy-baseline.md) |
+| Application 与 Core 的正式 PHP Runtime 往哪里收敛 | [Core ThinkPHP 8 运行时收敛方向 ADR](../architecture/core-thinkphp-runtime-direction-adr.md)；当前 PDO 路径是迁移前事实，不是已完成状态 |
 | 产品、Core、Edition、Module、客户实例如何编号 | [版本身份 ADR](../architecture/product-version-identity-adr.md)；当前实物仍由 manifests、locks、Release 固定 |
 | 做到哪里、完成的证据是什么 | [能力账本](../product-status/capability-ledger.json)及其[生成视图](../product-status/README.md) |
 | 正式发布了什么 | [Release 快照目录](../product-status/releases/)与 GitHub 不可变 Release |

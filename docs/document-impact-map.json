@@ -181,10 +181,10 @@
     },
     {
       "id": "core-thinkphp-runtime-direction",
-      "paths": ["docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md"],
+      "paths": ["server/app/AppService.php", "server/app/common/execution/**/*.php", "server/app/Modules/**/ModuleProvider.php", "server/app/**/*Pdo*.php", "server/database/**/*.php", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md"],
       "classifications": ["architecture-decision", "technical"],
       "upstream": ["Core/Application ThinkPHP 8 direction ADR", "Application AppService and ModuleProvider sources", "Core Composer and package sources"],
-      "technical_docs": ["docs/README.md", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md"],
+      "technical_docs": ["docs/README.md", "docs/governance/current-state.md", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md"],
       "site_docs": [],
       "generated": ["docs/reference/document-catalog.generated.md", "docs-site/reference/source-map.generated.md"],
       "reason": "The accepted Core/Application runtime boundary changes the current architecture explanation and must remain distinct from historical evidence and planned contracts."

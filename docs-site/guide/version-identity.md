@@ -16,6 +16,14 @@ Application **v3.0.14** 实际采用 Core **v0.1.0-alpha.13**。这是统一规�
 
 尚未完成资格的新版本不应出现在安装命令中作为可用依赖。继续使用已经发布、适合当前项目的不可变来源；统一版本规则不会自动升级既有实例。
 
+## Core Runtime 的破坏性变化
+
+Core 与 Application 的正式 PHP Runtime 都是 ThinkPHP 8。未来删除 Core
+公共 PDO Repository、PDO constructor 或 transaction contract 时，该变化按
+整个 Peanut Admin 产品的共同版本发布，不另开 Core `0.2.0-alpha.1` 序列。
+这项方向决定不表示迁移已经完成；只有共同版本、不可变包、Application
+精确采用和双 Edition 资格均完成后，新的 Runtime API 才可对外声明可用。
+
 ## 发布、打包与部署分别判断
 
 源码中存在 Module、本地生成 Module 包、完成独立发布，以及生产实例已采用，是不同状态。Core 包发布也不代表应用或实例完成部署；在线演示的版本以其单独说明为准。

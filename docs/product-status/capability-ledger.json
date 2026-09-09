@@ -10,7 +10,7 @@
   "overall": {
     "id": "PA-ROADMAP-001",
     "status": "in_progress",
-    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.14 固定源码完成 P0-E 八组、零资源残留、annotated tag/GitHub Release、双 Edition 安装与同 Edition 升级包；多租户 Demo 已用正式基础源码加可追溯 overlay 全新部署并通过部署回执、数据库、容器和四域 HTTPS 验证。既有 Standalone 演示未升级。发布后依赖补丁已使 Platform、PC、Web 的 high advisory 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 以受控构建、无公网开发服务器和 2026-10-09 到期复核作窄例外，故 v3.0.14 仍不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
+    "summary": "产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.14 固定源码完成 P0-E 八组、零资源残留、annotated tag/GitHub Release、双 Edition 安装与同 Edition 升级包；多租户 Demo 已用正式基础源码加可追溯 overlay 全新部署并通过部署回执、数据库、容器和四域 HTTPS 验证。既有 Standalone 演示未升级。Application 的 ThinkPHP 执行与 Tenant 数据边界基础已实现，但 Core/Application 全面删除公共 PDO 路径、重复 RuntimeFactory 和手工装配的收敛仅完成方向登记，尚未实施。发布后依赖补丁已使 Platform、PC、Web 的 high advisory 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 以受控构建、无公网开发服务器和 2026-10-09 到期复核作窄例外，故 v3.0.14 仍不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。"
   },
   "capabilities": [
     {
@@ -1226,10 +1226,10 @@
     },
     {
       "id": "PA-ARCH-001",
-      "name": "ThinkPHP/ThinkORM 统一执行与数据边界",
+      "name": "Application ThinkPHP/ThinkORM 执行与 Tenant 数据边界基础",
       "area": "architecture",
       "status": "implemented",
-      "summary": "TPQ00—TPQ53 已由 PR #380 合入 dev：一套可信 ExecutionContext 驱动 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。",
+      "summary": "TPQ00—TPQ53 已由 PR #380 合入 dev：Application 已形成由可信 ExecutionContext 驱动的 Edition 数据策略、TenantOwnedModel global scope、非 ORM Tenant gateway、Module 执行边界、分页/异常渲染、Application Service 和生成器合同。637 条历史问题已关闭，现行扫描只保留 17 条有理由和复核日期的 allowlist；正式 P0-E 留给后续唯一双 Edition L2 候选。本项不代表 Core 公共 PDO API、重复 RuntimeFactory、CLI PDO 路径或手工装配已经迁移。",
       "acceptance": [
         "35 个具体 Model 和 47 张 Tenant 表都有唯一 owner；18 张无 ORM Model 的表全部通过显式 Tenant gateway 访问",
         "Multi-tenant 查询与写入自动受可信 Tenant global scope 约束，Standalone 不生成 tenant_id SQL、字段或索引",
@@ -1275,6 +1275,35 @@
         "scripts/check-thinkphp-architecture",
         "server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php",
         "server/tests/Productization/ThinkPhpEditionIntegrationTest.php"
+      ]
+    },
+    {
+      "id": "PA-ARCH-002",
+      "name": "Core/Application ThinkPHP 8 Runtime 全面收敛",
+      "area": "architecture",
+      "status": "planned",
+      "summary": "方向已接受并完成双仓源码盘点与文档登记；Runtime 迁移尚未开始。后续按 ModuleProvider、Core 数据边界和十二个领域批次原子替换并删除旧 PDO 路径，不建立长期双实现、兼容桥或双写。",
+      "acceptance": [
+        "Core 公共 Runtime API 与 Application 容器不再暴露或绑定 PDO，PdoTransactionManager 和 PDO Repository 按领域删除",
+        "Core/Application 使用 ThinkPHP Model、Query、Db、Transaction 和正式 TenantScope，同时保持明确的表 owner",
+        "普通 ModuleProvider 使用接口到实现类映射，闭包与 make() 仅用于配置、SDK、回调和可变 Worker 等登记例外",
+        "HTTP、CLI、Worker、Cron、安装、迁移和种子使用同一 ThinkPHP bootstrap 与 ExecutionContext 规则",
+        "每批真实通过 Tenant 隔离、事务、并发及 Standalone/Multi-tenant 门禁，测试断言未被弱化、跳过或替换为 PASSED 占位",
+        "公共 PDO API 的破坏性删除使用 Application、Core PHP/Web 与两 Edition 协调一致的产品版本，不启用独立 Core 0.2.x 序列"
+      ],
+      "evidence": [
+        {
+          "kind": "document",
+          "ref": "docs/architecture/core-thinkphp-runtime-direction-adr.md"
+        }
+      ],
+      "dependencies": [
+        "PA-ARCH-001"
+      ],
+      "paths": [
+        "docs/architecture/core-thinkphp-runtime-direction-adr.md",
+        "docs/architecture/core-application-technical-boundary.md",
+        "docs/governance/current-state.md"
       ]
     },
     {

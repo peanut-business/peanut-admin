@@ -27,7 +27,7 @@ Core 既不是几个工具函数，也不是安装后自动得到完整后台的
 - **Core 内部能力域**：聚合包内部按 namespace 或 export subpath 划分的服务、合同、Schema 和 UI 运行时；Alpha.13 的 PDO 实现属于待迁移过渡面，不是长期框架中立承诺。内部有多个域，不等于每个域都是独立发布包。
 - **Core 参考宿主**：Core 仓的 `backend/`、`frontend/`、`starter/`、`examples/` 和工程脚本。它们展示如何装配、验证和生成，不能当作独立应用已经获得的路由、页面或业务数据。
 
-Core 当前开发基线是 [`9358686fee873dd235489c8794abf556fd70ec4f`](https://github.com/peanut-opensource/peanut-admin-core/commit/9358686fee873dd235489c8794abf556fd70ec4f)。PHP 聚合包要求 PHP 8.3、PDO 扩展、JSON、OpenSSL、Sodium、Fileinfo 与 `opis/json-schema`；`PDO` 在 Alpha.13 仍是过渡实现的底层事实，正式运行时支持边界是 ThinkPHP 8。宿主仍需提供 ThinkPHP HTTP/CLI bootstrap、provider/secret、Module 启用状态和环境配置。Web 聚合包同样要求宿主提供 transport、router、Pinia 和实际 API。
+本页固定的 Core 审计基线是 [`9358686fee873dd235489c8794abf556fd70ec4f`](https://github.com/peanut-opensource/peanut-admin-core/commit/9358686fee873dd235489c8794abf556fd70ec4f)，不是移动的当前 `dev`。PHP 聚合包在该快照要求 PHP 8.3、PDO 扩展、JSON/OpenSSL/Sodium/Fileinfo 与 `opis/json-schema`；`PDO` 在 Alpha.13 仍是过渡实现的底层事实，正式运行时支持边界是 ThinkPHP 8。宿主仍需提供 ThinkPHP HTTP/CLI bootstrap、provider/secret、Module 启用状态和环境配置。Web 聚合包同样要求宿主提供 transport、router、Pinia 和实际 API。
 
 ### PHP Kernel 的公共后台底座
 
@@ -151,7 +151,7 @@ Core `backend/` 和 `frontend/` 把上述能力装配成 ThinkPHP route/controll
 | PC | [`pc/composables/useRequest.ts`](../../pc/composables/useRequest.ts#L1) 使用 `./client` 与 `./client/nuxt` | 客户端协议直接采用，产品 API/页面留在 PC |
 | UniApp | [`uniapp/src/utils/request.ts`](../../uniapp/src/utils/request.ts#L1) 使用 `./client` 与 `./client/uniapp` | 客户端协议直接采用，平台 request/session 由 UniApp 注入 |
 
-四端 manifest 都声明 aggregate `0.1.0-alpha.12`；这属于工具/构建依赖身份，只证明包可解析，不证明每个 subpath 在 Runtime 被调用。
+固定审计快照中的四端 manifest 都声明 aggregate `0.1.0-alpha.12`；这属于当时的工具/构建依赖身份，只证明包可解析，不证明每个 subpath 在 Runtime 被调用。当前发布和开发身份必须回到页首链接的 Release 快照及版本事实源核对。
 
 ### 发布和升级成本
 
@@ -161,9 +161,9 @@ Core `backend/` 和 `frontend/` 把上述能力装配成 ThinkPHP route/controll
 
 ## Storage Driver 当前事实
 
-Core dev `9358686` 已加入低层 `StorageDriver` 四操作、对象 key 校验、HTTP transport 和 Local/Aliyun/Qcloud/Qiniu driver；具体 SDK client/transport 由宿主注入。见 [`StorageDriver`](https://github.com/peanut-opensource/peanut-admin-core/blob/9358686fee873dd235489c8794abf556fd70ec4f/packages/php/file-media/src/Storage/StorageDriver.php) 和 [边界说明](https://github.com/peanut-opensource/peanut-admin-core/blob/9358686fee873dd235489c8794abf556fd70ec4f/docs/architecture/storage-driver-boundary.md)。这批源码晚于 alpha.12，尚无新的不可变 split/应用 lock，因此不能说独立应用已经采用。
+固定 Core 快照 `9358686` 已加入低层 `StorageDriver` 四操作、对象 key 校验、HTTP transport 和 Local/Aliyun/Qcloud/Qiniu driver；具体 SDK client/transport 由宿主注入。见 [`StorageDriver`](https://github.com/peanut-opensource/peanut-admin-core/blob/9358686fee873dd235489c8794abf556fd70ec4f/packages/php/file-media/src/Storage/StorageDriver.php) 和 [边界说明](https://github.com/peanut-opensource/peanut-admin-core/blob/9358686fee873dd235489c8794abf556fd70ec4f/docs/architecture/storage-driver-boundary.md)。这段只描述 2026-09-01 的采用前状态；后续发布/锁定事实以页首当前快照入口为准。
 
-在应用 canonical `72fcf7b9` 中，[`AppService::registerStorage()`](../../server/app/AppService.php#L242) 仍装配应用自己的 `StorageDriverFactory`、`StorageService`、账本、凭据 resolver 和四个 driver。应用候选 commit `590e61830d0e62c0bf25425dfe43d69ae894b726` 已实现指向 Core dev 边界的源码改造，但它保留在独立候选 worktree，未合入 canonical `dev`、未改正式 lock，也未形成下游采用事实。
+在固定 Application 快照 `72fcf7b9` 中，[`AppService::registerStorage()`](../../server/app/AppService.php#L242) 仍装配应用自己的 `StorageDriverFactory`、`StorageService`、账本、凭据 resolver 和四个 driver。当时的候选 commit `590e61830d0e62c0bf25425dfe43d69ae894b726` 尚未合入；该历史状态后来如何收敛，以页首 v3.0.14 快照和 Gemini 收敛审计为准，不能继续从本段推导当前分支状态。
 
 因此当前合理顺序是：先用本页和[脚手架边界比较](scaffold-core-boundary-comparison.md)确认定位，再决定保留应用实现、采用 Core driver 或调整公共边界。若决定采用，最小验收是新的不可变 PHP split 身份、应用精确 lock、Host 的 provider SDK 装配，以及文件用途、授权、对象账本、补偿、Tenant 和既有 FileMedia Gate；不要求同时迁移 Core 高层 FileMedia Schema。
 

@@ -48,10 +48,11 @@ features:
 2. [升级已有应用](/guide/deployment-upgrade)：按同一 Edition 的 preflight、备份、冲突计划、迁移、构建、验证和恢复流程操作。
 3. [在线演示](/demo-access)：体验 Platform、共享 Admin 与 Tenant 绑定入口，确认它不等于你的业务生产部署。
 4. [核心概念](/guide/concepts)：理解身份、Tenant、Module 与 Application/Core 边界。
-5. [开发总览](/guide/development)：选择后端、前端或 Module 路径。
-6. [创建应用与交付 Module](/guide/application-module-lifecycle)：完成生成、校验、打包、安装、Tenant 开通、更新、卸载和应用升级。
-7. [测试与排错](/guide/testing)：用最小验证确认改动。
-8. [支持与问题提交](/support)：收集版本身份、脱敏诊断包和最小复现，并把安全问题送到非公开渠道。
+5. [产品、Module 与实例版本](/guide/version-identity)：区分共同产品版本、独立 Module 版本和客户实例版本。
+6. [开发总览](/guide/development)：选择后端、前端或 Module 路径。
+7. [创建应用与交付 Module](/guide/application-module-lifecycle)：完成生成、校验、打包、安装、Tenant 开通、更新、卸载和应用升级。
+8. [测试与排错](/guide/testing)：用最小验证确认改动。
+9. [支持与问题提交](/support)：收集版本身份、脱敏诊断包和最小复现，并把安全问题送到非公开渠道。
 
 ## 事实边界
 
