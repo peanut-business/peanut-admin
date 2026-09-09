@@ -39,7 +39,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
     public function bindings(): array
     {
         return [
-            OAuthCallbackLocator::class => fn(): OAuthCallbackLocator => new ThinkPhpOAuthCallbackLocator(),
+            OAuthCallbackLocator::class => ThinkPhpOAuthCallbackLocator::class,
             OAuthPersistence::class => ThinkPhpOAuthPersistence::class,
             OAuthTransport::class => WechatOAuthTransport::class,
             OfficialAccountCallbacks::class => \app\Modules\Official\Oauth\Application\OfficialAccountApplicationService::class,

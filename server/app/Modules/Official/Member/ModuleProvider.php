@@ -32,26 +32,6 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
         return 'official.member';
     }
 
-    public function balanceCommands(): MemberBalanceCommands
-    {
-        return new MemberBalanceContractService();
-    }
-
-    public function profileCommands(): MemberProfileCommands
-    {
-        return new MemberProfileContractService();
-    }
-
-    public function identityCommands(): MemberIdentityCommands
-    {
-        return new MemberIdentityContractService();
-    }
-
-    public function tagCommands(): MemberTagCommands
-    {
-        return new MemberTagContractService();
-    }
-
     public function bindings(): array
     {
         return [
@@ -61,10 +41,10 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             MemberSubjectLookup::class => fn(App $app): MemberSubjectLookup => new ThinkPhpMemberSubjectLookup(
                 $app->make(PlatformTenantDataGateway::class),
             ),
-            MemberIdentityCommands::class => fn(): MemberIdentityCommands => $this->identityCommands(),
-            MemberProfileCommands::class => fn(): MemberProfileCommands => $this->profileCommands(),
-            MemberTagCommands::class => fn(): MemberTagCommands => $this->tagCommands(),
-            MemberBalanceCommands::class => fn(): MemberBalanceCommands => $this->balanceCommands(),
+            MemberIdentityCommands::class => MemberIdentityContractService::class,
+            MemberProfileCommands::class => MemberProfileContractService::class,
+            MemberTagCommands::class => MemberTagContractService::class,
+            MemberBalanceCommands::class => MemberBalanceContractService::class,
             MemberAdministration::class => fn(App $app): MemberAdministration => new MemberAdministrationService(
                 $app->make(CurrentExecutionContext::class),
                 $app->make(XlsxExportService::class),

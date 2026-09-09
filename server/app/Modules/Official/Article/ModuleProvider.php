@@ -30,7 +30,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
     {
         return [
             ArticleModuleAccess::class => fn(App $app): ArticleModuleAccess => new PdoArticleModuleAccess($app->make(PDO::class)),
-            ArticleQueries::class => fn(): ArticleQueries => new ArticleQueryService(),
+            ArticleQueries::class => ArticleQueryService::class,
             PublicArticleService::class => fn(App $app): PublicArticleService => new PublicArticleService(
                 $app->make(ProductAssetReferenceService::class),
                 $app->make(RichTextResourceService::class),

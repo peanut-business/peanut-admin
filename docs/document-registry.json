@@ -127,6 +127,31 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-docs-maintenance-runtime-convergence-audit-2026-09-09",
+      "path": "docs/maintenance/runtime-convergence-audit-2026-09-09.md",
+      "title": "ThinkPHP 8 Runtime 收敛复核与执行报告",
+      "audience": ["maintainer", "architect", "operator", "ai"],
+      "content_type": "evidence",
+      "authority": "bounded-audit",
+      "canonical_sources": [
+        "docs/architecture/core-thinkphp-runtime-direction-adr.md",
+        "server/app/AppService.php",
+        "server/app/Modules/Official/Article/ModuleProvider.php",
+        "server/app/Modules/Official/Member/ModuleProvider.php",
+        "server/app/Modules/Official/Oauth/ModuleProvider.php",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/docs/architecture/index.md",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": ["application", "core"],
+      "related": ["core-thinkphp-runtime-direction-adr", "documentation", "release"],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-product-version-identity-adr",
       "path": "docs/architecture/product-version-identity-adr.md",
       "title": "产品、发行版、Module 与 Instance 版本身份",

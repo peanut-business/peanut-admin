@@ -8,7 +8,7 @@ Date: 2026-09-09
 
 Owner: `product-architecture`
 
-Source snapshot: Application `9781ce0de5588f1ea3afaaf46023b20c49911b4a`; Core `6aeeb52789fb49a2113bb6bab541629374dc6803`
+Source snapshot: Application `ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`; Core `61546084e1e07f1c41df8d2383dbbe1d77a83b16`
 
 ## 1. 范围与决策摘要
 
@@ -64,10 +64,10 @@ ThinkPHP HTTP/CLI bootstrap
 
 | 范围 | 规模和典型形态 |
 | --- | --- |
-| Application ThinkPHP 数据访问 | 31 个 `TenantOwnedModel` 子类；`Db::` 30 处/10 个文件。Application 已广泛使用 Model、Query 与全局 TenantScope，不应把这些原生调用再包装成 Repository |
-| Application PDO | `server/app` 有 87 个文件涉及 PDO、18 个自有 `Pdo*` 类；没有 `new PDO`，而是由 `AppService` 把 ThinkPHP 连接降为 PDO 后注入 |
-| Application ModuleProvider | 10 个，均实现 `ModuleBindingContributor`；共 55 个 binding，其中 5 个直接类映射、50 个闭包，Provider 内显式容器 `make()` 105 处 |
-| Application 容器与命名抽象 | 显式容器 `make()` 共 202 处：`AppService` 89 处、ModuleProvider 105 处、其他入口 8 处；另有 23 个 Repository、5 个 Adapter、15 个 Factory，其中 7 个名为 `RuntimeFactory` |
+| Application ThinkPHP 数据访问 | 31 个 `TenantOwnedModel` 子类；Application 已广泛使用 Model、Query 与全局 TenantScope，不应把这些原生调用再包装成 Repository |
+| Application PDO | `server/app` 有 97 个文件涉及 PDO、18 个自有 `Pdo*` 类；没有 `new PDO`，而是由 `AppService` 把 ThinkPHP 连接降为 PDO 后注入 |
+| Application ModuleProvider | 10 个，均实现 `ModuleBindingContributor`；本轮首批后共 55 个 binding，其中 11 个直接类映射、44 个闭包，Provider 内显式容器 `make()` 99 处 |
+| Application 容器与命名抽象 | 显式容器 `make()` 共 223 处；另有 23 个 Repository、5 个 Adapter、15 个 Factory，其中 7 个名为 `RuntimeFactory` |
 | Application Commands/Queries | Module 与 common 共有 20 个 Commands、8 个 Queries 合同文件；当前合同不暴露 PDO/Model，后续只保留有真实跨 Module/Host 消费者的业务能力 |
 | Core 发布源码 | `packages/php/*/src` 共 555 个 PHP 文件，其中 60 个涉及 PDO、35 个文件以 `Pdo` 命名；47 个 Repository 中有 26 个 `Pdo*Repository`。发布源码对 ThinkPHP import、Model、`Db::` 和容器 `make()` 的当前命中均为 0 |
 | Core Commands/Queries | 名称盘点命中 15 个 `*Command*`/`*Query*` 文件，混合了跨 Host 合同、Query service、constraint/compiler、PDO 实现和 DTO；Core 没有一套统一 CQRS 基类。是否保留必须按真实消费者和业务语义裁定，不能按名称批量删除或保留 |

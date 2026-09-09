@@ -24,7 +24,7 @@ Owner: `product-architecture`
 
 ## 本轮事实收敛 checkpoint
 
-审计起点：Application `origin/dev@fc6796c75eeea2c71592bf9a4534d5941426cbf9`、`origin/main@8c8a974642450842100b9a9a323d447c7b409b4f`。发布基线仍是 Application v3.0.14 与历史 Core Alpha.13；新统一产品目标 3.1.0 尚无发布结论。
+审计起点：Application `origin/dev@ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`、Core `origin/dev@61546084e1e07f1c41df8d2383dbbe1d77a83b16`、Application `origin/main@8c8a974642450842100b9a9a323d447c7b409b4f`。发布基线仍是 Application v3.0.14 与历史 Core Alpha.13；新统一产品目标 3.1.0 尚无发布结论。
 
 **Non-blocking checkpoint（2026-09-09）：**版本对象、同号规则、历史不可变性和发布依赖顺序已经固定，临时审计等待解除。独立业务开发、公开历史纠正和不依赖新包的工作可以继续；文件与运行资源仍按唯一 owner 规则处理。
 
