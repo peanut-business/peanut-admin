@@ -1,7 +1,6 @@
 module.exports = {
   extends: [
     'stylelint-config-standard',
-    'stylelint-config-rational-order',
     'stylelint-config-prettier',
     'stylelint-config-recommended-vue',
   ],
@@ -14,6 +13,7 @@ module.exports = {
   ],
   plugins: ['stylelint-order'],
   rules: {
+    'order/properties-order': require('./config/stylelint-property-order'),
     'at-rule-no-unknown': [
       true,
       {
@@ -30,6 +30,12 @@ module.exports = {
       true,
       {
         ignorePseudoClasses: ['deep'],
+      },
+    ],
+    'property-no-unknown': [
+      true,
+      {
+        ignoreProperties: ['composes', '@import', '@extend', '@mixin', '@at-root'],
       },
     ],
   },
