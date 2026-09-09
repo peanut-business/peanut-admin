@@ -107,6 +107,16 @@ $expect(($browserTooling[0]['package'] ?? null) === '@playwright/cli', 'P0-E Pla
 $expect(($browserTooling[0]['version'] ?? null) === '0.1.18', 'P0-E Playwright version is not pinned');
 $expect(($browserTooling[0]['relative_path'] ?? null) === '.local/p0e-browser-cli-0.1.18/playwright-cli', 'P0-E Playwright path is not fixed');
 $expect(($browserTooling[0]['fallback'] ?? null) === 'none', 'P0-E Playwright tooling must fail closed');
+$databaseTunnel = array_values(array_filter(
+    $p0eRegistry['resources']['tooling'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-p0e-mysql84-container-tunnel'
+));
+$expect(count($databaseTunnel) === 1, 'P0-E database tunnel registration is missing');
+$expect(($databaseTunnel[0]['transport'] ?? null) === 'ssh-local-forward', 'P0-E database tunnel transport changed');
+$expect(($databaseTunnel[0]['local_host'] ?? null) === '127.0.0.1', 'P0-E database tunnel must remain loopback-bound');
+$expect(($databaseTunnel[0]['local_port'] ?? null) === 20189, 'P0-E database tunnel port changed');
+$expect(($databaseTunnel[0]['container_host'] ?? null) === 'host.docker.internal', 'P0-E database tunnel container Host changed');
+$expect(($databaseTunnel[0]['fallback'] ?? null) === 'none', 'P0-E database tunnel must fail closed');
 
 $candidate = trim((string)shell_exec('git -C ' . escapeshellarg($root) . ' rev-parse HEAD'));
 $runId = 'p0e' . bin2hex(random_bytes(4));
@@ -128,7 +138,9 @@ $plan = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
 $expect(($plan['candidate'] ?? null) === $candidate, 'plan candidate is not exact HEAD');
 $expect(($plan['resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-gate', 'plan resource identity changed');
 $expect(($plan['environment'] ?? null) === 'development', 'plan environment changed');
-$expect(($plan['endpoint'] ?? null) === '192.168.192.2:20183', 'plan endpoint changed');
+$expect(($plan['endpoint'] ?? null) === 'host.docker.internal:20189', 'plan container endpoint changed');
+$expect(($plan['host_endpoint'] ?? null) === '192.168.192.2:20183', 'plan Host endpoint changed');
+$expect(($plan['database_tunnel']['stable_resource_id'] ?? null) === 'peanut-admin-p0e-mysql84-container-tunnel', 'plan tunnel identity changed');
 $expect(($plan['target_release'] ?? null) === $expectedTarget, 'plan did not bind the 3.0 scaffold release');
 $expect(($plan['groups'] ?? null) === $expectedGroups, 'plan did not bind the fresh-only closure');
 $expect(!array_key_exists('legacy_application', $plan), 'plan retained a legacy application');
@@ -140,10 +152,11 @@ foreach ($plan['lease_resources'] ?? [] as $resource) {
     $type = (string)($resource['type'] ?? '');
     $resourceCounts[$type] = ($resourceCounts[$type] ?? 0) + 1;
 }
-$expect(count($plan['lease_resources'] ?? []) === 27, 'manual lease resources must have 27 exact rows');
+$expect(count($plan['lease_resources'] ?? []) === 29, 'manual lease resources must have 29 exact rows');
 $expect(($resourceCounts['mysql-db'] ?? null) === 6, 'claim must bind six exact fresh-only databases');
 $expect(($resourceCounts['deployment-mode'] ?? null) === 2, 'claim must bind both deployment modes');
-$expect(($resourceCounts['port'] ?? null) === 2, 'claim must bind both generic port conflicts');
+$expect(($resourceCounts['port'] ?? null) === 3, 'claim must bind all generic port conflicts');
+$expect(($resourceCounts['database-tunnel'] ?? null) === 1, 'claim must bind the database tunnel');
 $expect(($resourceCounts['browser-host'] ?? null) === 2, 'claim must bind the separate browser Host boundaries');
 
 $runnerSource = (string)file_get_contents($runner);
@@ -186,6 +199,8 @@ $expect(str_contains($runnerSource, '--formal-release-adoption'), 'consumer Modu
 $expect(str_contains($runnerSource, 'consumer_module_cycle'), 'consumer Module lifecycle does not own a length-safe isolated database scenario');
 $expect(str_contains($runnerSource, 'passed != required'), 'Gate completion closure is not enforced');
 $expect(str_contains($runnerSource, 'preflight_database_admin_tooling'), 'remote database administration does not fail fast');
+$expect(str_contains($runnerSource, 'start_database_tunnel'), 'container database tunnel is not lifecycle-managed');
+$expect(str_contains($runnerSource, 'stop_database_tunnel'), 'container database tunnel cleanup is missing');
 $expect(str_contains($runnerSource, 'preflight_browser_tooling'), 'browser tooling does not fail before resource claim');
 $expect(str_contains($runnerSource, 'registered_browser_cli_path'), 'browser tooling does not use the fixed registered path');
 $expect(!str_contains($runnerSource, 'pwcli-cache-*'), 'browser tooling retained temporary cache glob discovery');

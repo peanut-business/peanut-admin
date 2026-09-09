@@ -226,13 +226,29 @@ $expect(!array_key_exists('mysqldump_command', $administrativeTool), 'fresh-only
 $expect(str_starts_with((string)($administrativeTool['container_image'] ?? ''), 'mysql:8.4.10@sha256:'), 'P0-E administration image is not immutable');
 $expect(($administrativeTool['fallback'] ?? null) === 'none; host mysql commands are forbidden', 'P0-E administration allowed a host CLI fallback');
 
-foreach (['upstream_endpoint' => 'host', 'container_endpoint' => 'container'] as $key => $consumer) {
-    $endpoint = $qualificationDatabase[$key] ?? null;
-    $expect(is_array($endpoint), "P0-E {$key} is missing");
-    $expect(in_array($consumer, $endpoint['consumers'] ?? [], true), "P0-E {$key} consumer is invalid");
-    $expect(($endpoint['host'] ?? null) === '192.168.192.2', "P0-E {$key} host changed unexpectedly");
-    $expect(($endpoint['port'] ?? null) === 20183, "P0-E {$key} port changed unexpectedly");
-}
+$upstreamEndpoint = $qualificationDatabase['upstream_endpoint'] ?? null;
+$expect(is_array($upstreamEndpoint), 'P0-E upstream endpoint is missing');
+$expect(in_array('host', $upstreamEndpoint['consumers'] ?? [], true), 'P0-E upstream endpoint consumer is invalid');
+$expect(($upstreamEndpoint['host'] ?? null) === '192.168.192.2', 'P0-E upstream Host changed unexpectedly');
+$expect(($upstreamEndpoint['port'] ?? null) === 20183, 'P0-E upstream port changed unexpectedly');
+$containerEndpoint = $qualificationDatabase['container_endpoint'] ?? null;
+$expect(is_array($containerEndpoint), 'P0-E container endpoint is missing');
+$expect(in_array('container', $containerEndpoint['consumers'] ?? [], true), 'P0-E container endpoint consumer is invalid');
+$expect(($containerEndpoint['host'] ?? null) === 'host.docker.internal', 'P0-E container endpoint must use the Docker Desktop Host gateway');
+$expect(($containerEndpoint['port'] ?? null) === 20189, 'P0-E container endpoint must use the registered tunnel port');
+
+$databaseTunnels = array_values(array_filter(
+    $p0eRegistry['resources']['tooling'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-p0e-mysql84-container-tunnel'
+));
+$expect(count($databaseTunnels) === 1, 'P0-E container database tunnel tooling is missing');
+$expect(($databaseTunnels[0]['transport'] ?? null) === 'ssh-local-forward', 'P0-E database tunnel transport changed');
+$expect(($databaseTunnels[0]['local_host'] ?? null) === '127.0.0.1', 'P0-E database tunnel must remain loopback-bound');
+$expect(($databaseTunnels[0]['local_port'] ?? null) === 20189, 'P0-E database tunnel local port changed');
+$expect(($databaseTunnels[0]['container_host'] ?? null) === 'host.docker.internal', 'P0-E database tunnel container Host changed');
+$expect(($databaseTunnels[0]['upstream_host'] ?? null) === ($upstreamEndpoint['host'] ?? null), 'P0-E database tunnel upstream Host diverged');
+$expect(($databaseTunnels[0]['upstream_port'] ?? null) === ($upstreamEndpoint['port'] ?? null), 'P0-E database tunnel upstream port diverged');
+$expect(($databaseTunnels[0]['fallback'] ?? null) === 'none', 'P0-E database tunnel must fail closed');
 
 $runSelector = static function (array $arguments) use ($root): array {
     $command = escapeshellarg($root . '/scripts/project-resource-registry');
@@ -337,6 +353,7 @@ $expect($registeredPorts === [
     'DEV_HTTP_PORT' => 20187,
     'PHP_PORT' => 20180,
     'VITE_PORT' => 20181,
+    'RICH_TEXT_COLLABORATION_PORT' => 20282,
     'PLATFORM_PORT' => 20177,
     'MT_DEMO_PHP_PORT' => 20178,
     'MT_DEMO_VITE_PORT' => 20179,
@@ -344,7 +361,9 @@ $expect($registeredPorts === [
     'PC_PORT' => 20185,
     'MOBILE_PORT' => 20182,
     'DOCS_PORT' => 20186,
+    'PEANUT_GENERATED_APPLICATION_UPGRADE_PORT' => 20283,
     'HTTP_PORT' => 20190,
+    'P0E_DB_TUNNEL_PORT' => 20189,
     'MYSQL_PORT' => 20276,
     'CACHE_PORT' => 20277,
     'PEANUT_BROWSER_BACKEND_PORT' => 20278,
@@ -383,8 +402,8 @@ function resourceGuardP0eEnvironment(string $runId, string $scenario, string $mo
         'APP_ENV' => 'production',
         'PEANUT_DEPLOYMENT_TARGET' => 'local-production-preview',
         'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-p0e-mysql84-gate',
-        'DB_HOST' => '192.168.192.2',
-        'DB_PORT' => '20183',
+        'DB_HOST' => 'host.docker.internal',
+        'DB_PORT' => '20189',
         'DB_NAME' => 'peanut_admin_development_p0e_' . $runId . '_' . $scenario,
         'DB_USER' => 'guard-test',
         'DB_PASS' => 'guard-test',
@@ -431,7 +450,7 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'environment' => ['development'],
         'deployment-target' => ['local-production-preview'],
         'consumer' => ['host', 'container'],
-        'endpoint' => ['192.168.192.2:20183'],
+        'endpoint' => ['host.docker.internal:20189'],
         'run-id' => [$runId],
         'candidate-tree' => [str_repeat('b', 40)],
         'mysql-db' => array_map(
@@ -439,9 +458,10 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
             $scenarios
         ),
         'deployment-mode' => ['standalone', 'multi-tenant'],
-        'port' => ['20190', '20186'],
+        'port' => ['20190', '20189', '20186'],
         'http-port' => ['20190'],
         'docs-port' => ['20186'],
+        'database-tunnel' => ['peanut-admin-p0e-mysql84-container-tunnel'],
         'cache-dir' => ['/Users/xing/.cache/peanut-admin/p0e-' . $runId],
         'output-dir' => [$worktree . '/output/p0e-' . $runId],
         'compose-project' => ['peanut-p0e-' . $runId],

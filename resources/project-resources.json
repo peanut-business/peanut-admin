@@ -568,13 +568,13 @@
           "network_scope": "private direct-link LAN"
         },
         "container_endpoint": {
-          "endpoint_id": "peanut-admin-p0e-mysql84-gate-docker-direct",
-          "host": "192.168.192.2",
-          "port": 20183,
+          "endpoint_id": "peanut-admin-p0e-mysql84-gate-docker-via-host-tunnel",
+          "host": "host.docker.internal",
+          "port": 20189,
           "consumers": [
             "container"
           ],
-          "network_scope": "Docker Desktop direct route to private direct-link LAN"
+          "network_scope": "Docker Desktop host gateway to the lease-owned loopback SSH tunnel peanut-admin-p0e-mysql84-container-tunnel"
         },
         "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
         "data_source": "the lease-fixed 3.0 fresh-only candidate tree and Gate-owned synthetic fixtures; earlier application databases, persistent development data and production data are forbidden",
@@ -1377,6 +1377,23 @@
         },
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
+      },
+      {
+        "stable_resource_id": "peanut-admin-p0e-mysql84-container-tunnel-listener",
+        "environment": "development",
+        "owner": "Peanut Admin P0-E project-resource lease owner",
+        "host": "127.0.0.1",
+        "port": 20189,
+        "port_env": "P0E_DB_TUNNEL_PORT",
+        "service_type": "lease-owned SSH local TCP forwarding listener",
+        "namespace": "peanut-admin-p0e-mysql84-container-tunnel",
+        "credential_ref": "operator-local SSH configuration for alias mac-14",
+        "data_source": "peanut-admin-p0e-mysql84-gate upstream endpoint through mac-14",
+        "freshness_requirement": "the port must be unbound before each qualification claim and reachable only while the owning P0-E process is active",
+        "health_check": "scripts/p0e-runtime-qualification verifies TCP readiness before starting production Compose",
+        "fallback": "none",
+        "lifecycle": "single fixed-candidate P0-E qualification",
+        "cleanup_responsibility": "scripts/p0e-runtime-qualification terminates its exact child process and proves port 20189 is unbound"
       },
       {
         "stable_resource_id": "peanut-admin-core-alpha11-mysql-listener",

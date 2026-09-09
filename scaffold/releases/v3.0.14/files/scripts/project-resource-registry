@@ -180,6 +180,7 @@ def main() -> int:
             "PC_PORT": 20185,
             "DOCS_PORT": 20186,
             "HTTP_PORT": 20190,
+            "P0E_DB_TUNNEL_PORT": 20189,
             "MT_DEMO_PHP_PORT": 20178,
             "MT_DEMO_VITE_PORT": 20179,
             "MT_DEMO_PLATFORM_PORT": 20176,

@@ -39,6 +39,7 @@ PERSISTENT_DATABASE = "peanut_admin_development"
 RESOURCE_ID = "peanut-admin-p0e-mysql84-gate"
 ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
 BROWSER_TOOLING_ID = "peanut-admin-p0e-playwright-cli"
+DATABASE_TUNNEL_ID = "peanut-admin-p0e-mysql84-container-tunnel"
 GROUP_RESULT = re.compile(r"^[a-z0-9][a-z0-9.-]{0,63}$")
 
 
@@ -193,7 +194,14 @@ def preflight_browser_tooling() -> None:
         )
 
 
-def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+def validate_fixture() -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+]:
     fixture = read_json(FIXTURE_PATH)
     registry = read_json(REGISTRY_PATH)
     p0e_registry = read_json(P0E_REGISTRY_PATH)
@@ -264,6 +272,36 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
     for key, value in expected_browser_tool.items():
         if browser_tool.get(key) != value:
             fail(f"registered P0-E Playwright tooling disagrees on {key}")
+    tunnel_matches = [
+        item for item in tooling
+        if item.get("stable_resource_id") == DATABASE_TUNNEL_ID
+    ]
+    if len(tunnel_matches) != 1:
+        fail(f"registry must contain exactly one {DATABASE_TUNNEL_ID}")
+    tunnel = tunnel_matches[0]
+    upstream = registered.get("upstream_endpoint", {})
+    container = registered.get("container_endpoint", {})
+    expected_tunnel = {
+        "transport": "ssh-local-forward",
+        "ssh_alias": admin_tool.get("ssh_alias"),
+        "ssh_command": admin_tool.get("ssh_command"),
+        "local_host": "127.0.0.1",
+        "local_port": 20189,
+        "container_host": container.get("host"),
+        "container_port": container.get("port"),
+        "upstream_host": upstream.get("host"),
+        "upstream_port": upstream.get("port"),
+        "fallback": "none",
+    }
+    for key, value in expected_tunnel.items():
+        if tunnel.get(key) != value:
+            fail(f"registered P0-E database tunnel disagrees on {key}")
+    if (
+        container.get("endpoint_id") != "peanut-admin-p0e-mysql84-gate-docker-via-host-tunnel"
+        or container.get("host") != "host.docker.internal"
+        or container.get("port") != tunnel.get("local_port")
+    ):
+        fail("P0-E container database endpoint is not bound to the registered tunnel")
     browser_hosts = p0e_registry.get("browser_host_binding")
     expected_browser_hosts = {
         "stable_resource_id": "peanut-admin-p0e-browser-hosts",
@@ -327,7 +365,7 @@ def validate_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], 
         or target.get("default_uniapp_version_code") != "10"
     ):
         fail("target scaffold release identity changed")
-    return fixture, registry, registered, admin_tool, browser_hosts
+    return fixture, registry, registered, admin_tool, browser_hosts, tunnel
 
 
 def validate_candidate(candidate: str, require_clean: bool, allowed_output: Path | None = None) -> tuple[str, str]:
@@ -379,7 +417,7 @@ def database_names(fixture: dict[str, Any], run_id: str) -> dict[str, str]:
 
 def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
     preflight_browser_tooling()
-    fixture, registry, _, admin_tool, browser_hosts = validate_fixture()
+    fixture, registry, registered, admin_tool, browser_hosts, database_tunnel = validate_fixture()
     names = database_names(fixture, args.run_id)
     paths = {
         "output-dir": str(absolute_path(args.output_dir, "output-dir", args.run_id)),
@@ -418,7 +456,11 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         ("deployment-target", "local-production-preview"),
         ("consumer", "host"),
         ("consumer", "container"),
-        ("endpoint", f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}"),
+        (
+            "endpoint",
+            f"{registered['container_endpoint']['host']}:"
+            f"{registered['container_endpoint']['port']}",
+        ),
         ("run-id", args.run_id),
         ("candidate-tree", tree),
         *(("mysql-db", value) for value in names.values()),
@@ -426,8 +468,10 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
         ("deployment-mode", "multi-tenant"),
         (("port", str(args.http_port))),
         (("port", str(args.docs_port))),
+        (("port", str(database_tunnel["local_port"]))),
         ("http-port", str(args.http_port)),
         ("docs-port", str(args.docs_port)),
+        ("database-tunnel", DATABASE_TUNNEL_ID),
         ("cache-dir", paths["cache-dir"]),
         ("output-dir", paths["output-dir"]),
         ("compose-project", compose_project),
@@ -452,8 +496,20 @@ def plan(args: argparse.Namespace, require_clean: bool) -> dict[str, Any]:
                 "mysql_command", "fallback",
             )
         },
+        "database_tunnel": {
+            key: database_tunnel[key]
+            for key in (
+                "stable_resource_id", "transport", "ssh_alias", "ssh_command",
+                "local_host", "local_port", "container_host", "container_port",
+                "upstream_host", "upstream_port", "fallback",
+            )
+        },
         "environment": "development",
-        "endpoint": f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}",
+        "endpoint": (
+            f"{registered['container_endpoint']['host']}:"
+            f"{registered['container_endpoint']['port']}"
+        ),
+        "host_endpoint": f"{fixture['database_resource']['host']}:{fixture['database_resource']['port']}",
         "databases": names,
         "ports": {"http": args.http_port, "docs": args.docs_port},
         "browser_hosts": {
@@ -553,6 +609,7 @@ class Runner:
         self.compose_backend_env: Path | None = None
         self.compose_overlay = self.cache / "compose.lease-proof.yml"
         self.runtime_credentials = self.cache / "runtime-credentials.env"
+        self.database_tunnel_process: subprocess.Popen[str] | None = None
         self.docs_process: subprocess.Popen[str] | None = None
         self.docs_root: Path | None = None
         self.active_compose_root = ROOT
@@ -662,6 +719,58 @@ class Runner:
         if f"user={expected_user}\n" not in probe:
             fail("P0-E application database identity does not match the registered allocation")
 
+    def start_database_tunnel(self) -> None:
+        if self.database_tunnel_process is not None and self.database_tunnel_process.poll() is None:
+            return
+        tunnel = self.plan["database_tunnel"]
+        if tunnel["transport"] != "ssh-local-forward" or tunnel["fallback"] != "none":
+            fail("registered P0-E database tunnel transport changed")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.settimeout(0.5)
+            if probe.connect_ex((tunnel["local_host"], int(tunnel["local_port"]))) == 0:
+                fail("lease-bound database tunnel port is already active")
+        forward = (
+            f"{tunnel['local_host']}:{tunnel['local_port']}:"
+            f"{tunnel['upstream_host']}:{tunnel['upstream_port']}"
+        )
+        self.database_tunnel_process = subprocess.Popen(
+            [
+                tunnel["ssh_command"], "-o", "BatchMode=yes",
+                "-o", "ExitOnForwardFailure=yes",
+                "-o", "ServerAliveInterval=15",
+                "-o", "ServerAliveCountMax=3",
+                "-N", "-L", forward, tunnel["ssh_alias"],
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            if self.database_tunnel_process.poll() is not None:
+                detail = (self.database_tunnel_process.stderr.read() or "").strip()
+                fail(f"registered P0-E database tunnel failed to start: {detail[-300:]}")
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.settimeout(0.5)
+                if probe.connect_ex((tunnel["local_host"], int(tunnel["local_port"]))) == 0:
+                    return
+            time.sleep(0.2)
+        self.stop_database_tunnel()
+        fail("registered P0-E database tunnel did not become reachable")
+
+    def stop_database_tunnel(self) -> None:
+        process = self.database_tunnel_process
+        if process is None:
+            return
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+        self.database_tunnel_process = None
+
     def remote_mysql(self, sql: str, *, database: str | None = None) -> str:
         tool = self.plan["database_admin_tooling"]
         client_script = (
@@ -680,7 +789,7 @@ class Runner:
         return result.stdout.decode("utf-8", errors="strict")
 
     def initialize(self) -> None:
-        for port in self.plan["ports"].values():
+        for port in [*self.plan["ports"].values(), self.plan["database_tunnel"]["local_port"]]:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
                 probe.settimeout(0.5)
                 if probe.connect_ex(("127.0.0.1", int(port))) == 0:
@@ -1351,7 +1460,7 @@ class Runner:
         output = self.cache / group
         log = self.group_log(group)
         self.create_database(database)
-        host, port = self.plan["endpoint"].rsplit(":", 1)
+        host, port = self.plan["host_endpoint"].rsplit(":", 1)
         arguments = [
             str(CONSUMER_MODULE_CHAIN),
             "--candidate", self.args.candidate,
@@ -1530,6 +1639,7 @@ class Runner:
                 log=log,
             )
         self.inspect(database, "standalone", f"{group}-database", project_root=project_root)
+        self.start_database_tunnel()
         self.write_compose_env(project_root, database, "standalone")
         self.compose("up", "-d", "--build", "php", "nginx", "cron", log=log, project_root=project_root)
         self.active_compose_root = project_root
@@ -1562,6 +1672,7 @@ class Runner:
     def browser_at(self, mode: str, project_root: Path, scenario: str, group: str, output_scope: str) -> None:
         database = self.plan["databases"][scenario]
         if mode == "multi-tenant":
+            self.start_database_tunnel()
             if self.compose_env.exists() and self.compose_overlay.exists() and self.active_compose_root != project_root:
                 self.compose(
                     "down", "--volumes", "--remove-orphans", "--rmi", "local",
@@ -1632,6 +1743,7 @@ class Runner:
                 check=False,
                 project_root=self.active_compose_root,
             )
+        self.stop_database_tunnel()
         for database in self.plan["databases"].values():
             self.drop_database(database)
         residual = [name for name in self.plan["databases"].values() if self.database_exists(name)]
@@ -1649,7 +1761,7 @@ class Runner:
                 docker_residuals.setdefault("images", []).append(tag)
         if any(docker_residuals.values()):
             fail(f"compose cleanup residuals remain: {docker_residuals}")
-        for port in self.plan["ports"].values():
+        for port in [*self.plan["ports"].values(), self.plan["database_tunnel"]["local_port"]]:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
                 probe.settimeout(0.5)
                 if probe.connect_ex(("127.0.0.1", int(port))) == 0:
@@ -1726,6 +1838,7 @@ class Runner:
 
     def preserve_failure(self, exception: Exception) -> None:
         self.stop_docs()
+        self.stop_database_tunnel()
         state = self.checkpoint["groups"].setdefault(self.current_group, {})
         state.update({"status": "failed", "failed_at": int(time.time()), "error": str(exception)[:500]})
         self.save_checkpoint()
@@ -1795,7 +1908,7 @@ def main() -> int:
         return 0
     verify_lease(args, plan_data)
     prepare_database_credentials()
-    fixture, _, _, _, _ = validate_fixture()
+    fixture, _, _, _, _, _ = validate_fixture()
     runner = Runner(args, plan_data, fixture)
     runner.preflight_database_admin_tooling()
     if args.command == "run":

@@ -263,6 +263,7 @@ function assertP0eLeaseContract(
         'candidate-tree' => 1,
         'compose-project' => 1,
         'consumer' => 2,
+        'database-tunnel' => 1,
         'deployment-mode' => 2,
         'deployment-target' => 1,
         'docs-port' => 1,
@@ -273,7 +274,7 @@ function assertP0eLeaseContract(
         'lease-proof-dir' => 1,
         'mysql-db' => count($database['allowed_scenarios']),
         'output-dir' => 1,
-        'port' => 2,
+        'port' => 3,
         'resource-id' => 1,
         'run-id' => 1,
         'worktree' => 1,
@@ -305,9 +306,14 @@ function assertP0eLeaseContract(
     assertLeaseResourceValues($resources, 'run-id', [$runId]);
     assertLeaseResourceValues($resources, 'mysql-db', $expectedDatabases);
     assertLeaseResourceValues($resources, 'deployment-mode', ['multi-tenant', 'standalone']);
-    assertLeaseResourceValues($resources, 'port', ['20186', '20190']);
+    assertLeaseResourceValues($resources, 'port', ['20186', '20189', '20190']);
     assertLeaseResourceValues($resources, 'http-port', ['20190']);
     assertLeaseResourceValues($resources, 'docs-port', ['20186']);
+    assertLeaseResourceValues(
+        $resources,
+        'database-tunnel',
+        ['peanut-admin-p0e-mysql84-container-tunnel']
+    );
     assertLeaseResourceValues($resources, 'compose-project', ['peanut-p0e-' . $runId]);
     assertLeaseResourceValues($resources, 'browser-session', ['p0e-' . $runId]);
     assertLeaseResourceValues($resources, 'browser-host', ['admin.p0e.localhost', 'platform.p0e.localhost']);

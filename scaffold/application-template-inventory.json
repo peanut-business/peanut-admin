@@ -4601,7 +4601,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ce5fbd5ca9728745259328a8ad1a3cf36aeda85fa8ac1b827fc42ad3a25ee241"
+            "source_sha256": "ff1ce80e37a7812c449f7834c5ca48f66f7c839bc06c810f2a79bf21e552296c"
         },
         {
             "path": "resources/service-registry.json",
@@ -5208,7 +5208,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "6dedef597b29f86a469a7a578c06119b962210d667ce2cdbef0230c5f9a10737"
+            "source_sha256": "a561bd92ac009e0d57325826b286bbca5bcf5e0eb5960e25a67722c1ffc1d82d"
         },
         {
             "path": "scripts/publish-github-release",
@@ -16628,7 +16628,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "deff1f795885a0f3b39688e33232a368696e00a36041af89f2256c20ee8a8c6c"
+            "source_sha256": "04c0788619e88d1aff6432c5952dcf6209ed0a956f4094a955915f6ac6de07d7"
         },
         {
             "path": "server/database/init.sql",
