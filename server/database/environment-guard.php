@@ -267,7 +267,7 @@ function assertP0eLeaseContract(
         'deployment-mode' => 2,
         'deployment-target' => 1,
         'docs-port' => 1,
-        'endpoint' => 1,
+        'endpoint' => 2,
         'environment' => 1,
         'gate' => 1,
         'http-port' => 1,
@@ -302,7 +302,15 @@ function assertP0eLeaseContract(
     assertLeaseResourceValues($resources, 'environment', ['development']);
     assertLeaseResourceValues($resources, 'deployment-target', [$deploymentTarget]);
     assertLeaseResourceValues($resources, 'consumer', ['container', 'host']);
-    assertLeaseResourceValues($resources, 'endpoint', [(string)$endpoint['host'] . ':' . (string)$endpoint['port']]);
+    $registeredEndpoints = [];
+    foreach (['upstream_endpoint', 'container_endpoint'] as $endpointKey) {
+        $registered = $database[$endpointKey] ?? null;
+        if (!is_array($registered)) {
+            throw new RuntimeException("P0-E database {$endpointKey} 登记缺失");
+        }
+        $registeredEndpoints[] = (string)$registered['host'] . ':' . (string)$registered['port'];
+    }
+    assertLeaseResourceValues($resources, 'endpoint', $registeredEndpoints);
     assertLeaseResourceValues($resources, 'run-id', [$runId]);
     assertLeaseResourceValues($resources, 'mysql-db', $expectedDatabases);
     assertLeaseResourceValues($resources, 'deployment-mode', ['multi-tenant', 'standalone']);
@@ -396,7 +404,7 @@ function guardedDatabaseConfig(?string $leaseProofPath = null, ?int $now = null)
     if ($isTemplated) {
         if ($resourceId !== 'peanut-admin-p0e-mysql84-gate'
             || $deploymentTarget !== 'local-production-preview'
-            || $consumer !== 'container'
+            || !in_array($consumer, ['host', 'container'], true)
             || ($database['application_runtime'] ?? null) !== false
             || ($database['lifecycle'] ?? null) !== 'ephemeral') {
             throw new RuntimeException('templated database 仅允许登记的 P0-E ephemeral Gate 使用');

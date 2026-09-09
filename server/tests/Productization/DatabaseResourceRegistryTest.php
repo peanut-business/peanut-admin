@@ -450,7 +450,7 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
         'environment' => ['development'],
         'deployment-target' => ['local-production-preview'],
         'consumer' => ['host', 'container'],
-        'endpoint' => ['host.docker.internal:20189'],
+        'endpoint' => ['192.168.192.2:20183', 'host.docker.internal:20189'],
         'run-id' => [$runId],
         'candidate-tree' => [str_repeat('b', 40)],
         'mysql-db' => array_map(
@@ -552,6 +552,19 @@ try {
         $config = guardedDatabaseConfig($activeProof, $guardNow);
         $expect($config['consumer'] === 'container', "P0-E guard did not allow exact scenario {$scenario}");
     }
+    resourceGuardSetEnvironment(resourceGuardP0eEnvironment(
+        $guardRunId,
+        'standalone_fresh',
+        'standalone',
+        [
+            'PEANUT_DATABASE_CONSUMER' => 'host',
+            'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-p0e-mysql84-gate-host-direct',
+            'DB_HOST' => '192.168.192.2',
+            'DB_PORT' => '20183',
+        ]
+    ));
+    $hostConfig = guardedDatabaseConfig($activeProof, $guardNow);
+    $expect($hostConfig['consumer'] === 'host', 'P0-E guard did not allow the exact lease-bound Host endpoint');
 
     $proofMutations = [
         'expired' => static function (array &$metadata): void { $metadata['expires_at'] = '2000000000'; },
@@ -586,7 +599,7 @@ try {
         'unknown-scenario' => ['DB_NAME' => 'peanut_admin_development_p0e_run123_unknown'],
         'foreign-run' => ['DB_NAME' => 'peanut_admin_development_p0e_other1_standalone_fresh'],
         'wrong-mode' => ['DB_NAME' => 'peanut_admin_development_p0e_run123_multi_tenant_fresh'],
-        'host-consumer' => ['PEANUT_DATABASE_CONSUMER' => 'host'],
+        'host-with-container-endpoint' => ['PEANUT_DATABASE_CONSUMER' => 'host'],
         'fallback-address' => ['DB_HOST' => '127.0.0.1', 'DB_PORT' => '3306'],
         'production-target' => ['PEANUT_DEPLOYMENT_TARGET' => 'production'],
     ];
