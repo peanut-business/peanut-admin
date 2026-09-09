@@ -25,8 +25,9 @@ Application convergence `main@f61d41ffb7137447e7be0b8ae2f7f9aaf4e27f7f`（PR #43
 2. Gemini 大迁移不是应当整体撤销的“错误想法”。Module 物理聚合、减少应用层重复抽象、采用 ThinkPHP
    原生 Model/Query/Scope 都是可继续的目标；但当前候选混合了互斥架构、残留引用、未跟踪 Runtime、机械
    测试占位和文档先行声明，不能直接合入。
-3. Core 必须保持产品中立和 caller-owned transaction。把 `think\\facade\\Db` 扩散到 Core package
-   不是应用层精简，而是改变公共包消费合同；当前没有批准或资格支持该方向。
+3. 本报告的“Core 保持框架中立和 caller-owned PDO transaction”是本 ADR 生效前的审计基线，现已由
+   [Core ThinkPHP 8 运行时收敛方向 ADR](../architecture/core-thinkphp-runtime-direction-adr.md) supersede：
+   Core 只支持 ThinkPHP 8，迁移须按领域微批次完成，不能把 `think\\facade\\Db` 的机械扩散误当作迁移完成。
 4. 现行应用层锁定为 ThinkPHP 原生 Model/Query/Scope + 构造函数注入。不得仅为隔离框架新增 Repository/
    Port/Adapter，也不得在业务方法内用 `app()` 定位依赖；跨 Module 公开合同和真实外部 Provider adapter
    仍可保留。
@@ -107,8 +108,9 @@ Model/Query/Scope；路由由宿主中间件保护。更大的 Application/Modul
 - Core 的 25 个文件/38 个 `markTestSkipped` 不是本候选新增；它们是由专用 MySQL/脚本 Gate 接管的测试
   入口，不应简单删除，也不能在正式资格中把 skip 计作通过。
 
-Core 的合理精简只能发生在参考 Host/Application composition：Host 可以用 ThinkPHP 装配 Core contract，
-Core package 本身继续通过显式 PDO/transaction handle 保持产品中立和同事务可消费性。
+Core 的合理精简仍应发生在清晰的 composition root 和领域微批次内，但长期目标不再是显式 PDO/transaction
+handle 的框架中立。Core/Application 共同收敛到 ThinkPHP 8；跨 Module 业务合同、Tenant/RBAC/Module
+生命周期、ExecutionContext 和外部 Provider/Storage Driver 仍保留。
 
 ## 6. 测试脚本的正式处置
 

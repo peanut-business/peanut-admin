@@ -21,8 +21,9 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-architecture-codegraph-worktree-policy` | `docs/architecture/codegraph-worktree-policy.md` | `current` | `architecture` | `architecture` |
 | `pa-docs-architecture-consumer-module-lifecycle-contract` | `docs/architecture/consumer-module-lifecycle-contract.md` | `current` | `architecture` | `product-architecture` |
 | `pa-docs-architecture-core-application-capability-graph` | `docs/architecture/core-application-capability-graph.md` | `archived` | `architecture` | `architecture` |
-| `pa-docs-architecture-core-application-technical-boundary` | `docs/architecture/core-application-technical-boundary.md` | `planned` | `architecture` | `architecture` |
+| `pa-docs-architecture-core-application-technical-boundary` | `docs/architecture/core-application-technical-boundary.md` | `current` | `architecture` | `architecture` |
 | `pa-docs-architecture-core-extraction-guide` | `docs/architecture/core_extraction_guide.md` | `deprecated` | `architecture` | `architecture` |
+| `pa-docs-architecture-core-thinkphp-runtime-direction-adr` | `docs/architecture/core-thinkphp-runtime-direction-adr.md` | `current` | `decision` | `product-architecture` |
 | `pa-docs-architecture-external-callback-tenant-routing-contract` | `docs/architecture/external-callback-tenant-routing-contract.md` | `planned` | `architecture` | `architecture` |
 | `pa-docs-architecture-module-architecture-refinement-appendix` | `docs/architecture/module-architecture-refinement-appendix.md` | `deprecated` | `architecture` | `architecture` |
 | `pa-docs-architecture-module-development-release-separation-plan` | `docs/architecture/module-development-release-separation-plan.md` | `deprecated` | `plan` | `product-architecture` |

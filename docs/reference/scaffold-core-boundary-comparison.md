@@ -10,7 +10,7 @@
 - MineAdmin 同时有 **应用 project 和版本化 library**；上传协议/结果 DTO 在公共库，Attachment 元数据和应用 service 留在应用。这是“公共机制与产品记录分开”的直接例子。
 - RuoYi-Vue-Plus 用 Maven reactor 区分 **common mechanism 与 system module**；OSS client 生命周期在 common，文件元数据查询在 system。这证明公共模块也可以含有连接生命周期实现，但其 Java/Spring 静态工厂不能直接移植到 Peanut 的 ThinkPHP 宿主。
 
-Peanut Admin 当前适合继续采用“两个聚合发布载体 + 内部能力域 + 独立应用宿主”的定位：Core 可以是公共后台底座，拥有产品无关的服务、Schema、PDO 实现和 UI；应用拥有业务规则、业务表、业务 UI、框架路由和运行装配。某个能力应保留、复用、适配或抽取，要看实际调用面和 data owner，不能从同名目录、厂商数量或其他脚手架的包数量推出。两个 aggregate 是当前实际分发边界，不是永久最优的冻结设计。
+Peanut Admin 当前适合继续采用“两个聚合发布载体 + 内部能力域 + 独立应用宿主”的定位：Core 拥有产品无关的服务、Schema 和运行时合同，正式 PHP 运行时只支持 ThinkPHP 8；Alpha.13 中的 PDO 实现属于按 ADR 迁移的过渡面。应用拥有业务规则、业务表、业务 UI、框架路由和运行装配。某个能力应保留、复用、适配或抽取，要看实际调用面和 data owner，不能从同名目录、厂商数量或其他脚手架的包数量推出。两个 aggregate 是当前实际分发边界，不是永久最优的冻结设计。
 
 ## 四个官方源码样本
 
@@ -53,7 +53,7 @@ RuoYi-Vue-Plus 固定在 [`bffc39a89fd6ed196031e71cbceefd9986eecce8`](https://gi
 | 维度 | LikeAdmin PHP | FastAdmin | MineAdmin | RuoYi-Vue-Plus | Peanut Admin 的含义 |
 | --- | --- | --- | --- | --- | --- |
 | 发布粒度 | 后端 project + 独立前端工程 | 单 project + Addons 依赖 | 应用 project + 多个版本化 library | Maven reactor 的 common/modules/admin | 保留 PHP/Web 两聚合包；内部域无需为目录数量各拆一包 |
-| 公共后台能力 | 项目内 `app/common` | 项目内 common/model 与命令 | `mineadmin/core` 提供启动装配等 | common BOM 与多个 common module | Core 可包含服务、Schema、PDO 和 UI，不限于工具函数 |
+| 公共后台能力 | 项目内 `app/common` | 项目内 common/model 与命令 | `mineadmin/core` 提供启动装配等 | common BOM 与多个 common module | Core 可包含服务、Schema 和 ThinkPHP 8 运行时合同；PDO 镜像路径按 ADR 退出 |
 | 生成应用 | 本次未核实生成器/升级覆盖规则 | CRUD command/stubs 生成项目文件；长期 owner/升级规则未核实 | 应用 project 消费 library；生成规则未核实 | 本次未核实 generator 实现与升级覆盖规则 | Peanut 的 controller/model/UI 归应用；升级器只覆盖已声明为 managed 的文件 |
 | Storage 机制 | 设置 logic、SDK、File Model 同 project | 本次未核实统一机制 | Upload 协议/DTO 与应用 Attachment 分离 | common 管 client，system 管元数据 | 可以抽窄 driver；凭据、用途、授权、账本和补偿继续由应用负责 |
 | 二次开发 | `app/common` 位于 project；具体升级规则未核实 | 生成 CRUD 与 Addons | 应用 service/repository 在 project | system module 承载业务 | 业务 Module 与 ThinkPHP Model/Scope 留在应用，不为分包增加 Repository 层 |
@@ -66,7 +66,7 @@ RuoYi-Vue-Plus 固定在 [`bffc39a89fd6ed196031e71cbceefd9986eecce8`](https://gi
 
 | 议题 | 已有 Peanut Core | 独立应用现状 | 当前决定 | 最小后续任务与验收 |
 | --- | --- | --- | --- | --- |
-| Settings | typed definition、scope/revision/ETag、secret、Schema/PDO | ImportExport 等已用 Core Settings；业务 key/default 与宿主 protector 在应用/Module | **保留已有能力复用** | 按真实 key 检查重复语义；验收 scope、secret、ETag，不把所有设置一刀切归任一仓 |
+| Settings | typed definition、scope/revision/ETag、secret、Schema；Alpha.13 PDO persistence 待迁移 | ImportExport 等已用 Core Settings；业务 key/default 与宿主 protector 在应用/Module | **保留已有能力，按 ADR 迁移** | 按真实 key 检查重复语义；验收 scope、secret、ETag、事务和两 Edition |
 | Storage | Core dev 有四操作 driver、key 校验和四 provider 实现；高层 FileMedia 另有 Schema/runtime | canonical 应用仍拥有 driver、凭据/account/space、用途、授权、账本、补偿和生命周期；`590e618` 只是未合候选 | **候选抽取，先复审后决定采用** | 决定后再做不可变 split、精确 lock、Host 装配和既有 FileMedia 安全 Gate；不因 MineAdmin/RuoYi 样本合并整个 FileMedia |
 | Crontab/Task | Core TaskJob 有 ledger/lease/retry/cancel/worker | 官方 Task Module 已装配 Core，业务任务/cron 规则在应用 | **已有能力复用，保留应用策略** | 防止第二套队列；新增任务验收 Tenant、授权复核、lease/retry/cancel |
 | ImportExport | Core ImportExport 组合 FileMedia 与 TaskJob | 官方 Module 已采用，应用注入格式、文件和日志 adapter | **已有能力复用，宿主适配** | 只为具体数据类型补 handler；验收格式、权限、任务、失败补偿和业务落库 |
