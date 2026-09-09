@@ -110,12 +110,19 @@ $expect(
     'workbench file shortcut is not derived from the effective Tenant Module menu'
 );
 $overlayBuilder = $read($root . '/scripts/build-demo-site-patch');
+$overlayFiles = [
+    'server/app/Modules/Official/Notification/Application/NotificationBootstrapDefaults.php',
+    'server/app/Modules/Official/Notification/Infrastructure/Persistence/PdoNotificationBootstrapService.php',
+    'server/app/Modules/Official/Task/Infrastructure/Persistence/PdoTaskBootstrapService.php',
+    'server/app/platform/infrastructure/PdoTenantApplicationBootstrapPersistence.php',
+    'server/database/seed-multi-tenant-demo.php',
+];
 $expect(
     preg_match('/files=\(\n(?<files>.*?)\n\)/s', $overlayBuilder, $fileMatch) === 1
-        && trim((string)$fileMatch['files']) === 'server/database/seed-multi-tenant-demo.php'
+        && array_map('trim', preg_split('/\R/', trim((string)$fileMatch['files'])) ?: []) === $overlayFiles
         && str_contains($overlayBuilder, "git show \"\$BASE_TAG:release-versions.json\"")
         && str_contains($overlayBuilder, ".scaffold_template // empty"),
-    'demo overlay must contain only the source-only synthetic data seed'
+    'demo overlay must contain only the framework-free synthetic data seed boundary'
 );
 $expect(
     str_contains($overlayBuilder, 'COPYFILE_DISABLE=1 tar --no-xattrs'),
