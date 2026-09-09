@@ -63,7 +63,7 @@ Standalone。Multi-tenant 派生应用当前没有从 archive 到应用仓源码
 `/platform/`。Platform Host、公共 Tenant Admin Host 与 Tenant 专属绑定 Host 必须由反向代理
 保留原始 Host；Platform API 只接收 `PLATFORM_HOSTS`，绑定入口不允许切换 Tenant。
 
-Platform 维护窗口使用 Core 的公开 Ops Console 合同，由应用的 PDO Adapter 和全局 HTTP
+Platform 维护窗口使用 Core 的公开 Ops Console 合同，由应用的 ThinkPHP 数据库/事务适配和全局 HTTP
 middleware 装配。窗口生效时，除受 `platform.ops.maintenance.manage` 权限保护的计划与关闭
 接口外，所有 HTTP 写方法都拒绝并写入 Platform 审计；不能通过菜单、前端或 Host 别名绕过。
 

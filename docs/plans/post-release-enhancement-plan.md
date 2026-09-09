@@ -347,7 +347,8 @@ owner `scripts/deploy-release` 从正式 annotated tag 生成不可变源码归�
 ### 7.1 AR02 的 gateway/runtime 前置合同
 
 Standalone 不能只对 ORM 表删除 `tenant_id`。现行数据归属登记中另有 18 张正式
-`tenant-gateway` 表；它们由 PDO、Db gateway 或 Core package repository 访问。AR02 只有在下列
+`tenant-gateway` 表；Alpha.13 仍由 PDO、Db gateway 或 Core package repository 访问，属于迁移前事实；目标按
+Core ThinkPHP 8 ADR 收敛为 ThinkPHP Model/Query/Db/Transaction。AR02 只有在下列
 闭包全部完成后才可标记完成：
 
 1. Edition profile 对 18 张表逐表登记 `strip_tenant_column` 或 `exclude_platform`，并同时声明

@@ -1,10 +1,12 @@
 # Peanut Admin Core 能力与独立应用采用全景
 
+> 当前运行时方向以 [Core ThinkPHP 8 运行时收敛方向 ADR](../architecture/core-thinkphp-runtime-direction-adr.md) 为准。本文中的 `Pdo*`、PDO transaction 和“宿主提供框架容器”描述的是 Alpha.13 迁移前源码事实，不是新的公共 API 目标；本页不把尚未开始的迁移写成完成证据。
+
 > 本页回答两个问题：Core 现在能做什么，以及独立 `peanut-admin` 应用实际上用了什么。它是静态源码审计，不是生产运行、完整资格或发布完成证明。
 
 ## 先看四条真实调用链
 
-Core 既不是几个工具函数，也不是安装后自动得到完整后台的成品应用。它提供后端服务、合同、Schema、PDO 实现和前端运行时；独立应用仍负责 ThinkPHP/Vue 宿主、路由、可信身份、业务数据和产品生命周期。当前最容易理解的采用例子是：
+Core 既不是几个工具函数，也不是安装后自动得到完整后台的成品应用。它提供后端服务、合同、Schema 和前端运行时；Alpha.13 源码仍有 PDO persistence 实现，但正式方向是与 Application 一起收敛到 ThinkPHP 8。独立应用仍负责 ThinkPHP/Vue 宿主、路由、可信身份、业务数据和产品生命周期。当前最容易理解的采用例子是：
 
 1. **登录与权限。** 应用组合根把 Core 的 `TenantAuthService`、`PdoTenantAuthRepository`、`TenantAuthEndpoint`、事务管理和授权服务装入 ThinkPHP 容器；请求中间件建立可信 Tenant 上下文后，应用业务继续使用自己的 Model、Scope 和权限入口。见 [`AppService::registerAuthentication()` 与 `registerAuthorization()`](../../server/app/AppService.php#L156)。
 2. **导入导出。** 官方 ImportExport Module 组合 Core Settings、TaskJob 和 ImportExport 机制，再注入应用的文件媒体网关、配置迁移规则与操作日志。Core 管通用任务和 CSV 流程，应用拥有具体格式、业务权限、文件账本及 Module 数据。见 [`ImportExport\ModuleProvider`](../../server/app/Modules/Official/ImportExport/ModuleProvider.php) 和 [`CoreSettingsConfigurationAdapter`](../../server/app/Modules/Official/ImportExport/Infrastructure/Configuration/CoreSettingsConfigurationAdapter.php#L20)。
@@ -18,10 +20,10 @@ Core 既不是几个工具函数，也不是安装后自动得到完整后台的
 本页把三个角色严格分开：
 
 - **可分发 Core**：PHP 聚合包 `peanut-admin/core` 和 Web 聚合包 `@peanut-admin/admin`。它们是独立应用能锁定并消费的两个发布载体。
-- **Core 内部能力域**：聚合包内部按 namespace 或 export subpath 划分的服务、合同、Schema、PDO 实现和 UI 运行时。内部有多个域，不等于每个域都是独立发布包。
+- **Core 内部能力域**：聚合包内部按 namespace 或 export subpath 划分的服务、合同、Schema 和 UI 运行时；Alpha.13 的 PDO 实现属于待迁移过渡面，不是长期框架中立承诺。内部有多个域，不等于每个域都是独立发布包。
 - **Core 参考宿主**：Core 仓的 `backend/`、`frontend/`、`starter/`、`examples/` 和工程脚本。它们展示如何装配、验证和生成，不能当作独立应用已经获得的路由、页面或业务数据。
 
-Core 当前开发基线是 [`9358686fee873dd235489c8794abf556fd70ec4f`](https://github.com/peanut-opensource/peanut-admin-core/commit/9358686fee873dd235489c8794abf556fd70ec4f)。PHP 聚合包要求 PHP 8.3、PDO、JSON、OpenSSL、Sodium、Fileinfo 与 `opis/json-schema`；宿主仍需提供框架容器、HTTP 路由、数据库连接、provider/secret、Module 启用状态和环境配置。Web 聚合包同样要求宿主提供 transport、router、Pinia 和实际 API。
+Core 当前开发基线是 [`9358686fee873dd235489c8794abf556fd70ec4f`](https://github.com/peanut-opensource/peanut-admin-core/commit/9358686fee873dd235489c8794abf556fd70ec4f)。PHP 聚合包要求 PHP 8.3、PDO 扩展、JSON、OpenSSL、Sodium、Fileinfo 与 `opis/json-schema`；`PDO` 在 Alpha.13 仍是过渡实现的底层事实，正式运行时支持边界是 ThinkPHP 8。宿主仍需提供 ThinkPHP HTTP/CLI bootstrap、provider/secret、Module 启用状态和环境配置。Web 聚合包同样要求宿主提供 transport、router、Pinia 和实际 API。
 
 ### PHP Kernel 的公共后台底座
 
@@ -31,10 +33,10 @@ Kernel 是公共后台运行底座，不只是基础 DTO。当前开发基线在
 | --- | --- | --- |
 | API 合同 | Problem Details、request id、过滤白名单、typed target、OpenAPI handler contract | 把框架 request/response 与路由映射到合同 |
 | 认证 | Tenant/平台登录、token/refresh、Tenant Client 注册与选择 | token secret、cookie、session store、PDO 仓储和 client 登记 |
-| HTTP 边界 | 认证 endpoint/response、refresh cookie、权限 middleware | ThinkPHP 等框架的 route/middleware 适配 |
+| HTTP 边界 | 认证 endpoint/response、refresh cookie、权限 middleware | ThinkPHP 8 的 route/middleware 适配 |
 | 执行上下文 | Tenant、平台、系统和授权操作上下文 | 从认证态建立可信上下文，拒绝客户端任意 Tenant id |
 | 租户运行 | availability、scope、workspace query、cache/lock namespace、计划任务上下文 | 入口绑定、部署模式和实际 cache/lock backend |
-| 持久化 | PDO 事务/仓储、Tenant column scope、Kernel Schema | PDO 配置、迁移和显式持久化模式 |
+| 持久化 | ThinkPHP Model/Query/Db/Transaction、TenantScope、Kernel Schema；Alpha.13 PDO 路径待按 ADR 迁移 | ThinkPHP bootstrap、迁移和业务表 owner |
 | 功能权限 | RBAC、角色管理、权限目录同步、revision cache、数据权限桥 | 装配目录和仓储，并在业务动作前执行授权 |
 | 审计 | 按 audience 写入和查询 audit event | 业务 use case 决定何时写，宿主映射 HTTP |
 | 身份 | Account/Credential、邮箱、密码 hash、自助服务 | 密码政策、credential repository 和 endpoint |
@@ -123,9 +125,9 @@ Core `backend/` 和 `frontend/` 把上述能力装配成 ThinkPHP route/controll
 
 | 域 | 当前应用接法与证据 | 数据 owner | 结论 | 最小后续任务与验收 |
 | --- | --- | --- | --- | --- |
-| Kernel | [`AppService`](../../server/app/AppService.php#L118) 绑定执行上下文、PDO 事务、认证和授权；业务 service/middleware 直接调用 Core | Core 中立 Kernel/Auth/RBAC/Module Schema；应用业务表、ThinkPHP Model/Scope 与请求生命周期 | **已有能力复用** | 保留；变更时以真实认证、Tenant、权限和 Module 既有 Gate 验收 |
-| Settings | ImportExport 的 [`CoreSettingsConfigurationAdapter`](../../server/app/Modules/Official/ImportExport/Infrastructure/Configuration/CoreSettingsConfigurationAdapter.php#L53) 调 `SettingAdminService`/PDO repository；Module manifest 提供 definition | 应用安装基线承载 `pa_setting_*` 表并用 Core PDO repository 读写；各 Module 拥有 key、默认值和业务含义，应用装配 protector | **已有能力复用，宿主适配** | 把剩余设置逐项按语义比对，不按目录名迁移；验收 scope/secret/ETag 与现有调用 |
-| TaskJob | [`PdoTaskJobRuntime`](../../server/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php) 把 Core job service/worker 接入官方 Task Module | 应用 `official.task` manifest 明确拥有 `pa_task_job*` 与 `pa_crontab`；Core repository/service 定义通用 job 行为 | **已有能力复用** | 保持单任务机制；新增 handler 以 lease/retry/cancel 和 Tenant 复核验收 |
+| Kernel | [`AppService`](../../server/app/AppService.php#L118) 当前绑定执行上下文、PDO 事务、认证和授权；业务 service/middleware 直接调用 Core | Core/Application 共同收敛到 ThinkPHP 8；应用业务表、ThinkPHP Model/Scope 与请求生命周期仍由应用拥有 | **已有能力复用，待按 ADR 微批次迁移** | 保留真实认证、Tenant、权限和 Module Gate；迁移后删除 PDO binding |
+| Settings | ImportExport 的 [`CoreSettingsConfigurationAdapter`](../../server/app/Modules/Official/ImportExport/Infrastructure/Configuration/CoreSettingsConfigurationAdapter.php#L53) 当前调用 `SettingAdminService`/PDO repository；Module manifest 提供 definition | 应用安装基线承载 `pa_setting_*` 表并拥有 key、默认值、业务含义和 protector；目标为 ThinkPHP Model/Transaction | **已有能力复用，待迁移** | 按 ADR 迁移 scope/secret/ETag/事务，不保留长期双实现 |
+| TaskJob | [`PdoTaskJobRuntime`](../../server/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php) 当前把 Core job service/worker 接入官方 Task Module | 应用 `official.task` manifest 拥有 `pa_task_job*` 与 `pa_crontab`；目标为统一 ThinkPHP bootstrap、Model/Transaction 和 worker | **已有能力复用，待迁移** | 保持单任务机制；以 lease/retry/cancel、Tenant 复核和两 Edition 验收 |
 | ImportExport | ModuleProvider 组合 Core runtime、Settings、TaskJob，并注入应用 FileMedia/operation log adapter | 应用 `official.import-export` manifest 拥有 operation/row-error 表、模板、字段和业务写入；Core service/repository 执行通用状态流 | **已有能力复用，宿主适配** | 对具体导入导出只补业务 handler；验收文件、任务、失败补偿和权限链 |
 | OpsConsole | [`PlatformOpsRuntimeFactory`](../../server/app/platform/service/ops/PlatformOpsRuntimeFactory.php) 提供后端 adapter；[`platform/src/App.vue`](../../platform/src/App.vue#L37) 直接创建 Core UI runtime | Core 控制台合同/页面状态；应用拥有备份、恢复、日志和权限数据 | **已有能力复用，宿主适配** | 逐个运维动作保留可信 descriptor 和脱敏；验收实际 provider 与授权 |
 | IntegrationSecurity | 应用实现 external resolver/binding/audit 及 OAuth/Wechat 宿主合同 | 当前接入只证明窄合同；应用保存 external binding，`official.oauth` manifest 拥有 `pa_oauth_*` 等表及 provider config、secret、绑定和回调。未发现应用采用 Core machine/webhook repository 的证据 | **部分复用，需要适配** | 按 provider 真实回调链逐项补证，验收签名、Tenant 绑定、重放和审计 |
