@@ -228,9 +228,6 @@ if [[ -n "$EDITION_PACKAGE" || -n "$EDITION_MANIFEST" ]]; then
   [[ -f "$EDITION_MANIFEST" && ! -L "$EDITION_MANIFEST" ]] \
     || fail "Edition installer manifest is unavailable: $EDITION_MANIFEST"
 fi
-if [[ -n "$OVERLAY" && -z "$EDITION_PACKAGE" ]]; then
-  fail 'Demo overlay deployment must consume the formal Multi-tenant Edition installer'
-fi
 if [[ -z "$OVERLAY" && "$DEMO_MODE" == enabled && "$UPDATE" != 1 ]]; then
   fail 'PEANUT_DEMO_MODE=enabled requires --overlay for a fresh deployment'
 fi

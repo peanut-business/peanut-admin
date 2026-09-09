@@ -104,6 +104,10 @@ fresh 保持零 TenantModule，由 Platform 治理。只有落盘 `.env` 中的
 TenantMember/Owner 和域名绑定后，仅为 default、Tenant A、Tenant B 通过统一 TenantModule
 运行链开通 `official.file`、`official.article`、`official.member` 三项 demo profile，再写入合成数据。
 
+本项目登记的 `production` / `production-candidate` 使用不可变源码 tag 部署，因为该制品保留
+项目自有的生产资源登记。面向第三方的 Edition 安装包只带消费者资源登记，不能被内部部署控制器
+拿来选择本项目私有数据库；二者的源码 commit/tree 相同，但资源所有权边界不同。
+
 ```bash
 scripts/build-demo-site-patch v3.0.0 output/deployment/demo-site-v3.0.0.tar
 
