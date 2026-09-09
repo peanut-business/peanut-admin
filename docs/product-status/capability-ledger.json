@@ -4,7 +4,7 @@
   "visibility": "internal",
   "facts_baseline": {
     "branch": "main",
-    "commit": "20a284d7bf4acc88313f29b8fe094033bf635c5c",
+    "commit": "48c1a86b5e964ca0721757897d56a810455f1e54",
     "reviewed_at": "2026-09-09"
   },
   "overall": {

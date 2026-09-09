@@ -25,6 +25,11 @@ Standalone 与 Multi-tenant 安装包，并分别提供从 `3.0.13` 到 `3.0.14`
 套用，也不得用完整安装包覆盖已有应用。每个 archive 都必须与 Release 中的 manifest、`SHA256SUMS`
 或 `SHA256SUMS.upgrades` 核对。
 
+> [!WARNING] v3.0.14 已知依赖风险
+> 发布后的锁文件复核发现前端依赖仍有 high/moderate advisory，因此 v3.0.14 不宣称漏洞清零。
+> `main` 已修复 Platform、PC、Web 的已识别 high；UniApp 仍受当前 DCloud Vue 3 工具链固定的
+> Vite 5.2.8 约束。需要这些修复的用户应等待下一次完成资格的正式 Release，不要把开发分支当成制品。
+
 正式版本号和附件列表以 [GitHub Releases](https://github.com/peanut-business/peanut-admin/releases) 页面为准。下面的 `X.Y.Z` 是文件命名示意，实际值必须直接采用 Release 页面显示的值。
 
 从首个正确 Edition 分发基线开始，每个正式 Release 会随附件提供以下两套安装物：

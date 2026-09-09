@@ -34,7 +34,7 @@ php scripts/check-product-capability-ledger
 <!-- CAPABILITY_STATUS_GENERATED_START -->
 > 总体状态：**进行中**。产品闭环 PC00—PC70 与可消费交付 CR01—CR40 已全部完成。v3.0.14 固定源码完成 P0-E 八组、零资源残留、annotated tag/GitHub Release、双 Edition 安装与同 Edition 升级包；多租户 Demo 已用正式基础源码加可追溯 overlay 全新部署并通过部署回执、数据库、容器和四域 HTTPS 验证。既有 Standalone 演示未升级。发布后依赖补丁已使 Platform、PC、Web 的 high advisory 归零；UniApp 的 DCloud 固定 Vite 5.2.8 high 以受控构建、无公网开发服务器和 2026-10-09 到期复核作窄例外，故 v3.0.14 仍不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
 >
-> 事实基线：`main@20a284d7bf4acc88313f29b8fe094033bf635c5c`，复核日期：`2026-09-09`。
+> 事实基线：`main@48c1a86b5e964ca0721757897d56a810455f1e54`，复核日期：`2026-09-09`。
 
 ### 已验证可用
 
