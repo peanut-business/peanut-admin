@@ -56,8 +56,9 @@
     "resource_id": "peanut-admin-production-docs-domain",
     "pages_project": "peanut-admin-docs",
     "url": "https://peanut-admin-doc.007345.xyz/",
-    "status": "publication-pending",
-    "verification": "This snapshot is updated to the deployed identity before the matching docs-site publication Gate."
+    "deployment_url": "https://76b925ec.peanut-admin-docs.pages.dev",
+    "status": "published-and-verified",
+    "verification": "The custom domain root, /demo-access, /releases and immutable Pages deployment returned HTTPS 200 with certificate verification result 0; the rendered pages contain v3.0.14."
   },
   "identity_boundary": {
     "formal_release": "v3.0.14 is the immutable consumer-ready source release with the known dependency risk recorded in its release snapshot.",

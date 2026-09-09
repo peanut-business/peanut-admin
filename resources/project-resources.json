@@ -2375,7 +2375,7 @@
           "production"
         ],
         "owner": "Peanut Admin documentation owner; Cloudflare Pages project peanut-admin-docs",
-        "source": "production docs deployment and public HTTPS verification on 2026-08-15",
+        "source": "Cloudflare Pages deployment https://76b925ec.peanut-admin-docs.pages.dev and public HTTPS verification on 2026-09-09",
         "host": "peanut-admin-doc.007345.xyz",
         "port": 443,
         "database": null,
@@ -2383,7 +2383,9 @@
         "namespace": "peanut-admin-docs",
         "service_type": "Cloudflare Pages documentation site",
         "credential_ref": "operator-managed Cloudflare Pages control-plane; no deployment token in Git",
-        "data_source": "docs-site/ built from the Peanut Admin release branch",
+        "data_source": "docs-site/ built from main release documentation; current deployment records v3.0.14 source and demo identities",
+        "current_deployment_url": "https://76b925ec.peanut-admin-docs.pages.dev",
+        "verified_at": "2026-09-09",
         "freshness_requirement": "verify the published docs site after each production release and keep its link visible in the application",
         "health_check": {
           "https": "curl --noproxy '*' -fsS https://peanut-admin-doc.007345.xyz/",
