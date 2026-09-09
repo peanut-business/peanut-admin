@@ -50,6 +50,8 @@ RUN composer install \
 
 FROM php:8.3-fpm-bookworm AS php
 
+ARG PEANUT_DEPLOYMENT_RECEIPT_BASE64=""
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libcurl4-openssl-dev \
@@ -84,7 +86,11 @@ COPY server/resources/schemas server/resources/schemas
 COPY --from=composer-deps /build/server/vendor server/vendor
 COPY deploy/docker/php-entrypoint.sh /usr/local/bin/peanut-php-entrypoint
 
-RUN mkdir -p server/runtime server/public/storage server/private/storage \
+RUN if [ -n "$PEANUT_DEPLOYMENT_RECEIPT_BASE64" ]; then \
+        printf '%s' "$PEANUT_DEPLOYMENT_RECEIPT_BASE64" | base64 --decode > DEPLOYMENT_RECEIPT.json; \
+        chmod 0444 DEPLOYMENT_RECEIPT.json; \
+    fi \
+    && mkdir -p server/runtime server/public/storage server/private/storage \
     && cd server \
     && printf '%s\n' \
         'APP_ENV=production' \

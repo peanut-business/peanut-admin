@@ -104,18 +104,29 @@ heartbeat_once
 heartbeat_loop &
 heartbeat_pid=$!
 
-release_metadata="$project_root/RELEASE_METADATA.json"
-[[ -f "$release_metadata" ]] || release_metadata="$project_root/legal/RELEASE_METADATA.json"
-[[ -f "$release_metadata" ]] || { failure_code='OPS_BACKUP_RUNTIME_FAILED'; false; }
-if git -C "$project_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  source_commit="$(git -C "$project_root" rev-parse HEAD)"
-  source_tree="$(git -C "$project_root" rev-parse 'HEAD^{tree}')"
-else
-  source_commit="$(jq -r '.technical_qualification.final_candidate_commit // ""' "$release_metadata")"
-  source_tree="$(jq -r '.technical_qualification.final_candidate_tree // ""' "$release_metadata")"
-fi
-[[ "$source_commit" =~ ^[a-f0-9]{40}$ && "$source_tree" =~ ^[a-f0-9]{40}$ ]] || { failure_code='OPS_BACKUP_RUNTIME_FAILED'; false; }
-release_key="$(jq -r 'if (.version | type) == "string" and (.version | test("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")) then "v" + .version else "" end' "$release_metadata")"
+deployment_receipt="$project_root/DEPLOYMENT_RECEIPT.json"
+[[ -f "$deployment_receipt" && ! -L "$deployment_receipt" ]] \
+  || { failure_code='OPS_BACKUP_RUNTIME_FAILED'; false; }
+jq -e '
+  .schema_version == 1
+  and .protocol == "peanut.deployment-receipt.v1"
+  and .target == "production"
+  and (.edition == "standalone" or .edition == "multi-tenant")
+  and (.release.tag | type == "string" and test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"))
+  and (.release.commit | type == "string" and test("^[a-f0-9]{40}$"))
+  and (.release.tree | type == "string" and test("^[a-f0-9]{40}$"))
+  and (.artifact.kind == "source" or .artifact.kind == "edition")
+  and (.artifact.archive_sha256 | type == "string" and test("^[a-f0-9]{64}$"))
+  and .overlay == null
+' "$deployment_receipt" >/dev/null || { failure_code='OPS_BACKUP_RUNTIME_FAILED'; false; }
+host_receipt="$(cat "$deployment_receipt")"
+container_receipt="$(sudo -n docker exec peanut-admin-php-1 cat /var/www/peanut-admin/DEPLOYMENT_RECEIPT.json)" \
+  || { failure_code='OPS_BACKUP_RUNTIME_FAILED'; false; }
+[[ "$host_receipt" == "$container_receipt" ]] \
+  || { failure_code='OPS_BACKUP_RUNTIME_FAILED'; false; }
+source_commit="$(jq -r '.release.commit' "$deployment_receipt")"
+source_tree="$(jq -r '.release.tree' "$deployment_receipt")"
+release_key="$(jq -r '.release.tag' "$deployment_receipt")"
 
 mysql_mount="$(sudo -n docker volume inspect peanut-admin_mysql-data --format '{{.Mountpoint}}')"
 storage_mount="$(sudo -n docker volume inspect peanut-admin_php-storage --format '{{.Mountpoint}}')"

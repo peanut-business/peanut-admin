@@ -111,6 +111,8 @@ $expect(
 );
 $overlayBuilder = $read($root . '/scripts/build-demo-site-patch');
 $overlayFiles = [
+    'deploy/docker-compose.prod.yml',
+    'deploy/docker/production.Dockerfile',
     'plugins.lock',
     'plugins/official.notification/plugin.json',
     'plugins/official.task/plugin.json',
@@ -119,6 +121,7 @@ $overlayFiles = [
     'server/app/Modules/Official/Notification/Infrastructure/Persistence/PdoNotificationBootstrapService.php',
     'server/app/Modules/Official/Task/Infrastructure/Persistence/PdoTaskBootstrapService.php',
     'server/app/platform/infrastructure/PdoTenantApplicationBootstrapPersistence.php',
+    'server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php',
     'server/database/seed-multi-tenant-demo.php',
 ];
 $expect(
@@ -126,7 +129,7 @@ $expect(
         && array_map('trim', preg_split('/\R/', trim((string)$fileMatch['files'])) ?: []) === $overlayFiles
         && str_contains($overlayBuilder, "git show \"\$BASE_TAG:release-versions.json\"")
         && str_contains($overlayBuilder, ".scaffold_template // empty"),
-    'demo overlay must contain only the framework-free synthetic data seed boundary'
+    'demo overlay must contain only the framework-free seed and deployment identity boundary'
 );
 $expect(
     str_contains($overlayBuilder, 'COPYFILE_DISABLE=1 tar --no-xattrs'),
@@ -256,6 +259,10 @@ foreach ([
     '--expected-tree',
     'release_ref="$tag_commit"',
     'git archive --format=tar "$release_ref"',
+    'DEPLOYMENT_RECEIPT.json',
+    'peanut.deployment-receipt.v1',
+    'deployment root and running PHP container identities differ',
+    'candidate PHP image deployment receipt differs from staging',
 ] as $token) {
     $expect(str_contains($deploy, $token), 'deployment flow lost contract token: ' . $token);
 }

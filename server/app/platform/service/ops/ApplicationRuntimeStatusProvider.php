@@ -154,12 +154,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
                 ':(exclude).peanut/upgrade-target',
                 ':(exclude).peanut/upgrade-target/**',
             ]) === '';
-            $qualified = is_array($metadata['technical_qualification'] ?? null)
-                ? $metadata['technical_qualification']
-                : [];
-            $releaseKey = ($qualified['final_candidate_commit'] ?? null) === $commit
-                ? $this->releaseKey($metadata)
-                : null;
+            $releaseKey = $this->exactReleaseKey($metadata, $commit);
 
             return [
                 'commit' => $this->commit($commit),
@@ -170,16 +165,88 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
             ];
         }
 
-        $qualified = is_array($metadata['technical_qualification'] ?? null)
-            ? $metadata['technical_qualification']
-            : [];
+        $receipt = $this->deploymentReceipt($metadata);
+        $release = $receipt['release'];
         return [
-            'commit' => $this->commit((string)($qualified['final_candidate_commit'] ?? '')),
-            'tree' => $this->commit((string)($qualified['final_candidate_tree'] ?? '')),
-            'release_key' => $this->releaseKey($metadata),
-            'built_at' => $this->builtAt($this->metadataPath()),
-            'repository_clean' => true,
+            'commit' => $this->commit((string)$release['commit']),
+            'tree' => $this->commit((string)$release['tree']),
+            'release_key' => $receipt['overlay'] === null ? (string)$release['tag'] : null,
+            'built_at' => $this->builtAt($this->deploymentReceiptPath()),
+            'repository_clean' => $receipt['overlay'] === null,
         ];
+    }
+
+    /** @param array<string,mixed> $metadata */
+    private function exactReleaseKey(array $metadata, string $commit): ?string
+    {
+        $releaseKey = $this->releaseKey($metadata);
+        if ($releaseKey === null) {
+            return null;
+        }
+        try {
+            return $this->git(['cat-file', '-t', $releaseKey]) === 'tag'
+                && hash_equals($commit, $this->git(['rev-parse', $releaseKey . '^{commit}']))
+                ? $releaseKey
+                : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /** @param array<string,mixed> $metadata @return array<string,mixed> */
+    private function deploymentReceipt(array $metadata): array
+    {
+        $raw = file_get_contents($this->deploymentReceiptPath());
+        $receipt = is_string($raw) ? json_decode($raw, true, 512, JSON_THROW_ON_ERROR) : null;
+        if (!is_array($receipt)
+            || array_keys($receipt) !== [
+                'schema_version', 'protocol', 'target', 'edition', 'release',
+                'artifact', 'overlay', 'generated_at',
+            ]
+            || $receipt['schema_version'] !== 1
+            || $receipt['protocol'] !== 'peanut.deployment-receipt.v1'
+            || !in_array($receipt['target'], ['production', 'production-candidate'], true)
+            || !in_array($receipt['edition'], ['standalone', 'multi-tenant'], true)
+            || !is_array($receipt['release'])
+            || array_keys($receipt['release']) !== ['tag', 'commit', 'tree']
+            || !is_array($receipt['artifact'])
+            || array_keys($receipt['artifact']) !== ['kind', 'archive_sha256', 'manifest_sha256']
+            || !in_array($receipt['artifact']['kind'], ['source', 'edition'], true)
+            || preg_match('/^[a-f0-9]{64}$/D', (string)$receipt['artifact']['archive_sha256']) !== 1
+            || ($receipt['artifact']['kind'] === 'source' && $receipt['artifact']['manifest_sha256'] !== null)
+            || ($receipt['artifact']['kind'] === 'edition'
+                && preg_match('/^[a-f0-9]{64}$/D', (string)$receipt['artifact']['manifest_sha256']) !== 1)
+            || preg_match('/^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/D', (string)$receipt['release']['tag']) !== 1
+            || preg_match('/^[a-f0-9]{40}$/D', (string)$receipt['release']['commit']) !== 1
+            || preg_match('/^[a-f0-9]{40}$/D', (string)$receipt['release']['tree']) !== 1
+            || $receipt['release']['tag'] !== $this->releaseKey($metadata)
+            || preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/D', (string)$receipt['generated_at']) !== 1
+            || !$this->validOverlayReceipt($receipt['overlay'], (string)$receipt['target'])) {
+            throw new \RuntimeException('OPS_RELEASE_IDENTITY_UNAVAILABLE');
+        }
+        return $receipt;
+    }
+
+    private function validOverlayReceipt(mixed $overlay, string $target): bool
+    {
+        if ($overlay === null) {
+            return true;
+        }
+        return $target === 'production-candidate'
+            && is_array($overlay)
+            && array_keys($overlay) === ['commit', 'archive_sha256', 'metadata_sha256']
+            && preg_match('/^[a-f0-9]{40}$/D', (string)$overlay['commit']) === 1
+            && preg_match('/^[a-f0-9]{64}$/D', (string)$overlay['archive_sha256']) === 1
+            && preg_match('/^[a-f0-9]{64}$/D', (string)$overlay['metadata_sha256']) === 1;
+    }
+
+    private function deploymentReceiptPath(): string
+    {
+        $path = $this->projectRoot . '/DEPLOYMENT_RECEIPT.json';
+        if (!is_file($path) || is_link($path)) {
+            throw new \RuntimeException('OPS_RELEASE_IDENTITY_UNAVAILABLE');
+        }
+        return $path;
     }
 
     /** @return array<string,mixed> */
