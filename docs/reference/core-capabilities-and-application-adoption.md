@@ -1,6 +1,8 @@
 # Peanut Admin Core 能力与独立应用采用全景
 
-> 当前运行时方向以 [Core ThinkPHP 8 运行时收敛方向 ADR](../architecture/core-thinkphp-runtime-direction-adr.md) 为准。本文中的 `Pdo*`、PDO transaction 和“宿主提供框架容器”描述的是 Alpha.13 迁移前源码事实，不是新的公共 API 目标；本页不把尚未开始的迁移写成完成证据。
+> 本文的静态计数与链接固定在 2026-09-01 的审计基线，不是滚动的当前清单。当前发布身份见
+> [`v3.0.14` 快照](../product-status/releases/v3.0.14.json)；运行时方向以
+> [Core ThinkPHP 8 运行时收敛方向 ADR](../architecture/core-thinkphp-runtime-direction-adr.md) 为准。本文中的 `Pdo*`、PDO transaction 和“宿主提供框架容器”描述的是迁移前源码事实，不是新的公共 API 目标。
 
 > 本页回答两个问题：Core 现在能做什么，以及独立 `peanut-admin` 应用实际上用了什么。它是静态源码审计，不是生产运行、完整资格或发布完成证明。
 

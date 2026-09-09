@@ -26,7 +26,7 @@ Core/Application 五域职责和 Storage Driver 提取入口见 `docs/architectu
 
 ## 当前产品边界
 
-- 当前正式源码与演示身份分别见 `docs/product-status/releases/v3.0.13.json` 和 `docs/product-status/deployments/v3.0.12-online-experience.json`；源码发布不代表生产部署完成。
+- 当前正式源码与多租户演示身份分别见 `docs/product-status/releases/v3.0.14.json` 和 `docs/product-status/deployments/v3.0.14-online-experience.json`；源码发布不代表生产部署完成，现有 Standalone 演示仍是独立的旧部署。
 - 当前管理身份为原生 Account/Credential/TenantMember/RBAC，业务会员 `pa_member` 独立。1.x Admin/Role/Department 映射、默认 Tenant bootstrap、旧数据库或 scaffold 原地兼容升级不属于当前支持面。
 - Standalone 与 Multi-tenant 必须由同一冻结源码确定性生成。跨实例运营平台是独立应用，不进入本仓或 Core Runtime；完整 SaaS 商业化仍暂缓。
 - 完成判断以能力账本、现行源码和相应固定证据为准。历史 PR、迁移/菜单计数和旧任务日志不作为当前基线；追溯时读取对应 Release 快照或 Git 历史。

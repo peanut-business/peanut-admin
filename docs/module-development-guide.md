@@ -2,7 +2,7 @@
 
 本指南是 Module 作者的短入口；当前真实布局、架构纪律和完整工作流见
 [用 Module 开发独立业务](plugin-module-development.md)，交付状态见
-[Module 发布与制品合同](architecture/module-publication-contract.md)。
+[Module 发布与制品合同](architecture/module-publication-contract.md)；公开站对应入口为 `/guide/application-module-lifecycle`。
 
 ## 新建与检查
 

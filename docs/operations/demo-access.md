@@ -3,7 +3,10 @@
 公开 Demo 的账号、地址和验证日期由获授权的部署 owner 在对应运行资源中维护；本文件只记录
 无秘密入口和当前采用身份，不复制密码、token、Cookie 或私有凭据引用。
 
-当前 `production-candidate` Demo 已采用 `v3.0.12` / `fe328a320b7c68b3c2f47512f2aa4afcad43c630`：
+当前 `production-candidate` Demo 已采用正式源码 `v3.0.14` / `e30b667bbfc25d70281ddf1864b99883850afa24`，
+以及仅用于演示 seed 和 v3.0.14 部署回执接线的 overlay `20a284d7bf4acc88313f29b8fe094033bf635c5c`
+（archive SHA-256 `153dba557cd502faf8c6f2c74b12e42266458bba36ab50d0962b94e1f4778047`）。
+宿主和运行 PHP 镜像中的 `DEPLOYMENT_RECEIPT.json` 必须逐字一致；overlay 不改变正式 Release 身份：
 
 - Platform：<https://pa-platform.007345.xyz/platform/>
 - 共享 Admin：<https://pa-admin.007345.xyz/admin/>

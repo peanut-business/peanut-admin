@@ -5,7 +5,7 @@
     "owner": "Peanut Admin maintainers",
     "source": "this versioned file",
     "resource_observation_policy": "validate this registry against the live resource before each stateful operation",
-    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo credentials are intentionally public and documented in docs-site/demo-access.md, with matching machine-readable demo resource entries",
+    "credentials_policy": "private production credentials use references only; owner-authorized disposable-demo account identifiers may be public and are documented in docs-site/demo-access.md, while passwords remain in controlled handoff and are never stored in Git",
     "local_port_policy": "registered values are defaults; PEANUT_LOCAL_ENV_FILE or .local/stack.env is the per-clone runtime source and existing overrides are preserved"
   },
   "resources": {
@@ -1368,12 +1368,12 @@
         "health_check": "GET /healthz",
         "public_demo_access": {
           "stable_access_id": "peanut-admin-local-public-demo-standalone-admin",
-          "classification": "owner-authorized intentionally public credential for the disposable local production preview",
+          "classification": "owner-authorized public account identifier for the disposable local production preview; password is not versioned",
           "verified_at": "2026-08-22",
           "verification": "GET /healthz and API login accepted the registered demo account",
           "url": "http://127.0.0.1:20190/admin/",
           "account": "admin@example.com",
-          "password": "peanut1234"
+          "credential_ref": "worktree-local server/.env installation input; not stored in Git"
         },
         "fallback": "none",
         "cleanup_responsibility": "scripts/local-stack.sh prod-down"
@@ -1635,12 +1635,15 @@
         "namespace": "peanut-admin-production-candidate",
         "service_type": "Docker Compose PHP/Nginx/cron application stack",
         "credential_ref": "oracle3:/www/docker/peanut-admin-candidate/server/.env (root-owned mode 0600; secret values are not stored in Git)",
-        "data_source": "fixed candidate source and images under /www/docker/peanut-admin-candidate on oracle3",
+        "data_source": "v3.0.14 release commit e30b667bbfc25d70281ddf1864b99883850afa24/tree c956641c976ce4e35d7a1abdc159bb3ee2fd958e plus demo overlay 20a284d7bf4acc88313f29b8fe094033bf635c5c under /www/docker/peanut-admin-candidate on oracle3",
+        "deployed_image_tag": "3.0.14-demo-153dba557cd5",
+        "deployment_receipt_sha256": "02699d2a079f1274e2053b99d23263e68cc8af1644881e78add71b2fdb774954",
+        "deployment_receipt_verified_at": "2026-09-09",
         "persistent_volumes": [
           "peanut-admin-candidate_php-runtime",
           "peanut-admin-candidate_php-storage"
         ],
-        "freshness_requirement": "verify the exact candidate commit/tree, images, empty candidate database volume, multi-tenant environment selectors and origin port before first start",
+        "freshness_requirement": "verify the exact release commit/tree, overlay commit/archive SHA-256, host/runtime DEPLOYMENT_RECEIPT.json byte equality, images, multi-tenant environment selectors and origin port before start",
         "health_check": {
           "compose": "ssh -o BatchMode=yes oracle3 \"sudo -n sh -c 'cd /www/docker/peanut-admin-candidate && docker compose -p peanut-admin-candidate -f compose.yaml --profile bundled-db ps'\"",
           "origin": "ssh -o BatchMode=yes oracle3 'curl -fsS http://127.0.0.1:18093/healthz'"
@@ -2033,12 +2036,12 @@
         "application_admin_credential_ref": "docs-site/demo-access.md is authoritative for the owner-authorized demo login; macOS Keychain service peanut-admin-production-admin account admin is a secondary legacy handoff reference and may be stale",
         "public_demo_access": {
           "stable_access_id": "peanut-admin-public-demo-standalone-admin",
-          "classification": "owner-authorized intentionally public credential for the disposable production demo",
+          "classification": "owner-authorized public account identifier for the disposable production demo; password is not versioned",
           "verified_at": "2026-08-20",
           "verification": "real browser login reached /admin/dashboard/workplace",
           "url": "https://peanut-admin.007345.xyz/admin/",
           "account": "admin@peanut-admin.007345.xyz",
-          "password": "peanut1234"
+          "credential_ref": "owner-controlled demo credential handoff; not stored in Git"
         },
         "demo_instance": true,
         "documentation_resource_id": "peanut-admin-production-docs-domain",
@@ -2082,7 +2085,17 @@
         "compose_project": "peanut-admin-candidate",
         "compose_file": "compose.yaml",
         "compose_profile": "bundled-db",
-        "candidate_identity_source": "the exact full commit and tree recorded by git rev-parse in the deployment evidence before first start",
+        "candidate_identity_source": "host and running PHP DEPLOYMENT_RECEIPT.json must match byte-for-byte and bind the exact release commit/tree plus optional overlay commit/archive SHA-256 before target change",
+        "current_deployed_identity": {
+          "release_tag": "v3.0.14",
+          "release_commit": "e30b667bbfc25d70281ddf1864b99883850afa24",
+          "release_tree": "c956641c976ce4e35d7a1abdc159bb3ee2fd958e",
+          "overlay_commit": "20a284d7bf4acc88313f29b8fe094033bf635c5c",
+          "overlay_archive_sha256": "153dba557cd502faf8c6f2c74b12e42266458bba36ab50d0962b94e1f4778047",
+          "deployment_receipt_sha256": "02699d2a079f1274e2053b99d23263e68cc8af1644881e78add71b2fdb774954",
+          "image_tag": "3.0.14-demo-153dba557cd5",
+          "verified_at": "2026-09-09"
+        },
         "required_non_secret_environment": {
           "APP_ENV": "production",
           "PEANUT_DEPLOYMENT_TARGET": "production-candidate",
@@ -2116,8 +2129,8 @@
         "public_demo_access_resource_id": "peanut-admin-production-candidate-domains",
         "demo_instance": true,
         "fresh_install_only": true,
-        "data_source": "fixed candidate source and Docker Compose state under /www/docker/peanut-admin-candidate",
-        "freshness_requirement": "before allocation, record the fixed candidate commit/tree and verify the target path, Compose project, origin port, database/volumes and four hostnames are all unused; first start must pass the canonical v3.0 baseline guard",
+        "data_source": "v3.0.14 formal release base plus separately identified seed/deployment-receipt overlay and Docker Compose state under /www/docker/peanut-admin-candidate",
+        "freshness_requirement": "before allocation, record the fixed release commit/tree and overlay digest and verify isolation; before target change validate the candidate image receipt, then require host/runtime receipt equality and the canonical v3.0 baseline guard",
         "backup_policy": {
           "required": false,
           "default": "skip for first empty synthetic install",
@@ -2264,8 +2277,8 @@
         "data_source": "Cloudflare zone records, BaoTa candidate site and pa_tenant_entry_binding",
         "configuration_policy": "all four hosts route to the same origin and preserve the original Host; platform is not Tenant-bound, shared Admin is unbound, and tenant-a/tenant-b are continuously bound",
         "public_demo_access": {
-          "classification": "intentionally public non-secret credentials for the disposable production-candidate demo only",
-          "verified_at": "2026-08-20",
+          "classification": "intentionally public account identifiers for the disposable production-candidate demo; passwords are never versioned",
+          "verified_at": "2026-09-09",
           "password_change_policy": "all listed identities are owner-authorized disposable-demo credentials; protected demo mutations are rejected by the active demo policy",
           "entries": [
             {
@@ -2273,35 +2286,35 @@
               "purpose": "instance Platform operator login",
               "url": "https://pa-platform.007345.xyz/platform/",
               "account": "platform@pa-demo.example",
-          "password": "peanut1234"
+              "credential_ref": "owner-controlled demo credential handoff; not stored in Git"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-bootstrap-admin",
               "purpose": "default Tenant bootstrap Admin login",
               "url": "https://pa-admin.007345.xyz/admin/",
               "account": "admin@pa-demo.example",
-          "password": "peanut1234"
+              "credential_ref": "owner-controlled demo credential handoff; not stored in Git"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-shared-admin",
               "purpose": "shared Admin login with Tenant A and Tenant B selection",
               "url": "https://pa-admin.007345.xyz/admin/",
               "account": "tenant-a@pa-demo.example",
-          "password": "peanut1234"
+              "credential_ref": "owner-controlled demo credential handoff; not stored in Git"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-tenant-a",
               "purpose": "Tenant A bound Admin login",
               "url": "https://pa-tenant-a.007345.xyz/admin/",
               "account": "tenant-a@pa-demo.example",
-          "password": "peanut1234"
+              "credential_ref": "owner-controlled demo credential handoff; not stored in Git"
             },
             {
               "stable_access_id": "peanut-admin-public-demo-tenant-b",
               "purpose": "Tenant B bound Admin login",
               "url": "https://pa-tenant-b.007345.xyz/admin/",
               "account": "tenant-b@pa-demo.example",
-          "password": "peanut1234"
+              "credential_ref": "owner-controlled demo credential handoff; not stored in Git"
             }
           ]
         },
