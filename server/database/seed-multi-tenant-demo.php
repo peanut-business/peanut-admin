@@ -2,13 +2,13 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Notification\Application\NotificationBootstrapService;
-use app\Modules\Official\Task\Application\TaskBootstrapService;
+use app\Modules\Official\Notification\Infrastructure\Persistence\PdoNotificationBootstrapService;
+use app\Modules\Official\Task\Infrastructure\Persistence\PdoTaskBootstrapService;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\DemoAccountPolicy;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
-use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
+use app\platform\infrastructure\PdoTenantApplicationBootstrapPersistence;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\PdoTenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
@@ -481,11 +481,11 @@ function demoMultiMain(): int
         $pdo,
         new ApplicationTenantBootstrapService(
             $pdo,
-            new NotificationBootstrapService(),
-            new TaskBootstrapService(),
+            new PdoNotificationBootstrapService($pdo, $currentExecution),
+            new PdoTaskBootstrapService($pdo, $currentExecution),
             $applicationContexts,
             TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
-            new ThinkPhpTenantApplicationBootstrapPersistence(),
+            new PdoTenantApplicationBootstrapPersistence($pdo, $currentExecution),
         ),
     );
     [$tenantA, $tenantB] = $transactions->run(function () use (

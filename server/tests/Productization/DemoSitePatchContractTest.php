@@ -81,6 +81,15 @@ $expect(
     'shared Admin demo Host must leave admin-web unbound so account-driven Tenant selection is exercised'
 );
 $expect(
+    str_contains($seed, 'PdoNotificationBootstrapService')
+        && str_contains($seed, 'PdoTaskBootstrapService')
+        && str_contains($seed, 'PdoTenantApplicationBootstrapPersistence')
+        && !str_contains($seed, 'new NotificationBootstrapService()')
+        && !str_contains($seed, 'new TaskBootstrapService()')
+        && !str_contains($seed, 'new ThinkPhpTenantApplicationBootstrapPersistence()'),
+    'framework-free demo seed must not call ThinkPHP Model bootstrap adapters before the application is booted'
+);
+$expect(
     str_contains($seed, "'tenant-a'")
         && str_contains($seed, "'tenant-b'")
         && str_contains($seed, "['default', 'tenant-a', 'tenant-b']"),
