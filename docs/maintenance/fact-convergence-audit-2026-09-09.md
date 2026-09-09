@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-fact-convergence-audit-2026-09-09`
 
-Status: `current`（进行中，未声明全量收口）
+Status: `current`（限定范围审计已交付；新同号发布受阻）
 
 Owner: `product-architecture`
 
@@ -71,7 +71,9 @@ Owner: `product-architecture`
 
 安装迁移消费者进一步拆分来源产品、实例发布序列和 scaffold 筛选目标：demo overlay 绑定来源产品，未标记客户 SQL 记录实例序列，Peanut SQL 按 scaffold 版本筛选。既有无数据库 `FreshSchemaBaselineTest` 与相关 PHP 语法检查通过；合成动态探针连续两次在环境文件门禁处停止，未加载到目标分支、未连接数据库，因此不计动态行为通过，后续生成物资格仍须覆盖。
 
-Core 首次固定候选 `ff3a58088d93ba08a3382dfdc941a92b22ba02ce` 在供应链组的 Composer audit 非零退出；首次临时输出被既有脚本清理，不能追认具体网络原因。同候选、同锁与工具的单次诊断退出 0，advisories 与 abandoned 均为空，仅证明诊断时未发现对应问题。独立 D05 同时发现 ArtifactRevision/EntitlementQuota 的公开 `Package::VERSION` 仍为 Alpha.13：历史发布 diff 证明它们属于聚合 PHP 包身份，而非 Module manifest 版本；主控此前的独立 Module 判断已撤回。修复形成新候选，首次失败与已通过组的身份继续保留，不能直接升级为新候选资格。
+Core 首次固定候选 `ff3a58088d93ba08a3382dfdc941a92b22ba02ce` 在供应链组非零退出；Composer 和 pnpm audit 都可能静默失败，临时输出被既有脚本清理，无法确认实际失败的子命令或具体原因。此前把它定位为 Composer 或瞬时网络失败的推断已撤回。同候选、同锁与工具的单次 Composer 诊断退出 0，advisories 与 abandoned 均为空，仅证明诊断时未发现对应问题。独立 D05 同时发现 ArtifactRevision/EntitlementQuota 的公开 `Package::VERSION` 仍为 Alpha.13：历史发布 diff 证明它们属于聚合 PHP 包身份，而非 Module manifest 版本；主控此前的独立 Module 判断已撤回。
+
+常量与既有断言修正后，新固定候选 `b51c7ce64fdf5bdf4c6295e098a938869c7ffd53` 的九角色 D05 增量复核全部通过，但按 exact-commit 合同执行的唯一完整重跑再次在供应链组失败。PHP unit/integration/security/browser/recovery/performance/workspace/repository 后续组未启动，旧候选通过结果不继承为新候选资格。已达到重试停止线：停止第三轮资格，仅修复门禁在清理临时文件前输出失败子命令和原始 JSON 的可观测性缺陷，审计阈值与退出码保持不变。Core 新包发布、Application 3.1.0 锁采用及其完整 L2/Edition Release 仍受此 Gate 阻塞。
 
 本轮曾出现一次资源租约流程失误：共享工具租约冲突后，复合命令未及时停止，当前隔离 worktree 的 Composer 安装仍执行完成；锁文件未改变。已改用遇错即停并获得正确租约，此安装不计为合规固定候选资格。Core 准备阶段另一次锁比较失败后的继续写入已撤回，最终仅保留第一方版本与锁内容摘要变化；第三方锁对象比较通过。两个事件均保留真实范围，不用后续通过抹除。
 
@@ -83,6 +85,10 @@ Core 首次固定候选 `ff3a58088d93ba08a3382dfdc941a92b22ba02ce` 在供应链�
 
 版本语义与依赖顺序已经稳定，[当前事实入口](../governance/current-state.md)已给出 non-blocking checkpoint，解除临时审计等待。新包、应用采用及双 Edition 发布各自的真实 Gate 继续生效。
 
-## 后续审计收口
+## 审计交付与发布停止范围
 
-仍需完成：两仓文档覆盖的最终快照、版本字段消费者及固定候选资格、公开投影构建和部署回执、知识库与 Git 收口。以上是本轮剩余交付，不是新增业务队列。真实发布 Gate 失败只阻塞该发布与直接下游；不能把尚未执行写成外部阻塞或已完成。
+本轮已交付本机任务来源索引、两仓文档覆盖、12 组历史操作处置、跨领域事实登记、版本身份决定和消费者实现、公开投影与独立部署回执。覆盖快照按路径分类，不等于所有历史说法均完成逐条事实验证。知识库已新增版本身份决定，并更新项目入口与 ThinkPHP 决策的旧独立 Core 编号解释；不保存瞬时资格进度。
+
+下一候选前的 UniApp 支持矩阵[只读复核](fact-audit-2026-09-09/uniapp-risk-review.json)已完成：已采用 DCloud `3.0.0-5010520260709002` 与查询到的 Vue3 alpha `3.0.0-alpha-5020520260829001` 均精确要求 Vite `5.2.8`，未找到不脱离官方 peer 合同的修复路径。此结果只维持已接受的控制与原 `2026-10-09` 到期日，不新增风险接受，不替代 npm audit，也不宣称漏洞清零。
+
+新 Core 的未发布开发准备与失败证据可进入 dev；发布状态必须保持 failed/unpublished，不能进入稳定发布。Application 根版本和真实锁仍保持 3.0.14/Alpha.13，未伪造 3.1.0 Registry 身份。新同号产品发布仍是本轮未完成交付：Core Q01 失败直接阻塞新包发布，以及随后 Application 锁采用、生成实例动态验证、完整 L2、双 Edition 制品和 Release。恢复必须先诊断已修复输出保留后的实际 audit 失败并重新取得固定候选资格，不能沿用本轮失败候选的局部通过结论。生产应用和旧 tags/Releases 均未变更。
