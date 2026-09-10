@@ -19,7 +19,7 @@ class GeneratorRenderService
         return [
             self::file($context['modelPath'], 'php', self::renderModel($context)),
             self::file($context['repositoryPath'], 'php', self::renderRepository($context)),
-            self::file($context['applicationPath'], 'php', self::renderApplicationService($context)),
+            self::file($context['servicePath'], 'php', self::renderService($context)),
             self::file($context['controllerPath'], 'php', self::renderController($context)),
             self::file($context['validatePath'], 'php', self::renderValidate($context)),
             self::file($context['apiPath'], 'typescript', self::renderApi($context)),
@@ -101,7 +101,7 @@ class GeneratorRenderService
         return $base + [
             'modelPath' => "server/app/common/model/{$module}/{$entity}.php",
             'repositoryPath' => "server/app/common/repository/{$module}/{$entity}Repository.php",
-            'applicationPath' => "server/app/adminapi/application/{$module}/{$entity}ApplicationService.php",
+            'servicePath' => "server/app/adminapi/services/{$module}/{$entity}Service.php",
             'controllerPath' => "server/app/adminapi/controller/{$module}/{$entity}Controller.php",
             'validatePath' => "server/app/adminapi/validate/{$module}/{$entity}Validate.php",
             'apiPath' => "web/src/api/{$module}/{$resource}.ts",
@@ -350,7 +350,7 @@ declare(strict_types=1);
 namespace app\adminapi\controller\{{module}};
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\{{module}}\{{entity}}ApplicationService;
+use app\adminapi\services\{{module}}\{{entity}}Service;
 use app\adminapi\validate\{{module}}\{{entity}}Validate;
 use app\common\execution\CurrentExecutionContext;
 use think\App;
@@ -360,7 +360,7 @@ class {{entity}}Controller extends BaseAdminController
     public function __construct(
         App $app,
         CurrentExecutionContext $executionContext,
-        private readonly {{entity}}ApplicationService $service,
+        private readonly {{entity}}Service $service,
     ) {
         parent::__construct($app, $executionContext);
     }
@@ -405,7 +405,7 @@ class {{entity}}Controller extends BaseAdminController
 PHP, $c + ['listResponse' => $listResponse]);
     }
 
-    private static function renderApplicationService(array $c): string
+    private static function renderService(array $c): string
     {
         $systemFields = [$c['primary'], 'tenant_id', 'create_time', 'update_time', 'delete_time'];
         $insertFields = array_values(array_map(
@@ -444,7 +444,7 @@ PHP, $c + ['listResponse' => $listResponse]);
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\application\{{module}};
+namespace app\adminapi\services\{{module}};
 
 use app\common\http\PageResult;
 use app\common\model\{{module}}\{{entity}};
@@ -452,7 +452,7 @@ use app\common\persistence\TransactionalExecution;
 use app\common\repository\{{module}}\{{entity}}Repository;
 use app\common\support\PaginationInput;
 
-final readonly class {{entity}}ApplicationService
+final readonly class {{entity}}Service
 {
     private const INSERT_FIELDS = {{insertFields}};
     private const UPDATE_FIELDS = {{updateFields}};

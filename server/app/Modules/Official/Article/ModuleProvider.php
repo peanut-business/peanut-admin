@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article;
 
-use PDO;
-use app\common\composition\ModuleBindingContributor;
 use app\Modules\Official\Article\Application\ArticleAdministrationService;
 use app\Modules\Official\Article\Application\ArticleQueryService;
 use app\Modules\Official\Article\Application\PublicArticleService;
@@ -13,13 +11,9 @@ use app\Modules\Official\Article\Contracts\ArticleModuleAccess;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
-use app\common\execution\CurrentExecutionContext;
-use app\common\service\ProductAssetReferenceService;
-use app\common\service\RichTextResourceService;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
-use think\App;
 
-final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
+final class ModuleProvider implements ModuleProviderContract
 {
     public function moduleKey(): string
     {
@@ -29,19 +23,10 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
     public function bindings(): array
     {
         return [
-            ArticleModuleAccess::class => fn(App $app): ArticleModuleAccess => new PdoArticleModuleAccess($app->make(PDO::class)),
+            ArticleModuleAccess::class => PdoArticleModuleAccess::class,
             ArticleQueries::class => ArticleQueryService::class,
-            PublicArticleService::class => fn(App $app): PublicArticleService => new PublicArticleService(
-                $app->make(ProductAssetReferenceService::class),
-                $app->make(RichTextResourceService::class),
-            ),
             PublicArticleQueries::class => PublicArticleService::class,
-            ArticleAdministration::class => fn(App $app): ArticleAdministration => new ArticleAdministrationService(
-                $app->make(CurrentExecutionContext::class),
-                $app->make(\PeanutAdmin\Kernel\Persistence\TransactionManager::class),
-                $app->make(ProductAssetReferenceService::class),
-                $app->make(RichTextResourceService::class),
-            ),
+            ArticleAdministration::class => ArticleAdministrationService::class,
         ];
     }
 }

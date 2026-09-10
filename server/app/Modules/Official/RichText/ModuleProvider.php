@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\RichText;
 
-use app\common\composition\ModuleBindingContributor;
 use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\RichText\Application\RichTextDocumentService;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
+final class ModuleProvider implements ModuleProviderContract
 {
     public function moduleKey(): string
     {

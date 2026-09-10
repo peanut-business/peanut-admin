@@ -10,7 +10,7 @@
 
 | 当前任务 | 事实源与入口 |
 | --- | --- |
-| 本次历史决策/规则闭环、Goal续作与压缩恢复 | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md`（`PA-USER-STEP-GATES-20260910`）及问题主登记；根任务续作另须读取原本机未跟踪检查点，后者不是公开仓库文档或普通 clone 前置。方案§9–14为派发合同及阶段任务书，阶段0–4已验收；当前S5-T01具体任务书见§12.3，未确认不施工；后续确认及单次十分钟窗口按§7.1，阶段6另行验收交付；失效调度直接移除，现行规则原位修正，不自动续作或重派 |
+| 本次历史决策/规则闭环、Goal续作与压缩恢复 | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md`（`PA-USER-STEP-GATES-20260910`）及问题主登记；根任务续作另须读取原本机未跟踪检查点，后者不是公开仓库文档或普通 clone 前置。方案§9–14为派发合同及阶段任务书，阶段0–4已核实成果及T01交付保留；§12.5 CQ-AUDIT-01及最终239项语义补正已通过根验收，不再重开审计。§12.4仅保留一个现行任务书，旧Proposal ID只是墓碑；按最新有界授权，由一个新实施任务连续执行已批准C01 A/B/C，不再重复同范围确认。C02、未填实后续服务单元及阶段6仍分别确认；失效调度直接移除，现行规则原位修正，不自动续作或重派 |
 | 当前事实、版本身份与历史冲突 | `docs/governance/current-state.md`、`docs/architecture/product-version-identity-adr.md`、`docs/maintenance/fact-convergence-audit-2026-09-09.md` |
 | 项目运行资源、连接、启动、迁移、测试、部署 | `resources/project-resources.json`；源仓 P0-E 专用资格工具另见 `resources/p0e-runtime-qualification.json` |
 | 服务层或跨 Module 调用改造 | `resources/service-registry.json`、`docs/architecture/service-layer-registry.md`；Module 自有表以对应 `module.json` 为准 |

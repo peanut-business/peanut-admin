@@ -2510,6 +2510,20 @@
       "status": "registered_pending_credential",
       "resources": [
         {
+          "stable_resource_id": "peanut-admin-local-private-storage-development",
+          "purpose": "worktree-local private Storage output for TaskImportExportHostTest XLSX verification only",
+          "environments": ["development"],
+          "owner": "S5-C01 executor 01a08cf3-c0a3-7370-b18f-34c9d65a1847",
+          "host": "local filesystem", "port": null, "database": null, "schema": null,
+          "namespace": "/Users/xing/.codex/worktrees/80f6/peanut-admin/server/private/storage",
+          "service_type": "Core LocalStorageDriver", "version": "current Core local driver and plugins.lock identity",
+          "credential_ref": "not applicable", "data_source": "Gate-created random XLSX object only",
+          "freshness_requirement": "after lease, verify active export.xlsx route is local/private and path is private/storage without printing secrets",
+          "health_check": "directory exists and exact Gate object_key is created then removed by TaskImportExportHostTest",
+          "fallback": "none", "lifecycle": "per-Gate", "cleanup_responsibility": "current lease owner removes only exact random file_key/object_key and temporary output; preserve failure recovery point",
+          "backup_responsibility": "not applicable"
+        },
+        {
           "stable_resource_id": "peanut-admin-cos-acceptance-20260824",
           "purpose": "isolated private Tencent COS bucket for unified storage acceptance",
           "environments": [

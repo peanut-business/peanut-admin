@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace app\Modules\Fixture\DeliveryRecord;
 
 use PDO;
-use app\common\composition\ModuleBindingContributor;
 use app\Modules\Fixture\DeliveryRecord\Application\DeliveryRecordService;
 use app\Modules\Fixture\DeliveryRecord\Contracts\DeliveryRecordCommands;
 use app\Modules\Fixture\DeliveryRecord\Infrastructure\Authorization\PdoDeliveryRecordAccess;
@@ -14,7 +13,7 @@ use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
+final class ModuleProvider implements ModuleProviderContract
 {
     public function moduleKey(): string
     {

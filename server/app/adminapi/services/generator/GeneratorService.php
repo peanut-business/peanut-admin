@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\adminapi\application\generator;
+namespace app\adminapi\services\generator;
 
 use app\adminapi\service\generator\GeneratorArchiveService;
 use app\adminapi\service\generator\GeneratorImportPersistence;
@@ -11,7 +11,7 @@ use app\common\http\PageResult;
 use app\common\persistence\TransactionalExecution;
 use app\common\support\PaginationInput;
 
-class GeneratorApplicationService
+class GeneratorService
 {
     public function __construct(
         private readonly GeneratorImportPersistence $imports,

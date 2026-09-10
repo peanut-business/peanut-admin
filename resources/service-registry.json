@@ -1299,6 +1299,26 @@
       }
     },
     {
+      "stable_service_id": "PA-SVC-GENERATOR",
+      "name": "Generator 服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "formed",
+      "owner": "adminapi Generator",
+      "responsibility": "管理受控代码生成表配置、预览和归档生成；生成的业务服务位于 adminapi/services。",
+      "explicit_exclusions": ["Module scaffold", "运行时数据库迁移"],
+      "current_implementation": [
+        "server/app/adminapi/services/generator/GeneratorService.php",
+        "server/app/adminapi/service/generator/GeneratorRenderService.php"
+      ],
+      "actual_callers": ["GeneratorController", "AppService"],
+      "data_ownership": {"owned_tables": ["pa_gen_table", "pa_gen_table_column"], "shared_or_read_only_tables": [], "policy": "生成配置归 Generator 所有"},
+      "dependencies": ["GeneratorImportPersistence", "TransactionalExecution", "ThinkPhpGeneratorMetadata"],
+      "current_issue": "首个业务服务已原子迁入 services；渲染器与架构门禁拒绝已退出的 application 路径回灌。",
+      "recommended_boundary": "GeneratorService 与 GeneratorRenderService；HTTP 调用方仅消费服务接口。",
+      "delivery": {"readiness": "complete", "can_start_dedicated_thread_now": false, "prerequisites": [], "blockers": [], "recommended_next_action": "已完成 C01-B 原子样板；后续已命名服务单元按各自批准批次迁移"}
+    },
+    {
       "stable_service_id": "PA-SVC-IMPORT-EXPORT",
       "name": "导入导出服务",
       "group_id": "enableable-business",

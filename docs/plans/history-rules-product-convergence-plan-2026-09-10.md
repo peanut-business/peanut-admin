@@ -4,9 +4,9 @@ Document ID: `pa-convergence-plan-20260910`
 
 Control revision: `PA-USER-STEP-GATES-20260910`
 
-Status: `current`（阶段0–4已回收验收；阶段5首批S5-T01本地实现及有界验证已根验收并合入dev；尚未进入产品资格、发布或部署）
+Status: `current`（阶段0–4、T01及CQ最终239项补正已验收；现行§12.4 C01-A/B/C已通过根技术验收，正在完成同批派生身份、状态与Git收尾；C02及以后未获批）
 
-Updated: 2026-09-10（Asia/Shanghai）
+Updated: 2026-09-11（Asia/Shanghai）
 
 Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段确认及最终回收权；已批准的独立执行任务拥有该步骤的唯一写集。
 
@@ -16,7 +16,7 @@ Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段�
 
 这包含三个成果：有效决定、历史经验和知识被正确采用；当前产品遗留得到实际处置；规则、代码、测试、文档与真实交付一致。不是读完所有聊天、把29项标成完成或写完报告。
 
-阶段3静态审计/排程与阶段4规则/文档原位修正均已由根任务回收验收，不是运行时修复或产品资格。S5-T01已确认、实施并完成有界补正，本地实现及有界验证已获根验收并合入dev；不由文档验收推定所有代码迁移、发布或部署获批。
+阶段3、4此前批准范围的审计/规则成果保留，但2026-09-11的服务目录与自定义装配纠偏证明其代码层覆盖不充分，不能再概括为所有实现质量问题已查清。S5-T01已确认、实施并完成有界补正，本地实现及有界验证已获根验收并合入dev；不由文档验收推定所有代码迁移、发布或部署获批。
 
 已确认方向不重新表决：Application/Core正式采用ThinkPHP 8，Core不追求框架中立；保留真实跨Module合同、ExecutionContext、Tenant/RBAC/Module生命周期及厂商SDK/Transport/Storage Driver。Application/Core/双Edition产品版本一致；Module与Instance独立，实例另记来源产品版本。
 
@@ -26,12 +26,12 @@ Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段�
 
 | 阶段 | 目标与范围 | 必须交付什么 | 当前状态 |
 | --- | --- | --- | --- |
-| 0 执行控制 | 保留目标、逐步确认、去除旧调度 | 唯一方案/检查点；不启用Goal自动续作；无定时器 | 已完成，入口持续同步 |
+| 0 执行控制 | 保留目标、逐步确认、去除旧调度 | 唯一方案/检查点；不启用Goal自动续作或周期监督；仅§7.1单次确认唤醒 | 已完成，入口持续同步 |
 | 1 归并已有材料 | 收集已有聊天分析中的独有问题与纠正 | 原登记与来源去向，不重扫原始聊天 | 已完成 |
 | 2 决定、经验与知识 | 分清有效要求、旧方向、原因推断和可用方案 | 已收敛10决定、14经验、11知识、29待核验事项 | 已完成，不等于当前产品通过 |
-| 3 查现状、补遗漏、排修复 | 以目标/决定/经验及能力账本核两仓；29项不是上限 | 需求覆盖、当前证据、残留处置、可直接批准的修复批次、依赖与时间估算 | 已补正并经根任务验收；仅静态审计/排程 |
-| 4 落实防复发规则 | 将已确认原因转为最小有效约束；复用现有规则/检查 | 旧规则移除，新要求落到实际入口与核验办法；说明已生效、仍待实现和不能硬拦截的边界 | 已完成并经根验收；不代表Runtime或压缩Hook通过 |
-| 5 分批实际修复 | 按真实领域和依赖修代码、测试及文档 | 每批实现/调用者/旧路径同步处理，最低充分验证、同步登记及批准的集成交付 | 逐批确认 |
+| 3 查现状、补遗漏、排修复 | 以目标/决定/经验及能力账本核两仓；29项不是上限 | 需求覆盖、当前证据、残留处置、可直接批准的修复批次、依赖与时间估算 | CQ-CORR-01..05及最终239项补正已验收；仅静态审计/排程 |
+| 4 落实防复发规则 | 将已确认原因转为最小有效约束；复用现有规则/检查 | 旧规则移除，新要求落到实际入口与核验办法；说明已生效、仍待实现和不能硬拦截的边界 | 当前入口已同步；C01所需生成器/路径/失败传播门禁在同批收尾 |
+| 5 分批实际修复 | 按真实领域和依赖修代码、测试及文档 | 每批实现/调用者/旧路径同步处理，最低充分验证、同步登记及批准的集成交付 | C01-A/B/C根技术验收通过；派生身份、状态与Git收尾中 |
 | 6 独立验收与交付 | 验证产品与防复发措施，不接受报告代替运行 | 固定候选、同源双Edition、真实消费路径、支持范围内厂商资格及交付证据 | 前置完成后单独确认 |
 
 每个步骤的方案必须有目标、输入、范围/排除项、owner、模型/推理、写集/资源、依赖、检查、产物和停止点。按领域或交付物划定有意义的步骤，不把单个命令或文件拆成反复请示；批准范围内低风险可逆细节自主处理。批准阶段方向不等于批准所有未知后续步骤。
@@ -85,6 +85,8 @@ Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段�
 续作、压缩或新消息后先读本方案、step_approval、当前owner/结果/恢复点，再核对实际在途状态。只有当前步骤明确获批才继续；未知最后操作先只读查结果，不重复副作用。用户重启、子任务回报、旧消息和Goal续作均不批准下一步。旧撤销侧栏任务和历史字段队列不恢复，不新增监督任务。恢复入口仍为主工作区 `.local/peanut-admin-supervision.json` 的版本化路径引用。
 
 ### 7.1 最新阶段确认与十分钟默认确认
+
+**2026-09-11最新明确授权优先**：用户在引用《批准持续整改》后明确要求“按他说的做”，批准先完成现有`service/services`定点补正并根验收，随后立即进入本方案修订C01，不再等待第二次同范围确认。C01-A模块装配、C01-B首个Generator服务组织与相关生成/测试/门禁、C01-C已定义的OpsModule切片组成一个批准批次，按技术依赖连续推进至根验收、提交并推送dev；小步实现、聚焦验证、必要补正和本批技术回收不再分别索取用户批准。C01-B尚未填实的其他服务单元、Core C02及以后批次、发布/部署和范围扩张不在此次直接施工授权内，跨批仍核前批验收与下一批完整范围。已验收内容不重复全审；未通过的239项分类仅定点修正，不能把路径清单齐全当职责判定正确。本授权不自动重建Goal、周期监督或其他后台调度。
 
 用户2026-09-10明确同意开始按阶段推进：每个新阶段使用新独立任务；根任务回收验收，不合格由原任务按原编号补正，通过后先描述下一阶段的完整执行任务。阶段3的§10/§14任务书本轮已明确批准，不等待十分钟。
 
@@ -287,7 +289,7 @@ Proposal ID：`PA-S4-PROPOSAL-20260910-01`。状态：已由 `01a08b02-5bc1-7851
 | --- | --- | --- | --- |
 | `S4-RULES-CORRECTION` | 先修本仓 AGENTS/执行规则/current-state/Storage 队列/TP8 ADR，以及 Core `p0-dependencies.json`、`p1-cap04-collaboration.md` 的当前冲突 | 两仓根目录执行 docs governance/diff；无运行资源；规则一致即停等根验收 | 1–2日 / 0.25日（未校准人力参考） |
 | `S5-T01` | Member Provider、domain-probe、integrity/CI、三份 Ablation；Core WorkflowGraph默认只读与现有Unit核验 | 精确范围/命令/正向probe限制见§12.3；不以全量 `test-unit` 冒充聚焦检查 | 首批实做校准；原2–3日/0.5–1日仅人力参考 |
-| `S5-C01` | 九个 Official ModuleProvider 与 `AppService.php`；简化稳定别名，保留配置/运输/worker/payment 真实 factory | Application `server/` 执行 PluginModule/OfficialArticle 现有测试；`--fast` 仅在提交后绑定准确 `CI_BASE_REF` 与 backend env，且只覆盖 `base...HEAD` | 1–2日 / 0.5日（未校准人力参考） |
+| `S5-C01` | 九个Official ModuleProvider核查；简化接口别名，删除具体类冗余绑定；AppService只读；精确写集见§12.4 | 扩展既有PluginModule的真实容器装配断言，保留OfficialArticle；不把manifest静态检查当自动解析证明 | 本轮估算及限制见§12.4 |
 | `S5-C02` | Core `Persistence/TransactionManager.php`、`PdoTransactionManager.php`、`PdoRepository.php`、`backend/app/command/KernelBootstrapFactory.php`；Application AppService 与 `common/persistence/CoreTenantRepositoryFactory.php` | 只建立TP8数据/事务宿主边界并迁首个原子消费者；不得提前删除C03–C12拥有的领域Repository或Identity/Tenant/RBAC API；执行Kernel事务聚焦测试和Application TP8行为矩阵 | 5–8日 / 1–2日（未校准人力参考） |
 | `S5-C03..C05` | ReferenceCodes → Settings → ArtifactRevision；精确 package/backend/starter 路径、消费者、表见主登记 | 各包现有 PHPUnit 目录与对应 backend test；DB测试绑定 `DB_HOST=127.0.0.1`、登记的 `MYSQL_PORT=DB_PORT`/凭据引用；不反复运行全工作区脚本 | 7–10日 / 1.5–3日（未校准人力参考） |
 | `S5-C06..C08` | EntitlementQuota/Workflow → Notification → TaskJob；连同 Notification/Task Application Provider | 各包聚焦 PHPUnit；Notification/TaskJob 使用各自现有 feature/MySQL harness 及登记输入，它们不属于 Core `test-integration` 覆盖 | 13–19日 / 3–5日（未校准人力参考） |
@@ -358,6 +360,95 @@ Core的`packages/php/workflow/src/Definition/WorkflowGraph.php`与`packages/php/
 **Git交付边界**：本批先交真实本地diff、失败可见检查及根验收所需证据，不在根验收前提交、合并或推送累计脏分支。根验收后由同一任务按根任务核实的精确已验收代码/文档写集完成集成收口；这属于本批后半程，不新开一个历史审计阶段。若累计文档尚不能安全分离，明确列出具体集成缺口，不能全分支合并或遗漏必要文档同步。没有集成回执不得称T01已交付完成。禁止重写历史、删除隔离区或清理其他任务工作树。
 
 **排除与停止点**：不开始S5-C01及后续TP8迁移，不删除PDO公共API，不改SQL/前端/依赖锁/版本/资源，不发布、部署、真实Provider、浏览器矩阵或完整combined/P0-E资格。没有当前失败证据不重修旧WorkflowGraph。完成后回报根任务的真实task ID、diff、命令退出码、未检查项和精确恢复点，停止等根验收；仅用户确认或§7.1有效窗口能批准下一批。首批记录实做耗时/返工/等待用于重新估算，不承诺未校准的整体完成时间。
+
+### 12.4 已批准并通过前置验收：S5-C01 composition、services 与 Ops 原子切片
+
+旧 Proposal ID `PA-S5-C01-PROPOSAL-20260910-01` 仅作失效墓碑，不得执行或消费旧确认窗口。现 Proposal ID：`PA-S5-C01-REVISED-PROPOSAL-20260911-02`；用户已按§7.1确认本批A/B/C，239项补正及三卡技术实现均已通过根验收，当前只完成同一批准批次的派生身份、状态与Git收尾。基线固定为 App `b3448a4b781a839f1c33bd48825cae1ee913cec3`、tree `890539c7970eef3600751432a56557a135eab2e7`；Core只读 `2ed77f38ca26472d685cfeb81674a66ba23eadb4`。本节是唯一当前任务书；C02及未填实其他服务单元仍未获批。
+
+#### C01-A：Module原生bindings收敛
+
+**目标与最终设计**：删除 App 重复 marker `ModuleBindingContributor`，所有 Core `ModuleProvider`（含 Fixture）一律由 `ModuleProviderBindings::collect()` 收集。Host仍负责从manifest构造provider、核对class/`moduleKey()`、在全量验证后拒绝既有Host binding冲突并一次性绑定；registry、资源owner和Module boundary不动。受影响的十个 bundled Plugin manifest 与根 lock 在同一批由 Writer 派生同步；已有独立1.0.0候选的 Rich Text 将Module/PHP/前端组件共同提升到1.0.1，旧tar不变且本批不打包/发布。Core collector不认识ThinkPHP Host既有binding，也不拒绝string self/cycle；`ModuleComposition`必须在任何 `App::make()/bind()` 前拒绝self/cyclic alias。ThinkPHP原生 `Service::register()/bind` 与容器字符串别名负责普通构造，不能写 `Concrete::class => Concrete::class`。
+
+**精确写集**：
+
+- `server/app/common/composition/ModuleComposition.php`；删除 `server/app/common/composition/ModuleBindingContributor.php`。
+- `server/app/Modules/Official/{Article,File,ImportExport,Member,Notification,Oauth,Payment,RichText,Task}/ModuleProvider.php`及 `server/app/Modules/Fixture/DeliveryRecord/ModuleProvider.php`：移除marker import/implements，并按下表修改bindings。
+- `server/tests/Productization/PluginModuleContractTest.php`：用锁定ThinkPHP容器验证collector、真实别名对象身份、无marker Fixture、自环/环路、Host已有binding冲突和“先验证后写入”。
+- `server/tests/Productization/ModuleCreateCommandTest.php`和 `server/resources/module-scaffold/backend/ModuleProvider.php.stub`均只读：stub已直接实现Core契约且返回bindings，本卡不改变生成合同。
+
+| Provider | 删除/改为原生构造 | 必须保留 |
+| --- | --- | --- |
+| Article | 删除 `PublicArticleService` 自键Closure；`ArticleModuleAccess→PdoArticleModuleAccess`、`ArticleAdministration→ArticleAdministrationService`改直接别名；`ArticleQueries`、`PublicArticleQueries`继续直接别名 | 无配置型Closure |
+| File | `FileAdministration→FileAdministrationService`、`FileUploads→FileUploadService`改直接别名 | 无配置型Closure |
+| ImportExport | `ImportExportCommands/Queries→ImportExportApplicationService`、`ConfigurationTransferCommands/Queries→ConfigurationTransferApplicationService`、`ImportExportWorkerRuntime→TaskImportExportRuntime`改直接别名；删除 `TenantConfigurationTransferService`、`AppFileMediaGateway`、`TaskImportExportRuntime`、`OperationLogExportApplicationService`四个自键Closure | `ImportExportApplicationService`、`ConfigurationTransferApplicationService`、`ImportExportTaskWorkerDefinition`保留：组装PDO repository/data-provider/task publisher、adapter数组/secret protector及worker authorization |
+| Member | `MemberQueries→MemberQueryService`、`MemberSubjectLookup→ThinkPhpMemberSubjectLookup`、`MemberAdministration→MemberAdministrationService`改直接别名；四个commands现有直接别名保留 | 无配置型Closure |
+| Notification | 删除 `NoticeChannelService`、`NotificationApplicationService`普通自键Closure；`NotificationCommands/Queries/VerificationCodeCommands`直接别名保持对象身份 | `NoticeSmsSender`和`VerificationCodeService`保留：含APP_ENV布尔值；`NotificationBootstrapCommands→NotificationBootstrapService`保留直接别名 |
+| Oauth | 删除 `ThinkPhpExternalTenantBindingRepository`、`ExternalTenantResolver`、`ExternalChannelBindingService`普通自键Closure；既有locator/persistence/transport/callback/store/query直接别名保留 | `OAuthCommands` Closure保留：注入默认头像primitive；不得把transport选择或外部绑定下推Core |
+| Payment | 删除 `PaymentServiceFactory`普通自键Closure；`PaymentChannelGrantCommands→ThinkPhpPaymentChannelGrantCommands`改直接别名并删除Provider内仅转发的 `channelGrantCommands()`；Recharge/Refund直接别名保留 | tenant支付通道选择仍由 `PaymentServiceFactory::forTenant()`负责，不在Provider复制 |
+| RichText | 无普通项 | `RichTextDocumentService`保留协作URL/secret配置Closure |
+| Task | `TaskBootstrapCommands→TaskBootstrapService`直接别名保留 | `TaskJobRuntime`、`TaskScheduler`保留签名key、console callable、worker limit及可变调度图 |
+| Fixture/DeliveryRecord | 仅移除marker | `DeliveryRecordCommands`保留其PDO/context与Provider私有commands factory |
+
+**资源、命令和副作用**：仅使用登记 `peanut-admin-host-php-development`（`/opt/homebrew/bin/php` 8.3.24）及本worktree `server/vendor`；不连DB/缓存/端口/Provider。`php think list`会加载env、全Console、plugin lock与Module tree，故不是本卡Gate；以聚焦合同替代，不声称完整bootstrap资格。以下命令在 App 根分别执行并记录退出码：对每个实际改动PHP运行 `/opt/homebrew/bin/php -l <path>`；`rg -n 'ModuleBindingContributor' server/app server/tests server/resources`预期无生产/测试命中；`cd server && /opt/homebrew/bin/php tests/Productization/PluginModuleContractTest.php`。
+
+`ModuleCreateCommandTest.php`明确不是本卡Gate：它会真实执行两次 `php think module:create`、调用 `/usr/local/bin/composer validate`及裸 `node`/Vite，并写随机 `server/app/Modules/{Official,Acme}/Generated*`、`server/tests/Modules/{Official,Acme}/Generated*`、`web/src/modules/{official,acme}-generated-*`、OS temp和 `web/src/.pa-module-contribution-symlink-*`。当前80f6缺 `server/.env`和worktree-local `web/node_modules`，且登记Node资源用途未证明覆盖通用Module scaffold；不得借用别树依赖。未来真正修改scaffold时，先登记通用toolchain，使用0600的 `server/.env.<run-id>`并绑定绝对 `PEANUT_SERVER_ENV_FILE`，记录随机suffix/path；PHP/Node/env/dependency分别由该测试任务清理自己创建的精确目标，中断后不得用宽glob清理。通过C01-A后停止，根验收前不提交/合并/推送，不进入C01-B。
+
+#### C01-B：services组织与首个Generator单元
+
+**组织结论**：73个 `Application/application` 文件中，大多数是真实业务服务，用户要求的最终目录为复数 `services`，不能按Module/HTTP边界整体豁免。非业务角色分别迁入或保留在 `Authorization`（ArticleCapabilityAuthorization、TaskAuthorizationRouter）、`Definition`（ImportExportTaskWorkerDefinition、CrontabTaskDefinition）、`Runtime`（TaskImportExportRuntime）、`Bootstrap`（NotificationBootstrapDefaults/Service、TaskBootstrapService）、`Enum`（RefundEnum）、`Exception`（BusinessException）、`Contracts/Access`（DeliveryRecordAccess）；角色目录同其owner原子卡确认，不混入首个样板。
+
+**首个可执行原子单元**：把 `server/app/adminapi/application/generator/GeneratorApplicationService.php`（`app\adminapi\application\generator\GeneratorApplicationService`）一次切换为 `server/app/adminapi/services/generator/GeneratorService.php`（`app\adminapi\services\generator\GeneratorService`），不留旧类/桥。精确写集：
+
+- 上述旧/新文件、`server/app/adminapi/controller/generator/GeneratorController.php`、`server/app/AppService.php`。
+- `server/app/adminapi/service/generator/GeneratorRenderService.php`：`applicationPath/renderApplicationService`改为 `servicePath/renderService`，生成路径改 `server/app/adminapi/services/{module}/{Entity}Service.php`，同步模板namespace/class/controller import与类型。
+- `server/tests/Productization/TaskImportExportHostTest.php`、`server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php`、`scripts/check-thinkphp-architecture`；`scripts/ci-server-check.sh`仅在聚焦选择器确需把上述测试接到services/generator路径时修改。
+- `resources/service-registry.json`新增Generator业务服务的canonical owner/path/consumer/gate（当前无旧Generator登记可迁移，不能伪称已有记录）。
+
+直接消费者只有GeneratorController与AppService；Web的 `web/src/api/system/generator.ts`、`web/src/views/dev-tools/code/index.vue`只消费HTTP路径及preview file path，默认只读；`web/src/views/dev-tools/modules/index.vue`及module discovery测试属于Module scaffold。Platform、PC、UniApp源码扫描无PHP namespace/generator直接消费者，明确零改动，不称“四端均受影响”。
+
+**真实生成输出 Gate（新增必要条件）**：未来施工必须在既有 `server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php` 中增加对实际 `GeneratorRenderService::render(array $table)` 的纯内存合同调用，不新增fixture或独立测试入口。最小输入为合法 tenant-owned multi-tenant 表快照：`table_name=pa_demo_article`、`module_name=demo`、`entity_name=Article`、`data_owner=tenant`、`target_edition=multi-tenant`、columns 至少 `id(primary)`、`tenant_id(required)`、`title(string)`。断言返回的七个文件中，service 文件路径必须为 `server/app/adminapi/services/demo/ArticleService.php`，PHP namespace/class 必须为 `app\\adminapi\\services\\demo`/`ArticleService`，controller content 的 import/type 必须指向同一 services class，且所有返回路径不能含 `adminapi/application` 或 `ApplicationService.php`。再以旧 `applicationPath`/旧类命中作为负控，断言旧路径回灌被拒绝；保留本测试文件已有安全/租户/分页/异常断言。此为无DB、无端口的内存合同，不替代会写DB/对象存储的 `TaskImportExportHostTest.php` 动态Gate。
+
+**其余业务服务批次归属**：每批同时移动实现、namespace/import、Provider、控制器/命令、generator输出、service registry及路径Gate，不留兼容层。Notification→C07；Task→C08；ImportExport（含TenantConfigurationTransferService、OperationLogExportApplicationService）→C09；File→C10；Member/Oauth/Payment及admin/api身份、租户、授权类→C12；Settings/config/dict/hot-search→C04；Article、RichText、Workbench、Decoration、Dept/Jobs、System、Index/Pc/Search等无既有独立Core领域的host/module服务作为C01-B后续命名原子子单元，逐个复用本样板并须分别获§7.1确认；不得用“如有需要”跳过。ArtifactRevision→C05，EntitlementQuota/Workflow→C06，二者不是App services搬目录的替代。
+
+**最低Gate**：App根逐文件 `php -l`；`rg -n 'GeneratorApplicationService|adminapi/application/generator|applicationPath|renderApplicationService' server scripts web platform pc uniapp resources/service-registry.json`仅允许明确历史文档命中；运行 `/opt/homebrew/bin/php server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php`。受影响的 `TaskImportExportHostTest.php`会写数据库/对象存储清理数据，只有先读取 `resources/project-resources.json`、取得 `peanut-admin-mysql84-development`对应已登记逻辑资源唯一租约、核健康/schema freshness及Storage清理owner后才运行；缺任一前置即只阻塞该动态Gate，静态/renderer合同不能冒充其通过。前端无namespace变化，不运行浏览器矩阵。完成本单元即停止，后续服务子单元不自动领取。
+
+#### C01-C：OpsModule composition切片
+
+目标只把 `server/app/command/OpsModuleTask.php` 的PDO/config/audit/trusted-key解码与 `new PlatformOpsRuntimeFactory` 改为复用 `AppService.php` 已登记的 `PlatformOpsRuntimeFactory`；保留 `DatabaseContextualCommand`、action/task-key/revision/error allowlist和Module签名行为。精确写集为该命令、`server/app/AppService.php`（仅实际DI签名需显式暴露时）、现有/新增于既有Ops命令测试文件的wiring断言、`resources/service-registry.json`及本登记/报告。先以 `rg -n 'OpsModuleTask|ops-module:task|PlatformOpsRuntimeFactory' server/tests server/app`定位现有测试；若没有可承载文件，实施前把一个聚焦测试文件加入获批写集，不借OpsUpgrade测试代替。
+
+最低Gate：逐个改动PHP `php -l`；用真实ThinkPHP容器但受控PDO/Audit依赖证明命令取得与AppService同一factory，且无命令内 `new PlatformOpsRuntimeFactory`；原参数负控保持。不得执行会claim/advance真实任务的命令。此卡不依赖 `OpsUpgradeTask` 的结论；后者空trusted-key安全意图仍为unknown且保持只读。通过后停止，不进入Core C02。
+
+#### 后续Core卡的覆盖补正
+
+C02→C12既有顺序和单实现PDO repository/factory归属保持，不复制问题卡。C05的精确未来写集必须加入 Core `docs/status/runtime-operation-coverage.json`，以及 App `server/app/platform/service/ops/CrossProductAdoptionHost.php`、`server/tests/Productization/CrossProductDownstreamAdoptionTest.php`中ArtifactRevision路径；退出条件要求独立coverage destination/owner、append/finalize、immutability/lineage、denied-before-write，并明确接受App无生产consumer或补真实入口。C06同样加入上述Core登记和App Host/Test，分别覆盖Quota reserve→commit/release补偿、Workflow start→transition、失败无部分写、idempotency/race与跨域事务。该App测试会创建并drop随机 `peanut_admin_cap06_adoption_*` 数据库；未登记允许该命名且有CREATE/DROP权限的独占lease前不得执行。coverage owner与资源命名任一未闭合即对应卡未完成。
+
+**共同交付边界**：本批获批后三卡的“停止”是技术验收点，不是逐小步用户确认；根接到回执先验收，必要补正沿原ID，通过后由同一实施任务继续已批准下游或按精确写集提交并推送dev。没有真实资源前置的检查仅阻塞直接依赖它的交付，不冒称通过。C01-C测试路径在实施前置检查中按真实现有测试确定，必要的新聚焦断言属于本批验证，不另开全审。C01-B未命名后续服务单元及Core C02不自行领取。完成或真正受阻时保存原检查点并回报，禁止只做报告就把本批标为交付。
+### 12.5 已批准补正任务：CQ-AUDIT-01 代码层遗漏核查与计划补正
+
+**授权与目标**：2026-09-11用户在确认“先执行代码层核查、更新任务计划，再恢复原计划”的顺序后明确回复“好。开始。注意使用不同模型及推理等级以及合理的使用新对话”。本任务是现有阶段3/4覆盖遗漏的集中补正，不是阶段0重启或另一套总计划。系统查清两仓同类实现问题，更新原登记、规则修订输入与实施安排。该段记录当时的CQ审计授权；其后最新有界授权已经批准最终239项根验收后立即实施修订C01 A/B/C，优先于这里原有的重复确认口径，但不恢复旧C01，也不授权C02、未填实后续服务单元或其他Runtime范围。
+
+**入口与身份**：App正式根为`/Users/xing/.codex/worktrees/80f6/peanut-admin`，HEAD `b3448a4b781a839f1c33bd48825cae1ee913cec3`，tree `890539c7970eef3600751432a56557a135eab2e7`；Core根为`/Users/xing/Documents/company-projects/peanut-admin-core`，HEAD `2ed77f38ca26472d685cfeb81674a66ba23eadb4`，tree `44141384dfe06edc28e611b31d34141ad843b619`。新独立任务自身worktree只承载上下文，不作为审计基线，不复制私有控制或其他树依赖。先读本节、§7.1/§9、原登记`stage3_assessment.implementation_quality_review`及原报告“代码层遗漏与责任纠偏”，再读两仓适用规则及直接源码。已验收历史决定/知识和T01证据复用，仅对影响结论的具体缺口补证，不重新全量读聊天。现有31项不是数量目标或范围上限。
+
+**接手协议**：新任务先只读核对两个根、HEAD、未提交写集，发送一次接手回执给根任务`01a07fd6-296d-7cf2-8434-77c57925fc14`，然后停止等待唯一`PA-CQ-AUDIT-01-START-20260911-01`。根核对真实task ID、绑定原检查点并发送START后，才转移下列文档及本步骤状态的唯一writer。原App六份文档差异和Core两份阶段4依赖文档差异须保留；不暂存、重置或提交。根不与owner并写；子智能体不写共同登记、不递归派发。
+
+**有限并行队列**：owner采用Terra/medium。先列适用源码根/排除项与已有证据，随后并行消费下表，不按聊天数量或文件行数制造任务。清晰目录/引用提取可用Luna/low，常规语义Luna/medium，复杂跨层核对Terra/medium；只有具体推理不足才局部升级Sol或GPT-6并登记理由。不用默认max的角色代替成本选择。上限20子智能体且服从实际容量，为复核保留空间；回收后先最低充分验收，再滚动补位，结果积压时不追加。
+
+| ID | 独立范围与建议模型 | 必须交回的证据与验收 |
+| --- | --- | --- |
+| CQ-01 | App后端组织与职责；Terra/medium，可下拆已编号窄路径Luna/low | Service/Model/Controller/Contract目录、namespace、引用与职责是否符合已确认方向；services最终布局建议及原子迁移边界。复用已有73文件/239文件计数，不能把所有Application文件直接判成Service |
+| CQ-02 | App组合根和框架能力重复；Terra/medium | 九Provider、AppService、ModuleComposition及真实消费者：普通自动构造、接口别名、动态配置/SDK/Worker分别处理；自定义bindings相对原生Service register/bind究竟保留哪些Module语义、移除哪些重复，不以“有调用”判必要或一刀切删除 |
+| CQ-03 | Core各正式包内部组织、数据边界、Repository/Factory/Commands/Queries；Terra/medium | 全部适用包有覆盖去向；识别真正跨Module合同与单实现包装的差异，关联已有PDO问题与批次，不重复建同一问题；保留Tenant/RBAC/ExecutionContext及厂商SDK/Transport/Driver语义 |
+| CQ-04 | 两仓HTTP/CLI/Worker/Cron bootstrap、跨仓装配调用；Terra/medium | 以宿主入口及调用链核对重复RuntimeFactory/手工容器/独立PDO路径，明确与CQ-02/03的接口依赖；不重读包内实现、不发起运行资源或资格测试 |
+| CQ-05 | 生成器/模板/示例、测试和架构扫描路径、规则投影；Luna/medium | 追踪旧组织方向是否被再次生成或被门禁强制，识别services迁移后可能漏扫的路径；给具体文件/符号和正式修正办法，保护有效业务/安全断言。前端各入口按其框架核对生成消费者/API与目录相关漂移，不把PHP规则机械用于TS，不重做全量UI资格 |
+| CQ-06 | owner去重、跨类别覆盖复核和原计划补正；依赖CQ-01..05 | 对现行已确认要求逐项关联源码事实/旧问题/独有新问题/合理保留/证据不足；填实修复批次、依赖、文件、owner、最低检查、失败停止点及有依据估算。不是只汇总搜索数量或两个用户示例 |
+
+首次边界清单应覆盖App `server/app`、生产生成/构建入口、相关脚本/测试/模板、`web/platform/pc/uniapp`相关架构消费者及Core正式源码/宿主目录。排除vendor实现审计、构建制品、隔离旧重构、外部项目和已失效源码；锁定vendor仅用于核验框架真实合同。实际调用/影响分析遵循两仓CodeGraph规则；工具不可用则登记限制并定向源码查证，不能以索引故障改为无限准备。代表性语义阅读与全范围路径清单分开，不声称逐行全读或零遗漏。
+
+**输出及唯一写集**：仍使用`docs/maintenance/runtime-convergence-issue-register-2026-09-09.json`与同名人类审计报告、本方案§12.4/§12.5及原修复批次；必要同步`AGENTS.md`、`docs/README.md`、`docs/governance/current-state.md`、`docs/document-registry.json`、`docs/document-impact-map.json`及其既有生成目录索引。本机检查点只更新本步骤与当前控制字段，不改写历史队列、不进入公开Git。每项附需求依据、完整基线、文件/符号、事实/推断/未知、现状判定、业务风险、需保留语义、实施及防复发检查去向。直接冲突的开发规则在原登记中列精确修订输入，由根结合综合结论裁定后纳入同一修复批次；不得自行新增业务规则。Core源码与文档本步只读，既有阶段4本地文档须明确仍未集成。
+
+**顺序与防循环**：先完成这次有限类别核查和综合，再改实施排程，不一边扫描一边迁移代码。目录/生成器/门禁修复是否先于C01、是否同批原子替换，由证据给出明确推荐；原TP8领域顺序及独立安全前置尽量保留。所有确需修复项有具体批次和验收归宿，不只登记“以后优化”，也不让非阻塞建议拖延主目标。移除失效现行写集和重复说明，不保留两套可执行C01；已完成T01和有界历史证据保留历史身份。新的技术细节由owner论证、根裁定，只将真正业务范围选择交用户。
+
+**检查与交付停止点**：完成文档后运行一次`./scripts/docs-governance check`、`git diff --check`及修改JSON的解析/唯一ID/引用/方案SHA检查，核对两仓无新增PHP/SQL/前端/业务测试/lock改动；不运行产品全套测试。回报覆盖清单、原位结果位置、实际diff、验证、未查明边界及可直接批准的下一任务书，回写检查点并交还writer给根，停止等待验收。禁止本步创建Goal/定时监督、施工、发布、部署、清理或自行启动后续批次。中断/压缩后先核当前owner、已回收CQ编号、结果及精确续读点，不盲目重派。工期在首轮边界/文件规模明确后给区间及依据；不沿用旧C01的45–90分钟估算。
 
 ## 13. 阶段6任务书：独立验收与交付
 

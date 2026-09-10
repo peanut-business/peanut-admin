@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth;
 
-use app\common\composition\ModuleBindingContributor;
 use app\common\service\external\ExternalTenantBindingRepository;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalChannelBindingStore;
@@ -24,7 +23,7 @@ use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
+final class ModuleProvider implements ModuleProviderContract
 {
     public function moduleKey(): string
     {
@@ -43,20 +42,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
             OAuthPersistence::class => ThinkPhpOAuthPersistence::class,
             OAuthTransport::class => WechatOAuthTransport::class,
             OfficialAccountCallbacks::class => \app\Modules\Official\Oauth\Application\OfficialAccountApplicationService::class,
-            ThinkPhpExternalTenantBindingRepository::class => fn(App $app): ThinkPhpExternalTenantBindingRepository => new ThinkPhpExternalTenantBindingRepository(
-                $app->make(OAuthCallbackLocator::class),
-            ),
             ExternalTenantBindingRepository::class => ThinkPhpExternalTenantBindingRepository::class,
             ExternalChannelBindingStore::class => ThinkPhpExternalTenantBindingRepository::class,
-            ExternalTenantResolver::class => fn(App $app): ExternalTenantResolver => new ExternalTenantResolver(
-                $app->make(ExternalTenantBindingRepository::class),
-                $app->make(ExternalTenantAudit::class),
-            ),
-            ExternalChannelBindingService::class => fn(App $app): ExternalChannelBindingService => new ExternalChannelBindingService(
-                $app->make(ExternalTenantBindingRepository::class),
-                $app->make(ExternalTenantResolver::class),
-                $app->make(ExternalChannelBindingStore::class),
-            ),
             OAuthCommands::class => fn(App $app): OAuthCommands => new OAuthCommandService(
                 $app->make(\app\Modules\Official\Member\Contracts\MemberQueries::class),
                 $app->make(\app\Modules\Official\Member\Contracts\MemberIdentityCommands::class),

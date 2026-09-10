@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\generator\GeneratorApplicationService;
+use app\adminapi\services\generator\GeneratorService;
 use app\adminapi\service\generator\GeneratorArchiveService;
 use app\adminapi\validate\generator\GeneratorValidate;
 use app\common\service\instance\InstanceToolAccessGuard;
@@ -16,7 +16,7 @@ use think\response\Json;
 
 class GeneratorController extends BaseAdminController
 {
-    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly GeneratorApplicationService $generator)
+    public function __construct(App $app, CurrentExecutionContext $executionContext, private readonly GeneratorService $generator)
     {
         parent::__construct($app, $executionContext);
     }

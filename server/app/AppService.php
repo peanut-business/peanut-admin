@@ -4,7 +4,7 @@ declare (strict_types = 1);
 namespace app;
 
 use app\adminapi\application\config\ConfigApplicationService;
-use app\adminapi\application\generator\GeneratorApplicationService;
+use app\adminapi\services\generator\GeneratorService;
 use app\adminapi\application\WorkbenchApplicationService;
 use app\adminapi\infrastructure\generator\ThinkPhpGeneratorMetadata;
 use app\adminapi\service\AdminApiAccessRegistry;
@@ -473,7 +473,7 @@ class AppService extends Service
             (string)Config::get('project.default_image.user_avatar', ''),
         ));
         $this->app->bind(ThinkPhpGeneratorMetadata::class, ThinkPhpGeneratorMetadata::class);
-        $this->app->bind(GeneratorApplicationService::class, fn(): GeneratorApplicationService => new GeneratorApplicationService(
+        $this->app->bind(GeneratorService::class, fn(): GeneratorService => new GeneratorService(
             $this->app->make(GeneratorImportPersistence::class),
             $this->app->make(\app\common\persistence\TransactionalExecution::class),
             $this->app->make(ThinkPhpGeneratorMetadata::class),

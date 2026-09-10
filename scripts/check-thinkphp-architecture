@@ -162,8 +162,8 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
     lines = text.splitlines()
     hits: list[tuple[str, int, str]] = []
     rel = relative(path)
-    application_path = "/Application/" in f"/{rel}" or "/application/" in f"/{rel}"
-    service_path = "/service/" in f"/{rel}" or path.name.endswith("Service.php")
+    application_path = "/Application/" in f"/{rel}" or "/application/" in f"/{rel}" or "/services/" in f"/{rel}"
+    service_path = "/service/" in f"/{rel}" or "/services/" in f"/{rel}" or path.name.endswith("Service.php")
     host_path = (
         rel.startswith((
             "server/app/api/",
@@ -351,6 +351,7 @@ def hits_for(path: Path, text: str) -> list[tuple[str, int, str]]:
             and ("/Application/" in f"/{rel}"
                  or "/application/" in f"/{rel}"
                  or "/service/" in f"/{rel}"
+                 or "/services/" in f"/{rel}"
                  or rel.endswith("ModuleProvider.php"))):
             hits.append(("global_service_locator", number, line.strip()))
         if application_path and re.search(

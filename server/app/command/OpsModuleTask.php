@@ -3,19 +3,29 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\audit\AuditContractHost;
+use app\common\execution\CurrentExecutionContext;
+use app\common\execution\ExecutionContextStore;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
+use PDO;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
-use think\facade\Config;
 use Throwable;
 
 /** Deployment-control bridge for one fixed Module operation task. */
 final class OpsModuleTask extends DatabaseContextualCommand
 {
+    public function __construct(
+        ExecutionContextStore $contexts,
+        CurrentExecutionContext $executionContext,
+        PDO $pdo,
+        private readonly PlatformOpsRuntimeFactory $runtime,
+    ) {
+        parent::__construct($contexts, $executionContext, $pdo);
+    }
+
     protected function configure(): void
     {
         $this->setName('ops-module:task')
@@ -29,19 +39,7 @@ final class OpsModuleTask extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = $this->database();
-            $config = Config::get('modules', []);
-            if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
-            $trustedKeys = $this->trustedKeys();
-            $audit = AuditContractHost::fromPdo($pdo);
-            $runtime = new PlatformOpsRuntimeFactory(
-                $pdo,
-                $audit,
-                dirname(__DIR__, 3),
-                $config,
-                $trustedKeys,
-            );
-            $service = $runtime->moduleTaskExecution();
+            $service = $this->runtime->moduleTaskExecution();
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
                 'claim' => $service->claim(),
@@ -78,18 +76,5 @@ final class OpsModuleTask extends DatabaseContextualCommand
         $revision = trim((string)$input->getOption('revision'));
         if (preg_match('/^[1-9][0-9]*$/D', $revision) !== 1) throw new \RuntimeException('OPS_MODULE_EXECUTION_REVISION_INVALID');
         return (int)$revision;
-    }
-
-    /** @return array<string,string> */
-    private function trustedKeys(): array
-    {
-        $trusted = [];
-        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
-            $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
-            if (is_string($keyId) && is_string($decoded) && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
-                $trusted[$keyId] = $decoded;
-            }
-        }
-        return $trusted;
     }
 }

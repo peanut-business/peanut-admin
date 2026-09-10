@@ -39,8 +39,9 @@ Composer 与 npm Registry、Marketplace 不是当前已开放的独立交付通�
 Bundled 与独立 Package 使用不同的不可变身份。Bundled Module 的最终身份是完整应用 Release 的
 commit/tree、根 `plugins.lock` digest 和其中的 canonical contents digest；在它尚未签发独立 Package 时，
 Module version 是兼容性标签，修复源码不等于发布了同版本 Registry 包。任何进入后端或前端 canonical
-root 的修改，都必须在同一提交重新生成对应 `plugins/<key>/plugin.json` 和根 `plugins.lock`，并让
-`plugin:lock --check`、完整应用生成与全官方 Module 打包门禁通过；只改源码或只手填 lock 均为阻断。
+root 的修改，都必须在同一提交重新生成对应 `plugins/<key>/plugin.json` 和根 `plugins.lock`；日常开发批次
+执行 `plugin:lock --check`、受影响的装配和行为检查，只改源码或只手填 lock 均为阻断。完整应用生成与全官方
+Module 打包属于固定候选资格；开发源码和锁收敛不冒充这些后续 Gate 已通过。
 
 Self-contained Package 从首次形成 `package-candidate` 起，以 `(package key, version, tar SHA-256)` 冻结。
 同一 version 不得换 digest、覆盖旧 tar 或复用 published identity；内容再次变化必须提升 Module、PHP 与
@@ -127,7 +128,7 @@ Standalone 部署 owner 可另行执行 `php think tenant-module:enable-locked-p
 及当前有效依赖一起校验；新增开通与授权 revision、审计写入使用同一事务。已有有效开通及配置保持原值，
 过期或停用依赖不视为已满足；该命令不会授予任何角色权限。Multi-tenant 继续使用现有租户管理授权入口。
 
-## 6. `official.rich-text` 当前裁定（2026-09-09）
+## 6. `official.rich-text` 当前裁定（2026-09-11）
 
 - 源码、Module manifest、前端贡献和 bundled Plugin identity 已进入 Peanut Admin v3.0.14 完整应用
   Release（源码、两种 Edition 安装包和同 Edition 升级包），故 bundled 状态为 **bundled-locked**；
@@ -142,10 +143,15 @@ Standalone 部署 owner 可另行执行 `php think tenant-module:enable-locked-p
 - 当前全官方 Module 打包合同改为从 `plugins.lock` 自动发现 official keys，Rich Text 以及未来新增的
   bundled official Module 不再能被硬编码清单漏掉。
 
-本次在固定源码提交 `882182e7ead6af6b5eab4d5a4a89f94747acdbb7` 上运行 `module:check`，八项检查
+历史上在固定源码提交 `882182e7ead6af6b5eab4d5a4a89f94747acdbb7` 上运行 `module:check`，八项检查
 全部通过；随后生成并复验未签名本地候选，SHA-256 为
 `9240e9ca17f18f009117a775fa9c0a19eaa6511e7a563fc100316aab9647caa8`。这使独立包通道达到
-**package-candidate（local/unsigned）**，不改变 bundled 通道状态，也不满足 qualified 或 published。
+**1.0.0 package-candidate（local/unsigned）**，不改变 bundled 通道状态，也不满足 qualified 或
+published。该 1.0.0 候选和 tar 保持不可变，不能证明后续 canonical 源码。
 
-下一次要推进 Rich Text 独立发布，最低缺口是：专用浏览器行为、协同服务认证/隔离、signed tar
+当前开发源码因 ModuleProvider 装配收敛已将 Module、PHP 与前端组件共同提升到 **1.0.1**，并派生新的
+bundled Plugin identity。1.0.1 目前只处于开发源码/bundled 身份：本批不生成、qualified 或 published
+新的独立 Package，也不覆盖或重写上述 1.0.0 tar 与固定证据。
+
+下一次要推进 Rich Text 1.0.1 独立发布，最低缺口是：固定新 source commit/tree、专用浏览器行为、协同服务认证/隔离、signed tar
 verify、SBOM、review、漏洞响应 owner 和明确目标渠道。完成前维持 bundled-only。

@@ -96,6 +96,14 @@ while IFS= read -r path; do
     select_test "$path"
   fi
 
+  if [[ "$path" == server/app/adminapi/services/generator/* || "$path" == server/app/adminapi/service/generator/* ]]; then
+    select_test server/tests/Productization/ThinkPhpArchitectureBehaviorMatrixTest.php
+  fi
+
+  if [[ "$path" == server/app/command/OpsModuleTask.php ]]; then
+    select_test server/tests/Productization/OpsModuleTaskWiringTest.php
+  fi
+
   case "$path" in
     scripts/check-test-integrity)
       integrity_checker_changed=1

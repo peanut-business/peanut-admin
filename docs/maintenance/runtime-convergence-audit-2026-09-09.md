@@ -2,27 +2,64 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（阶段0–4已回收验收；阶段5首批S5-T01及有界补正已获根验收并合入dev，尚不是运行时整改闭环或发布资格证明）
+Status: `current`（T01与CQ补正保留；C01-A/B/C已通过根技术验收并处于同批Git收尾；后续Runtime整改未完成）
 
 Owner: `product-architecture`
 
-Reviewed at: 2026-09-10（材料归并日期；历史源码/测试事实不刷新验证日期）
+Reviewed at: 2026-09-11（CQ-AUDIT-01静态核查及C01聚焦实现；未运行完整产品资格）
 
-## 阶段3当前残留与修复排程（已通过根验收）
+## 2026-09-11 CQ-AUDIT-01 根补正结果
 
-2026-09-10根任务已验收逐项当前证据、状态和历史知识映射，并核过补正后的74个候选路径、29条命令cwd/输入、批次引用、C02/C12退出归属、质量目标去向及估算限制。Core直接集成命令已保留PEANUT_INTEGRATION=1及登记DB输入，未将必需组skip当通过。阶段3完成的是静态审计与排程，不是代码已修复；阶段4规则/文档及必要补正也已根验收。阶段5首批任务书见现行方案§12.3，独立任务 `01a08b36-5b92-7e51-a4e2-42741e855a9c` 已完成本地修复及CORR-01..03有界补正，并获根验收；当前只准备精确公开候选。逐项事实和任务卡见主登记 `stage3_assessment`、`stage4_rule_application` 和 `stage5_t01_execution`。未合并推送、发布部署。
+CQ-AUDIT-01最初只在 App `b3448a4b781a839f1c33bd48825cae1ee913cec3` / Core `2ed77f38ca26472d685cfeb81674a66ba23eadb4` 做静态核查，并按CQ-CORR-01..05修订事实源和任务书；该静态补正已获根验收。其后获批C01在独立App worktree实施并通过A/B/C技术验收，仍不表示完整资格、发布或部署完成。
+
+### 当前处置
+
+- `STRUCTURE-001`：73个 `Application/application` 文件已经逐一分类；绝大多数是真实业务服务，用户明确要求迁入复数 `services`。不能继续把Module私有Application或HTTP application整体豁免。非业务项包括 DeliveryRecordAccess（access contract）、ArticleCapabilityAuthorization/TaskAuthorizationRouter（authorization）、ImportExportTaskWorkerDefinition/CrontabTaskDefinition（definition）、TaskImportExportRuntime（runtime）、Notification/Task bootstrap defaults/services、RefundEnum和BusinessException，分别进入角色目录。Model/Scope、ExecutionContext、Tenant/RBAC及Contracts/Infrastructure边界不因目录治理而删除。
+- 首个services样板 Generator 已完成：`server/app/adminapi/application/generator/GeneratorApplicationService.php` → `server/app/adminapi/services/generator/GeneratorService.php`，已同步Controller、AppService、GeneratorRenderService生成路径/namespace/class、TaskImportExportHostTest、ThinkPhpArchitectureBehaviorMatrixTest、architecture scanner和service registry，未留旧类/桥。Web仅有HTTP/preview consumers；Platform、PC、UniApp无PHP namespace或generator直接引用。
+- 对此前未分类的 service 树已补语义化机器清单：当前 `common/service=151`、`platform/service=80`、`adminapi/service=7`、`api/service=1`，共239/239条路径，每条恰好拥有role、action、具体target与真实repair batch。单数 `service` 不是目标复数 `services`：59项业务Service迁复数services；其中四个 `Pdo*TaskExecutionService` 是可信部署worker的业务状态机，迁入platform/services并去掉存储前缀，不能仅因名称放进infrastructure。Contract/DTO/value/enum/exception/policy/context/validation/composition/runtime/http/infrastructure迁专属职责目录；13项legacy PDO/factory执行merge/delete或replace/delete。Dictionary/Tenant Settings两个重复factory合入AppService既有绑定，Tenant bootstrap factory随C12的PDO provider替换退出；Platform/PlatformOps两个PDO mega-factory最终随C02–C12消费迁移合入AppService逐服务绑定，C01-C对PlatformOps factory的当前复用只是过渡，不覆盖最终退出。原 `UNREGISTERED-CQ-CORR-04` 大桶已完全移除。
+- `COMPOSITION-001`：Core `ModuleProvider`已定义 `bindings()`，Core collector已做contract/implementation/duplicate检查；App marker重复且会静默忽略未实现marker的合法Provider。C01-A删除marker，并覆盖九个Official加 Fixture DeliveryRecord Provider。薄 `ModuleComposition`仍保留manifest/provider class与 `moduleKey()`身份、Core collector、Host pre-bound冲突、self/cycle预检及“全量验证后再bind”。
+- 普通make收敛已精确到Provider：Article `PublicArticleService`自键Closure删除；ImportExport的 `TenantConfigurationTransferService`、`AppFileMediaGateway`、`TaskImportExportRuntime`、`OperationLogExportApplicationService`自键Closure删除；Notification的 `NoticeChannelService`、`NotificationApplicationService`删除；Oauth三项普通自键删除；Payment的 `PaymentServiceFactory`自键和 `channelGrantCommands()`转发删除。接口改直接concrete映射。保留 ImportExport复杂repository/adapter/worker图、Notification的APP_ENV参数、Oauth默认头像、RichText secret、Task签名/callable/worker、Fixture PDO/context等动态Closure。
+- `OPS-COMPOSITION-001`：`OpsModuleTask`已改为构造注入 AppService 注册的同一 `PlatformOpsRuntimeFactory`，去掉命令内PDO/config/audit/key decoder/factory；真实ThinkPHP容器聚焦测试覆盖正式装配、trusted-key解码和参数负控。`OpsUpgradeTask`空trusted-key意图仍unknown且未改。
+- Core单实现PDO repository/factory继续归并C02→C12；C05/C06须新增正式 runtime coverage owner，并补 App `CrossProductAdoptionHost.php` / `CrossProductDownstreamAdoptionTest.php` 对 ArtifactRevision、Quota、Workflow 的下游语义。其随机建删数据库尚无闭合的独占资源命名/权限，未登记前不得运行。
+- Generator 的 `ThinkPhpArchitectureBehaviorMatrixTest.php` 已实际调用 `GeneratorRenderService::render()`，覆盖七个输出、services namespace/class/controller import和旧 `application/ApplicationService` 回灌负控。需要数据库/对象存储租约的 `TaskImportExportHostTest.php` 仍是分离的动态Gate。
+
+### CQ回执
+
+| CQ | owner / 模型 | 状态与结果 | 核查范围 | 排除与unknown |
+| --- | --- | --- | --- | --- |
+| CQ-01 | `cq01_app_organization` / Terra medium | completed；73文件及边界事实有效，但“整体保留Application”处置被根退回并由CORR分类取代 | App组织、Model/Scope、ExecutionContext/RBAC | 未运行时；原处置不再是当前决定 |
+| CQ-02 | `cq02_composition` / Terra medium | completed；确认marker/Core collector重复和Host保留语义 | Provider、ModuleComposition、ThinkPHP Container | 第三方历史依赖未知 |
+| CQ-03 | `cq03_core_organization` / Terra medium | completed；13正式包、真实ports、C02-C12归并和coverage缺口 | Core package/Host/persistence | 外部消费者与三领域ledger owner未知 |
+| CQ-04 | `cq04_bootstrap` / Terra medium | completed；AppService单一root、OpsModule重复 | HTTP/CLI/Cron/Worker/Ops | OpsUpgrade空key意图未知 |
+| CQ-05 | `cq05_generators_gates` / Luna worker（锁定max） | interrupted，无final；不得计入已回收结果 | 无可接受结果 | 全部由CORR重做 |
+| CQ-05-CORR | `cq_corr_services` / Luna medium | completed；逐一分类73文件，补Generator、四前端入口、ModuleCreate/think list副作用 | App services/generator/gates/frontend | 未执行测试/资源 |
+| CQ-06-CORR | `cq_corr_synthesis` / Sol medium | completed；补全Provider make、Fixture、任务卡、C05/C06与旧说明清理 | 两仓综合、任务书可执行性 | 仍是静态建议，待根验收 |
+| CQ owner | `01a08c92-3c74-7c23-a1d3-9fea9260ba4b` / Sol medium | accepted-by-root；补正owner已交还正式事实源写权；Terra medium仅复核窄范围跨类别反例 | 报告、登记、计划、入口、私有状态 | 不施工、不运行产品测试 |
+
+模型分级按全局约定：前一版把路径集合完整误当组织正确，故最终239项语义补正使用Sol/medium；仅将跨类别直接消费者反例交Terra/medium复核，机械检查不升级。没有把所有工作默认高档。
+
+### 可执行性与停止线
+
+现行唯一任务书是方案§12.4的 `PA-S5-C01-REVISED-PROPOSAL-20260911-02`，分为C01-A composition、C01-B Generator services、C01-C OpsModule。旧 Proposal 仅为失效墓碑。三卡已由同一实施任务连续交付并分别通过根技术验收；当前仅完成派生Plugin身份、失败传播、状态和精确Git收尾。C02与未填实后续服务单元不在该授权内。
+
+C01-B动态Gate使用登记数据库 `peanut-admin-mysql84-development`（development，`192.168.192.2:20183` / `peanut_admin_development`）和登记本地私有存储 `peanut-admin-local-private-storage-development`。首次 `database-host-status` 误在取得租约前写入 `.local/stack.env` 与正式 `server/.env`，该次调用不计有效资源证据；取得租约后已重新核健康和freshness并完成动态Gate。测试专用env/lock/manifests已移入废纸篓，正式0600 `server/.env` 与 `.local/stack.env` 作为本worktree运行配置保留；数据库租约已释放且测试数据/私有对象已清理。
+
+`ModuleCreateCommandTest.php`会在仓内生成并finally删除随机backend/frontend/test trees，调用Composer和裸Node/Vite并写OS temp/symlink；当前80f6虽已有本地server env，但仍无worktree-local web依赖，登记Node用途也未证明覆盖通用scaffold，所以不是C01 Gate。`php think list`会加载env、AppService、全部Module和Console，且可能触发与本卡无关的命令构造，不是无副作用/无DB保证，也不是binding聚焦证明。
+## 阶段3既有残留与修复排程（历史有界验收；新增遗漏见上）
+
+2026-09-10根任务已验收逐项当前证据、状态和历史知识映射，并核过补正后的74个候选路径、29条命令cwd/输入、批次引用、C02/C12退出归属、质量目标去向及估算限制。Core直接集成命令已保留PEANUT_INTEGRATION=1及登记DB输入，未将必需组skip当通过。阶段3完成的是静态审计与排程，不是代码已修复；阶段4规则/文档及必要补正也已根验收。阶段5首批任务书见现行方案§12.3，独立任务 `01a08b36-5b92-7e51-a4e2-42741e855a9c` 已完成本地修复及CORR-01..03有界补正，并获根验收，实现及收尾提交现已推送dev。逐项事实和任务卡见主登记 `stage3_assessment`、`stage4_rule_application` 和 `stage5_t01_execution`。在该2026-09-10历史快照中C01尚未开始；当前C01状态以本文顶部和现行方案§12.4为准，发布、部署仍未开始。
 
 ## 阶段4规则修正（已通过根验收）
 
 阶段4只修正现行入口中的冲突口径：正式技术栈固定为 ThinkPHP 8，Repository/transaction bridge 不再作为长期框架中立目标；普通 ModuleProvider 优先接口到实现类，配置、SDK、回调和可变 Worker 等动态边界保留闭包理由；产品/Core/双 Edition 同号与 Module/Instance 独立身份保持分离；bundled Rich Text、独立发布、媒体 spike 和真实厂商操作证据不互相替代；扫描器、静态观察、局部 smoke、skip 或 `PASSED` 不得冒充动态资格。阶段4还把唯一 writer、授权、恢复、消息插入/压缩后的只读恢复和 S4→S5 停止线同步到入口。
 
-根任务已复核Core两份依赖文档及断言规则：有效断言须保留，有据证明错误的测试合同须正式修正。原登记区分实际修改/原本正确未改、触发/owner、人工/自动检查范围及S5依赖；文档检查和无历史入口核对不是真实压缩Hook、全工具硬拦截或产品资格。S5-T01具体任务书见现行方案§12.3：七个既有文件加Core只读Unit，Luna/medium实施；scanner词法语义和LazyDI负向控制的有界复核使用Terra/medium。正向domain-probe需已生成且Composer安装的应用根，归固定combined-qualification候选，不是直接DB前置；本批不冒称正向已通过。本地修复、补正和记录已完成并获根验收，Git 集成仍未核准。
+根任务已复核Core两份依赖文档及断言规则：有效断言须保留，有据证明错误的测试合同须正式修正。原登记区分实际修改/原本正确未改、触发/owner、人工/自动检查范围及S5依赖；文档检查和无历史入口核对不是真实压缩Hook、全工具硬拦截或产品资格。S5-T01具体任务书见现行方案§12.3：七个既有文件加Core只读Unit，Luna/medium实施；scanner词法语义和LazyDI负向控制的有界复核使用Terra/medium。正向domain-probe需已生成且Composer安装的应用根，归固定combined-qualification候选，不是直接DB前置；本批不冒称正向已通过。本地修复、补正及精确Git集成均已验收；App已推dev，Core两份已验收规则文档仍为本地差异，留至对应Core批次。
 
-## 阶段5首批 S5-T01（本地实现已根验收）
+## 阶段5首批 S5-T01（已验收并推送dev）
 
-独立任务 `01a08b36-5b92-7e51-a4e2-42741e855a9c` 已完成本地修复。三份 Ablation 是带失败断言和负向控制的有界检查：DataIsolation 仍是内存 join 语义，LazyDI 验证现行 Registry 的认证、公开同一路由负向控制及未注册拒绝，Ergonomics 仅验证 Reflection/当前 hook 结构；均不声称 SQL、容器、性能或完整产品资格。scanner 现以实际 significant-token 索引排除注释/字符串关键词，且控制流/类声明（含引用返回）不再被视为失败能力；bare/empty/整数零与字符串 literal exit 按有界成功语义处理，非零整数为失败，`exit(0+1)` 保持未知。临时非fixture的零退出、空断言声明（含引用返回）和超过1KB空循环样本均以退出1和精确路径拒绝；带 `throw`/实际断言、非零 exit 与 `exit(0+1)` 的正常样本退出0，清理后的树也退出0。该scanner仍不是完整控制流证明。Member import/合同 Reflection、domain-probe 无参数stderr/退出2、三份 Ablation、integrity、CI shell syntax 和 Core WorkflowGraph Unit 均已完成聚焦检查；结果与退出码见主登记 `stage5_t01_execution`。正向 generated-app probe、DB/Provider、完整资格及集成推送仍未执行。
+独立任务 `01a08b36-5b92-7e51-a4e2-42741e855a9c` 已完成本地修复。三份 Ablation 是带失败断言和负向控制的有界检查：DataIsolation 仍是内存 join 语义，LazyDI 验证现行 Registry 的认证、公开同一路由负向控制及未注册拒绝，Ergonomics 仅验证 Reflection/当前 hook 结构；均不声称 SQL、容器、性能或完整产品资格。scanner 现以实际 significant-token 索引排除注释/字符串关键词，且控制流/类声明（含引用返回）不再被视为失败能力；bare/empty/整数零与字符串 literal exit 按有界成功语义处理，非零整数为失败，`exit(0+1)` 保持未知。临时非fixture的零退出、空断言声明（含引用返回）和超过1KB空循环样本均以退出1和精确路径拒绝；带 `throw`/实际断言、非零 exit 与 `exit(0+1)` 的正常样本退出0，清理后的树也退出0。该scanner仍不是完整控制流证明。Member import/合同 Reflection、domain-probe 无参数stderr/退出2、三份 Ablation、integrity、CI shell syntax 和 Core WorkflowGraph Unit 均已完成聚焦检查；结果与退出码见主登记 `stage5_t01_execution`。实现提交为`e0733059d59370c6ae499292cab48e314ef50706`（tree `7393b630378e43097145dcc2d9d3ea069f79268a`），收尾提交为`b3448a4b781a839f1c33bd48825cae1ee913cec3`（tree `890539c7970eef3600751432a56557a135eab2e7`）；根已核实远端dev及21文件批准差异。正向 generated-app probe、DB/Provider和完整资格仍未执行。
 
-本次只读核查固定在 Application `origin/dev@ab96727c8b07da64489fe152b36e483f055dcf0c`、累计文档工作树同一 HEAD（含既有未提交文档及两处受保护 PHP 差异），以及干净的 Core `origin/dev@2ed77f38ca26472d685cfeb81674a66ba23eadb4`。Application 主 checkout 的 `main@8c8a974…` 比远端 `dev` 前进，但本次没有把它误作集成基线。远端引用已只读核对；没有 fetch、合并、资源连接、产品测试或发布。完整逐项处置、来源和候选写集在主登记 `stage3_assessment`。
+阶段3历史静态快照（不是当前T01交付身份）：当时只读核查固定在 Application `origin/dev@ab96727c8b07da64489fe152b36e483f055dcf0c`、累计文档工作树同一 HEAD（含既有未提交文档及两处受保护 PHP 差异），以及干净的 Core `origin/dev@2ed77f38ca26472d685cfeb81674a66ba23eadb4`。Application 主 checkout 的 `main@8c8a974…` 比远端 `dev` 前进，但本次没有把它误作集成基线。远端引用已只读核对；没有 fetch、合并、资源连接、产品测试或发布。完整逐项处置、来源和候选写集在主登记 `stage3_assessment`。
 
 当前仍需修复的主线是 TP8 Runtime：Application `AppService.php:127-133` 仍直接绑定 `PDO`、`PdoTransactionManager` 和幂等 PDO factory；Article、Task、ImportExport Provider 仍有 PDO/Core repository 装配；Core `packages/php/*/src/Persistence/Pdo` 与 backend/starter RuntimeFactory 仍是生产路径。它们不能按名称一次删除，因为 `ExecutionContextStore.php:24-46` 的 finally 清理、public/member fail-closed、Module 生命周期与 worker/CLI 路径是要保留的合同。静态接线不能替代异常、长驻进程、事务/并发和双 Edition 的动态资格。
 
@@ -30,9 +67,9 @@ Reviewed at: 2026-09-10（材料归并日期；历史源码/测试事实不刷�
 
 版本、模块和部署事实需继续分开：v3.0.14 是已发布的不可变历史、bundled Rich Text 身份有对应发布证据、multi-tenant production-candidate overlay 已验证；持久 Standalone 未升级，独立 Rich Text 发布和真实 Provider 操作均未由这些事实证明。当前 Application lock 仍是 Core `0.1.0-alpha.13`，故未来产品/Core/双 Edition 同号只能在新的冻结候选中实现，不能回填历史。当前 dev 包含 `563df8c4` 的 Core Storage Driver 采用；`590e6183` 是非祖先同主题早期提交，`563df8c4` 与 `64460af8` patch-id 相同；`e915bea7` 只记录隔离媒体试验。当前 Core `WorkflowGraph.php:10-470` 未见历史重复声明，故 CAP01 历史缺陷由当前静态证据支持已解决，但其单元测试未在阶段3执行。
 
-阶段3、4已验收；S5-T01及CORR-01..03已完成本地实现并获根验收、合入dev，发布/部署及后续批次仍未获准。阶段5后续须再次按任务书确认，顺序为 ModuleProvider 简化 → Core TP8 数据边界 → ReferenceCodes → Settings → ArtifactRevision → EntitlementQuota/Workflow → Notification → TaskJob → ImportExport → FileMedia → DataPermission → Kernel Identity/Tenant/RBAC。每张卡已列精确文件、消费者、表 owner、旧路径退出、既有命令、输入、停止点和资源边界。Core 含 Integration 的 PHPUnit 命令必须显式设置 `PEANUT_INTEGRATION=1` 并提供登记的 DB_HOST/端口/凭据引用；缺少登记环境应阻塞，测试 skip 不计通过；纯 Unit 命令无需该标志。当前没有领域专用 TP8 检查的地方明确记录为缺口，只能在后续获批卡中新增。
+阶段3、4已验收；S5-T01及CORR-01..03已完成本地实现并获根验收、合入dev，发布/部署及后续批次仍未获准。阶段5后续须再次按现行§12.4任务书确认，顺序为 Module composition → Generator services样板 → OpsModule独立切片 → Core TP8数据边界 → ReferenceCodes → Settings → ArtifactRevision → EntitlementQuota/Workflow → Notification → TaskJob → ImportExport → FileMedia → DataPermission → Kernel Identity/Tenant/RBAC。每张卡已列精确文件、消费者、表 owner、旧路径退出、既有命令、输入、停止点和资源边界。Core 含 Integration 的 PHPUnit 命令必须显式设置 `PEANUT_INTEGRATION=1` 并提供登记的 DB_HOST/端口/凭据引用；缺少登记环境应阻塞，测试 skip 不计通过；纯 Unit 命令无需该标志。ArtifactRevision/Quota/Workflow须先落正式coverage owner与可用资源，再执行相应动态Gate。
 
-45–68个工程日实现加10–17个工程日聚焦检查，只是依据当前文件、消费者、表 owner 和现有检查规模给出的未校准人力规划参考；它不是实测AI吞吐、AI需要的天数或本任务日历承诺，首个实施批次后必须重估。资源租约、真实 Provider、下游消费、独立模块发布和部署等待单列；不再用另一个总小时数替代已撤回的150小时结论。Provider、双 Edition 和消费者质量仍是后续固定候选的既定验收目标，只有媒体spike采用与独立模块发布属于条件性选择。S5-T01及其有界补正已获根验收，当前仅待审定精确公开候选，不重派阶段3、4。
+45–68个工程日实现加10–17个工程日聚焦检查，只是依据当前文件、消费者、表 owner 和现有检查规模给出的未校准人力规划参考；它不是实测AI吞吐、AI需要的天数或本任务日历承诺，首个实施批次后必须重估。资源租约、真实 Provider、下游消费、独立模块发布和部署等待单列；不再用另一个总小时数替代已撤回的150小时结论。Provider、双 Edition 和消费者质量仍是后续固定候选的既定验收目标，只有媒体spike采用与独立模块发布属于条件性选择。S5-T01及其有界补正已验收并推送，不重派阶段3、4或T01。现行方案§12.4已删除旧C01正文，仅保留旧Proposal ID墓碑并给出三张已获本批有界批准的原子卡；旧45–90分钟估算已删除。
 
 ## 阶段2有效决定与历史经验（2026-09-10）
 

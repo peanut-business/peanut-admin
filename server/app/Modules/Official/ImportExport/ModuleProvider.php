@@ -3,19 +3,14 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport;
 
-use app\common\composition\ModuleBindingContributor;
-use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\persistence\CoreTenantRepositoryFactory;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\export\OperationLogExportProvider;
-use app\common\service\storage\StorageService;
 use app\Modules\Official\ImportExport\Application\ConfigurationTransferApplicationService;
 use app\Modules\Official\ImportExport\Application\ImportExportApplicationService;
 use app\Modules\Official\ImportExport\Application\ImportExportTaskWorkerDefinition;
-use app\Modules\Official\ImportExport\Application\OperationLogExportApplicationService;
 use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
-use app\Modules\Official\ImportExport\Application\TenantConfigurationTransferService;
 use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferCommands;
 use app\Modules\Official\ImportExport\Contracts\ConfigurationTransferQueries;
 use app\Modules\Official\ImportExport\Contracts\ImportExportCommands;
@@ -43,7 +38,7 @@ use PDO;
 use think\App;
 use Throwable;
 
-final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
+final class ModuleProvider implements ModuleProviderContract
 {
     public function moduleKey(): string
     {
@@ -64,8 +59,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                     $app->make(AuditContractHost::class),
                 ));
             },
-            ImportExportCommands::class => fn(App $app): ImportExportCommands => $app->make(ImportExportApplicationService::class),
-            ImportExportQueries::class => fn(App $app): ImportExportQueries => $app->make(ImportExportApplicationService::class),
+            ImportExportCommands::class => ImportExportApplicationService::class,
+            ImportExportQueries::class => ImportExportApplicationService::class,
             ConfigurationTransferApplicationService::class => function (App $app): ConfigurationTransferApplicationService {
                 $pdo = $app->make(PDO::class);
                 return new ConfigurationTransferApplicationService(
@@ -84,17 +79,8 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                     $app->make(AuditContractHost::class),
                 );
             },
-            ConfigurationTransferCommands::class => fn(App $app): ConfigurationTransferCommands => $app->make(ConfigurationTransferApplicationService::class),
-            ConfigurationTransferQueries::class => fn(App $app): ConfigurationTransferQueries => $app->make(ConfigurationTransferApplicationService::class),
-            TenantConfigurationTransferService::class => fn(App $app): TenantConfigurationTransferService => new TenantConfigurationTransferService(
-                $app->make(AdminAuthorizationQuery::class),
-                $app->make(ConfigurationTransferCommands::class),
-                $app->make(ConfigurationTransferQueries::class),
-            ),
-            AppFileMediaGateway::class => fn(App $app): AppFileMediaGateway => new AppFileMediaGateway(
-                $app->make(PDO::class),
-                $app->make(StorageService::class),
-            ),
+            ConfigurationTransferCommands::class => ConfigurationTransferApplicationService::class,
+            ConfigurationTransferQueries::class => ConfigurationTransferApplicationService::class,
             ImportExportTaskWorkerDefinition::class => function (App $app): ImportExportTaskWorkerDefinition {
                 $pdo = $app->make(PDO::class);
                 return new ImportExportTaskWorkerDefinition(
@@ -107,18 +93,7 @@ final class ModuleProvider implements ModuleProviderContract, ModuleBindingContr
                     new AdminAsyncAuthorization($app->make(AdminAuthorizationService::class)),
                 );
             },
-            TaskImportExportRuntime::class => fn(App $app): TaskImportExportRuntime => new TaskImportExportRuntime(
-                $app->make(ImportExportCommands::class),
-                $app->make(ImportExportQueries::class),
-                $app->make(TaskJobRuntime::class),
-                $app->make(AppFileMediaGateway::class),
-                $app->make(ImportExportTaskWorkerDefinition::class),
-            ),
-            ImportExportWorkerRuntime::class => fn(App $app): ImportExportWorkerRuntime => $app->make(TaskImportExportRuntime::class),
-            OperationLogExportApplicationService::class => fn(App $app): OperationLogExportApplicationService => new OperationLogExportApplicationService(
-                $app->make(AdminAuthorizationService::class),
-                $app->make(TaskImportExportRuntime::class),
-            ),
+            ImportExportWorkerRuntime::class => TaskImportExportRuntime::class,
         ];
     }
 
