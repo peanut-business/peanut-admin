@@ -2627,36 +2627,31 @@
   },
   "consumer_delivery": {
     "authorization_id": "PA-CONSUMER-FIRST-20260911",
-    "status": "cr01-in-progress",
+    "status": "cr01-development-accepted-cr02-ready",
     "scope": "消费前阻塞修复、协调发行、同源双Edition独立安装升级资格与对应交付；不要求内部C02-C12全部完成后才消费",
     "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#126-当前消费优先路线与cr01实施任务书",
     "baseline": {"application": "464dee420e7203deca9281da8584d07f0f8401b1", "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4"},
     "cr01": {
-      "status": "执行中",
-      "owner_role": "01a08d69-8a7e-7600-8673-a4baf4d3c9c3; Terra/medium; /Users/xing/.codex/worktrees/5215/peanut-admin",
+      "status": "部分完成：开发修复已验收；整应用生成依赖CR02，真实消费资格归CR03",
+      "owner_role": "Terra/medium implementation; root acceptance; private execution locations remain in the local checkpoint",
+      "implementation_commit": "2278d9e13bd5ad7fc7a45f722b7f1d7ed656a73d",
+      "fixture_correction_commit": "68812f17620a0d730f5c1be427f249e09a652cd5",
       "issue_refs": ["STRUCTURE-001", "COMPOSITION-001", "BOOTSTRAP-001", "DCS-CONSUMPTION-001"],
       "A": "已实现：Module生成样板及其现有测试/文档使用复数Services，且现有生成合同断言旧Application/.gitkeep缺席；不重复C01的CRUD Generator修复。真实ModuleCreateCommandTest已通过；architecture检查的7项既有无关unregistered findings未作为通过证据。",
-      "B": "官方Host/Provider/Core依赖、inventory ownership和升级边界逐路径裁定后实际落实；保护业务app-owned/秘密/三方冲突",
+      "B": "25条共享Host精确纳管已落实；实例app-owned接管/删除及缺受管记录均阻断，真正新增路径仍可创建；修复scaffoldFails自抛自捕假绿并验证有效负控。不是旧实例人工采用或完整消费资格已通过。",
       "ownership": {
         "status": "CR01-B-02根裁定已实施；旧app-owned转受管、删除及缺登记均须人工采用阻断",
-        "items": [
-          {"path": "server/app/AppService.php", "copy_to_instance": true, "current_owner": "app-owned", "proposed_owner": "managed host bootstrap", "adoption": "old app-owned baseline must block for explicit manual adoption before any write"},
-          {"path": "server/app/common/contract/module/ModuleGovernanceProvider.php", "copy_to_instance": true, "current_owner": "app-owned", "proposed_owner": "managed host/Core boundary", "adoption": "old app-owned baseline must block for explicit manual adoption before any write"},
-          {"path": "server/app/common/contract/module/PluginLifecycleCommands.php", "copy_to_instance": true, "current_owner": "app-owned", "proposed_owner": "managed host/Core boundary", "adoption": "old app-owned baseline must block for explicit manual adoption before any write"},
-          {"path": "server/app/platform/service/module/PdoModuleGovernanceProvider.php", "copy_to_instance": true, "current_owner": "app-owned", "proposed_owner": "managed ThinkPHP Host adapter", "adoption": "old app-owned baseline must block for explicit manual adoption before any write"},
-          {"path": "server/app/platform/service/plugin/PluginLifecycleService.php", "copy_to_instance": true, "current_owner": "app-owned", "proposed_owner": "managed ThinkPHP Host adapter", "adoption": "old app-owned baseline must block for explicit manual adoption before any write"},
-          {"path": "server/app/Modules/Official/** and web/src/modules/**", "copy_to_instance": true, "current_owner": "app-owned", "proposed_owner": "app-owned business Module/page", "adoption": "never automatically overwritten by scaffold upgrade"},
-          {"path": "server/.env, customer config, business schema/migrations and third-party Modules", "copy_to_instance": "as applicable", "current_owner": "app-owned/secret/third-party", "proposed_owner": "preserved", "adoption": "never automatically overwritten by scaffold upgrade"}
-        ],
+        "managed_path_policy": {"classification": "managed", "owner": "scaffold", "source": "scripts/build-application-template-inventory::managedHostPaths", "copy_to_instance": true, "adoption": "Existing app-owned paths require explicit owner adoption; release artifacts never grant ownership by themselves."},
+        "preserved_boundaries": ["Official and third-party business Modules and pages remain app-owned", "Customer configuration, secrets and business schema/migrations remain outside automatic writes"],
         "approved_managed_paths": [
           "server/app/AppService.php", "server/app/common/contract/module/ModuleGovernanceProvider.php", "server/app/common/contract/module/PluginLifecycleCommands.php", "server/app/common/contract/module/ModuleQualificationQuery.php", "server/app/common/contract/module/ModuleQualification.php", "server/app/common/contract/module/TenantModuleState.php", "server/app/common/persistence/AdvisoryLockExecution.php", "server/app/common/persistence/AdvisoryLockUnavailable.php", "server/app/common/persistence/CoreTenantRepositoryFactory.php", "server/app/platform/service/module/PdoModuleGovernanceProvider.php", "server/app/platform/service/module/DeployedTenantModuleRegistry.php", "server/app/platform/service/module/ModuleQualificationQueryService.php", "server/app/platform/service/module/OpisManifestSchemaValidator.php", "server/app/platform/service/module/ReflectionContractInspector.php", "server/app/platform/service/module/StrictVersionConstraintMatcher.php", "server/app/platform/service/plugin/PluginLifecycleService.php", "server/app/platform/service/plugin/PluginLifecycleException.php", "server/app/platform/service/plugin/PluginDescriptor.php", "server/app/platform/service/plugin/PluginLockResolver.php", "server/app/platform/service/plugin/PluginModuleRegistryFactory.php", "server/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php", "server/app/platform/service/plugin/ModuleLifecyclePolicy.php", "server/app/platform/service/plugin/ModuleCatalogApplier.php", "server/app/platform/service/plugin/ScopedMenuCatalogRepository.php", "server/app/platform/service/plugin/ModuleCatalogMutationRepository.php"
         ],
         "stable_boundaries": "Core Kernel classes are package-managed external dependencies; RuntimeNamespace advisoryLockName(PDO,string), DeploymentMode parsing, unchanged AppService callers/constructor contracts and Module public contracts remain stable. Business/third-party Modules, configuration/secrets and business schema remain app-owned; any future deleted Core API requires CR02 adoption gating.",
-        "root_check_20260911": {"runner": "exit 0; SCAFFOLD-UPGRADE-E2E-001 passed", "inventory": "--check exit 0", "create_application": "exit 255; nested build-scaffold-release exit 64 because current source release-versions is V1/3.0.14 plus Core alpha.13, a CR02 version/identity prerequisite", "edition_upgrade": "exit 255 before fixture repair because its synthetic project lacked release-versions.json", "log_root": "/private/tmp/peanut-cr01-proof.7YTdu4"}
+        "root_check_20260911": {"runner": "2278d9e1: exit 0; SCAFFOLD-UPGRADE-E2E-001 passed", "runner_log_sha256": "f923b18a9dd0ed61672394bef456c556b403a1088e1e96589db57d86f60105a5", "inventory": "2278d9e1: --check exit 0; later fixture/status changes do not alter generated entries", "create_application": "exit 255; nested build-scaffold-release exit 64 because current source release-versions is V1/3.0.14 plus Core alpha.13; CR02 must remove this real prerequisite before rerunning", "create_failure_log_sha256": "6a3b6f88cc698ce38481a516ce409e6e01ea01bb40cb09a7fcf7453956b05a4d", "edition_upgrade": "Initial fixture lacked release-versions.json; corrected in 68812f1, then exit 0 / EDITION-UPGRADE-PACKAGE-001 passed. Synthetic contract, not real signed-release qualification.", "raw_evidence": "Root-local checkpoint retains exact execution receipts and output locations; not published in this register"}
       },
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
-    "cr02": {"status": "待领取", "depends_on": ["CR01消费边界接受后才能采用潜在变更Core合同"], "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"], "deliverable": "当前供应链真实问题处理、同号Core实包/应用锁、V2身份及新候选准备；可独立只读定位不阻塞CR01"},
+    "cr02": {"status": "可领取：CR01开发边界已接受，根按方案12.7绑定独立执行任务", "depends_on": ["CR01开发修复集成", "Core实际资格/发布后才能移动应用依赖锁"], "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书", "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"], "deliverable": "当前供应链真实问题处理、同号Core实包/应用锁、V2身份及新候选准备，并消除CR01整应用生成的真实前置"},
     "cr03": {"status": "待领取", "depends_on": ["CR01", "CR02"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格，独立于实施者验收"},
     "cr04": {"status": "待领取", "depends_on": ["CR03"], "deliverable": "仅发布真实通过候选及公开消费/升级文档；不自动部署客户生产"},
     "deferred_runtime": "C02-C12和其余services原ID/顺序保留；只有证明不影响消费/升级/安全的项可后置，不能整批标完成",

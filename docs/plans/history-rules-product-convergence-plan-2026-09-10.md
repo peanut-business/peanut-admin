@@ -505,6 +505,35 @@ C02→C12既有顺序和单实现PDO repository/factory归属保持，不复制�
 
 开始、实质变化、技术裁定、完成/阻塞时更新原检查点当前owner、任务ID、已完成动作、结果位置和精确恢复点；消息/压缩后先核它，不重复派发。完成后向根回报并交还writer，根立即进入验收/下一已批准路线任务准备，不重新索取同范围同意。只有新业务选择或危险未知副作用才请用户。无Goal、定时器或隐藏自动任务；不把24–48小时当作降低门禁的理由。
 
+### 12.7 CR02协调发行准备执行任务书
+
+授权沿用`PA-CONSUMER-FIRST-20260911`，根在CR01开发修复集成后绑定一个新的独立任务，不重复索取同范围确认。
+CR01的开发实现为`2278d9e13bd5ad7fc7a45f722b7f1d7ed656a73d`，Edition fixture补正为
+`68812f17620a0d730f5c1be427f249e09a652cd5`；已通过Module生成、Runner与Edition合同、inventory检查。
+整应用生成仍因V1/3.0.14+Alpha.13不满足V2同号builder前置而未通过；本批必须解决，不能把CR01验收当成该组通过。
+
+#### 输入、owner与模型
+
+- App从包含上述提交的最新dev建立独立工作树；Core读取基线`2ed77f38ca26472d685cfeb81674a66ba23eadb4`，写入时另建干净Core工作树。Core主工作区两份既有Stage4依赖文档差异保留，不能顺带暂存、还原或提交。
+- 实施owner为Terra/medium；锁/身份/资源元数据窄核对可用Luna/low；真实供应链或公共API难点才按证据升级Sol/high或根裁定。子任务不递归派发、不写公共账本，同一文件/资源唯一owner。首次只读核实际仓库、commit/tree、写集后回根，根绑定唯一START。
+- App读取本节、版本身份ADR、`consumer_delivery`、`docs/operations/consumer-ready-control.md`及实际builder/Creator；Core读取AGENTS、`docs/status/product-310-publication-candidate-contract.md`、`docs/releases/qualifications/3.1.0.json`、Q01/D05证据、当前`check-supply-chain`和release-candidate验证器。按操作选择两仓资源登记；不能从本文复制未经健康核验的连接配置。
+
+#### 执行顺序与准确边界
+
+1. **当前失败诊断**：旧Core两次Q01仅证明supply-chain失败，旧临时audit JSON已被删除；已定向核过本地索引，没有raw子命令证据，不再找全量聊天。使用现行已改善错误输出的`scripts/check-supply-chain`，在Development模式、登记工具/环境内运行一次定点诊断，保存失败子命令、原退出码及报告。不直接第三次启动完整Q01。依据真实原因修依赖/脚本/规则投影，不改门槛、跳测试或仅加成功输出；不把网络错误泛化成产品缺陷。
+2. **消费兼容边界**：核新Core相对于当前应用Alpha.13锁的实际公共符号/构造合同、CR01共享Host及仍为app-owned的直接消费者。内部PDO还存在不是默认发布阻塞，但已删除/变更的被调用公共API必须定点修实际采用者，不能仅标internal或加桥；明显破坏已支持消费者时先报根作技术范围裁定。不是执行全部C02-C12。
+3. **Core实包资格与发行**：沿已有3.1.0目标只读核Registry版本是否占用、实际包名/投影/凭据引用和发布入口。修复完成后固定干净候选及当前四份lock摘要；按Core现行合同执行同一身份Q01和D05九角色审阅。D05分工按实际风险与增量，不让每角色重扫全仓，也不能复制旧候选的通过结论。实际发布仅在新资格及不可变身份preflight通过后进行；npm/GitHub与Composer split/Packagist可见性分别验证。已存在版本只有证据完全匹配才可复用，不覆盖重发；可见性等待不重新发布。未获资格不移动应用消费锁。
+4. **应用协调身份和风险**：采用真实可获取Core PHP/Web包，原位更新`release-versions.json`到产品/实例分字段的V2合同，App/Core/双Edition目标同号，模块独立编号不被批量提升。同步实际依赖清单/锁、release metadata、CHANGELOG和当前说明。只按当前锁复核供应链：已登记待复核重点是UniApp Vite5.2.8与DCloud exact peer；`FACT-RISK-001`在下一候选预检即需复核，不能沿用过期接受风险。保留厂商支持，不为升级版本任意换技术栈。
+5. **新生成及资格输入**：已知阻塞集中修完后，按实际builder从固定源码生成inventory、Module派生lock和双Edition制品输入，严禁改历史`scaffold/releases/v*`。依次补CR01受阻的`CreateApplicationTest`及直接身份检查，验证实际25条受管baseline和客户文件边界；只重跑受本批影响的组。旧实例的显式人工采用与新同Edition升级必须形成CR03可执行输入，不能以‘需人工’一句话宣布问题已解决，也不能伪造采用metadata。App完整P0-E由CR03独立执行，不在本批反复全矩阵调试。
+6. **文档和交付**：当前失败/已修复/接受风险/未验证分别写回原问题登记、人类审计和Core现行状态；删除直接失效口径，历史失败保留历史身份。运行受影响两仓文档检查。给根准确commit/tree、包版本和Registry可见性、锁摘要、每组exit及私有日志位置、下一候选资源/真实旧实例和采用输入。完成开发集成推送；没有完整App资格不得称Consumer RC已发布。
+
+#### 写集与真实停止点
+
+- Core初始写集是实际失败涉及的依赖manifest/lock、`scripts/check-supply-chain`的证据/错误处理（仅确有缺口时）、现行release/status/qualification文档与包版本/投影验证入口；最小必要公共API采用修复必须先经根核范围，不能借此开展大规模Runtime迁移。
+- App初始写集为版本/依赖身份、受影响lock、现有inventory/Edition构建和Creator检查、供应链风险事实与消费说明；CR01已通过且未改变的Runtime不重构。身份和测试fixture使用已存在机制，不新建Shield、兼容桥、双写或重复测试系统。
+- 资源/Registry不可用仅阻塞直接依赖动作；其他独立开发修复继续。缺Core资格/实包、当前高危未处置、公共合同不兼容、身份不一致或必要聚焦失败时，不采用下游锁、不封存App候选、不发布。新业务支持取舍、客户生产数据或未知外部副作用交用户；同范围实施不逐步等确认。
+- 完成或真实阻塞后停止写入并回根；根验收后为CR03绑定独立候选和资源。不启用Goal或定时器，不回到历史全量扫描。
+
 ## 13. 阶段6任务书：独立验收与交付
 
 进入条件：§12.6消费前必须项完成并集成，阻塞产品缺陷已闭环；根依据当前用户授权核定具体验收候选、资源和完整矩阵，未决支持范围/危险外部动作仍交用户。未影响消费的内部C02–C12不再作为整体前置。建议独立owner Terra/medium，身份/回执核对Luna/low，身份隔离/安全高风险复核按需升级；复核者不以自己先前修复的总结代替证据。

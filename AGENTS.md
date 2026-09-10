@@ -10,7 +10,7 @@
 
 | 当前任务 | 事实源与入口 |
 | --- | --- |
-| 本次历史决策/规则闭环与消费交付 | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md`（`PA-USER-STEP-GATES-20260910`）§7.1/§12.6及问题主登记`consumer_delivery`。阶段0–4、T01、CQ和C01已验收，不重派。当前用户批准消费优先路线：CR01消费边界/生成物→CR02协调发行→CR03独立安装升级资格→CR04交付；根核技术前置后有序衔接，不逐小步索取同意。内部C02–C12仅非消费阻塞项后置，不标完成。每阶段独立任务，根负责最终裁定；不新建Goal或定时器。根续作读取原本机未跟踪检查点，普通clone无需该私有控制文件 |
+| 本次历史决策/规则闭环与消费交付 | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md`（`PA-USER-STEP-GATES-20260910`）§7.1/§12.6–12.7及问题主登记`consumer_delivery`。阶段0–4、T01、CQ和C01已验收，不重派。CR01开发修复已验收，整应用生成仍依赖CR02的V2/同号实包；当前按§12.7协调发行，再CR03独立安装升级资格→CR04交付。根核技术前置后有序衔接，不逐小步索取同意。内部C02–C12仅非消费阻塞项后置，不标完成。每阶段独立任务，根负责最终裁定；不新建Goal或定时器。根续作读取原本机未跟踪检查点，普通clone无需该私有控制文件 |
 | 当前事实、版本身份与历史冲突 | `docs/governance/current-state.md`、`docs/architecture/product-version-identity-adr.md`、`docs/maintenance/fact-convergence-audit-2026-09-09.md` |
 | 项目运行资源、连接、启动、迁移、测试、部署 | `resources/project-resources.json`；源仓 P0-E 专用资格工具另见 `resources/p0e-runtime-qualification.json` |
 | 服务层或跨 Module 调用改造 | `resources/service-registry.json`、`docs/architecture/service-layer-registry.md`；Module 自有表以对应 `module.json` 为准 |

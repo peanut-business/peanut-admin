@@ -41,7 +41,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | 命令 | 用途与当前边界 |
 | --- | --- |
 | `php scripts/create-app --name=<name> --slug=<slug> --package=<vendor/name> --target=<absolute-path> --edition=standalone\|multi-tenant [--application-version=<semver>] [--profile=minimal\|standard\|full]` | 从当前不可变 scaffold 创建指定 Edition 的全新应用；目标必须是新的绝对路径 |
-| `php think module:create <module.key> [--vendor=<Vendor>]` | 按 Module key 生成唯一 backend/frontend/Tenant 安全骨架；已存在目标时不覆盖 |
+| `php think module:create <module.key> [--vendor=<Vendor>]` | 按 Module key 生成 backend/frontend/Tenant 安全骨架；业务服务目录为 `Services/`，不再生成 `Application/` 空骨架；已存在目标时不覆盖 |
 | `php think module:check <module.key> [--kernel-version=<semver>] [--package=<tar>] [--sha256=<hash>]` | 作者与自动化共用的八项只读 preflight；不连接数据库 |
 | `php think module:pack <module.key> [--output=<tar>] [--signing-key-id=<id> --signing-secret-key-file=<file>]` | 生成确定性 package candidate 和 SHA-256；可选 Ed25519 签名，不会发布或修改 `plugins.lock` |
 | `php think module:install-package <tar> [--sha256=<hash>] [--signature-key-id=<id>]` | development/debug/Standalone 中验证并安装；对同一不可变制品重复执行是 reactivation，不开通 Tenant 或授权成员 |
@@ -72,6 +72,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `module:pack` | Package 命令的结构化成功/失败结果 | 不发布失败或摘要不匹配的 archive |
 | `plugin:release-composition`、`plugin:reconcile` | composition 的只读比较结果；reconcile 的逐 Package 状态（含 `preserved_disabled`） | 保留当前 Release、数据库和恢复坐标；不要删除 lock、源码或账本来绕过异常状态 |
 | `scripts/create-app`、`scripts/scaffold-upgrade` | JSON `status`；无效 usage 退出 64 | 不猜参数；按脚本打印的固定 usage 重试 |
+| `scripts/scaffold-upgrade preflight` | `actions[].reason` 为 `app_owned_adoption_required` 或 `managed_adoption_required`，计划 `blocked` | 客户文件被请求接管/删除，或缺实例受管记录；停止应用计划，由 owner 备份、比对并验证显式采用。不得伪造 ownership/baseline 或改写签名包解除冲突 |
 | `ops-module:request` | `ok/result` 或 `ok=false,error_code` | 修复登记、inbox、target 或双确认，不改写 opaque task |
 | `scripts/ops-module-worker --once` | 单次任务结果写入受控任务状态；stderr 只给安全摘要 | 失败保持维护和恢复指针，由 deployment owner 检查受限日志 |
 

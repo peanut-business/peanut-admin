@@ -12,13 +12,21 @@ Reviewed at: 2026-09-11（CQ-AUDIT-01静态核查及C01聚焦实现；未运行�
 
 用户已批准由根安排沿[方案§12.6](../plans/history-rules-product-convergence-plan-2026-09-10.md)推进：CR01消费边界/生成物修正→CR02协调发行→CR03独立安装与升级验收→CR04交付。C02–C12非消费阻塞部分后置，并非已完成或放弃；以下CQ/C01结论保留为已验收输入，不重复派发。具体状态统一在主登记`consumer_delivery`，不另建审计账本。
 
-有界直接核验（Application `464dee420e7203deca9281da8584d07f0f8401b1`）：CRUD Generator已输出services，但`ModuleScaffoldGenerator::BACKEND_FILES`仍生成Application空骨架；`scripts/build-application-template-inventory::classification()`将大量官方Host/Provider/Service设app-owned，而升级器只更新managed/generated-managed，因此“内部实现”不等于自动升级保证。现有签名/三方冲突/客户文件保护应复用，不新建Shield或兼容桥。当前prepare只读检查exit1/blocked，主因下一协调候选仍未采用V2及同号Core，连带空目标/CHANGELOG检查失败；不是三个独立Runtime缺陷。v3.0.13/v3.0.14已登记双Edition制品，正式旧实例仍需真实验签和同Edition升级演练。本轮未运行生成/数据库/资格或发布。
+CR01前有界核验（Application `464dee420e7203deca9281da8584d07f0f8401b1`）确认：CRUD Generator已输出services，但Module样板仍生成Application空骨架；大量官方Host为app-owned，不能因此宣称内部实现自动升级。该轮没有运行生成/数据库/资格或发布；后续实施结果以下文为准。v3.0.13/v3.0.14已有登记双Edition制品，正式旧实例仍需真实验签及同Edition升级演练。
 
 CR01-A 已在独立工作树实施：`module:create` 现在只生成 Module 的复数 `Services/` 骨架，既有
 `ModuleCreateCommandTest` 同时断言 `Services/.gitkeep` 存在及旧 `Application/.gitkeep` 缺席，并已
 通过真实的 Official/自定义 Module 生成、Composer 与 Vite 过程。测试的临时 0600 环境和工具租约已清理。
 同次 architecture 检查只报告 7 项未触及的既有 File/Notification/Task/platform bootstrap 问题；它们不构成
-CR01-A 的通过断言，也未在本批修改。CR01-B 的逐路径 owner 仍等待根技术裁定。
+CR01-A 的通过断言，也未在本批修改。
+
+CR01开发修复在`2278d9e13bd5ad7fc7a45f722b7f1d7ed656a73d`完成，Edition fixture补正在
+`68812f17620a0d730f5c1be427f249e09a652cd5`完成，根已验收：25条Host精确纳管；app-owned接管及删除、
+缺实例受管登记均阻断；合法V1记录与正常新增受管文件保留。既有异常测试helper的自抛自捕假绿已正式修复。
+Runner真实合同与inventory检查exit0，修正必需版本文件后的Edition合同exit0；已通过且未变组未重复运行。
+整应用生成实际exit255（builder exit64）：当前V1/3.0.14+Core Alpha.13不满足builder的V2同号前置，归CR02
+处理，不能标通过。CR01为开发修复已验收、消费验证部分完成；没有发布、部署或完整资格。下一步为现行方案§12.7，
+不再回扫历史或重做C01。原始收据保留于私有检查点，公开问题登记保存提交、结果及摘要身份。
 
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
 
