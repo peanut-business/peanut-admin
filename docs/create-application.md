@@ -97,6 +97,20 @@ scaffold 升级把应用从当前版本退回初始版本；成功后再把 mani
 
 ## 后续升级边界
 
+### 共享 Host 的受管来源与人工采用
+
+当前 inventory 只将以下共享 Host 闭包列为 `managed`：`AppService.php`、Module governance 的
+五个 contract/DTO/state 文件、三个 common persistence helper、六个 `platform/service/module` 文件和
+十个 `platform/service/plugin` 文件。精确路径由
+`scripts/build-application-template-inventory` 的 `managedHostPaths` 维护；Core 类是
+package-managed 外部依赖，不属于派生应用的 `app-owned` 源码。
+
+旧实例若把这些路径登记为 `app-owned`，preflight 会给出 `app_owned_adoption_required`；若旧 release
+声称路径受管但实例 manifest 没有对应受管记录，会给出 `managed_adoption_required`。两者都表示零写入：
+owner 必须在自己的开发分支备份、比较上游和本地定制，并保留业务改动。不得通过删除文件、伪造
+classification/baseline 或改写已签 manifest 解除阻断。当前工具没有自动完成这类采用步骤；owner 需在
+后续完整交付项中验证人工采用，CR03 必须以真实旧实例演练，不能把本说明当成升级已通过。
+
 从正式 Release 创建派生应用不代表它会自动跟随 Peanut Admin 的 `dev/main`。应用只按同
 Edition 的正式升级包和自己的发布流程采用后续版本：
 

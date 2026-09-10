@@ -44,6 +44,9 @@ manifest、lock、不可变包引用或兼容验证，共同版本号也不能�
 
 ## 2. 创建并检查 Module
 
+新建 Module 的业务用例放在后端复数 `Services/` 目录；生成器不会创建旧的 `Application/` 骨架。
+这不要求迁移已有 Module，也不改变普通 App 服务使用小写 `services/` 的约定。
+
 在生成应用的 `server/` 目录运行：
 
 ```bash

@@ -47,7 +47,7 @@ final class ScaffoldUpgradeRunner
         $fromParameters = $this->parameters($application, (string)$application['application']['version']);
         $instanceVersion = $this->instanceVersion($versionContract);
         $targetParameters = $this->parameters($application, $instanceVersion);
-        $actions = $this->classify($root, $from, $to, $fromParameters, $targetParameters, $versionContract);
+        $actions = $this->classify($root, $application, $from, $to, $fromParameters, $targetParameters, $versionContract);
         $summary = $this->summary($actions);
         $impact = $this->impact($actions);
         $appOwnedState = $this->ownershipState($root, $application, 'app-owned');
@@ -249,6 +249,7 @@ final class ScaffoldUpgradeRunner
      */
     private function classify(
         string $root,
+        array $application,
         ScaffoldManifest $from,
         ScaffoldManifest $to,
         array $fromParameters,
@@ -258,12 +259,32 @@ final class ScaffoldUpgradeRunner
     {
         if ($from->renames() !== [] || $to->renames() !== []) throw new RuntimeException('SCAFFOLD_RENAME_UNSUPPORTED');
         $old = $from->files(); $new = $to->files(); $actions = [];
+        $applicationFiles = [];
+        foreach ($application['files'] as $file) {
+            if (is_array($file) && is_string($file['path'] ?? null)) {
+                $applicationFiles[$file['path']] = $file;
+            }
+        }
         $paths = array_unique(array_merge(array_keys($old), array_keys($new))); sort($paths, SORT_STRING);
         foreach ($paths as $path) {
             $before = $old[$path] ?? null; $after = $new[$path] ?? null;
+            $projectPath = ScaffoldPathGuard::projectPath($root, $path);
+            $current = $this->regularFileState($projectPath, $path);
+            $instanceFile = $applicationFiles[$path] ?? null;
+            if (($instanceFile['classification'] ?? null) === 'app-owned') {
+                $file = $after ?? $before ?? [];
+                $target = $after === null ? null : hash('sha256', $this->renderCurrentVersionArtifact($to, $after, $targetParameters, $versionContract));
+                $actions[] = $this->action($path, $file, 'conflict', 'app_owned_adoption_required', true, $current, $target);
+                continue;
+            }
+            if ($before !== null && (!$instanceFile
+                || !in_array($instanceFile['classification'] ?? null, ['managed', 'generated-managed'], true))) {
+                $file = $after ?? $before;
+                $target = $after === null ? null : hash('sha256', $this->renderCurrentVersionArtifact($to, $after, $targetParameters, $versionContract));
+                $actions[] = $this->action($path, $file, 'conflict', 'managed_adoption_required', true, $current, $target);
+                continue;
+            }
             if ($after === null) {
-                $projectPath = ScaffoldPathGuard::projectPath($root, $path);
-                $current = $this->regularFileState($projectPath, $path);
                 if (!$current['present']) {
                     $actions[] = $this->action($path, $before ?? [], 'conflict', 'managed_file_missing', true, $current, null);
                     continue;
@@ -279,8 +300,6 @@ final class ScaffoldUpgradeRunner
             }
             $targetContent = $this->renderCurrentVersionArtifact($to, $after, $targetParameters, $versionContract);
             $targetDigest = hash('sha256', $targetContent);
-            $projectPath = ScaffoldPathGuard::projectPath($root, $path);
-            $current = $this->regularFileState($projectPath, $path);
             if ($before === null) {
                 $actions[] = $current['present']
                     ? $this->action($path, $after, 'conflict', 'new_path_already_exists', true, $current, $targetDigest)

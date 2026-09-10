@@ -488,6 +488,29 @@
         "backup_responsibility": "not applicable; synthetic data only"
       },
       {
+        "stable_resource_id": "peanut-admin-module-scaffold-development-toolchain",
+        "purpose": "worktree-local dependency installation and real module:create contract verification",
+        "environments": [
+          "development"
+        ],
+        "owner": "Peanut Admin module scaffold owner",
+        "host": "macbookpro-arm64",
+        "port": null,
+        "database": null,
+        "schema": null,
+        "namespace": "/Users/xing/.nvm/versions/node/v24.13.0/bin; worktree-local server/vendor and web/node_modules",
+        "service_type": "host PHP/Composer and Node/pnpm development toolchain",
+        "version": "PHP 8.3.24; Composer 2.8.10; Node 24.13.0; pnpm 9.15.6",
+        "command": "/opt/homebrew/bin/php; /usr/local/bin/composer; /Users/xing/.nvm/versions/node/v24.13.0/bin/node; /Users/xing/.nvm/versions/node/v24.13.0/bin/pnpm",
+        "credential_ref": "local Composer provider configuration when required; no application credential is read",
+        "data_source": "server/composer.lock and web/pnpm-lock.yaml in the active worktree",
+        "freshness_requirement": "verify the exact binaries; install only the active worktree's locked dependencies; bind a mode-0600 server/.env.<run-id> with synthetic non-secret values for CLI bootstrap; no database, listener or shared cache is used",
+        "health_check": "composer --version, node --version and pnpm --version match the recorded toolchain; server/vendor/autoload.php and web/node_modules exist only in the active worktree after locked installation",
+        "fallback": "none",
+        "lifecycle": "single focused module scaffold verification",
+        "cleanup_responsibility": "task owner removes only its named temporary environment file and claimed temporary output paths; worktree-local locked dependencies may remain until worktree cleanup"
+      },
+      {
         "stable_resource_id": "peanut-admin-edition-upgrade-release-signing-key",
         "purpose": "sign official Standalone and Multi-tenant Edition upgrade packages",
         "environments": [

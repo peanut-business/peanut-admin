@@ -14,6 +14,12 @@ Reviewed at: 2026-09-11（CQ-AUDIT-01静态核查及C01聚焦实现；未运行�
 
 有界直接核验（Application `464dee420e7203deca9281da8584d07f0f8401b1`）：CRUD Generator已输出services，但`ModuleScaffoldGenerator::BACKEND_FILES`仍生成Application空骨架；`scripts/build-application-template-inventory::classification()`将大量官方Host/Provider/Service设app-owned，而升级器只更新managed/generated-managed，因此“内部实现”不等于自动升级保证。现有签名/三方冲突/客户文件保护应复用，不新建Shield或兼容桥。当前prepare只读检查exit1/blocked，主因下一协调候选仍未采用V2及同号Core，连带空目标/CHANGELOG检查失败；不是三个独立Runtime缺陷。v3.0.13/v3.0.14已登记双Edition制品，正式旧实例仍需真实验签和同Edition升级演练。本轮未运行生成/数据库/资格或发布。
 
+CR01-A 已在独立工作树实施：`module:create` 现在只生成 Module 的复数 `Services/` 骨架，既有
+`ModuleCreateCommandTest` 同时断言 `Services/.gitkeep` 存在及旧 `Application/.gitkeep` 缺席，并已
+通过真实的 Official/自定义 Module 生成、Composer 与 Vite 过程。测试的临时 0600 环境和工具租约已清理。
+同次 architecture 检查只报告 7 项未触及的既有 File/Notification/Task/platform bootstrap 问题；它们不构成
+CR01-A 的通过断言，也未在本批修改。CR01-B 的逐路径 owner 仍等待根技术裁定。
+
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
 
 CQ-AUDIT-01最初只在 App `b3448a4b781a839f1c33bd48825cae1ee913cec3` / Core `2ed77f38ca26472d685cfeb81674a66ba23eadb4` 做静态核查，并按CQ-CORR-01..05修订事实源和任务书；该静态补正已获根验收。其后获批C01在独立App worktree实施并通过A/B/C技术验收，仍不表示完整资格、发布或部署完成。

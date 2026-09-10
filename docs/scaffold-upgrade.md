@@ -46,6 +46,19 @@ plan 的 `impact` 用 `will_change`、`will_preserve` 与 `must_resolve` 分组�
 
 ## 当前 3.x 维护者诊断路径
 
+### 共享 Host 采用停止线
+
+受管共享 Host 只限 inventory builder 的精确 allowlist：App bootstrap、Module governance 的
+contract/DTO/state、关联 persistence helper，以及直接共同演进的 platform module/plugin Host 实现。
+Core 是 package-managed 外部依赖；业务/第三方 Module、配置、秘密和业务 Schema 仍是 app-owned。
+`app_owned_adoption_required` 表示旧实例把目标共享 Host 作为 app-owned；
+`managed_adoption_required` 表示实例没有该路径的受管采用记录。两种 preflight 冲突均零写入，
+包括上游删除路径。
+
+应用 owner 只能在自身开发分支备份、比较并保留定制后，完成明确的人工采用验证；不得删除文件、
+伪造 classification/baseline 或修改已签 manifest 来绕过冲突。执行器不提供自动采用动作，CR03 必须
+在真实旧实例完成该演练。未来若 Core 删除 API，必须先完成真实调用者采用并由 CR02 阻断不兼容发行。
+
 包内 `--package` 是普通用户的唯一升级输入。显式 `--from-manifest/--to-manifest` 仍保留给维护者
 诊断不可变 scaffold Release 之间的三方比较，不是正式下载或用户操作入口：
 

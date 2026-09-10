@@ -26,7 +26,7 @@ server/app/Modules/Official/Article/
 ├── Contracts/
 ├── Http/routes.php
 ├── Http/Controller/
-├── Application/
+├── Services/
 ├── Infrastructure/Persistence/
 ├── Model/
 ├── Resources/
@@ -49,10 +49,12 @@ Plugin 身份另存于 `plugins/<module.key>/plugin.json`，bundled 部署身份
 
 ## 3. 实现边界
 
-- Controller 只负责 HTTP 输入输出；Application Service 负责用例和事务边界；Model 继承适用的
+- Controller 只负责 HTTP 输入输出；Module 的 `Services/` 承载用例和事务边界；Model 继承适用的
   `TenantOwnedModel` 并依赖全局 TenantScope。
 - 应用服务直接使用 ThinkPHP Model、Query 和 Scope，并通过组合根完成构造函数注入。不得仅为了
   隔离 ThinkPHP 而新增 Repository、Port、Persistence Adapter 或兼容桥。
+- 新 Module 只使用复数 `Services/`；不要由生成器创建 `Application/`，也不要手工以 PDO 或
+  Factory 作为业务装配替代品。既有 Module 的目录不因本规则被批量迁移。
 - `Contracts/` 只用于 Module 对外公开且确有跨 Module 消费者的稳定命令/查询合同；不得把每个内部
   Service 镜像成 Interface。
 - `Infrastructure/` 只容纳确有必要的外部系统或技术适配。Module 自有表仍由本 Module 的 Model/Scope
