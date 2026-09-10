@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01与CQ补正保留；C01-A/B/C已通过根技术验收并处于同批Git收尾；后续Runtime整改未完成）
+Status: `current`（T01与CQ补正保留；C01-A/B/C及同批派生身份已通过根验收并集成dev；后续Runtime整改未完成）
 
 Owner: `product-architecture`
 
@@ -40,7 +40,7 @@ CQ-AUDIT-01最初只在 App `b3448a4b781a839f1c33bd48825cae1ee913cec3` / Core `2
 
 ### 可执行性与停止线
 
-现行唯一任务书是方案§12.4的 `PA-S5-C01-REVISED-PROPOSAL-20260911-02`，分为C01-A composition、C01-B Generator services、C01-C OpsModule。旧 Proposal 仅为失效墓碑。三卡已由同一实施任务连续交付并分别通过根技术验收；当前仅完成派生Plugin身份、失败传播、状态和精确Git收尾。C02与未填实后续服务单元不在该授权内。
+现行唯一C01任务书是方案§12.4的 `PA-S5-C01-REVISED-PROPOSAL-20260911-02`，分为C01-A composition、C01-B Generator services、C01-C OpsModule。旧 Proposal 仅为失效墓碑。三卡、派生Plugin身份和失败传播补正已通过根验收；实现提交 `2c65e7f96505490328d27acdbbd2ebdf90091a5e`（tree `04493466273d7dc5268b286d3493ec7a2e12dd01`）已推送dev。C02与未填实后续服务单元不在该授权内。
 
 C01-B动态Gate使用登记数据库 `peanut-admin-mysql84-development`（development，`192.168.192.2:20183` / `peanut_admin_development`）和登记本地私有存储 `peanut-admin-local-private-storage-development`。首次 `database-host-status` 误在取得租约前写入 `.local/stack.env` 与正式 `server/.env`，该次调用不计有效资源证据；取得租约后已重新核健康和freshness并完成动态Gate。测试专用env/lock/manifests已移入废纸篓，正式0600 `server/.env` 与 `.local/stack.env` 作为本worktree运行配置保留；数据库租约已释放且测试数据/私有对象已清理。
 

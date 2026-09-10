@@ -2624,5 +2624,31 @@
     },
     "limitations": "No positive generated-app probe, DB, Provider, full qualification, Runtime migration, release or deployment; Core source unchanged. Scanner coverage is token-pattern based, not full control-flow or semantic assertion proof.",
     "next_action": "T01 closed; no redispatch. Root presents S5-C01 section12.4 for section7.1 confirmation before one new independent execution task. C01 is not yet authorized."
+  },
+  "stage5_c01_execution": {
+    "status": "completed-root-accepted-and-pushed",
+    "proposal_id": "PA-S5-C01-REVISED-PROPOSAL-20260911-02",
+    "executor_thread_id": "01a08cf3-c0a3-7370-b18f-34c9d65a1847",
+    "baseline_commit": "b3448a4b781a839f1c33bd48825cae1ee913cec3",
+    "implementation_commit": "2c65e7f96505490328d27acdbbd2ebdf90091a5e",
+    "implementation_tree": "04493466273d7dc5268b286d3493ec7a2e12dd01",
+    "scope": "C01-A Module native bindings, C01-B first Generator services unit, C01-C OpsModule factory reuse, and required same-batch Plugin identity/failure-propagation/current-document closeout",
+    "root_review": {
+      "status": "accepted-delivery",
+      "reviewer": "01a07fd6-296d-7cf2-8434-77c57925fc14",
+      "accepted_at": "2026-09-11",
+      "evidence": "A/B/C were independently read and accepted; final review accepted ten Writer-derived manifests/root lock, RichText 1.0.1 identity chain, controlled nonzero failure propagation, default-lock no-DB composition and exact approved write set."
+    },
+    "resource_execution": "C01-B used registered peanut-admin-mysql84-development and peanut-admin-local-private-storage-development. The first database-host-status call wrote local env files before lease and is not counted; health/freshness and the positive Gate were rerun under the lease. Exact test data/object cleanup completed and the lease was released; formal 0600 server/.env and .local/stack.env remain local and uncommitted.",
+    "checks": {
+      "composition": "PluginModuleContractTest passed with real official makes, alias identity, cycles and pre-bound atomicity",
+      "generator": "ThinkPhpArchitectureBehaviorMatrixTest passed real seven-output renderer and old-path negative; TaskImportExportHostTest positive DB/storage Gate passed under lease",
+      "ops": "OpsModuleTaskWiringTest passed actual AppService registerPlatform factory identity/config/key decoding and argument negatives without valid task action",
+      "metadata": "PluginArtifactWriter checkLock passed 10; default plugins.lock App initialize passed without DB; RichText Module/PHP/npm/plugin versions equal 1.0.1 and historical 1.0.0 tar remained untouched",
+      "failure_propagation": "TaskImportExportHostTest controlled failure exited 1 with the expected stable message",
+      "closeout": "check-test-integrity, docs-governance, JSON/plan SHA and git diff checks passed"
+    },
+    "limitations": "No C02 or remaining service units, full application generation, all-official package matrix, fixed-candidate qualification, release, deployment or real Provider qualification. OpsUpgradeTask remains unchanged and its empty trusted-key intent remains unknown.",
+    "next_action": "C01 closed; do not redispatch. Any C02 or remaining services require their own approved task."
   }
 }
