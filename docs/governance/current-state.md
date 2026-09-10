@@ -34,4 +34,4 @@ Owner: `product-architecture`
 
 公开事实投影已发布并通过 HTTPS 正文核验；[部署回执](../maintenance/fact-audit-2026-09-09/docs-deployment-receipt.json)记录固定来源。主审计已交付明确覆盖范围、冲突裁定与历史拒绝操作处置，新产品发布保持单独的受阻状态。
 
-上述交付是此前有界事实审计，不代表两仓残留修复或企业消费级资格完成。现行执行依[逐步确认的0–6阶段方案](../plans/history-rules-product-convergence-plan-2026-09-10.md)，修订 PA-USER-STEP-GATES-20260910。阶段1–2已验收；阶段3静态核查、逐项处置和精确修复卡已补正并通过根验收；阶段4规则修正及必要补正也已通过根验收。当前证据确认 Application/Core 的 PDO/RuntimeFactory 主线仍存在；Tenant/ExecutionContext、双 Edition、Provider、消费者和浏览器行为仍有动态证据缺口。S5-T01本地实现及有界验证已由根验收，尚待根任务审定精确公开候选与后续 Git 集成；修复与资格尚未完成。不启用Goal自动续作或旧周期监督；根任务的恢复控制保留在未跟踪本机记录，不作为公开文档前置。
+上述交付是此前有界事实审计，不代表两仓残留修复或企业消费级资格完成。现行执行依[逐步确认的0–6阶段方案](../plans/history-rules-product-convergence-plan-2026-09-10.md)，修订 PA-USER-STEP-GATES-20260910。阶段1–2已验收；阶段3静态核查、逐项处置和精确修复卡已补正并通过根验收；阶段4规则修正及必要补正也已通过根验收。当前证据确认 Application/Core 的 PDO/RuntimeFactory 主线仍存在；Tenant/ExecutionContext、双 Edition、Provider、消费者和浏览器行为仍有动态证据缺口。S5-T01本地实现及有界验证已由根验收，并已合入 `dev` 的记录提交；修复与资格尚未完成，发布与部署未开始。不启用Goal自动续作或旧周期监督；根任务的恢复控制保留在未跟踪本机记录，不作为公开文档前置。

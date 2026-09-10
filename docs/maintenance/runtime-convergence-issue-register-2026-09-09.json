@@ -2577,7 +2577,7 @@
     }
   },
   "stage5_t01_execution": {
-    "status": "accepted-local-implementation-awaiting-public-integration-review",
+    "status": "integrated-on-dev-awaiting-root-closeout",
     "proposal_id": "PA-S5-T01-PROPOSAL-20260910-01",
     "start_token": "PA-S5-T01-START-20260910-01",
     "executor_thread_id": "01a08b36-5b92-7e51-a4e2-42741e855a9c",
@@ -2601,7 +2601,7 @@
       "configuration": "Terra/medium only for this bounded correction round; no project-wide model escalation",
       "preserved": "Member import and missing-argument domain-probe PHP SHA, DataIsolation/Ergonomics bounded checks, Core WorkflowGraph Unit 6 tests/16 assertions exit0, and CI always-on scanner wiring are root accepted local implementation evidence.",
       "accepted_at": "2026-09-10T12:44:15Z",
-      "privacy_and_integration": "The public remote requires an exact approved candidate. Local-only conversation coverage and execution checkpoint records are ignored and excluded from public canonical sources, documentation closure, and candidate staging; they remain available only at the root task's original local location.",
+      "privacy_and_integration": "The exact approved candidate is integrated on public dev at commit e0733059d59370c6ae499292cab48e314ef50706 (tree same SHA). Local-only conversation coverage and execution checkpoint records are ignored and excluded from public canonical sources, documentation closure, and candidate staging; they remain available only at the root task's original local location.",
       "prohibitions": "No C01, Core source change, positive generated-app probe, DB/Provider, full qualification, CI --fast, commit, merge, push, release, or deploy before root approves the exact public candidate."
     },
     "corrections": {
@@ -2611,6 +2611,6 @@
       "T01-CORR-03": "Current plan/report/README/current-state/checkpoint fields now await root review; VERIFY-004 distinguishes historical skipped/exit0 from current stderr/exit2; CAP01 records the already-passed Core Unit and its limits. Existing Peanut Admin and Core ThinkPHP KnowledgeBase notes were backed up then updated and read back."
     },
     "limitations": "No positive generated-app probe, DB, Provider, full qualification, migration, release, deployment, or integration push; Core source unchanged. Scanner coverage remains token-pattern based rather than full control-flow or semantic assertion proof.",
-    "next_action": "Root review of the exact public documentation/code candidate and explicit Git integration authorization; no commit/merge/push before that authorization."
+    "next_action": "Root closeout of the dev integration receipt; no release, deployment, S6, or C01 action."
   }
 }

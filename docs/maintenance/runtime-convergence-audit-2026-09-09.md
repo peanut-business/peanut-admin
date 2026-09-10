@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（阶段0–4已回收验收；阶段5首批S5-T01及有界补正已获根验收，正准备精确公开候选，尚不是运行时整改闭环或发布资格证明）
+Status: `current`（阶段0–4已回收验收；阶段5首批S5-T01及有界补正已获根验收并合入dev，尚不是运行时整改闭环或发布资格证明）
 
 Owner: `product-architecture`
 
@@ -30,7 +30,7 @@ Reviewed at: 2026-09-10（材料归并日期；历史源码/测试事实不刷�
 
 版本、模块和部署事实需继续分开：v3.0.14 是已发布的不可变历史、bundled Rich Text 身份有对应发布证据、multi-tenant production-candidate overlay 已验证；持久 Standalone 未升级，独立 Rich Text 发布和真实 Provider 操作均未由这些事实证明。当前 Application lock 仍是 Core `0.1.0-alpha.13`，故未来产品/Core/双 Edition 同号只能在新的冻结候选中实现，不能回填历史。当前 dev 包含 `563df8c4` 的 Core Storage Driver 采用；`590e6183` 是非祖先同主题早期提交，`563df8c4` 与 `64460af8` patch-id 相同；`e915bea7` 只记录隔离媒体试验。当前 Core `WorkflowGraph.php:10-470` 未见历史重复声明，故 CAP01 历史缺陷由当前静态证据支持已解决，但其单元测试未在阶段3执行。
 
-阶段3、4已验收；S5-T01及CORR-01..03已完成本地实现并获根验收，当前只准备精确公开候选，未获 Git 集成核准。阶段5后续须再次按任务书确认，顺序为 ModuleProvider 简化 → Core TP8 数据边界 → ReferenceCodes → Settings → ArtifactRevision → EntitlementQuota/Workflow → Notification → TaskJob → ImportExport → FileMedia → DataPermission → Kernel Identity/Tenant/RBAC。每张卡已列精确文件、消费者、表 owner、旧路径退出、既有命令、输入、停止点和资源边界。Core 含 Integration 的 PHPUnit 命令必须显式设置 `PEANUT_INTEGRATION=1` 并提供登记的 DB_HOST/端口/凭据引用；缺少登记环境应阻塞，测试 skip 不计通过；纯 Unit 命令无需该标志。当前没有领域专用 TP8 检查的地方明确记录为缺口，只能在后续获批卡中新增。
+阶段3、4已验收；S5-T01及CORR-01..03已完成本地实现并获根验收、合入dev，发布/部署及后续批次仍未获准。阶段5后续须再次按任务书确认，顺序为 ModuleProvider 简化 → Core TP8 数据边界 → ReferenceCodes → Settings → ArtifactRevision → EntitlementQuota/Workflow → Notification → TaskJob → ImportExport → FileMedia → DataPermission → Kernel Identity/Tenant/RBAC。每张卡已列精确文件、消费者、表 owner、旧路径退出、既有命令、输入、停止点和资源边界。Core 含 Integration 的 PHPUnit 命令必须显式设置 `PEANUT_INTEGRATION=1` 并提供登记的 DB_HOST/端口/凭据引用；缺少登记环境应阻塞，测试 skip 不计通过；纯 Unit 命令无需该标志。当前没有领域专用 TP8 检查的地方明确记录为缺口，只能在后续获批卡中新增。
 
 45–68个工程日实现加10–17个工程日聚焦检查，只是依据当前文件、消费者、表 owner 和现有检查规模给出的未校准人力规划参考；它不是实测AI吞吐、AI需要的天数或本任务日历承诺，首个实施批次后必须重估。资源租约、真实 Provider、下游消费、独立模块发布和部署等待单列；不再用另一个总小时数替代已撤回的150小时结论。Provider、双 Edition 和消费者质量仍是后续固定候选的既定验收目标，只有媒体spike采用与独立模块发布属于条件性选择。S5-T01及其有界补正已获根验收，当前仅待审定精确公开候选，不重派阶段3、4。
 
