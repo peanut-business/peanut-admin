@@ -41,9 +41,19 @@
     },
     {
       "id": "internal-refactor",
-      "paths": ["server/app/**/*.php", "web/src/**/*", "platform/src/**/*", "pc/**/*", "uniapp/src/**/*"],
-      "classifications": ["none"],
-      "upstream": ["changed implementation"],
+      "paths": [
+        "server/app/**/*.php",
+        "web/src/**/*",
+        "platform/src/**/*",
+        "pc/**/*",
+        "uniapp/src/**/*"
+      ],
+      "classifications": [
+        "none"
+      ],
+      "upstream": [
+        "changed implementation"
+      ],
       "technical_docs": [],
       "site_docs": [],
       "generated": [],
@@ -51,22 +61,61 @@
     },
     {
       "id": "http-api",
-      "paths": ["server/route/**/*.php", "server/app/**/*Controller.php", "docs/api/openapi.yaml", "scripts/check-openapi"],
-      "classifications": ["technical", "developer-site", "generated"],
-      "upstream": ["server routes/controllers", "docs/api/openapi.yaml"],
-      "technical_docs": ["docs/api/openapi.yaml", "docs/peanut-admin-development-guide.md"],
-      "site_docs": ["docs-site/api.md"],
-      "generated": ["web/src/generated/openapi-client.ts", "web/src/generated/openapi.d.ts"],
+      "paths": [
+        "server/route/**/*.php",
+        "server/app/**/*Controller.php",
+        "docs/api/openapi.yaml",
+        "scripts/check-openapi"
+      ],
+      "classifications": [
+        "technical",
+        "developer-site",
+        "generated"
+      ],
+      "upstream": [
+        "server routes/controllers",
+        "docs/api/openapi.yaml"
+      ],
+      "technical_docs": [
+        "docs/api/openapi.yaml",
+        "docs/peanut-admin-development-guide.md"
+      ],
+      "site_docs": [
+        "docs-site/api.md"
+      ],
+      "generated": [
+        "web/src/generated/openapi-client.ts",
+        "web/src/generated/openapi.d.ts"
+      ],
       "reason": "Public HTTP shape and examples must follow the route/OpenAPI authority."
     },
     {
       "id": "cli-command",
-      "paths": ["scripts/*", "server/think", "server/app/command/*.php", "server/app/**/command/**/*.php"],
-      "exclude_paths": ["scripts/docs-governance", "scripts/consumer-ready-control"],
-      "classifications": ["technical", "developer-site"],
-      "upstream": ["executable command and --help output"],
-      "technical_docs": ["docs/peanut-admin-development-guide.md", "docs/release-engineering.md"],
-      "site_docs": ["docs-site/getting-started.md", "docs-site/reference.md"],
+      "paths": [
+        "scripts/*",
+        "server/think",
+        "server/app/command/*.php",
+        "server/app/**/command/**/*.php"
+      ],
+      "exclude_paths": [
+        "scripts/docs-governance",
+        "scripts/consumer-ready-control"
+      ],
+      "classifications": [
+        "technical",
+        "developer-site"
+      ],
+      "upstream": [
+        "executable command and --help output"
+      ],
+      "technical_docs": [
+        "docs/peanut-admin-development-guide.md",
+        "docs/release-engineering.md"
+      ],
+      "site_docs": [
+        "docs-site/getting-started.md",
+        "docs-site/reference.md"
+      ],
       "generated": [],
       "reason": "Only pages that name the changed command are in scope."
     },
@@ -112,11 +161,28 @@
     },
     {
       "id": "module-manifest",
-      "paths": ["server/app/Modules/**/module.json", "server/app/Modules/**/Module.php", "server/app/Modules/**/ModuleProvider.php"],
-      "classifications": ["technical", "developer-site"],
-      "upstream": ["module.json", "module bootstrap"],
-      "technical_docs": ["docs/module-development-guide.md", "docs/plugin-module-development.md", "docs/architecture/module-execution-context-contract.md", "docs/architecture/module-publication-contract.md"],
-      "site_docs": ["docs-site/guide/module-development.md"],
+      "paths": [
+        "server/app/Modules/**/module.json",
+        "server/app/Modules/**/Module.php",
+        "server/app/Modules/**/ModuleProvider.php"
+      ],
+      "classifications": [
+        "technical",
+        "developer-site"
+      ],
+      "upstream": [
+        "module.json",
+        "module bootstrap"
+      ],
+      "technical_docs": [
+        "docs/module-development-guide.md",
+        "docs/plugin-module-development.md",
+        "docs/architecture/module-execution-context-contract.md",
+        "docs/architecture/module-publication-contract.md"
+      ],
+      "site_docs": [
+        "docs-site/guide/module-development.md"
+      ],
       "generated": [],
       "reason": "Module identity, ownership, permission and lifecycle projections follow the manifest."
     },
@@ -142,10 +208,21 @@
     },
     {
       "id": "capability-status",
-      "paths": ["docs/product-status/capability-ledger.json", "docs/product-status/releases/*.json", "docs/product-status/deployments/*.json"],
-      "classifications": ["technical"],
-      "upstream": ["docs/product-status/capability-ledger.json", "release/deployment snapshots"],
-      "technical_docs": ["docs/product-status/README.md"],
+      "paths": [
+        "docs/product-status/capability-ledger.json",
+        "docs/product-status/releases/*.json",
+        "docs/product-status/deployments/*.json"
+      ],
+      "classifications": [
+        "technical"
+      ],
+      "upstream": [
+        "docs/product-status/capability-ledger.json",
+        "release/deployment snapshots"
+      ],
+      "technical_docs": [
+        "docs/product-status/README.md"
+      ],
       "site_docs": [],
       "generated": [],
       "reason": "Internal status and candidate evidence are not published to the developer site."
@@ -180,6 +257,37 @@
       "reason": "The fixed application-upgrade workflow, safe Platform projection and deployment-owner procedure move together."
     },
     {
+      "id": "conversation-semantic-audit",
+      "paths": [
+        "docs/maintenance/conversation-audit-2026-09-09.md",
+        "docs/maintenance/fact-audit-2026-09-09/source-index.json",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json",
+        "docs/plans/history-rules-product-convergence-plan-2026-09-10.md"
+      ],
+      "classifications": [
+        "technical",
+        "generated"
+      ],
+      "upstream": [
+        "fixed local conversation corpus",
+        "saved relevant evidence receipts; no exhaustive-reading gate",
+        "step-gated 0–6 plan PA-USER-STEP-GATES-20260910; approved goal/knowledge coverage beyond the 29-item seed; current gaps and actionable repair plan before rules, repairs and independent qualification; dispatch contracts and stage3–6 task specifications; root acceptance then explicit or bounded 10-minute approval per plan section7.1; one independent task per stage, root-task ownership"
+      ],
+      "technical_docs": [
+        "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
+        "docs/maintenance/conversation-audit-2026-09-09.md",
+        "docs/maintenance/fact-audit-2026-09-09/source-index.json",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json",
+        "docs/README.md",
+        "docs/governance/current-state.md"
+      ],
+      "site_docs": [],
+      "generated": [
+        "docs/reference/document-catalog.generated.md"
+      ],
+      "reason": "Public historical evidence, issue disposition and approved execution plan must agree. Root-local recovery and coverage controls are untracked, excluded from this closure, and never projected publicly."
+    },
+    {
       "id": "core-thinkphp-runtime-direction",
       "paths": ["server/app/AppService.php", "server/app/common/execution/**/*.php", "server/app/Modules/**/ModuleProvider.php", "server/app/**/*Pdo*.php", "server/database/**/*.php", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"],
       "classifications": ["architecture-decision", "technical"],
@@ -191,11 +299,33 @@
     },
     {
       "id": "architecture-boundary",
-      "paths": ["resources/service-registry.json", "docs/architecture/**/*.md", "docs/design/**/*.md", "server/app/Modules/**/module.json", "server/vendor/peanut-admin/core/**/*", "web/node_modules/@peanut-admin/admin/**/*"],
-      "classifications": ["architecture-decision", "technical", "developer-site"],
-      "upstream": ["accepted ADR or architecture contract", "service registry", "module manifests", "fixed Core dependency identity"],
-      "technical_docs": ["docs/architecture/clean-native-multitenancy-baseline.md", "docs/architecture/module-execution-context-contract.md"],
-      "site_docs": ["docs-site/guide/development.md", "docs-site/guide/module-development.md"],
+      "paths": [
+        "resources/service-registry.json",
+        "docs/architecture/**/*.md",
+        "docs/design/**/*.md",
+        "server/app/Modules/**/module.json",
+        "server/vendor/peanut-admin/core/**/*",
+        "web/node_modules/@peanut-admin/admin/**/*"
+      ],
+      "classifications": [
+        "architecture-decision",
+        "technical",
+        "developer-site"
+      ],
+      "upstream": [
+        "accepted ADR or architecture contract",
+        "service registry",
+        "module manifests",
+        "fixed Core dependency identity"
+      ],
+      "technical_docs": [
+        "docs/architecture/clean-native-multitenancy-baseline.md",
+        "docs/architecture/module-execution-context-contract.md"
+      ],
+      "site_docs": [
+        "docs-site/guide/development.md",
+        "docs-site/guide/module-development.md"
+      ],
       "generated": [],
       "reason": "Application/Core ownership changes are decisions, not incidental documentation edits."
     },
@@ -208,6 +338,26 @@
       "site_docs": ["docs-site/index.md", "docs-site/reference/source-map.generated.md"],
       "generated": ["docs/reference/document-catalog.generated.md", "docs-site/reference/source-map.generated.md"],
       "reason": "The governance graph and its generated views move together."
+    },
+    {
+      "id": "history-convergence-execution-entry",
+      "paths": [
+        "AGENTS.md",
+        "AGENT_EXECUTION_RULES.md"
+      ],
+      "classifications": [
+        "technical"
+      ],
+      "upstream": [
+        "task-scoped approved execution plan; stable safety rules"
+      ],
+      "technical_docs": [
+        "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "site_docs": [],
+      "generated": [],
+      "reason": "Changes to public task routing/recovery clauses require matching plan and issue register; root-local private controls remain outside public documentation closure."
     }
   ],
   "scenarios": [

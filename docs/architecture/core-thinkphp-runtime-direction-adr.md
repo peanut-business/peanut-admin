@@ -65,9 +65,9 @@ ThinkPHP HTTP/CLI bootstrap
 | 范围 | 规模和典型形态 |
 | --- | --- |
 | Application ThinkPHP 数据访问 | 31 个 `TenantOwnedModel` 子类；Application 已广泛使用 Model、Query 与全局 TenantScope，不应把这些原生调用再包装成 Repository |
-| Application PDO | `server/app` 有 97 个文件涉及 PDO、18 个自有 `Pdo*` 类；没有 `new PDO`，而是由 `AppService` 把 ThinkPHP 连接降为 PDO 后注入 |
-| Application ModuleProvider | 10 个，均实现 `ModuleBindingContributor`；本轮首批后共 55 个 binding，其中 11 个直接类映射、44 个闭包，Provider 内显式容器 `make()` 99 处 |
-| Application 容器与命名抽象 | 显式容器 `make()` 共 223 处；另有 23 个 Repository、5 个 Adapter、15 个 Factory，其中 7 个名为 `RuntimeFactory` |
+| Application PDO | `server/app` 有 87 个文件命中 `\bPDO\b`，97 个文件命中 `PDO\|Pdo`（包括类名）；18 个自有 `Pdo*` 类；没有 `new PDO`，而是由 `AppService` 把 ThinkPHP 连接降为 PDO 后注入 |
+| Application ModuleProvider | 10 个，均实现 `ModuleBindingContributor`；在页首固定快照共 55 个 binding，其中 5 个直接类映射、50 个闭包，Provider 内显式容器 `make()` 105 处 |
+| Application 容器与命名抽象 | 显式命名容器 `make()` 202 处；所有实例 `->make()` 223 处（包括业务工厂，不能全部称为容器）；另有 23 个 Repository、5 个 Adapter、15 个 Factory，其中 7 个名为 `RuntimeFactory` |
 | Application Commands/Queries | Module 与 common 共有 20 个 Commands、8 个 Queries 合同文件；当前合同不暴露 PDO/Model，后续只保留有真实跨 Module/Host 消费者的业务能力 |
 | Core 发布源码 | `packages/php/*/src` 共 555 个 PHP 文件，其中 60 个涉及 PDO、35 个文件以 `Pdo` 命名；47 个 Repository 中有 26 个 `Pdo*Repository`。发布源码对 ThinkPHP import、Model、`Db::` 和容器 `make()` 的当前命中均为 0 |
 | Core Commands/Queries | 名称盘点命中 15 个 `*Command*`/`*Query*` 文件，混合了跨 Host 合同、Query service、constraint/compiler、PDO 实现和 DTO；Core 没有一套统一 CQRS 基类。是否保留必须按真实消费者和业务语义裁定，不能按名称批量删除或保留 |
@@ -83,7 +83,7 @@ Application 的 HTTP、CLI、Worker 和 Cron 已分别从 `server/public/index.p
 
 ### 2.5 盘点口径
 
-本页使用 `rg --files` 固定生产 PHP 文件集合，再分别统计 ThinkPHP import、`Db::`、PDO 类型、`*Repository.php`、`*Adapter.php`、`*Factory.php`、ModuleProvider binding 和显式容器 `make()`；测试、`vendor`、`node_modules`、scaffold Release 快照与历史文档不计入 Runtime 数量。CodeGraph 只用于交叉核对 Application 的动态 Provider 调用关系。静态命中不能证明某接口存在外部消费者，也不能证明闭包可直接改为类映射；这些未知必须在对应微批次逐项核对。
+本页固定生产 PHP 文件集合：Application `server/app/`、Core `packages/php/*/src/`、Core host `backend/app/` 与 `starter/backend/src/`，通过 `git ls-tree -r --name-only <commit>` 与 `git show <commit>:<path>` 复现页首切点。PDO 类型文件按 `\bPDO\b` 命中一次；`PDO|Pdo` 子串另列，不能混用。显式命名容器调用限定接收者 `$app`、`$this->app`、`$container`、`$this->container`；普通 `->make()` 单列。测试、`vendor`、`node_modules`、scaffold Release 快照与历史文档不计入 Runtime 数量。后续 Provider 修改和当前切点计数见[收敛审计](../maintenance/runtime-convergence-audit-2026-09-09.md)，不倒灌到本固定快照。CodeGraph 只用于交叉核对动态 Provider 调用关系。静态命中不能证明外部消费者或闭包可安全简化；须按领域核对。
 
 ## 3. ADR 裁定
 
@@ -164,7 +164,7 @@ return [
 
 1. 使用 ThinkPHP Model/Query/Db/Transaction 和正式 bootstrap；
 2. 原子覆盖该领域实现、实际调用者、公共合同与装配，并删除对应 PDO 路径、公共导出、专用 factory 和无消费者镜像接口；
-3. 保持现有真实测试断言，不把测试改成 `PASSED` 占位，不把 skip 当通过；
+3. 保持有效的业务、安全和架构断言，不把测试改成 `PASSED` 占位，不把 skip 当通过；若按事实证实测试合同错误，按真实业务/框架语义正式修正，并执行受影响检查；
 4. 验证 Tenant 隔离、事务回滚、并发/锁/幂等和 Standalone/Multi-tenant 两 Edition；
 5. 同一领域只保留一个实现和一个事实源；禁止长期双实现、兼容桥、双写、镜像表和全库正则替换；
 6. 记录精确写集、受影响调用链、失败恢复边界和下一微批次，不把未完成迁移写成已采用能力。
@@ -193,7 +193,7 @@ return [
 - 普通 ModuleProvider 基本只剩接口映射，闭包都有明确的配置/环境/SDK/Console/Worker 理由；
 - 没有真实消费者的镜像接口、Repository 和 RuntimeFactory 已删除；
 - HTTP、CLI、Worker、Cron、安装/迁移/种子共用正式 ThinkPHP bootstrap；
-- 真实测试仍执行原有断言，未用 skip 或 `PASSED` 占位；
+- 真实测试仍执行有效的业务、安全和架构断言，未用 skip 或 `PASSED` 占位；错误测试合同须有证据、正式修正及受影响检查回执。
 - ReferenceCodes 到 Identity/Tenant/RBAC 的每个微批次都通过 Tenant 隔离、事务、并发和两 Edition 证据；
 - Core/Application 表 owner、Core 版本、Application lock、source/tree 和发布证据彼此一致。
 

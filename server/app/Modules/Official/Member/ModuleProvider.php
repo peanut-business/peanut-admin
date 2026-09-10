@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member;
 
 use app\common\composition\ModuleBindingContributor;
+use app\Modules\Official\Member\Application\MemberAdministrationService;
 use app\Modules\Official\Member\Application\MemberBalanceContractService;
 use app\Modules\Official\Member\Application\MemberIdentityContractService;
 use app\Modules\Official\Member\Application\MemberQueryService;

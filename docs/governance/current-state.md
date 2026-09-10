@@ -21,13 +21,17 @@ Owner: `product-architecture`
 | 下一步与哪些缺口有关 | [版本合同队列](../plans/application-scaffold-version-contract-queue.md)、[Storage 队列](../plans/storage-driver-extraction-queue.md)、[跨项目发布路线](../plans/product-release-operations-saas-roadmap.md) |
 | 如何开发、验证、发布和维护文档 | [执行规则](../../AGENT_EXECUTION_RULES.md)、[发布控制器](../operations/consumer-ready-control.md)、[事实来源地图](authoritative-source-map.md) |
 | 历史任务可信到什么程度 | 主审计的覆盖清单、来源任务、直接证据与已失效说明；聊天终态不替代代码或运行证明 |
+| 本次闭环任务到哪里、下一步是否获准 | [历史决定与问题证据审计](../maintenance/conversation-audit-2026-09-09.md)、[source index](../maintenance/fact-audit-2026-09-09/source-index.json) 与[问题主登记](../maintenance/runtime-convergence-issue-register-2026-09-09.json)；公开材料只保留可发布的结论。根任务的本机恢复/coverage 控制未跟踪且不构成普通 clone 前置。 |
+| 历史整改是否全部闭环 | [跨类别整改审计](../maintenance/runtime-convergence-audit-2026-09-09.md)与[问题主登记](../maintenance/runtime-convergence-issue-register-2026-09-09.json)；当前仍在内容复核和整改，历史索引计数不等于逐项语义验证 |
 
 ## 本轮事实收敛 checkpoint
 
-审计起点：Application `origin/dev@ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`、Core `origin/dev@61546084e1e07f1c41df8d2383dbbe1d77a83b16`、Application `origin/main@8c8a974642450842100b9a9a323d447c7b409b4f`。发布基线仍是 Application v3.0.14 与历史 Core Alpha.13；新统一产品目标 3.1.0 尚无发布结论。
+历史审计起点：Application `origin/dev@ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`、Core `origin/dev@61546084e1e07f1c41df8d2383dbbe1d77a83b16`、Application `origin/main@8c8a974642450842100b9a9a323d447c7b409b4f`。阶段3当前静态核查基线另为 Application `origin/dev@ab96727c8b07da64489fe152b36e483f055dcf0c`、Core `origin/dev@2ed77f38ca26472d685cfeb81674a66ba23eadb4`；两组身份不可互相替代。发布基线仍是 Application v3.0.14 与历史 Core Alpha.13；新统一产品目标 3.1.0 尚无发布结论。
 
 **Non-blocking checkpoint（2026-09-09）：**版本对象、同号规则、历史不可变性和发布依赖顺序已经固定，临时审计等待解除。独立业务开发、公开历史纠正和不依赖新包的工作可以继续；文件与运行资源仍按唯一 owner 规则处理。
 
 3.1.0 的真实发布前置仍逐项生效：Core 必须完成新固定资格与 Registry 发布，Application 才能采用新锁；双 Edition 和客户 Instance 采用继续依赖各自候选与部署证据。Core 在两次固定资格尝试中均停于供应链审计，具体失败子命令未知；九角色复核通过不能替代 Q01。达到重试停止线后，仅修复失败报告保留机制并完成新资源清理，未启动第三轮资格。解除条件是重新定位真实审计失败、完成必要修复并取得新候选 Q01 和真实 Registry 发布。Application 版本消费者实现与事实文档已准备，根合同及实际锁仍保持已发布的 3.0.14/Alpha.13；新 3.1.0 采用、完整 L2、Edition 制品和 Release 尚未执行。不能把本 checkpoint 当成新 Release 或线上升级通过。
 
 公开事实投影已发布并通过 HTTPS 正文核验；[部署回执](../maintenance/fact-audit-2026-09-09/docs-deployment-receipt.json)记录固定来源。主审计已交付明确覆盖范围、冲突裁定与历史拒绝操作处置，新产品发布保持单独的受阻状态。
+
+上述交付是此前有界事实审计，不代表两仓残留修复或企业消费级资格完成。现行执行依[逐步确认的0–6阶段方案](../plans/history-rules-product-convergence-plan-2026-09-10.md)，修订 PA-USER-STEP-GATES-20260910。阶段1–2已验收；阶段3静态核查、逐项处置和精确修复卡已补正并通过根验收；阶段4规则修正及必要补正也已通过根验收。当前证据确认 Application/Core 的 PDO/RuntimeFactory 主线仍存在；Tenant/ExecutionContext、双 Edition、Provider、消费者和浏览器行为仍有动态证据缺口。S5-T01本地实现及有界验证已由根验收，尚待根任务审定精确公开候选与后续 Git 集成；修复与资格尚未完成。不启用Goal自动续作或旧周期监督；根任务的恢复控制保留在未跟踪本机记录，不作为公开文档前置。

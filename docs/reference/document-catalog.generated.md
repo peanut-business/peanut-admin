@@ -7,6 +7,8 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 
 | Stable ID | Path | Status | Type | Owner |
 | --- | --- | --- | --- | --- |
+| `pa-convergence-plan-20260910` | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md` | `current` | `plan` | `product-architecture` |
+| `pa-conversation-audit-2026-09-09` | `docs/maintenance/conversation-audit-2026-09-09.md` | `current` | `evidence` | `conversation-audit` |
 | `pa-docs-2026-08-05-core-packages-production-claude-review-prompt` | `docs/2026-08-05-core-packages-production-claude-review-prompt.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-2026-08-05-core-packages-production-claude-review-result` | `docs/2026-08-05-core-packages-production-claude-review-RESULT.md` | `archived` | `evidence` | `release-qualification` |
 | `pa-docs-architecture-application-module-blueprint-adoption-roadmap` | `docs/architecture/application-module-blueprint/adoption-roadmap.md` | `planned` | `plan` | `architecture` |
@@ -166,7 +168,7 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-docs-plans-product-closure-execution-queue` | `docs/plans/product-closure-execution-queue.md` | `archived` | `plan` | `product-architecture` |
 | `pa-docs-plans-product-release-operations-saas-roadmap` | `docs/plans/product-release-operations-saas-roadmap.md` | `planned` | `plan` | `product-architecture` |
 | `pa-docs-plans-saas-enhancement-development-plan` | `docs/plans/saas-enhancement-development-plan.md` | `planned` | `plan` | `product-architecture` |
-| `pa-docs-plans-storage-driver-extraction-queue` | `docs/plans/storage-driver-extraction-queue.md` | `planned` | `plan` | `architecture` |
+| `pa-docs-plans-storage-driver-extraction-queue` | `docs/plans/storage-driver-extraction-queue.md` | `current` | `plan` | `architecture` |
 | `pa-docs-plugin-module-development` | `docs/plugin-module-development.md` | `current` | `reference` | `application-maintainers` |
 | `pa-docs-pr-checklist` | `docs/governance/templates/docs-impact-checklist.md` | `current` | `reference` | `documentation-architecture` |
 | `pa-docs-product-status-acceptance-gates` | `docs/product-status/acceptance-gates.md` | `archived` | `evidence` | `release-qualification` |

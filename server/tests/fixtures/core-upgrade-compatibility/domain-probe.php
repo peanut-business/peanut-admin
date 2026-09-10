@@ -10,8 +10,8 @@ use app\common\service\payment\support\PaymentCrypto;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
 
 if ($argc !== 2) {
-    echo "COMBINED-UPGRADE-DOMAIN-PROBE-FIXTURE-001 skipped: application root argument required\n";
-    exit(0);
+    fwrite(STDERR, "COMBINED-UPGRADE-DOMAIN-PROBE-FIXTURE-001 blocked: application root argument required\n");
+    exit(2);
 }
 
 $applicationRoot = realpath($argv[1]);

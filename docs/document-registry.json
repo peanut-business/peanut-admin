@@ -127,10 +127,76 @@
       "validation": "./scripts/docs-governance check"
     },
     {
+      "id": "pa-convergence-plan-20260910",
+      "path": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
+      "title": "Peanut Admin 历史决策、规则与产品闭环方案",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "accepted-execution-plan",
+      "canonical_sources": [
+        "AGENTS.md",
+        "AGENT_EXECUTION_RULES.md",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "history-rules-convergence",
+        "consumer-ready"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-conversation-audit-2026-09-09",
+      "path": "docs/maintenance/conversation-audit-2026-09-09.md",
+      "title": "Peanut Admin 历史决定与问题证据审计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "bounded-audit",
+      "canonical_sources": [
+        "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
+        "docs/maintenance/fact-audit-2026-09-09/source-index.json",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "owner": "conversation-audit",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "release"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-maintenance-runtime-convergence-audit-2026-09-09",
       "path": "docs/maintenance/runtime-convergence-audit-2026-09-09.md",
-      "title": "ThinkPHP 8 Runtime 收敛复核与执行报告",
-      "audience": ["maintainer", "architect", "operator", "ai"],
+      "title": "ThinkPHP 8 Runtime 收敛与跨类别历史整改审计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "operator",
+        "ai"
+      ],
       "content_type": "evidence",
       "authority": "bounded-audit",
       "canonical_sources": [
@@ -145,8 +211,15 @@
       ],
       "owner": "product-architecture",
       "status": "current",
-      "scope": ["application", "core"],
-      "related": ["core-thinkphp-runtime-direction-adr", "documentation", "release"],
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-thinkphp-runtime-direction-adr",
+        "documentation",
+        "release"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -228,14 +301,29 @@
       "id": "pa-docs-plans-storage-driver-extraction-queue",
       "path": "docs/plans/storage-driver-extraction-queue.md",
       "title": "Storage Driver 提取决策与后续队列",
-      "audience": ["maintainer", "architect", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
       "content_type": "plan",
       "authority": "interpretation",
-      "canonical_sources": ["docs/architecture/core-application-technical-boundary.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md"],
+      "canonical_sources": [
+        "docs/architecture/core-application-technical-boundary.md",
+        "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md",
+        "docs/product-status/releases/v3.0.14.json",
+        "server/composer.lock"
+      ],
       "owner": "architecture",
-      "status": "planned",
-      "scope": ["application"],
-      "related": ["storage", "execution-queue", "documentation"],
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "storage",
+        "execution-queue",
+        "documentation"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"

@@ -75,7 +75,7 @@ changed_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-changed-server.XXXXXX")"
 changed_php_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-changed-php.XXXXXX")"
 selected_file="$(mktemp "${TMPDIR:-/tmp}/peanut-admin-focused-tests.XXXXXX")"
 trap 'rm -f -- "$changed_file" "$changed_php_file" "$selected_file"' EXIT
-git diff --name-only "$base...HEAD" -- server plugins plugins.lock scripts/check-admin-api-permissions.php > "$changed_file"
+git diff --name-only "$base...HEAD" -- server plugins plugins.lock scripts/check-admin-api-permissions.php scripts/check-test-integrity > "$changed_file"
 
 select_test() {
   local path="$1"
@@ -83,6 +83,8 @@ select_test() {
     printf '%s\n' "$path" >> "$selected_file"
   fi
 }
+
+integrity_checker_changed=0
 
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
@@ -95,6 +97,9 @@ while IFS= read -r path; do
   fi
 
   case "$path" in
+    scripts/check-test-integrity)
+      integrity_checker_changed=1
+      ;;
     server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/app/Modules/Official/*|server/route/official_*.php|plugins/*|plugins.lock|server/config/modules.php|server/resources/schemas/plugin.schema.json)
       select_test server/tests/Productization/PluginArtifactContractTest.php
       select_test server/tests/Productization/PluginModuleContractTest.php
@@ -151,6 +156,10 @@ while IFS= read -r path; do
     select_test server/tests/Productization/OAuthChannelHostTest.php
   fi
 done < "$changed_file"
+
+if [[ "$integrity_checker_changed" == 1 ]]; then
+  echo 'Focused server gates: check-test-integrity changed; always-on integrity gate executed'
+fi
 
 while IFS= read -r path; do
   [[ -n "$path" ]] && php -l "$path"
