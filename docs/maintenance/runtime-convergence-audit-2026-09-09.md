@@ -28,6 +28,13 @@ Runner真实合同与inventory检查exit0，修正必需版本文件后的Editio
 处理，不能标通过。CR01为开发修复已验收、消费验证部分完成；没有发布、部署或完整资格。下一步为现行方案§12.7，
 不再回扫历史或重做C01。原始收据保留于私有检查点，公开问题登记保存提交、结果及摘要身份。
 
+CR02已在Core Development模式实际定位并修复供应链根因：`js-yaml@4.3.1`经
+`openapi-typescript → @redocly/openapi-core`触发高危公告，根锁已受控升级至4.3.2；pnpm高危审计、许可证、
+secret scan与供应链PHPUnit均通过。Application Alpha.13直接消费者对照Core
+`a949a777..2ed77f38`显示仅PHP/Web包版本常量与manifest版本改变，PSR-4 roots、PHP requirements和Web
+exports未变，故没有需要补写的实际采用者。该结论仅覆盖静态兼容与Development供应链修复；3.1.0候选Q01/D05、
+Registry实包、应用锁、V2身份、生成与旧实例采用输入仍未完成，不能发布或移动下游锁。
+
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
 
 CQ-AUDIT-01最初只在 App `b3448a4b781a839f1c33bd48825cae1ee913cec3` / Core `2ed77f38ca26472d685cfeb81674a66ba23eadb4` 做静态核查，并按CQ-CORR-01..05修订事实源和任务书；该静态补正已获根验收。其后获批C01在独立App worktree实施并通过A/B/C技术验收，仍不表示完整资格、发布或部署完成。
