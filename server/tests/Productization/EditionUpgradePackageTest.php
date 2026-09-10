@@ -113,6 +113,16 @@ try {
         ],
         'files' => $files,
     ]);
+    editionUpgradeJson($project . '/release-versions.json', [
+        'schema_version' => 2,
+        'protocol' => 'peanut.release-versions.v2',
+        'source_product_version' => '3.0.11',
+        'instance_version' => '1.4.0',
+        'scaffold_template' => '3.0.11',
+        'generated_instance_default' => '0.1.0',
+        'core_php' => '3.0.11',
+        'core_web' => '3.0.11',
+    ]);
 
     $targetContents = [
         'managed.txt' => "new managed\n",
