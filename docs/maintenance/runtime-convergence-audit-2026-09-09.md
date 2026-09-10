@@ -2,11 +2,17 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01与CQ补正保留；C01-A/B/C及同批派生身份已通过根验收并集成dev；后续Runtime整改未完成）
+Status: `current`（T01、CQ与C01已验收；消费优先路线已批准，CR01开始安排；内部Runtime整改与新发行资格未完成）
 
 Owner: `product-architecture`
 
 Reviewed at: 2026-09-11（CQ-AUDIT-01静态核查及C01聚焦实现；未运行完整产品资格）
+
+## 当前消费优先安排（2026-09-11）
+
+用户已批准由根安排沿[方案§12.6](../plans/history-rules-product-convergence-plan-2026-09-10.md)推进：CR01消费边界/生成物修正→CR02协调发行→CR03独立安装与升级验收→CR04交付。C02–C12非消费阻塞部分后置，并非已完成或放弃；以下CQ/C01结论保留为已验收输入，不重复派发。具体状态统一在主登记`consumer_delivery`，不另建审计账本。
+
+有界直接核验（Application `464dee420e7203deca9281da8584d07f0f8401b1`）：CRUD Generator已输出services，但`ModuleScaffoldGenerator::BACKEND_FILES`仍生成Application空骨架；`scripts/build-application-template-inventory::classification()`将大量官方Host/Provider/Service设app-owned，而升级器只更新managed/generated-managed，因此“内部实现”不等于自动升级保证。现有签名/三方冲突/客户文件保护应复用，不新建Shield或兼容桥。当前prepare只读检查exit1/blocked，主因下一协调候选仍未采用V2及同号Core，连带空目标/CHANGELOG检查失败；不是三个独立Runtime缺陷。v3.0.13/v3.0.14已登记双Edition制品，正式旧实例仍需真实验签和同Edition升级演练。本轮未运行生成/数据库/资格或发布。
 
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
 

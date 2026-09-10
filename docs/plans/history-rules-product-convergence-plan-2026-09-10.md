@@ -4,7 +4,7 @@ Document ID: `pa-convergence-plan-20260910`
 
 Control revision: `PA-USER-STEP-GATES-20260910`
 
-Status: `current`（阶段0–4、T01及CQ最终239项补正已验收；现行§12.4 C01-A/B/C及同批派生身份已通过根验收并集成至dev；C02及以后未获批）
+Status: `current`（阶段0–4、T01、CQ与C01保留已验收成果；用户已批准§12.6消费优先路线，先实施CR01；C02–C12非消费阻塞部分后置）
 
 Updated: 2026-09-11（Asia/Shanghai）
 
@@ -15,6 +15,8 @@ Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段�
 在当前明确批准的产品支持范围内，将 Peanut Admin Application/Core 收敛为真实可用、可交付的同源 Standalone/Multi-tenant 企业消费级脚手架，并把反复错误的原因落实为可核验的防复发措施。
 
 这包含三个成果：有效决定、历史经验和知识被正确采用；当前产品遗留得到实际处置；规则、代码、测试、文档与真实交付一致。不是读完所有聊天、把29项标成完成或写完报告。
+
+2026-09-11用户在审阅消费与升级风险评估后明确批准“按你的建议开始向后推进，推进方式由你安排”。近期交付改为：先修会扩散到客户源码或破坏升级的缺陷，完成协调版本、真实安装/升级及固定候选资格，再交付可消费发行；不再要求C02–C12所有内部架构债全部消失后才消费。总体ThinkPHP目标不取消，未完成项不标完成。24–48小时仅为冲刺目标，不是未经验证的发布承诺。唯一当前路线与实施包见§12.6。
 
 阶段3、4此前批准范围的审计/规则成果保留，但2026-09-11的服务目录与自定义装配纠偏证明其代码层覆盖不充分，不能再概括为所有实现质量问题已查清。S5-T01已确认、实施并完成有界补正，本地实现及有界验证已获根验收并合入dev；不由文档验收推定所有代码迁移、发布或部署获批。
 
@@ -31,8 +33,8 @@ Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段�
 | 2 决定、经验与知识 | 分清有效要求、旧方向、原因推断和可用方案 | 已收敛10决定、14经验、11知识、29待核验事项 | 已完成，不等于当前产品通过 |
 | 3 查现状、补遗漏、排修复 | 以目标/决定/经验及能力账本核两仓；29项不是上限 | 需求覆盖、当前证据、残留处置、可直接批准的修复批次、依赖与时间估算 | CQ-CORR-01..05及最终239项补正已验收；仅静态审计/排程 |
 | 4 落实防复发规则 | 将已确认原因转为最小有效约束；复用现有规则/检查 | 旧规则移除，新要求落到实际入口与核验办法；说明已生效、仍待实现和不能硬拦截的边界 | 当前入口已同步；C01生成器/路径/失败传播门禁已随批集成 |
-| 5 分批实际修复 | 按真实领域和依赖修代码、测试及文档 | 每批实现/调用者/旧路径同步处理，最低充分验证、同步登记及批准的集成交付 | C01-A/B/C及派生身份已验收并集成dev；等待下一批独立授权 |
-| 6 独立验收与交付 | 验证产品与防复发措施，不接受报告代替运行 | 固定候选、同源双Edition、真实消费路径、支持范围内厂商资格及交付证据 | 前置完成后单独确认 |
+| 5 分批实际修复 | 优先修消费、升级与发行阻塞，再继续内部TP8收敛 | CR01消费边界与生成物；CR02协调版本/依赖/身份；其余原ID保留 | C01已验收；CR01获准，按§12.6连续推进 |
+| 6 独立验收与交付 | 验证产品与防复发措施，不接受报告代替运行 | CR03同源双Edition安装/升级与固定资格；CR04对应发行和文档交付 | 根核前置、具体候选/资源/写集后交独立任务；不因路线批准跳过技术Gate |
 
 每个步骤的方案必须有目标、输入、范围/排除项、owner、模型/推理、写集/资源、依赖、检查、产物和停止点。按领域或交付物划定有意义的步骤，不把单个命令或文件拆成反复请示；批准范围内低风险可逆细节自主处理。批准阶段方向不等于批准所有未知后续步骤。
 
@@ -86,7 +88,9 @@ Owner: 根任务 `01a07fd6-296d-7cf2-8434-77c57925fc14` 持有总Goal、阶段�
 
 ### 7.1 最新阶段确认与十分钟默认确认
 
-**2026-09-11最新明确授权优先**：用户在引用《批准持续整改》后明确要求“按他说的做”，批准先完成现有`service/services`定点补正并根验收，随后立即进入本方案修订C01，不再等待第二次同范围确认。C01-A模块装配、C01-B首个Generator服务组织与相关生成/测试/门禁、C01-C已定义的OpsModule切片组成一个批准批次，按技术依赖连续推进至根验收、提交并推送dev；小步实现、聚焦验证、必要补正和本批技术回收不再分别索取用户批准。C01-B尚未填实的其他服务单元、Core C02及以后批次、发布/部署和范围扩张不在此次直接施工授权内，跨批仍核前批验收与下一批完整范围。已验收内容不重复全审；未通过的239项分类仅定点修正，不能把路径清单齐全当职责判定正确。本授权不自动重建Goal、周期监督或其他后台调度。
+**当前授权（2026-09-11消费优先）**：用户明确批准§12.6路线并将推进方式交由根安排。CR01–CR04按根技术验收及真实前置有序衔接，已写明范围内不反复索取同意；每个新阶段由新的独立任务承担，必要补正复用原任务。每次移交前根仍须填实并登记实际写集、候选、资源、模型/推理和验收条件，不能把路线批准当成未知操作的空白授权。只将支持范围缩减、已发布合同的额外破坏性改变、客户生产数据/真实交易或其他新业务选择交用户。原十分钟机制仅适用于本路线以外尚未批准的任务；本次不创建确认提醒、Goal或周期监督。
+
+历史C01有界授权已消费并完成：§12.4及主登记保留其实现/验收证据，不再作为待启动指令。当前消费优先授权以上段及§12.6为准，不能恢复旧C01执行者或未批准的整批内部迁移。
 
 用户2026-09-10明确同意开始按阶段推进：每个新阶段使用新独立任务；根任务回收验收，不合格由原任务按原编号补正，通过后先描述下一阶段的完整执行任务。阶段3的§10/§14任务书本轮已明确批准，不等待十分钟。
 
@@ -271,7 +275,7 @@ Proposal ID：`PA-S4-PROPOSAL-20260910-01`。状态：已由 `01a08b02-5bc1-7851
 
 进入条件：阶段3修复清单及阶段4相关规则已验收，用户确认这一批的实际行为、文件、资源和验证。每批一个实施owner；常规明确补丁Luna/medium，跨模块实现Terra/medium，安全/事务/公共API难点才聚焦升级。不能因为“整个项目重要”让全部机械步骤默认高档。
 
-具体S5批次由S3-10填实；以下是不可丢失的顺序约束，不是提前生成的缺陷清单：
+具体S5批次由S3-10填实；消费前工作优先按§12.6，以下是内部Runtime迁移的依赖顺序，不再作为首次消费的整批前置，也不是提前生成的缺陷清单：
 
 1. 先正式修正会使后续验证失真的测试/fixture/退出码和直接前置；区分正常条件跳过、错误测试合同及假通过，保留有效断言。没有当前问题证据的历史脚本不重复修。
 2. TP8主线严格沿ADR：ModuleProvider简化 → Core ThinkPHP数据边界 → ReferenceCodes → Settings → ArtifactRevision → EntitlementQuota/Workflow → Notification → TaskJob → ImportExport → FileMedia → DataPermission → Kernel Identity/Tenant/RBAC。
@@ -450,9 +454,60 @@ C02→C12既有顺序和单实现PDO repository/factory归属保持，不复制�
 
 **检查与交付停止点**：完成文档后运行一次`./scripts/docs-governance check`、`git diff --check`及修改JSON的解析/唯一ID/引用/方案SHA检查，核对两仓无新增PHP/SQL/前端/业务测试/lock改动；不运行产品全套测试。回报覆盖清单、原位结果位置、实际diff、验证、未查明边界及可直接批准的下一任务书，回写检查点并交还writer给根，停止等待验收。禁止本步创建Goal/定时监督、施工、发布、部署、清理或自行启动后续批次。中断/压缩后先核当前owner、已回收CQ编号、结果及精确续读点，不盲目重派。工期在首轮边界/文件规模明确后给区间及依据；不沿用旧C01的45–90分钟估算。
 
+### 12.6 当前消费优先路线与CR01实施任务书
+
+授权ID：`PA-CONSUMER-FIRST-20260911`。用户已明确批准，不等待确认计时器。C01实现/收尾已在`464dee420e7203deca9281da8584d07f0f8401b1`（tree `74c91e26dda41fecde69e987dc39d3892f84e304`）交付；Core读取基线`2ed77f38ca26472d685cfeb81674a66ba23eadb4`。不重做历史审计、239项分类或已验收C01。以下状态是计划/授权，不是资格通过。
+
+#### 路线、依赖与交付
+
+| 批次 | 必需交付 | 依赖与推进 |
+| --- | --- | --- |
+| CR01 消费边界与生成物修正 | 新Module不再引导Application/service旧组织；官方Host/Provider/Core依赖和文件ownership有逐路径处置，受管升级与客户改动保护可验证；现有检查/文档同步 | 立即由一个新实施任务执行；根验收后交付dev。不是再次提交审计建议 |
+| CR02 协调发行准备 | 查明并正式处理Core已有供应链失败及当前依赖风险；实际同号Core PHP/Web包和应用锁；产品/实例V2、inventory、Module lock、制品及资格输入一致 | 不依赖CR01的既有风险/Registry只读定位可并行；发布Core/锁定应用前根核兼容面与干净候选。沿既有3.1.0目标核版本可用性；已占用则按现行版本合同裁定，不改旧包 |
+| CR03 独立消费与升级验收 | 两Edition clean create/install/bootstrap/开发CRUD；正式旧实例→新候选签名升级、客户定制/冲突/失败保护、依赖/迁移/数据；固定候选P0-E及支持范围内必要增补 | CR01/02实做与聚焦通过后，由独立验收任务执行。不能把源码静态检查或八组fresh-only资格冒称完整实例升级 |
+| CR04 发行与消费交付 | 仅发布通过资格的同一身份；同步公开消费/升级文档站和已验证支持矩阵；给下游精确制品、升级步骤、已知限制 | 根验收CR03后执行既有发布门禁；不从此推导客户生产部署、真实交易或缩减厂商支持许可 |
+
+延期规则：原C02–C12和services子单元保留原ID、依赖和目标。仅在当前证据证明不传播错误开发模式、不暴露即将删除的消费合同、不破坏安装/升级及安全数据语义时，可在原问题登记标为消费后处理。不能仅因路径名为internal/PDO就延期；确认的安全、Tenant/RBAC、事务/并发、数据损坏、测试假绿及有效厂商功能缺陷仍阻塞相应交付。不复用新“P0清单”取代原账本。
+
+#### CR01输入与执行责任
+
+- 总裁定与跨阶段调度为根任务；实施owner采用Terra/medium，清晰目录/模板/引用核对和补丁可交Luna/low，复杂升级语义由Terra/medium，聚焦失败或安全难点才升级Sol或GPT-6。子智能体最多20且服从实际容量，不递归派发、不改共同账本，不为用满容量制造任务。
+- 一个新独立任务在其独立worktree从最新已登记dev接手；首次核基线与未提交差异，禁止在主仓main或其他任务树直接施工。80f6本机恢复材料不复制进新源码树，不提交。Core两份已验收Stage4文档保持原差异，CR01只读Core；CR02有独立owner时再交接集成。
+- 先读本节、AGENTS/适用执行规则、原问题登记`consumer_delivery`及相关既有CQ分类。代码关系按CodeGraph规则；不重新扫描全部源码。实施开始先回报实际工作根、commit/tree、owner与第一动作，然后直接做CR01-A。读取、版本恢复和检查点不是交付本身。
+- 复用上一轮直接证据：`GeneratorRenderService`已输出复数services；`ModuleScaffoldGenerator::BACKEND_FILES`仍含`Application/.gitkeep`；inventory builder `classification()`按前缀把大量官方app源码设app-owned；升级器只更新managed/generated-managed并保护app-owned。v3.0.13/v3.0.14已登记Edition制品；源V1版本合同有规范化路径，正式包仍要求V2 application manifest、同Edition及支持源版本。不得凭历史tag断言新升级通过。
+
+#### CR01-A：修正新模块的开发样板
+
+目标：按已确认的服务目录方向，Module业务服务使用复数`Services`（Module子目录沿用PascalCase，普通App服务目录用`services`）；原蓝图/指南冲突说明同期纠正，不能再生成`Application`骨架、旧service说明或教用户手工PDO/Factory装配。保留Contracts、Model、Http、Resources、生命周期和真实SDK/Driver边界。不是把所有现存官方Module目录一次搬完。
+
+精确起始写集：`server/app/common/service/module/ModuleScaffoldGenerator.php`、`server/resources/module-scaffold/`中受影响stub、`server/tests/Productization/ModuleCreateCommandTest.php`及其实际已有同目录合同、`scripts/check-thinkphp-architecture`/`scripts/ci-server-check.sh`的直接路径选择、`docs/plugin-module-development.md`、`docs/architecture/application-module-blueprint/coding-standards.md`、`docs-site/guide/application-module-lifecycle.md`中冲突说明。无变化项不机械改动。C01 Generator实现不重构；仅补实际传播旧规则的关联。
+
+最低充分验证：改动PHP lint；既有ModuleCreateCommandTest生成/Composer/前端过程；现有architecture检查。运行前核其真实副作用和资源用途，使用本worktree的依赖与登记PHP/Node；必要的开发工具用途/临时输出路径可按事实补项目资源登记后claim，不借用其他项目或其他worktree依赖。测试必须断言实际生成Services及旧路径缺席，不删原有效断言；不以静态grep冒充生成运行结果。
+
+#### CR01-B：明确可升级的真实文件边界并落实
+
+起始读/写面：`scripts/build-application-template-inventory`、`server/app/common/service/scaffold/ApplicationCreator.php`、`scripts/scaffold-runtime/ScaffoldUpgradeRunner.php`/`EditionUpgradePackage.php`/`ScaffoldManifest.php`、`server/tests/Productization/CreateApplicationTest.php`/`ScaffoldUpgradeRunnerTest.php`/`EditionUpgradePackageTest.php`；说明使用`docs/create-application.md`、`docs/scaffold-upgrade.md`及已有公开对应页。只有实际必要的文件才改，不先造新controller/Shield/Repository/adapter。
+
+执行顺序：
+
+1. 以当前inventory与builder列出消费必需的官方Host/bootstrap、ModuleProvider及其Core接口依赖闭包；每条记录源路径、是否复制给实例、默认owner、未来变更怎样采用、客户扩展点。只针对这些边界补源码，不重新盘点所有239项。对仍为app-owned的官方代码，不能用“标internal”代替采用方案。
+2. 把逐路径处置和必要直接调用者写回原登记`consumer_delivery.cr01.ownership`，送根做一次技术裁定；该裁定不是新增用户确认，CR01-A等不冲突工作可继续。根核：平台共同代码才能受管；业务Module/页面、客户配置/秘密、业务Schema/迁移保持app-owned；不得整体反转`server/app/**`或用前缀掩盖未知owner。官方独立Package生命周期与scaffold写集不得相互覆盖。
+3. 根接受后在同一批正式修改builder/确有缺口的执行器/入口与已有测试。若旧实例没有新受管路径的baseline，必须明确冲突/人工采用入口并在任何写入前阻断，不能凭新classification强行接管。保留app-owned摘要、三方冲突、验签、摘要重验、migration链和同Edition检查。不能新增兼容桥、双写、复制框架功能或宣称任意未来版本零重构。
+4. 用现有生成与升级测试证明：新应用生成包含正确目标与baseline；本地定制保留；双方修改阻断；app-owned/秘密不被覆盖；旧V1源合同到目标V2不丢实例版本；缺baseline不偷改。新增断言优先写入既有合同，不新建重复测试体系。真实签名制品/数据库演练归CR03，不在迭代中反复跑全资格。
+
+`scaffold/application-template-inventory.json`及Plugin派生元数据只有其正式builder/Writer生成；inventory须绑定真实源码冻结身份。日常修改不改写`scaffold/releases/v*`历史制品；若strict --check需要尚未准备的协调版本，登记给CR02，不改成跳过成功。完整干净生成验证按实际builder所需身份完成，不能把陈旧inventory的条目当成新生成已成功。
+
+#### CR01交付、验收与恢复
+
+唯一正式登记writer为实施owner；回报根前停止写相关文件。新增结果只放原`docs/maintenance/runtime-convergence-issue-register-2026-09-09.json#consumer_delivery`、原同名人类审计报告和本节状态，不另建总审计报告。新增问题复用STRUCTURE/COMPOSITION/BOOTSTRAP/版本/消费ID，原编号必要补正，不回扫历史。直接冲突current文档原位更正；文档索引/registry/impact-map与公开投影仅更新真实影响，历史证据保持历史身份。
+
+完成实现和受影响既有检查后，提交精确diff、命令退出码/有效断言、未验部分及其真实依赖，由根做最小充分复核；按Git规则精确提交→本地dev整合→推送→核对远端并清理本任务分支/worktree。只在依赖身份/发行前置确实使某个验证不可运行时，给出具体受阻项及可交付部分，不因一个Gate让独立修复停摆；不把部分完成标为全部完成。
+
+开始、实质变化、技术裁定、完成/阻塞时更新原检查点当前owner、任务ID、已完成动作、结果位置和精确恢复点；消息/压缩后先核它，不重复派发。完成后向根回报并交还writer，根立即进入验收/下一已批准路线任务准备，不重新索取同范围同意。只有新业务选择或危险未知副作用才请用户。无Goal、定时器或隐藏自动任务；不把24–48小时当作降低门禁的理由。
+
 ## 13. 阶段6任务书：独立验收与交付
 
-进入条件：已批准必须交付的修复批次完成并集成，阻塞产品缺陷已闭环；用户确认验收候选、支持范围、资源、完整检查矩阵和发布/部署范围。建议独立owner Terra/medium，身份/回执核对Luna/low，身份隔离/安全高风险复核按需升级；复核者不以自己先前修复的总结代替证据。
+进入条件：§12.6消费前必须项完成并集成，阻塞产品缺陷已闭环；根依据当前用户授权核定具体验收候选、资源和完整矩阵，未决支持范围/危险外部动作仍交用户。未影响消费的内部C02–C12不再作为整体前置。建议独立owner Terra/medium，身份/回执核对Luna/low，身份隔离/安全高风险复核按需升级；复核者不以自己先前修复的总结代替证据。
 
 | ID | 工作 | 必需结果/停止点 |
 | --- | --- | --- |

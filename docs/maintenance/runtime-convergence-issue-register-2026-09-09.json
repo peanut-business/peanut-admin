@@ -2625,6 +2625,27 @@
     "limitations": "No positive generated-app probe, DB, Provider, full qualification, Runtime migration, release or deployment; Core source unchanged. Scanner coverage is token-pattern based, not full control-flow or semantic assertion proof.",
     "next_action": "T01 closed; no redispatch. Root presents S5-C01 section12.4 for section7.1 confirmation before one new independent execution task. C01 is not yet authorized."
   },
+  "consumer_delivery": {
+    "authorization_id": "PA-CONSUMER-FIRST-20260911",
+    "status": "approved-cr01-dispatch-preparation",
+    "scope": "消费前阻塞修复、协调发行、同源双Edition独立安装升级资格与对应交付；不要求内部C02-C12全部完成后才消费",
+    "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#126-当前消费优先路线与cr01实施任务书",
+    "baseline": {"application": "464dee420e7203deca9281da8584d07f0f8401b1", "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4"},
+    "cr01": {
+      "status": "待领取",
+      "owner_role": "independent implementation task; Terra/medium",
+      "issue_refs": ["STRUCTURE-001", "COMPOSITION-001", "BOOTSTRAP-001", "DCS-CONSUMPTION-001"],
+      "A": "Module生成样板及其现有测试/文档使用复数Services；不重复C01的CRUD Generator修复",
+      "B": "官方Host/Provider/Core依赖、inventory ownership和升级边界逐路径裁定后实际落实；保护业务app-owned/秘密/三方冲突",
+      "ownership": {"status": "待定点实现前核对及根技术裁定", "items": []},
+      "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
+    },
+    "cr02": {"status": "待领取", "depends_on": ["CR01消费边界接受后才能采用潜在变更Core合同"], "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"], "deliverable": "当前供应链真实问题处理、同号Core实包/应用锁、V2身份及新候选准备；可独立只读定位不阻塞CR01"},
+    "cr03": {"status": "待领取", "depends_on": ["CR01", "CR02"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格，独立于实施者验收"},
+    "cr04": {"status": "待领取", "depends_on": ["CR03"], "deliverable": "仅发布真实通过候选及公开消费/升级文档；不自动部署客户生产"},
+    "deferred_runtime": "C02-C12和其余services原ID/顺序保留；只有证明不影响消费/升级/安全的项可后置，不能整批标完成",
+    "limits": "不重扫历史、不造兼容桥、不批量把业务改managed、不弱化测试或厂商有效支持；24-48小时不是通过承诺；根核前置后按用户授权安排衔接，无Goal/定时器"
+  },
   "stage5_c01_execution": {
     "status": "completed-root-accepted-and-pushed",
     "proposal_id": "PA-S5-C01-REVISED-PROPOSAL-20260911-02",
