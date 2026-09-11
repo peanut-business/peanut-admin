@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01、CQ、C01、CR01已验收；CR02-U实现与聚焦验证已复核接受、交付已集成`dev@c5fea410`；CR03资格与内部Runtime整改未开始）
+Status: `current`（T01、CQ、C01、CR01及CR02开发交付已验收；CR03执行合同已补齐、进入独立资格准备；尚无App资格或发布结论）
 
 Owner: `product-architecture`
 
@@ -48,6 +48,12 @@ CR03的可执行输入与缺口统一记录在主登记`consumer_delivery.cr02.h
 `managed_adoption_required`；CR02-U已提供受支持的显式owner-adoption plan/apply/recover，并让候选签名包
 绑定真实v3.0.14旧基线。CR03仍须绑定其最终候选、正式签名凭据/制品和独立资源。现有P0-E八组覆盖生成、fresh、Module、compose及两Edition
 浏览器组，不覆盖真实旧实例升级、全部真实Provider操作或Web/Platform/PC/UniApp完整业务矩阵，不能由CR02结果推定。
+
+CR03任务书现已在[方案§12.8](../plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书)落地：
+先补实际旧实例/数据恢复与四端场景、隔离资源合同，再经dev→main PR固定候选，分别执行八组P0-E与增补资格。
+输入为`ced1fa56`，最终main身份尚未产生，不预填资格结果。COS只有acceptance桶、仍缺凭据绑定，OSS/七牛及
+支付/短信/OAuth未有完整外部测试资源；这些只阻塞对应厂商真实资格，不删除厂商支持，也不阻塞独立安装升级准备。
+本轮没有运行产品Gate或操作客户环境；具体队列、模型、资源、停止点及输出位置见原问题登记`consumer_delivery.cr03`。
 
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
 
