@@ -2652,10 +2652,10 @@
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
     "cr02": {
-      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U实现21798b2c及聚焦验证已复核接受，交付已集成dev@c5fea410，CR03未启动",
+      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U实现21798b2c及聚焦验证已复核接受，交付已集成dev@c5fea410；CR03-01正在同一独立任务完成就绪补正，尚未冻结或运行资格",
       "depends_on": [
         "CR01开发修复已集成",
-        "CR03须由根另行绑定固定候选、资源、真实旧实例与缺失采用/签名输入"
+        "CR03-01补正通过根技术验收后，仍须由根绑定固定候选、资源、真实旧实例与采用/签名输入"
       ],
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书",
       "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
@@ -2801,7 +2801,7 @@
       "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
     "cr03": {
-      "status": "CR03-01已完成，待根冻结技术验收；App资格未运行",
+      "status": "CR03-01根复核部分通过，原任务正在集中补正真实lease、生成实例、升级命令和身份输入；App资格未运行",
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书",
       "authorization_id": "PA-CONSUMER-FIRST-20260911",
       "depends_on": ["CR01及CR02开发交付已验收", "CR03-01独立资源/资格场景就绪后才允许冻结"],
@@ -2811,8 +2811,9 @@
       "candidate_rule": "就绪后经dev到main PR及根技术验收，以实际origin/main完整commit/tree冻结；不得预填未来SHA或把prepare ready当qualified",
       "model": "gpt-5.6-terra",
       "reasoning": "medium",
+      "current_correction_model": "gpt-5.6-sol / medium，仅用于根确认的lease/生成实例/跨阶段命令难点；补正回根后常规CR03恢复Terra/medium",
       "queue": [
-        {"id": "CR03-01", "status": "待领取", "scope": "就绪、旧实例增补/四端场景和隔离资源合同；不跑完整资格"},
+        {"id": "CR03-01", "status": "执行中：根部分验收后的同任务集中补正", "scope": "就绪、旧实例增补/四端场景和隔离资源合同；不跑完整资格"},
         {"id": "CR03-02", "status": "待领取", "depends_on": ["CR03-01", "根冻结技术验收"], "scope": "dev-main PR与真实main候选冻结"},
         {"id": "CR03-03", "status": "待领取", "depends_on": ["CR03-02"], "scope": "同候选P0-E八组及零残留"},
         {"id": "CR03-04", "status": "待领取", "depends_on": ["CR03-02"], "scope": "正式key签名同Edition旧实例升级/依赖/数据/失败恢复；独立租约"},
@@ -2822,17 +2823,20 @@
       "resource_binding": {
         "p0e": "peanut-admin-p0e-mysql84-gate; development; 192.168.192.2:20183; container host.docker.internal:20189; HTTP20190/Docs20186; run cr03a0911; lease p0e-runtime-cr03a0911",
         "signing": "peanut-admin-edition-upgrade-release-signing-key; key ID peanut-admin-release-2026-01; credentials only from registry; no ephemeral key",
-        "supplement": "CR03-01先登记peanut-admin-consumer-upgrade-mysql84-gate与环境/租约合同；同一mac-14物理分配、独立peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>；run cr03u0911；未登记/claim不得连接",
+        "supplement": "CR03-01先登记peanut-admin-consumer-upgrade-mysql84-gate与环境/租约合同；同一mac-14物理分配、独立peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>；cr03u0911仅保留给未来最终候选，Development补正不得使用；未登记/claim不得连接",
         "paths": "新执行树output/p0e-cr03a0911与output/cr03-upgrade-cr03u0911；登记缓存根下同名目录；实例/备份仅在增补缓存内；开始前核同名资源不存在，不复用旧run"
       },
       "cr03_01_execution": {
         "owner": "CR03 executor task 01a08e89-4065-7c91-ac27-6bf4fc36c99d",
-        "status": "completed-awaiting-root-technical-acceptance",
+        "status": "partial-accepted-bounded-correction-in-progress",
         "narrow_write_set": [
           "resources/project-resources.json#peanut-admin-consumer-upgrade-mysql84-gate",
           "server/tests/fixtures/consumer-upgrade-qualification/matrix.json",
           "scripts/consumer-upgrade-qualification",
-          "docs/p0e-runtime-qualification.md"
+          "docs/p0e-runtime-qualification.md",
+          "server/database/environment-guard.php及其直接Productization合同",
+          "实际生成inventory/scaffold严格身份输入及必要未发布3.1.0派生摘要",
+          "本方案、原报告/登记、AGENTS/README/current-state及必要文档impact"
         ],
         "entry": "scripts/consumer-upgrade-qualification plan",
         "readiness_receipts": {
@@ -2847,7 +2851,7 @@
           "web": "pnpm audit: no high or critical event",
           "uniapp": "npm audit reports Vite 5.2.8 high aggregate; this matches the existing controlled DCloud/Vite exception in capability ledger, with no lock change and expiry 2026-10-09; it is not a clean-security claim or a reason to weaken future qualification"
         },
-        "boundary": "plan mode has no lease, download, signing, database connection, instance write or cleanup; CR03-02 remains blocked until root accepts this preparation and freezes a main candidate"
+        "boundary": "plan mode has no final lease, signing, database connection, instance write or cleanup; Development可在登记、健康和独立非final lease后做被批准的最小相邻验证。CR03-02仍阻塞到根验收本次补正；prepare ready不等于seal或qualified"
       },
       "external_blockers": [
         "COS有acceptance桶但master-key和测试账户仍待绑定；OSS/七牛无完整测试资源",

@@ -143,20 +143,31 @@ def main() -> int:
         database = names[scenario]
         instance = instance_roots[scenario]
         backup = backup_roots[scenario]
+        package = f"<exact-signed-3.1.0-{data['edition']}-package>"
+        upgrader = f"{package}/upgrader/scripts/scaffold-upgrade"
+        adoption_plan = instance / ".peanut/upgrades/plans/<adoption-plan_path-from-stdout>"
+        upgrade_plan = instance / ".peanut/upgrades/plans/<upgrade-plan_path-from-stdout>"
         remote = ["/usr/bin/ssh", "-o", "BatchMode=yes", "mac-14", "/usr/local/bin/docker", "exec", "peanut-admin-mysql84-development", "/bin/sh", "-lc"]
-        mysql_environment = {
+        instance_environment = {
             "APP_ENV": "development", "PEANUT_DEPLOYMENT_TARGET": "local-development",
             "PEANUT_DATABASE_RESOURCE_ID": f"peanut-admin-cr03-{args.run_id}-{scenario}-mysql84",
             "PEANUT_DATABASE_CONSUMER": "host", "PEANUT_DATABASE_ENDPOINT_ID": f"peanut-admin-cr03-{args.run_id}-{scenario}-mysql84-host",
             "DB_HOST": "192.168.192.2", "DB_PORT": "20183", "DB_NAME": database,
+            "DEPLOYMENT_MODE": data["edition"],
+        }
+        outer_guard_environment = {
+            "APP_ENV": "development", "PEANUT_DEPLOYMENT_TARGET": "local-development",
+            "PEANUT_DATABASE_RESOURCE_ID": RESOURCE_ID, "PEANUT_DATABASE_CONSUMER": "host",
+            "PEANUT_DATABASE_ENDPOINT_ID": "peanut-admin-consumer-upgrade-mysql84-gate-host-direct",
+            "DB_HOST": "192.168.192.2", "DB_PORT": "20183", "DB_NAME": database,
             "DEPLOYMENT_MODE": data["edition"], "PEANUT_RESOURCE_LEASE_PROOF": str(proof_dir),
         }
         instance_database_resource = {
-            "stable_resource_id": mysql_environment["PEANUT_DATABASE_RESOURCE_ID"],
+            "stable_resource_id": instance_environment["PEANUT_DATABASE_RESOURCE_ID"],
             "purpose": f"CR03 {scenario} generated instance database",
             "environments": ["development", "local-production-preview"], "owner": "active CR03 consumer-upgrade lease owner",
             "service_type": "mysql", "version": "8.4.10", "database": database, "schema": "pa_ table prefix", "namespace": database,
-            "upstream_endpoint": {"endpoint_id": mysql_environment["PEANUT_DATABASE_ENDPOINT_ID"], "host": "192.168.192.2", "port": 20183, "consumers": ["host"], "network_scope": "private direct-link LAN"},
+            "upstream_endpoint": {"endpoint_id": instance_environment["PEANUT_DATABASE_ENDPOINT_ID"], "host": "192.168.192.2", "port": 20183, "consumers": ["host"], "network_scope": "private direct-link LAN"},
             "container_endpoint": {"endpoint_id": f"peanut-admin-cr03-{args.run_id}-{scenario}-mysql84-container", "host": "192.168.192.2", "port": 20183, "consumers": ["container"], "network_scope": "Docker Desktop direct route to private direct-link LAN"},
             "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env", "data_source": "lease-owned synthetic formal-v3.0.14 Edition instance",
             "freshness_requirement": "exact database is absent before installation and remains bound to this scenario until cleanup", "health_check": "credential-backed ping, SELECT DATABASE(), then instance environment-guard.php --current",
@@ -166,22 +177,43 @@ def main() -> int:
             "serial_http_order": list(scenarios).index(scenario) + 1,
             "instance_root": str(instance), "database": database, "local_object_prefix": object_prefixes[scenario],
             "instance_database_resource": instance_database_resource,
-            "host_install_environment": mysql_environment,
-            "container_runtime_environment_overrides": {**mysql_environment, "APP_ENV": "production", "PEANUT_DEPLOYMENT_TARGET": "local-production-preview", "PEANUT_DATABASE_CONSUMER": "container", "PEANUT_DATABASE_ENDPOINT_ID": instance_database_resource["container_endpoint"]["endpoint_id"], "HTTP_PORT": "20190"},
+            "outer_source_guard": {
+                "cwd": str(ROOT),
+                "environment": outer_guard_environment,
+                "credential_ref": resource["credential_ref"],
+                "argv": ["/opt/homebrew/bin/php", "-r", f"require {json.dumps(str(ROOT / 'server/database/environment-guard.php'))}; guardedDatabaseConfig();"],
+                "must_run": "immediately before every database create/dump/restore/drop command; failure stops the scenario",
+            },
+            "host_install_environment": instance_environment,
+            "container_runtime_environment_overrides": {**instance_environment, "APP_ENV": "production", "PEANUT_DEPLOYMENT_TARGET": "local-production-preview", "PEANUT_DATABASE_CONSUMER": "container", "PEANUT_DATABASE_ENDPOINT_ID": instance_database_resource["container_endpoint"]["endpoint_id"], "HTTP_PORT": "20190"},
             "database_commands": {
                 "create": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot -e 'CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'"],
                 "dump": {"command": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF -uroot {database}"], "stdout_file": str(backup / "database.sql")},
-                "restore": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot {database}"],
+                "restore": {"command": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot {database}"], "stdin_file": str(backup / "database.sql")},
                 "drop_after_evidence": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot -e 'DROP DATABASE `{database}`'"],
             },
-            "upgrade_commands": [
-                ["php", "scripts/scaffold-upgrade", "adoption-plan", f"--project-root={instance}", "--package=<exact-signed-3.1.0-package>", "--signature-key-id=peanut-admin-release-2026-01"],
-                ["php", "scripts/scaffold-upgrade", "adoption-apply", f"--project-root={instance}", "--plan=<exact-adoption-plan>", "--confirm-plan-sha256=<exact-sha256>", "--confirm-paths=<exact-25-paths>"],
-                ["php", "scripts/scaffold-upgrade", "preflight", f"--project-root={instance}", "--package=<exact-signed-3.1.0-package>", "--signature-key-id=peanut-admin-release-2026-01"],
-                ["php", "scripts/scaffold-upgrade", "apply", f"--project-root={instance}", "--plan=<exact-upgrade-plan>"],
-                ["php", "scripts/scaffold-upgrade", "verify", f"--project-root={instance}", "--plan=<exact-upgrade-plan>"],
-                ["php", "scripts/scaffold-upgrade", "recover", f"--project-root={instance}", "--plan=<exact-upgrade-plan>"],
+            "dependency_commands": [
+                ["/usr/local/bin/composer", "install", f"--working-dir={instance / 'server'}", "--no-interaction", "--no-dev", "--optimize-autoloader"],
+                ["/Users/xing/.nvm/versions/node/v24.13.0/bin/npm", "ci", "--prefix", str(instance / "platform")],
+                ["/Users/xing/.nvm/versions/node/v24.13.0/bin/npm", "ci", "--prefix", str(instance / "pc")],
+                ["/Users/xing/.nvm/versions/node/v24.13.0/bin/npm", "ci", "--prefix", str(instance / "uniapp")],
+                ["/bin/zsh", "-lc", f"cd {instance / 'web'} && PATH=/Users/xing/.nvm/versions/node/v24.13.0/bin:$PATH corepack pnpm install --frozen-lockfile"],
+                ["/bin/zsh", "-lc", f"cd {instance / 'docs-site'} && PATH=/Users/xing/.nvm/versions/node/v24.13.0/bin:$PATH corepack pnpm install --frozen-lockfile"],
             ],
+            "upgrade_commands": [
+                ["/opt/homebrew/bin/php", upgrader, "adoption-plan", f"--project-root={instance}", f"--package={package}", "--signature-key-id=peanut-admin-release-2026-01"],
+                ["/opt/homebrew/bin/php", upgrader, "adoption-apply", f"--project-root={instance}", f"--plan={adoption_plan}", "--confirm-plan-sha256=<adoption-plan_sha256-from-stdout>", "--confirm-paths=<exact-25-ordered-paths-from-stdout>"],
+                ["/opt/homebrew/bin/php", upgrader, "adoption-recover", f"--project-root={instance}", f"--plan={adoption_plan}"],
+                ["/opt/homebrew/bin/php", upgrader, "preflight", f"--project-root={instance}", f"--package={package}", "--signature-key-id=peanut-admin-release-2026-01"],
+                ["/opt/homebrew/bin/php", upgrader, "apply", f"--project-root={instance}", f"--plan={upgrade_plan}"],
+                ["/opt/homebrew/bin/php", upgrader, "verify", f"--project-root={instance}", f"--plan={upgrade_plan}"],
+                ["/opt/homebrew/bin/php", upgrader, "recover", f"--project-root={instance}", f"--plan={upgrade_plan}"],
+            ],
+            "migration_commands": [
+                ["/opt/homebrew/bin/php", str(instance / "server/database/install.php"), "--migrate", "--target-version=3.1.0", "--dry-run"],
+                ["/opt/homebrew/bin/php", str(instance / "server/database/install.php"), "--migrate", "--target-version=3.1.0"],
+            ],
+            "recovery_pair": {"instance_archive": str(backup / "instance.tar"), "database_dump": str(backup / "database.sql"), "order": ["recover managed files with the distinct upgrade plan", "restore the exact instance archive", "restore the exact database dump", "read back business, Tenant, RBAC, Module and customization identities"]},
             "http_command": {"cwd": str(instance), "environment": {"HTTP_PORT": "20190"}, "argv": ["/usr/local/bin/docker", "compose", "--project-name", f"peanut-cr03-{args.run_id}-{scenario}", "--env-file", ".env", "--env-file", "server/.env.local-production-preview", "-f", "deploy/docker-compose.prod.yml", "up", "-d", "--build"]},
         }
     claimed_resources = [

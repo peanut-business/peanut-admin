@@ -14,7 +14,7 @@ Reviewed at: 2026-09-10（Asia/Shanghai；历史语料切点不变）
 
 现行执行依[逐步确认的0–6阶段方案](../plans/history-rules-product-convergence-plan-2026-09-10.md)（PA-USER-STEP-GATES-20260910）。阶段0–2成果保留；阶段3查现状/补遗漏并排修复，阶段4落实防复发规则，阶段5分批实际修复，阶段6独立验收交付。阶段3静态审计与排程已补正并通过根验收；未改Runtime/业务测试，不从29项推定目标已完整覆盖。
 
-公开恢复与结果以[问题主登记](runtime-convergence-issue-register-2026-09-09.json)的当前批次记录及本方案为准。根任务仍持有唯一Goal与正式登记权；其专用恢复检查点保留在原本机未跟踪位置，不能作为公开 clone 的依赖或发布文档。旧侧栏任务撤销。不启用Goal自动续作；不恢复旧周期监督，后续确认按现行方案§7.1显式/十分钟窗口；回报、旧提醒、重启或压缩不独立授权。
+公开恢复与结果以[问题主登记](runtime-convergence-issue-register-2026-09-09.json)的当前批次记录及本方案为准。根任务持有总目标与正式登记权；其专用恢复检查点保留在原本机未跟踪位置，不能作为公开 clone 的依赖或发布文档。旧侧栏任务撤销。不启用Goal自动续作、确认唤醒或周期监督；后续步骤只按现行方案§7.1的任务绑定和根技术Gate推进，回报、旧提醒、重启或压缩不独立授权。
 
 阶段6的消费级交付不以问题清零报告替代；前置为本方案各依赖Gate通过、可自主修复open项完成处置、独立复审无已知阻塞产品缺陷。届时读取执行规则 §7.2、`docs/operations/consumer-ready-control.md`、Release/候选合同及资源登记，在Development mode完成必要聚焦验证后，固定唯一source commit/tree、Core/Application/两Edition一致版本、依赖锁和制品/环境身份。按登记资源验收同源Standalone与Multi-tenant；候选失败回到受影响修复，不边测边改或重跑无关成功组。通过后才登记相应能力/Release/公开投影及授权交付；真实厂商资格缺失不允许替身冒充通过。
 

@@ -54,6 +54,9 @@ scripts/consumer-ready-control preflight --phase release --check-remote \
 控制器是准备门禁，不是执行器：
 
 - `ready` 不等于 qualified、release-ready 或已发布；
+- `prepare ready` 只证明当次 prepare 合同成立；已知变更结束后仍须分别以只读方式通过
+  `build-application-template-inventory --check`、对应未发布 scaffold release 的
+  `build-scaffold-release --check` 与 `preflight --phase seal --check-remote`，不能用 prepare 结果替代；
 - 它不能替代 `scripts/project-resource-lease claim`；
 - 它不能替代 Development 聚焦验证或 `scripts/p0e-runtime-qualification`；
 - 它不会自动修复版本、清理他人资源、创建数据库或选择 fallback；
