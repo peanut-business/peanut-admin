@@ -45,15 +45,6 @@ export default defineConfig((configEnv) =>
       ],
       build: {
         manifest: true,
-        rollupOptions: {
-          output: {
-            manualChunks: {
-              element: ['element-plus', '@element-plus/icons-vue'],
-              chart: ['echarts', 'vue-echarts'],
-              vue: ['vue', 'vue-router', 'pinia', '@vueuse/core', 'vue-i18n'],
-            },
-          },
-        },
         chunkSizeWarningLimit: 2000,
       },
     },
