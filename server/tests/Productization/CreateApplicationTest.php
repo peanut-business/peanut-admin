@@ -161,8 +161,10 @@ createApplicationExpect(
     'source qualification evidence must not participate in application template identity'
 );
 foreach ([
+    'README.md' => 'readme',
     'CHANGELOG.md' => 'changelog',
     'RELEASE_METADATA.json' => 'release-metadata',
+    'resources/project-resources.json' => 'resources',
     'docs-site/capabilities.md' => 'docs-page',
 ] as $path => $transform) {
     $semanticDigest = hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");

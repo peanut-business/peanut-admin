@@ -239,6 +239,78 @@ function isLexicallyAbsolutePath(string $path): bool
         && !str_ends_with($path, '/..');
 }
 
+/** @param list<string> $arguments */
+function leaseGit(array $arguments): string
+{
+    $pipes = [];
+    $process = proc_open(
+        array_merge(['/usr/bin/git'], $arguments),
+        [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes
+    );
+    if (!is_resource($process)) {
+        throw new RuntimeException('consumer-upgrade candidate Git identity 不可用');
+    }
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    if (proc_close($process) !== 0 || !is_string($stdout)) {
+        throw new RuntimeException('consumer-upgrade candidate Git identity 无法解析: ' . trim((string)$stderr));
+    }
+    return trim($stdout);
+}
+
+/**
+ * The Host-only consumer-upgrade guard accepts only the live lease directory
+ * owned by the candidate repository's Git common directory.
+ *
+ * @param array<string,string> $metadata
+ * @param array<string,list<string>> $resources
+ */
+function assertConsumerUpgradeCandidateLeaseIdentity(
+    string $proofPath,
+    array $metadata,
+    array $resources
+): void {
+    $candidateRepository = realpath($metadata['candidate_repository']);
+    $worktree = realpath($metadata['worktree']);
+    $actualProofPath = realpath($proofPath);
+    if (!is_string($candidateRepository)
+        || !is_dir($candidateRepository)
+        || $candidateRepository !== $metadata['candidate_repository']
+        || !is_string($worktree)
+        || $worktree !== $metadata['worktree']
+        || $worktree !== $candidateRepository
+        || !is_string($actualProofPath)
+        || $actualProofPath !== $proofPath) {
+        throw new RuntimeException('consumer-upgrade candidate/proof 路径不是可信实体');
+    }
+
+    $commonDirectory = leaseGit(['-C', $candidateRepository, 'rev-parse', '--git-common-dir']);
+    if (!str_starts_with($commonDirectory, '/')) {
+        $commonDirectory = $candidateRepository . '/' . $commonDirectory;
+    }
+    $commonDirectory = realpath($commonDirectory);
+    if (!is_string($commonDirectory)) {
+        throw new RuntimeException('consumer-upgrade candidate Git common-dir 不可用');
+    }
+    $expectedProofPath = $commonDirectory . '/peanut-admin-resource-leases/leases/' . $metadata['lease'];
+    if (!hash_equals($expectedProofPath, $actualProofPath)
+        || ($resources['lease-proof-dir'] ?? null) !== [$actualProofPath]) {
+        throw new RuntimeException('consumer-upgrade proof 不是 candidate repository 的 active lease 坐标');
+    }
+
+    $candidate = leaseGit(['-C', $candidateRepository, 'rev-parse', $metadata['candidate'] . '^{commit}']);
+    $head = leaseGit(['-C', $candidateRepository, 'rev-parse', 'HEAD^{commit}']);
+    $tree = leaseGit(['-C', $candidateRepository, 'rev-parse', $candidate . '^{tree}']);
+    if (!hash_equals($metadata['candidate'], $candidate)
+        || !hash_equals($candidate, $head)
+        || ($resources['candidate-tree'] ?? null) !== [$tree]) {
+        throw new RuntimeException('consumer-upgrade candidate commit/tree 与实际 Git identity 不一致');
+    }
+}
+
 /**
  * @param array<string,string> $metadata
  * @param array<string,list<string>> $resources
@@ -363,6 +435,7 @@ function assertP0eLeaseContract(
  * @param array{run_id:string,scenario:string} $identity
  */
 function assertConsumerUpgradeLeaseContract(
+    string $proofPath,
     array $metadata,
     array $resources,
     array $database,
@@ -380,12 +453,18 @@ function assertConsumerUpgradeLeaseContract(
         'endpoint' => 1,
         'environment' => 1,
         'gate' => 1,
+        'http-port' => 1,
         'instance-root' => 2,
         'lease-proof-dir' => 1,
+        'listener-resource-id' => 1,
         'mysql-db' => count($database['allowed_scenarios']),
+        'object-prefix' => count($database['allowed_scenarios']),
+        'object-storage-resource-id' => 1,
         'output-dir' => 1,
+        'port' => 1,
         'resource-id' => 1,
         'run-id' => 1,
+        'tooling-resource-id' => 1,
         'worktree' => 1,
     ];
     $actualCounts = [];
@@ -408,6 +487,16 @@ function assertConsumerUpgradeLeaseContract(
     assertLeaseResourceValues($resources, 'endpoint', [(string)$database['upstream_endpoint']['host'] . ':' . (string)$database['upstream_endpoint']['port']]);
     assertLeaseResourceValues($resources, 'run-id', [$runId]);
     assertLeaseResourceValues($resources, 'mysql-db', $expectedDatabases);
+    assertLeaseResourceValues($resources, 'tooling-resource-id', [(string)$database['administrative_tooling_resource_id']]);
+    assertLeaseResourceValues($resources, 'listener-resource-id', [(string)$database['http_listener_resource_id']]);
+    assertLeaseResourceValues($resources, 'object-storage-resource-id', [(string)$database['local_object_storage_resource_id']]);
+    assertLeaseResourceValues($resources, 'port', ['20190']);
+    assertLeaseResourceValues($resources, 'http-port', ['20190']);
+    assertLeaseResourceValues(
+        $resources,
+        'object-prefix',
+        array_map(static fn(string $scenario): string => 'cr03/' . $runId . '/' . $scenario . '/', $scenarios)
+    );
     assertLeaseResourceValues($resources, 'gate', [$metadata['gate']]);
     assertLeaseResourceValues($resources, 'worktree', [$metadata['worktree']]);
     if ($metadata['lease'] !== 'consumer-upgrade-' . $runId
@@ -416,6 +505,7 @@ function assertConsumerUpgradeLeaseContract(
         || preg_match('/^[a-f0-9]{40}$/D', $resources['candidate-tree'][0]) !== 1) {
         throw new RuntimeException('consumer-upgrade lease candidate/run_id/worktree identity 不匹配');
     }
+    assertConsumerUpgradeCandidateLeaseIdentity($proofPath, $metadata, $resources);
 
     $cacheDir = $resources['cache-dir'][0];
     $outputDir = $resources['output-dir'][0];
@@ -509,7 +599,7 @@ function guardedDatabaseConfig(?string $leaseProofPath = null, ?int $now = null)
             $leaseProofPath ??= requiredEnvironment('PEANUT_RESOURCE_LEASE_PROOF');
             $metadata = activeLeaseMetadata($leaseProofPath, $now ?? time(), 'consumer-upgrade-qualification');
             $resources = activeLeaseResources($leaseProofPath);
-            assertConsumerUpgradeLeaseContract($metadata, $resources, $database, $identity, $resourceId, $deploymentTarget, $deploymentMode);
+                assertConsumerUpgradeLeaseContract($leaseProofPath, $metadata, $resources, $database, $identity, $resourceId, $deploymentTarget, $deploymentMode);
         } else {
             throw new RuntimeException('templated database resource 未获 qualification guard 授权');
         }

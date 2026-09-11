@@ -8,6 +8,14 @@
     "port": 20183,
     "database_template": "peanut_admin_development_cr03_<run_id>_<scenario>"
   },
+  "outer_resources": {
+    "administrative_tooling_resource_id": "peanut-admin-consumer-upgrade-mysql84-remote-admin-cli",
+    "http_listener_resource_id": "peanut-admin-consumer-upgrade-http-gate",
+    "http_port": 20190,
+    "local_object_storage_resource_id": "peanut-admin-consumer-upgrade-local-storage",
+    "local_object_prefix_template": "cr03/<run_id>/<scenario>/",
+    "execution_order": "serial-by-scenario"
+  },
   "source_release": {
     "version": "3.0.14",
     "commit": "e30b667bbfc25d70281ddf1864b99883850afa24",
@@ -45,6 +53,10 @@
   "execution": {
     "entry": "scripts/consumer-upgrade-qualification plan",
     "claim_entry": "scripts/project-resource-lease claim",
+    "database_admin": "/usr/bin/ssh -> /usr/local/bin/docker exec peanut-admin-mysql84-development -> /usr/bin/mysql",
+    "database_dump": "/usr/bin/ssh -> /usr/local/bin/docker exec peanut-admin-mysql84-development -> /usr/bin/mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF",
+    "instance_upgrade_entry": "php scripts/scaffold-upgrade adoption-plan|adoption-apply|preflight|apply|verify|recover",
+    "http_entry": "/usr/local/bin/docker compose --project-name peanut-cr03-<run_id>-<scenario> --env-file .env --env-file server/.env.local-production-preview -f deploy/docker-compose.prod.yml",
     "cleanup_owner": "active CR03 consumer-upgrade lease owner",
     "forbidden": ["p0e-fresh-databases", "persistent-development-database", "demo-deployment", "production-data", "ephemeral-signing-key"]
   }

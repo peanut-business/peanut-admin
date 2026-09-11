@@ -243,7 +243,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8ca7b5fb20d0d60bd7841453893e09897ae37e25dd69a7972a4b6e8147d796ed"
+            "source_sha256": "616f07fa391b8c095a778a9650f20b0843db84b80fd940eeceac8f7fa31f3af7"
         },
         {
             "path": "RELEASE_METADATA.json",
@@ -4835,7 +4835,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "41f31fc5bd4f2d7240f21b53ad04176936728a9582245dfaa9b4bfe3a1f8eb7c"
+            "source_sha256": "71ba0dfdb649715fadf9065d34fd47117ba5e83bae7259a23b5a8b463199da7e"
         },
         {
             "path": "resources/service-registry.json",
@@ -5068,6 +5068,19 @@
         {
             "path": "scripts/consumer-ready-control",
             "target": "scripts/consumer-ready-control",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "scripts/consumer-upgrade-qualification",
+            "target": "scripts/consumer-upgrade-qualification",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -16902,7 +16915,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4fc2b244861b5b4399550623d9b1094c52ee4c4307d646d4e02bfa163206854e"
+            "source_sha256": "24959399dd362d3a22a5e00b8d196808c79fae5e63352576c543d57936334236"
         },
         {
             "path": "server/database/init.sql",
@@ -19086,6 +19099,19 @@
         {
             "path": "server/tests/fixtures/PlatformTenantModule/Content/module.json",
             "target": "server/tests/fixtures/PlatformTenantModule/Content/module.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "server/tests/fixtures/consumer-upgrade-qualification/matrix.json",
+            "target": "server/tests/fixtures/consumer-upgrade-qualification/matrix.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
