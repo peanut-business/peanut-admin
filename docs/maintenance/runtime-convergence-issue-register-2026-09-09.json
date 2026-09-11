@@ -2801,21 +2801,21 @@
       "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
     "cr03": {
-      "status": "CR03-01已完成并获根技术验收；CR03-02正在集成dev并准备正式PR；App资格未运行",
+      "status": "CR03-01/02已完成；首次main候选P0-E六组通过后浏览器失败失效；CR03-03定点修复与双Edition聚焦验证已通过，待修复PR冻结新候选；App资格未完成",
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书",
       "authorization_id": "PA-CONSUMER-FIRST-20260911",
       "depends_on": ["CR01及CR02开发交付已验收", "CR03-01独立资源/资格场景就绪后才允许冻结"],
       "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"],
       "input_commit": "ced1fa5613f675672ef9dc71b2cac83ecc32ac98",
-      "fixed_candidate": null,
+      "fixed_candidate": {"commit": "240eab8f942d01f10abdb211dab8950361b0d420", "tree": "d04ac919ed8cf5afa6580b54367f3010338eb7c6", "status": "invalidated-by-standalone-browser-runtime-failure"},
       "candidate_rule": "就绪后经dev到main PR及根技术验收，以实际origin/main完整commit/tree冻结；不得预填未来SHA或把prepare ready当qualified",
       "model": "gpt-5.6-terra",
       "reasoning": "medium",
-      "current_execution_model": "gpt-5.6-terra / medium；CR03-02仅处理已验证差异的dev集成与PR准备，根仍保留main冻结裁定",
+      "current_execution_model": "gpt-5.6-sol / medium；仅用于CR03-03同一边界补丁/报告不一致后的可靠收口，修复PR后降回Terra；根保留新main冻结裁定",
       "queue": [
         {"id": "CR03-01", "status": "已完成并获根技术验收", "scope": "就绪、旧实例增补/四端场景和隔离资源合同；不跑完整资格"},
-        {"id": "CR03-02", "status": "进行中：集成dev并准备PR", "depends_on": ["CR03-01", "根冻结技术验收"], "scope": "dev-main PR与真实main候选冻结"},
-        {"id": "CR03-03", "status": "待领取", "depends_on": ["CR03-02"], "scope": "同候选P0-E八组及零残留"},
+        {"id": "CR03-02", "status": "已完成：PR #450合入main@240eab8f", "depends_on": ["CR03-01", "根冻结技术验收"], "scope": "dev-main PR与真实main候选冻结"},
+        {"id": "CR03-03", "status": "进行中：首次候选浏览器失败；定点修复/聚焦双Edition浏览器已通过，待修复PR与新候选完整P0-E", "depends_on": ["CR03-02"], "scope": "同候选P0-E八组及零残留"},
         {"id": "CR03-04", "status": "待领取", "depends_on": ["CR03-02"], "scope": "正式key签名同Edition旧实例升级/依赖/数据/失败恢复；独立租约"},
         {"id": "CR03-05", "status": "待领取", "depends_on": ["对应实例/资源就绪"], "scope": "四端业务与逐厂商实际资格；缺外部账号只阻塞对应部分"},
         {"id": "CR03-06", "status": "待领取", "depends_on": ["前项实际结果"], "scope": "准确收口、证据及资源清理，根验收后才CR04"}
@@ -2854,7 +2854,14 @@
           "web": "pnpm audit: no high or critical event",
           "uniapp": "npm audit reports Vite 5.2.8 high aggregate; this matches the existing controlled DCloud/Vite exception in capability ledger, with no lock change and expiry 2026-10-09; it is not a clean-security claim or a reason to weaken future qualification"
         },
-        "boundary": "plan mode has no final lease, signing, database connection, instance write or cleanup; Development可在登记、健康和独立非final lease后做被批准的最小相邻验证。CR03-01的final seal已根验，CR03-02仍须根核实际PR后才冻结；seal ready不等于qualified"
+        "boundary": "CR03-01的plan阶段未使用最终lease、签名、数据库或实例；其final seal已根验。CR03-02随后经PR #450冻结首次main候选，但该候选P0-E浏览器失败，seal ready及历史六组均不等于qualified"
+      },
+      "cr03_03_execution": {
+        "failed_candidate": "240eab8f942d01f10abdb211dab8950361b0d420/tree d04ac919ed8cf5afa6580b54367f3010338eb7c6",
+        "failed_run": "cr03a0911; generated-application、双fresh、Plugin、consumer Module及production-compose六组通过；standalone-browser因Element/Vue ESM chunk循环初始化失败；output/p0e-cr03a0911保留，lease及六库/Compose/images/cache/listeners已清理",
+        "development_fix": "删除web/config/vite.config.prod.ts的object manualChunks；运行时提交b4316381，inventory提交73bc4572，生成身份/fixture提交b41e8270",
+        "focused_verification": "web frozen-lock production build通过且manifest 61 chunks/零依赖环；CREATE-APP-INVENTORY-001、SCAFFOLD-RELEASE-3.1.0及CREATE-APP-001通过；cr03b0911真实生成、双fresh、production Compose、Standalone/Multi-tenant browser通过并零残留释放",
+        "boundary": "这是Development聚焦证明，不是完整P0-E；新候选不得继承旧六组，须经dev-main修复PR根核后重新完整资格"
       },
       "external_blockers": [
         "COS有acceptance桶但master-key和测试账户仍待绑定；OSS/七牛无完整测试资源",

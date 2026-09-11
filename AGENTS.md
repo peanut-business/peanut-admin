@@ -10,7 +10,7 @@
 
 | 当前任务 | 事实源与入口 |
 | --- | --- |
-| 本次历史决策/规则闭环与消费交付 | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md`（`PA-USER-STEP-GATES-20260910`）§7.1/§12.6–12.8及问题主登记`consumer_delivery`。阶段0–4、T01、CQ和C01已验收，不重派。CR01及CR02开发交付已验收，Core 3.1.0公开包、V2/同号依赖和旧实例显式归属采用已到位；CR03-01真实lease/生成实例/升级命令补正、真实生成负控和最终seal已获根验收。CR03-02正在将已验证差异集成至`dev`并准备`dev → main`正式PR；根核实际PR后才冻结候选，随后CR04交付；不重复START。内部C02–C12仅非消费阻塞项后置，不标完成。每阶段独立任务，根负责最终裁定；不新建Goal、确认唤醒或定时器。根续作读取原本机未跟踪检查点，普通clone无需该私有控制文件 |
+| 本次历史决策/规则闭环与消费交付 | `docs/plans/history-rules-product-convergence-plan-2026-09-10.md`（`PA-USER-STEP-GATES-20260910`）§7.1/§12.6–12.8及问题主登记`consumer_delivery`。阶段0–4、T01、CQ和C01已验收，不重派。CR01及CR02开发交付已验收；CR03-01已根验收，CR03-02经PR #450合入`main@240eab8f`。该候选P0-E六组通过后在Standalone浏览器暴露生产chunk循环初始化失败，资格失效；CR03-03现于原任务完成单点Vite修复、生成身份刷新及双Edition production Compose/browser聚焦验证，待新`dev → main`修复PR经根核后形成新候选。尚未完成完整P0-E、正式旧实例升级或CR04交付；不重复START。内部C02–C12仅非消费阻塞项后置，不标完成。每阶段独立任务，根负责最终裁定；不新建Goal、确认唤醒或定时器。根续作读取原本机未跟踪检查点，普通clone无需该私有控制文件 |
 | 当前事实、版本身份与历史冲突 | `docs/governance/current-state.md`、`docs/architecture/product-version-identity-adr.md`、`docs/maintenance/fact-convergence-audit-2026-09-09.md` |
 | 项目运行资源、连接、启动、迁移、测试、部署 | `resources/project-resources.json`；源仓 P0-E 专用资格工具另见 `resources/p0e-runtime-qualification.json` |
 | 服务层或跨 Module 调用改造 | `resources/service-registry.json`、`docs/architecture/service-layer-registry.md`；Module 自有表以对应 `module.json` 为准 |

@@ -6,11 +6,11 @@
     },
     "release": {
         "version": "3.1.0",
-        "source_commit": "cd2ac5d3b2a4081f3739aa8ca39aad02d1c507ac",
-        "source_tree": "70954b43c0765897df2a2a9448eff96182713771",
-        "inventory_sha256": "e22aea1c002c4ba585b062fb48f0ede1dc9329db1f0fa2e94005fe22085a6960",
+        "source_commit": "73bc4572fd9b663ace19f074dcc65daf0b5ba877",
+        "source_tree": "5f416ef01b9e4ecea57de06a8818f407f3b48f77",
+        "inventory_sha256": "16934c8c4145f3c0240e5c986286c5ace6c328cfa38fc84782b9a8b5035f7f0e",
         "inventory_template_version": "3.1.0",
-        "managed_tree_sha256": "7e86926edb7eadea57c920034c3331e2948567630e4851456bf99a991233614d",
+        "managed_tree_sha256": "06407fdde3fff6b32e1389ee726b4204bd175a76ba871300757fd683653bbd55",
         "tokens": {
             "product_name": "Scaffold Product Token",
             "slug": "scaffold-product-token",
@@ -2382,7 +2382,7 @@
         {
             "path": "web/config/vite.config.prod.ts",
             "source": "files/web/config/vite.config.prod.ts",
-            "template_sha256": "a634cdaf9a8f62b736000eca852d59a11c1b2baf6e555a951e9f39284bab4235",
+            "template_sha256": "52d860cb55071fbf969e19fdffc6d4191cb5f94ccfef18f3399fc067457dcaca",
             "classification": "managed",
             "transform": "tokens",
             "mode": 420,
