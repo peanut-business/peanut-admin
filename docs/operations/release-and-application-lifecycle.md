@@ -19,6 +19,9 @@ Core 即使没有运行时改动也必须发布同号的新不可变包身份并
 `0.1.0-alpha.13`。发行列车必须先验证 Core 公共身份可消费，再更新应用 lock、生成同号 scaffold，
 最后在应用固定候选完成资格与发布。任一步失败时只阻塞依赖它的下游状态，不创建不对应真实包版本的
 别名。此前本页“撤销 Core/scaffold 同号”的决定已由新 ADR supersede；历史不同号事实保留，不能据此继续发布不同号的新产品。
+当前 3.1.0 开发线已经完成 Core 同号公共身份验证与 Application manifests/locks 采用；同号 scaffold
+生成输入和聚焦检查由 CR02 收敛，完整 Application P0-E、tag、Release 与 Edition 正式制品仍由后续
+固定候选 Gate 决定。
 
 Standalone 与 Multi-tenant 安装包来自同一个 Peanut Admin Release，是两种确定性 Edition 构建物，
 不是两套人工源码。对应的签名升级包只提供同 Edition 的 scaffold 采用输入，也不是完整应用

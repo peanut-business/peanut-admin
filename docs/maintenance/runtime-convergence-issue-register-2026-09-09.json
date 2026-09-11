@@ -2627,7 +2627,7 @@
   },
   "consumer_delivery": {
     "authorization_id": "PA-CONSUMER-FIRST-20260911",
-    "status": "cr02-executing-core-supply-chain-remediated-compatibility-confirmed",
+    "status": "cr02-executing-core-310-published-app-locks-adopted-generation-inputs-in-progress",
     "scope": "消费前阻塞修复、协调发行、同源双Edition独立安装升级资格与对应交付；不要求内部C02-C12全部完成后才消费",
     "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#126-当前消费优先路线与cr01实施任务书",
     "baseline": {"application": "464dee420e7203deca9281da8584d07f0f8401b1", "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4"},
@@ -2651,7 +2651,7 @@
       },
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
-    "cr02": {"status": "执行中：Core供应链Development修复与Alpha.13直接消费者静态兼容面已完成；Core新候选资格/实包、应用锁、V2身份和生成输入仍待完成", "depends_on": ["CR01开发修复集成", "Core实际资格/发布后才能移动应用依赖锁"], "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书", "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"], "compatibility": "Application locks peanut-admin/core and @peanut-admin/admin at 0.1.0-alpha.13. Core a949a777..2ed77f38 changes only the two PHP Package::VERSION constants and PHP/Web package manifest version to 3.1.0; Composer PSR-4 roots, PHP requirements and Web export map are unchanged. Current Application direct Core imports therefore need no adoption patch. This is a static compatibility conclusion, not a published-package or runtime qualification result.", "deliverable": "当前供应链真实问题处理、同号Core实包/应用锁、V2身份及新候选准备，并消除CR01整应用生成的真实前置"},
+    "cr02": {"status": "执行中：Core 3.1.0 Q01/D05、source/split/npm/Packagist/GitHub Release和干净Registry消费已完成；Application五份真实依赖锁与V2身份已采用，生成输入及聚焦检查收尾中", "depends_on": ["CR01开发修复集成", "CR03在CR02生成输入完成后独立绑定固定候选与资源"], "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书", "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"], "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks now resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.", "deliverable": "已完成Core真实资格/发布与应用同号真实locks/V2身份；本批继续完成inventory、双Edition生成输入、Creator/身份聚焦检查和准确交付，完整App P0-E留给CR03"},
     "cr03": {"status": "待领取", "depends_on": ["CR01", "CR02"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格，独立于实施者验收"},
     "cr04": {"status": "待领取", "depends_on": ["CR03"], "deliverable": "仅发布真实通过候选及公开消费/升级文档；不自动部署客户生产"},
     "deferred_runtime": "C02-C12和其余services原ID/顺序保留；只有证明不影响消费/升级/安全的项可后置，不能整批标完成",

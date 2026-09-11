@@ -12,10 +12,10 @@ const checkOnly = process.argv.includes('--check')
 
 const expectedCounts = {
   composer: 43,
-  web: 1082,
-  platform: 103,
+  web: 849,
+  platform: 151,
   pc: 923,
-  uniapp: 1008,
+  uniapp: 1007,
   'docs-site': 174,
 }
 

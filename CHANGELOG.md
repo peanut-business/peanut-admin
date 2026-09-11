@@ -11,6 +11,35 @@ and the two public core packages have independent version histories.
   components under Apache-2.0. Existing immutable tags and Releases keep the
   license files originally published with those artifacts.
 
+## [3.1.0] - 2026-09-11
+
+### Changed
+
+- Adopted the qualified, publicly consumable Peanut Admin Core PHP and Web
+  packages at the unified product version `3.1.0` across Server, Web, Platform,
+  PC and UniApp.
+- Moved the product root to the V2 release identity contract, separating the
+  `source_product_version` from customer-owned `instance_version` while keeping
+  Module versions independent.
+- Prepared deterministic Standalone and Multi-tenant scaffold inputs from one
+  Application source identity; final Application qualification and publication
+  remain separate CR03/Release gates.
+
+### Fixed
+
+- Preserved customer-owned application files during managed scaffold adoption
+  and rejected missing, deleted or previously app-owned managed paths until an
+  explicit owner adoption is recorded.
+- Remediated the Core build-chain high advisory without weakening supply-chain,
+  license, candidate identity or public compatibility gates.
+
+### Delivery
+
+- Core `3.1.0` source, Composer split, npm package and Packagist package are
+  published and clean Registry consumers resolve their immutable identities.
+- This Application line is not yet a published or qualified Consumer RC; full
+  fixed-candidate P0-E remains owned by CR03.
+
 ## [3.0.14] - 2026-09-09
 
 ### Changed

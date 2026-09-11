@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b208de94bac09e5dd322313b64f168b5",
+    "content-hash": "caaa8635a7d1663bfb7afbb035bc7d08",
     "packages": [
         {
             "name": "aliyuncs/oss-sdk-php",
@@ -1478,16 +1478,16 @@
         },
         {
             "name": "peanut-admin/core",
-            "version": "0.1.0-alpha.13",
+            "version": "3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/peanut-opensource/peanut-admin-core-php.git",
-                "reference": "61f40dc2412338b4dfdcf7d2cd7514da45ea773a"
+                "reference": "047f8e035c4ae14ab5a75581fdbb2a51be126787"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/61f40dc2412338b4dfdcf7d2cd7514da45ea773a",
-                "reference": "61f40dc2412338b4dfdcf7d2cd7514da45ea773a",
+                "url": "https://api.github.com/repos/peanut-opensource/peanut-admin-core-php/zipball/047f8e035c4ae14ab5a75581fdbb2a51be126787",
+                "reference": "047f8e035c4ae14ab5a75581fdbb2a51be126787",
                 "shasum": ""
             },
             "require": {
@@ -1544,10 +1544,10 @@
             ],
             "description": "Peanut Admin reusable administration runtime packages",
             "support": {
-                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v0.1.0-alpha.13",
+                "source": "https://github.com/peanut-opensource/peanut-admin-core-php/tree/v3.1.0",
                 "issues": "https://github.com/peanut-opensource/peanut-admin-core-php/issues"
             },
-            "time": "2026-09-08T22:03:00+00:00"
+            "time": "2026-09-11T00:59:05+00:00"
         },
         {
             "name": "psr/container",
@@ -2895,9 +2895,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "peanut-admin/core": 15
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

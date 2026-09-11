@@ -16,14 +16,14 @@ php scripts/create-app \
 `--edition` 必须明确选择 `standalone` 或 `multi-tenant`。这不是运行时开关：生成器会从同一份
 Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、索引、Tenant/Platform 能力和
 升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。当前正式
-当前正式发布清单采用 full 配置，示例显式传入 `--profile=full`；省略 `--profile` 时仍采用
+发布清单采用 full 配置，示例显式传入 `--profile=full`；省略 `--profile` 时仍采用
 `standard`，需要完整应用能力时必须显式选择 `--profile=full`。
 
 四种版本身份各自拥有事实源：
 
 | 版本轴 | 事实源 | 用途 |
 | --- | --- | --- |
-| 应用发布 | `release-versions.json.product_release` | 应用 owner 的版本、tag 与完整应用 Release |
+| 源产品与实例发布 | V2 `source_product_version` / `instance_version`；历史 V1 `product_release` | Peanut 产品来源与客户实例各自的版本、tag 和 Release |
 | Scaffold 采用 | `scaffold_template` 与不可变 scaffold manifest | 受管技术基线、渲染快照与 Peanut migration 目标 |
 | Core 依赖 | Composer/npm 精确包版本与 lock | 应用实际安装的后端/前端 Core 身份 |
 | Module | Module manifest、archive SHA-256/签名与安装账本 | 可独立版本化的业务源码 contribution 及其依赖和 migration |
@@ -32,7 +32,7 @@ Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、�
 `source_product_version` 与 `instance_version`；客户独立版本不等于 Peanut 产品版本。
 下一次正式发布起，Peanut 产品 Application、scaffold 与 PHP/Web Core 使用同一个产品发行号
 （包括同步的预发布后缀），但相同号码不替代 manifest、lock、不可变包引用或兼容证据。
-当前 `3.0.14` / `0.1.0-alpha.13` 是保持不变的历史组合；新版本通过资格并发布之前不改安装指令。
+当前正式 `3.0.14` / `0.1.0-alpha.13` 是保持不变的历史组合。Core 3.1.0 已发布且当前开发线已采用真实 locks；在 Application 3.1.0 完整资格和发布前，公开安装指令仍指向 v3.0.14。
 现行规则见[版本身份 ADR](architecture/product-version-identity-adr.md)。Module 可独立开发和分发，
 继续使用自己的版本与 archive SHA-256，并由应用仓采用、固定依赖、构建和验收，最后随应用自己的
 完整 Release 部署；Module archive 不是生产实例部署单位。

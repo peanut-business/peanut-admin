@@ -41,15 +41,16 @@ localPath(objectKey)
 
 `ObservedStorageDriver`、账户空间路由、凭据解密、用途、授权、对象账本和补偿均归应用。Core 不引用应用仓、不启用现有另一条 FileMedia 生命周期/Schema、不改表。整文件 HTTP 下载属于后续建议，不进入本执行队列。
 
-Core 固定 source candidate `a949a77728f2940153c6cfd76b104d5d8bb183e3` 已通过 Alpha.13 的 Q01/D05
-资格；Composer split `61f40dc2412338b4dfdcf7d2cd7514da45ea773a` 与 source candidate 的
-`packages/php` tree 相同。`v0.1.0-alpha.13` 已发布到 GitHub、npm 与 Packagist，应用可以用不可变
-Registry 身份锁定，不再依赖 branch、path repository 或复制 vendor。
+历史 Alpha.13 固定资格和发布身份保持不变。新统一产品 Core 固定 source candidate
+`985ee420b486a97325cdd0bb87412a76346aeb93` 已通过 3.1.0 的 Q01/D05；Composer split
+`047f8e035c4ae14ab5a75581fdbb2a51be126787` 与候选 `packages/php` 投影相同。`v3.1.0` 已发布到
+GitHub、npm 与 Packagist，当前 Application 3.1.0 开发线已用不可变 Registry 身份锁定，不依赖
+branch、path repository 或复制 vendor；Application 完整资格与发布仍是后续 Gate。
 
 旧应用 commit `590e61830d0e62c0bf25425dfe43d69ae894b726` 是基于过时 `dev` 的单提交采用
 实验，不是 merge。它先重放为 `64460af8`，再以 `563df8c4` 进入统一收敛分支；冲突处理保留了最新
 Edition-aware ledger、Tenant ownership、凭据解析和 Host adapter，只删除应用重复的四个低层 Driver。
-同一收敛候选现已把 PHP/npm manifest 与 lock 更新到 Core Alpha.13，并实际构造 Local、Aliyun OSS、
+同一收敛线现已把 PHP/npm manifest 与 lock 更新到 Core 3.1.0，并实际构造 Local、Aliyun OSS、
 Tencent COS、Qiniu 四种 Driver。它在合入应用 `dev/main` 和通过应用固定候选资格前仍是开发候选，不能
 描述为应用正式 Release 或真实云账号生产可用。
 

@@ -26,11 +26,11 @@ Owner: `product-architecture`
 
 ## 本轮事实收敛 checkpoint
 
-历史审计起点：Application `origin/dev@ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`、Core `origin/dev@61546084e1e07f1c41df8d2383dbbe1d77a83b16`、Application `origin/main@8c8a974642450842100b9a9a323d447c7b409b4f`。阶段3当前静态核查基线另为 Application `origin/dev@ab96727c8b07da64489fe152b36e483f055dcf0c`、Core `origin/dev@2ed77f38ca26472d685cfeb81674a66ba23eadb4`；两组身份不可互相替代。发布基线仍是 Application v3.0.14 与历史 Core Alpha.13；新统一产品目标 3.1.0 尚无发布结论。
+历史审计起点：Application `origin/dev@ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`、Core `origin/dev@61546084e1e07f1c41df8d2383dbbe1d77a83b16`、Application `origin/main@8c8a974642450842100b9a9a323d447c7b409b4f`。阶段3静态核查基线另为 Application `origin/dev@ab96727c8b07da64489fe152b36e483f055dcf0c`、Core `origin/dev@2ed77f38ca26472d685cfeb81674a66ba23eadb4`；两组身份不可互相替代。当前正式 Application 发布基线仍是 v3.0.14 与历史 Core Alpha.13；Core PHP/Web 3.1.0 已按新资格发布，Application 3.1.0 仅处于消费锁与双 Edition 输入准备阶段，尚未完成固定候选资格或发布。
 
 **Non-blocking checkpoint（2026-09-09）：**版本对象、同号规则、历史不可变性和发布依赖顺序已经固定，临时审计等待解除。独立业务开发、公开历史纠正和不依赖新包的工作可以继续；文件与运行资源仍按唯一 owner 规则处理。
 
-3.1.0 的真实发布前置仍逐项生效：Core 必须完成新固定资格与 Registry 发布，Application 才能采用新锁；双 Edition 和客户 Instance 采用继续依赖各自候选与部署证据。Core 在两次固定资格尝试中均停于供应链审计，具体失败子命令未知；九角色复核通过不能替代 Q01。达到重试停止线后，仅修复失败报告保留机制并完成新资源清理，未启动第三轮资格。解除条件是重新定位真实审计失败、完成必要修复并取得新候选 Q01 和真实 Registry 发布。Application 版本消费者实现与事实文档已准备，根合同及实际锁仍保持已发布的 3.0.14/Alpha.13；新 3.1.0 采用、完整 L2、Edition 制品和 Release 尚未执行。不能把本 checkpoint 当成新 Release 或线上升级通过。
+3.1.0 的真实发布前置仍逐项生效。Core 固定候选 `985ee420b486a97325cdd0bb87412a76346aeb93` 已完成完整 Q01 与同候选九视角 D05；source tag、Composer split、npm、Packagist 和 GitHub Release 均已发布并由干净 Registry 消费者验证。Application 当前已把 Server/Web/Platform/PC/UniApp manifests 与 locks 指向真实 3.1.0 包，并采用产品/实例分字段的 V2 身份；双 Edition 生成输入、Creator 聚焦检查和文档正在本 CR02 收敛。完整 L2/P0-E、Application tag/Release、Edition 正式制品、客户 Instance 采用和部署仍未执行，归后续固定候选 Gate；不能把 Core 发布或当前开发锁当成 Consumer RC 或线上升级通过。
 
 公开事实投影已发布并通过 HTTPS 正文核验；[部署回执](../maintenance/fact-audit-2026-09-09/docs-deployment-receipt.json)记录固定来源。主审计已交付明确覆盖范围、冲突裁定与历史拒绝操作处置，新产品发布保持单独的受阻状态。
 

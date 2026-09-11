@@ -28,15 +28,15 @@ Source snapshot: Application `ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`; Core `6
 
 ### 2.1 两仓依赖和迁移事实
 
-Peanut Admin Application 的 `server/composer.json` 已直接声明 `topthink/framework`、`topthink/think-orm` 和 ThinkPHP 生态依赖，并以已发布的 `peanut-admin/core: 0.1.0-alpha.13` 作为 Core 聚合包。Core `dev` 已把公共包 manifest 准备为 3.1.0，但该候选资格失败且未发布；版本准备不代表 Runtime 已迁移。Core 根项目 `composer.json` 当前声明：
+Peanut Admin Application 的 `server/composer.json` 已直接声明 `topthink/framework`、`topthink/think-orm` 和 ThinkPHP 生态依赖。历史 Application v3.0.14 使用已发布的 `peanut-admin/core: 0.1.0-alpha.13`；当前 3.1.0 开发线已采用完成 Q01/D05 并公开发布的同号 Core 包。新包身份与锁采用不代表下述 Runtime 迁移已完成。Core 根项目 `composer.json` 当前声明：
 
 | 位置 | 当前事实 |
 | --- | --- |
 | Core 根项目 | `topthink/framework ^8.1.4`、`topthink/think-orm ^4.0.51`、`topthink/think-migration ^3.1.1` |
 | Core `backend/composer.json` | ThinkPHP 8 reference host，声明 `topthink/framework ^8.1.4` |
 | Core `starter/backend/composer.json` | ThinkPHP 8.1.4、`topthink/think-migration 3.1.1`，用于内部 starter 验证 |
-| Core 发布子包 `packages/php/composer.json` | `dev` manifest 为未发布 3.1.0，声明 `ext-pdo`、PHP 8.3、JSON/OpenSSL/Sodium/Fileinfo；当前包源代码仍以 PDO persistence 实现 |
-| Application `server/composer.json` | ThinkPHP framework、ORM、multi-app、filesystem 与 Core Alpha.13；业务运行时由 ThinkPHP 启动 |
+| Core 发布子包 `packages/php/composer.json` | 已发布 3.1.0，声明 `ext-pdo`、PHP 8.3、JSON/OpenSSL/Sodium/Fileinfo；当前包源代码仍以 PDO persistence 实现 |
+| Application `server/composer.json` | ThinkPHP framework、ORM、multi-app、filesystem 与 Core 3.1.0；业务运行时由 ThinkPHP 启动 |
 
 因此，“Core 没有任何 ThinkPHP 事实”不是现行仓库事实；更准确的说法是：发布子包当前仍把 PDO 当作公共 persistence 入口，而 Core 根项目和参考宿主已经是 ThinkPHP 8。Core 的 migration/owned-migration 由宿主执行，根项目和 starter 对 `topthink/think-migration` 的声明是该事实的依赖证据。后续应把 migration 执行也收敛到正式 ThinkPHP bootstrap，而不是继续扩展裸 PDO runner。
 

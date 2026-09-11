@@ -1,34 +1,38 @@
 {
-  "reviewed_at": "2026-09-09T13:45+08:00",
-  "scope": "Pre-candidate recheck of the UniApp accepted high risk only; no install, lock mutation, runtime resource, or broader upgrade review.",
+  "reviewed_at": "2026-09-11T09:45+08:00",
+  "scope": "CR02 3.1.0 candidate recheck of the UniApp lock and DCloud/Vite support matrix; no arbitrary dependency migration, runtime service, public development server or production claim.",
   "local_facts": {
     "vite": "5.2.8 (uniapp/package.json and package-lock.json)",
     "dcloud_vite_plugin_uni": "3.0.0-5010520260709002",
-    "dcloud_uni_app_family": "3.0.0-5010520260709002"
+    "dcloud_uni_app_family": "3.0.0-5010520260709002",
+    "npm_audit_exit": 1,
+    "npm_audit_summary": {"info": 0, "low": 38, "moderate": 16, "high": 1, "critical": 0, "total": 55},
+    "direct_high": "vite@5.2.8 aggregates current development-server and launch-editor advisories; npm proposes vite@5.4.21 outside the installed plugin's exact peer"
   },
   "official_sources": [
     {
       "url": "https://registry.npmjs.org/@dcloudio/vite-plugin-uni/3.0.0-5010520260709002",
-      "fact": "Installed plugin metadata declares peerDependencies.vite exactly 5.2.8."
+      "fact": "The installed plugin metadata still declares peerDependencies.vite exactly 5.2.8."
     },
     {
-      "url": "https://registry.npmjs.org/@dcloudio/vite-plugin-uni/3.0.0-alpha-5020520260829001",
-      "fact": "Current npm vue3 dist-tag target (queried as 2026-08-29 alpha) also declares Vite exactly 5.2.8."
+      "url": "https://registry.npmjs.org/@dcloudio/vite-plugin-uni/3.0.0-alpha-1000920260909822",
+      "fact": "The current npm vue3 dist-tag resolves to 3.0.0-alpha-1000920260909822 and declares Vite exactly 8.2.2."
     },
     {
       "url": "https://uniapp.dcloud.net.cn/quickstart-cli.html",
-      "fact": "DCloud documents separate stable and alpha Vue3/Vite CLI tracks, but does not publish a wider Vite peer range on this page."
-    },
-    {
-      "url": "https://github.com/dcloudio/uni-app",
-      "fact": "Official source repository default branch is uni-app-x; public repository metadata was queried, but its current tree does not expose the npm package path used by the installed plugin."
+      "fact": "DCloud documents separate stable and alpha Vue3/Vite CLI tracks; changing tracks requires coordinated DCloud-family compatibility validation rather than a Vite-only override."
     }
   ],
-  "known_supported": "The installed DCloud toolchain officially supports its exact Vite 5.2.8 peer. The newer public vue3 alpha inspected still supports exactly 5.2.8, not Vite 6/7/8.",
-  "inference": "An arbitrary Vite upgrade would violate the observed DCloud peer contract. No non-disruptive, officially supported upgrade path was found that removes the audit finding while retaining this toolchain family.",
-  "decision": "This completes the 3.1 preparation-period DCloud/npm support-matrix review. No supported repair was found. Preserve the existing controls and original 2026-10-09 deadline; do not add a risk acceptance or make an audit/vulnerability-zero conclusion. Recheck only if dependencies or the support matrix change before freeze.",
+  "known_supported": "The installed DCloud family supports only Vite 5.2.8. A newer official vue3 pre-release track supports Vite 8.2.2, but it changes the coordinated DCloud toolchain family and is not a drop-in lock repair for this candidate.",
+  "inference": "Forcing Vite 5.4.21 or 8.2.2 under the installed plugin would violate its exact peer. Moving the complete application to the newer pre-release DCloud family is a separate compatibility change that needs focused H5 and mini-program build/runtime qualification; CR02 does not silently broaden into that migration.",
+  "decision": "The next-candidate trigger has been satisfied with a fresh lock audit and current registry metadata. Preserve the installed vendor-supported family and the existing bounded controls: build-only use, no public development server, no vulnerability-free claim. The high finding remains an explicitly accepted, time-bounded build/development risk through 2026-10-09; a DCloud-family migration must be separately qualified before that date or the next candidate, whichever comes first.",
   "uncertainties": [
-    "npm latest is an older alpha dist-tag while vue3 points at a newer alpha; neither is proof of a production-ready migration.",
-    "This review did not run an audit and therefore does not quantify whether Vite 5.2.8 remains affected by a specific advisory."
-  ]
+    "The vue3 dist-tag is a pre-release track and is not evidence that this application's H5 and mini-program targets are compatible without migration testing.",
+    "The audit severity aggregates transitive findings; this review does not claim production Runtime exposure or zero exploitability.",
+    "Real Provider and customer deployment qualification remain outside CR02."
+  ],
+  "evidence": {
+    "npm_audit_sha256": "1c6dcf1d9232594611181180fb33f108bd4e6490cdaaa2213f6a9aafa025893d",
+    "package_lock_sha256": "6157e264bb64ccf4b58dae9dad122ae69b1533a8bb260dd3681cb7e849ab3236"
+  }
 }
