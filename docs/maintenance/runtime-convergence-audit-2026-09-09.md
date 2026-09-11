@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01、CQ、C01、CR01及CR02开发交付已验收；CR03执行合同已补齐、进入独立资格准备；尚无App资格或发布结论）
+Status: `current`（T01、CQ、C01、CR01及CR02开发交付已验收；CR03-01与最终seal已根验收，CR03-02正在集成与PR准备；尚无App资格或发布结论）
 
 Owner: `product-architecture`
 
@@ -51,11 +51,12 @@ CR03的可执行输入与缺口统一记录在主登记`consumer_delivery.cr02.h
 
 CR03任务书现已在[方案§12.8](../plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书)落地：
 先补实际旧实例/数据恢复与四端场景、隔离资源合同，再经dev→main PR固定候选，分别执行八组P0-E与增补资格。
-输入为`ced1fa56`，最终main身份尚未产生，不预填资格结果。COS只有acceptance桶、仍缺凭据绑定，OSS/七牛及
+CR03-01已完成并获根技术验收：canonical common-dir lease proof、真实candidate/tree、固定实例guard、签名包内升级入口、
+恢复stdin、独立资源与HTTP20190唯一登记均已收敛；`CreateApplicationTest`真实生成负控及`seal --check-remote`
+在`83bc66ce`均通过。当前未发布生成源是`cd2ac5d3`/`70954b43`，inventory `e22aea1c…`、manifest `9ca57d31…`。
+CR03-02正在把这些已验证差异集成`dev`并准备正式PR，最终main身份尚未产生，不预填资格结果。COS只有acceptance桶、仍缺凭据绑定，OSS/七牛及
 支付/短信/OAuth未有完整外部测试资源；这些只阻塞对应厂商真实资格，不删除厂商支持，也不阻塞独立安装升级准备。
-CR03-01 已完成待根技术验收：登记了独立的两个旧实例/恢复 schema，补了无资源计划入口，并按当前
-candidate 做 P0-E eight-group 与旧实例 two-scenario 的 plan readback；Playwright 0.1.18 工具有效。
-它没有 claim、运行产品 Gate、下载正式资产、使用签名私钥或操作客户环境。四端锁审计中 PC/Platform/Web
+CR03-01没有 claim、运行产品 Gate、下载正式资产、使用签名私钥或操作客户环境。四端锁审计中 PC/Platform/Web
 无 high/critical；UniApp Vite 5.2.8 的 high aggregate 与既有受控例外相符，仍按 2026-10-09 到期复核，
 不能表述为漏洞清零。具体队列、模型、资源、停止点及输出位置见原问题登记`consumer_delivery.cr03`。
 

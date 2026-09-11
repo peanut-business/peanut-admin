@@ -2652,10 +2652,10 @@
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
     "cr02": {
-      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U实现21798b2c及聚焦验证已复核接受，交付已集成dev@c5fea410；CR03-01正在同一独立任务完成就绪补正，尚未冻结或运行资格",
+      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U实现21798b2c及聚焦验证已复核接受，交付已集成dev@c5fea410；CR03-01已由根验收，CR03-02正在同一独立任务集成dev并准备正式PR，尚未冻结或运行资格",
       "depends_on": [
         "CR01开发修复已集成",
-        "CR03-01补正通过根技术验收后，仍须由根绑定固定候选、资源、真实旧实例与采用/签名输入"
+        "CR03-02实际PR经根技术验收并合入main后，才绑定固定候选、资源、真实旧实例与采用/签名输入"
       ],
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书",
       "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
@@ -2801,7 +2801,7 @@
       "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
     "cr03": {
-      "status": "CR03-01集中补正已完成并等待根技术验收；App资格未运行",
+      "status": "CR03-01已完成并获根技术验收；CR03-02正在集成dev并准备正式PR；App资格未运行",
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书",
       "authorization_id": "PA-CONSUMER-FIRST-20260911",
       "depends_on": ["CR01及CR02开发交付已验收", "CR03-01独立资源/资格场景就绪后才允许冻结"],
@@ -2811,10 +2811,10 @@
       "candidate_rule": "就绪后经dev到main PR及根技术验收，以实际origin/main完整commit/tree冻结；不得预填未来SHA或把prepare ready当qualified",
       "model": "gpt-5.6-terra",
       "reasoning": "medium",
-      "current_correction_model": "gpt-5.6-sol / medium，仅用于根确认的lease/生成实例/跨阶段命令难点；补正回根后常规CR03恢复Terra/medium",
+      "current_execution_model": "gpt-5.6-terra / medium；CR03-02仅处理已验证差异的dev集成与PR准备，根仍保留main冻结裁定",
       "queue": [
-        {"id": "CR03-01", "status": "补正完成，等待根技术验收", "scope": "就绪、旧实例增补/四端场景和隔离资源合同；不跑完整资格"},
-        {"id": "CR03-02", "status": "待领取", "depends_on": ["CR03-01", "根冻结技术验收"], "scope": "dev-main PR与真实main候选冻结"},
+        {"id": "CR03-01", "status": "已完成并获根技术验收", "scope": "就绪、旧实例增补/四端场景和隔离资源合同；不跑完整资格"},
+        {"id": "CR03-02", "status": "进行中：集成dev并准备PR", "depends_on": ["CR03-01", "根冻结技术验收"], "scope": "dev-main PR与真实main候选冻结"},
         {"id": "CR03-03", "status": "待领取", "depends_on": ["CR03-02"], "scope": "同候选P0-E八组及零残留"},
         {"id": "CR03-04", "status": "待领取", "depends_on": ["CR03-02"], "scope": "正式key签名同Edition旧实例升级/依赖/数据/失败恢复；独立租约"},
         {"id": "CR03-05", "status": "待领取", "depends_on": ["对应实例/资源就绪"], "scope": "四端业务与逐厂商实际资格；缺外部账号只阻塞对应部分"},
@@ -2828,8 +2828,8 @@
       },
       "cr03_01_execution": {
         "owner": "CR03 executor task 01a08e89-4065-7c91-ac27-6bf4fc36c99d",
-        "status": "bounded-correction-complete-awaiting-root-acceptance",
-        "correction_commits": ["441e4ecd1c90a624ad6e74793a5a72befb3a1308", "725874950f783ec706b3d798eefb7695abbb219c"],
+        "status": "completed-root-accepted",
+        "correction_commits": ["441e4ecd1c90a624ad6e74793a5a72befb3a1308", "725874950f783ec706b3d798eefb7695abbb219c", "cd2ac5d3b2a4081f3739aa8ca39aad02d1c507ac", "d5a7552d0a1daff8e075e5337270e00aa6885368", "83bc66ce2428d7d474aa6056f7a2cb11bd137587", "ef368b83d161929f4fd1d6f7f18db7f5114e9847"],
         "narrow_write_set": [
           "resources/project-resources.json#peanut-admin-consumer-upgrade-mysql84-gate",
           "server/tests/fixtures/consumer-upgrade-qualification/matrix.json",
@@ -2844,7 +2844,9 @@
           "browser_tooling": "scripts/p0e-browser-tooling install/check: @playwright/cli 0.1.18 valid in the CR03 worktree",
           "p0e_plan": "eight fresh groups and six exact P0-E schemas planned for cr03a0911 without claim or runtime connection",
           "legacy_upgrade_plan": "two exact CR03 schemas planned for cr03u0911 without claim, download, signing, database connection, instance write or cleanup",
-          "consumer_prepare": "consumer-ready-control preflight --phase prepare: ready for dcc32454c5a06520e0f4d18a8d4990ad3cecd452 / 16a865e8e18983b06fe4b312ba98c77b248bfc83"
+          "consumer_prepare": "consumer-ready-control preflight --phase prepare: ready at cd2ac5d3b2a4081f3739aa8ca39aad02d1c507ac",
+          "final_seal": "consumer-ready-control preflight --phase seal --candidate 83bc66ce2428d7d474aa6056f7a2cb11bd137587 --check-remote: 22 checks passed, ready, exit 0",
+          "generation": "CreateApplicationTest: CREATE-APP-001 passed at 83bc66ce; source cd2ac5d3b2a4081f3739aa8ca39aad02d1c507ac/tree70954b43c0765897df2a2a9448eff96182713771; inventory e22aea1c002c4ba585b062fb48f0ede1dc9329db1f0fa2e94005fe22085a6960; scaffold manifest 9ca57d31285ae94b337340dff846565043bb1a7178fbc24c7d1131517125dfad; managed tree 7e86926edb7eadea57c920034c3331e2948567630e4851456bf99a991233614d"
         },
         "advisory_review": {
           "checked_at": "2026-09-11",
@@ -2852,7 +2854,7 @@
           "web": "pnpm audit: no high or critical event",
           "uniapp": "npm audit reports Vite 5.2.8 high aggregate; this matches the existing controlled DCloud/Vite exception in capability ledger, with no lock change and expiry 2026-10-09; it is not a clean-security claim or a reason to weaken future qualification"
         },
-        "boundary": "plan mode has no final lease, signing, database connection, instance write or cleanup; Development可在登记、健康和独立非final lease后做被批准的最小相邻验证。CR03-02仍阻塞到根验收本次补正；prepare ready不等于seal或qualified"
+        "boundary": "plan mode has no final lease, signing, database connection, instance write or cleanup; Development可在登记、健康和独立非final lease后做被批准的最小相邻验证。CR03-01的final seal已根验，CR03-02仍须根核实际PR后才冻结；seal ready不等于qualified"
       },
       "external_blockers": [
         "COS有acceptance桶但master-key和测试账户仍待绑定；OSS/七牛无完整测试资源",
