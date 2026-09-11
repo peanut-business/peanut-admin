@@ -80,12 +80,12 @@ P0-E 不扫描其他 worktree 的临时 `pwcli-cache`，也不使用系统 Chrom
 25 条 Host ownership adoption 的逐条确认、preflight/apply/verify、业务数据读回，以及 paired
 database dump + instance archive 的恢复证据；秘密、Module 和 app-owned bytes 不得进入升级写集。
 
-CR03-01 只能先生成无资源计划。该命令要求一个干净、固定候选，但不 claim、下载、签名、连接
-数据库或创建任何实例；真实 claim 仅能在根冻结 main 候选后进行：
+CR03-01 只能先生成 structural plan。该命令要求一个干净、固定候选，但不 claim、下载、签名、连接
+数据库或创建任何实例；它不是可运行或 qualified 的结论。最终资格 claim 仅能在根冻结 main 候选后进行：
 
 ```bash
 candidate="$(git rev-parse HEAD)"
-run_id="cr03u0911"
+run_id="<new-lease-bound-run-id>"
 scripts/consumer-upgrade-qualification plan \
   --candidate "$candidate" --run-id "$run_id" --lease "consumer-upgrade-${run_id}" \
   --output-dir "$PWD/output/cr03-upgrade-${run_id}" \
@@ -96,6 +96,61 @@ scripts/consumer-upgrade-qualification plan \
 recover；成功保存脱敏证据后由 active lease owner 清理其精确资源。无正式 signing resource、
 旧 Release asset、外部 trusted key 或 main candidate 时停止，不能回退到 CR02 临时 key 或任何
 fresh-only 场景。
+
+### 旧实例升级 runbook
+
+这是 CR03-04 的人工最小执行集，不是第二个执行框架。先以 `gh release download v3.0.14` 下载两个
+installer、两个 manifest 和 `UPGRADE_TRUSTED_KEYS.json` 到 active lease cache；`shasum -a 256` 必须逐字
+匹配 `server/tests/fixtures/consumer-upgrade-qualification/matrix.json`，再检查 manifest 的 source
+commit/tree、Edition 和 deployment mode。下载不匹配、key id 不匹配或可信公钥不在包外入口时停止。
+
+旧安装包内的 v3.0.14 `environment-guard.php` 只能读取该独立实例自己的**固定**资源登记，不能识别
+本仓 templated CR03 resource；它是旧实例 bootstrap 的 consumer guard。每个 disposable instance 必须先保留
+archive 原始摘要，再按安装包的实例注册入口登记一个精确、lease-owned Host DB name，随后才设置其
+0600 `server/.env.<run-id>` 并运行 `php server/database/install.php`。这项实例局部注册不改 archive
+字节、不能替代本仓资源 lease，也不能冒充 P0-E fresh 场景。目标 3.1.0 package 的运行/迁移检查则使用
+本仓 `peanut-admin-consumer-upgrade-mysql84-gate` 和当前 `environment-guard.php`：它要求
+`local-development`、Host endpoint、`consumer-upgrade-qualification` active lease，及两个精确
+database/instance/backup roots。没有二者时停止。
+
+在 active lease 后，按每个 Edition 串行执行以下具体步骤，并把所有 stdout/stderr、JSON plan、SHA 和
+screenshot/trace 写入该 run 的 output：
+
+1. 将 release assets 下载到 `cache/instances/<scenario>/assets/`，以 fixture 的四个 SHA-256 做逐个比对，
+   从 package 外的 trusted-key source 读取 `peanut-admin-release-2026-01` 的 public key，再核对
+   `UPGRADE_TRUSTED_KEYS.json` 的 key id 和 public key。解包 installer 前后都记录 archive SHA；解析 manifest
+   必须得到 fixture 中的 source commit、tree、Edition 和 deployment mode。任一输入不一致立即停止。
+2. 解包旧 installer 到 `cache/instances/<scenario>/v3.0.14/`，在 archive 原始 SHA 已记录后，为该 Edition 的
+   精确 DB 名称写入它自己的固定 instance resource registration 与 `server/.env.<run-id>`（0600）。运行
+   `php server/database/install.php`，并记录 installer、DB 名称和环境守卫的成功结果；这里的 v3.0.14 guard
+   只验证旧实例固定资源，不接受或改写本仓 CR03 registry。
+3. 仅使用该实例的合成账号建立可识别的文章/分类、设置、已启用 Module state、Tenant/Account/RBAC 以及一项
+   app-owned customization；密码和 secret 只保存在 active-lease 的 0600 环境。随后在
+   `cache/backups/<scenario>/` 生成并校验该精确 DB dump 与 instance archive SHA-256，记录业务、Tenant/RBAC、
+   Module、customization 与 secret 的不泄露摘要作为恢复前读回基线。
+4. 以下载并验证的 3.1.0 signed package 运行
+   `php scripts/scaffold-upgrade adoption-plan --project-root=<instance> --package=<extracted-package> --signature-key-id=peanut-admin-release-2026-01`。
+   保存其 JSON 为 `<output>/adoption-plan.json`，人工逐条确认恰好 25 个 ordered paths 和 plan SHA，才运行
+   `php scripts/scaffold-upgrade adoption-apply --project-root=<instance> --plan=<output>/adoption-plan.json --confirm-plan-sha256=<sha256> --confirm-paths=<comma-separated-exact-25-paths>`。
+   不接受手工重排、缺项、额外项或 archive 内未声明的写集。
+5. 对同一 package 依次运行 `preflight`（带 `--package`、`--signature-key-id`）、`apply --plan=<plan>`、
+   `verify --plan=<plan>`；再按 package 的锁定入口完成 Composer/npm 安装，以及
+   `php server/database/install.php --migrate --dry-run` 后的确认 apply。记录 application / instance /
+   generation_source versions、DB migration ledger、定制/Module/secret 摘要、Tenant/RBAC 与业务行读回。
+6. 在一个可恢复失败点（例如 apply 后、verify 前）中断，先执行 package `recover --plan=<plan>`，再从步骤 3 的
+   checksum DB dump 与 instance archive restore；恢复后读取同一业务、Tenant/RBAC、Module 和 customization。
+   任何差异都停止，不能通过重建合成数据伪造恢复成功。
+7. HTTP `127.0.0.1:20190` 由 active lease 独占且四端串行。Web 路由 `/login`：登录后验证文章/分类、
+   `/app-setting/website` 保存并重开、菜单/Module/权限、Tenant A→B 拒绝和 Local upload/read/delete。Platform
+   路由 `/platform/`：用该 run 的 PlatformOperator 登录，验证 Tenant enable/disable/authorization 与 secret non-echo。
+   PC 路由 `/login`、`/information`、`/information/detail/<id>`：验证登录/失效、文章列表/详情/分类及允许保存后重进。
+   UniApp H5 路由 `/pages/login/login`、`/pages/news/news`、`/pages/news_detail/news_detail`、`/pages/user/user`：
+   验证登录、内容、返回、Tabbar/错误布局。账号只来自该 run 的 0600 setup output；每端把 trace 或 screenshot
+   保存到 `output/cr03-upgrade-<run-id>/clients/<surface>/`。无注册 HTTP owner、路由、账号或 Local object prefix 时
+   surface 未就绪，不能以页面配置代替。
+8. 成功后仅清理 active lease 的两 schema、instance/backup roots、temporary accounts/listener/object prefix；
+   失败则保留这些精确坐标和 lease 给一次诊断。OSS/COS/七牛、支付、短信、OAuth 的真实外部动作仍各自依赖
+   注册测试账户与授权，不由本 runbook 假称完成。
 
 ## Claim 与运行
 

@@ -111,21 +111,21 @@ function registeredDatabaseEndpoint(array $database, string $consumer): array
 }
 
 /** @return array<string,string> */
-function activeLeaseMetadata(string $proofPath, int $now): array
+function activeLeaseMetadata(string $proofPath, int $now, string $expectedGate): array
 {
     $metadataPath = $proofPath . '/metadata.tsv';
     if (!is_dir($proofPath) || is_link($proofPath) || !is_file($metadataPath) || is_link($metadataPath)) {
-        throw new RuntimeException('P0-E active lease metadata 不可用');
+        throw new RuntimeException('active lease metadata 不可用');
     }
     $lines = file($metadataPath, FILE_IGNORE_NEW_LINES);
     if (!is_array($lines)) {
-        throw new RuntimeException('P0-E active lease metadata 无法读取');
+        throw new RuntimeException('active lease metadata 无法读取');
     }
     $metadata = [];
     foreach ($lines as $line) {
         $fields = explode("\t", $line);
         if (count($fields) !== 2 || $fields[0] === '' || $fields[1] === '' || isset($metadata[$fields[0]])) {
-            throw new RuntimeException('P0-E active lease metadata 格式无效');
+            throw new RuntimeException('active lease metadata 格式无效');
         }
         $metadata[$fields[0]] = $fields[1];
     }
@@ -136,7 +136,7 @@ function activeLeaseMetadata(string $proofPath, int $now): array
     if ($actualKeys !== $expectedKeys
         || preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/D', $metadata['lease']) !== 1
         || preg_match('/^[a-f0-9]{40}$/D', $metadata['candidate']) !== 1
-        || $metadata['gate'] !== 'p0e-runtime-qualification'
+        || $metadata['gate'] !== $expectedGate
         || !str_starts_with($metadata['candidate_repository'], '/')
         || !str_starts_with($metadata['worktree'], '/')
         || preg_match('/^[0-9]+$/D', $metadata['created_at']) !== 1
@@ -144,7 +144,7 @@ function activeLeaseMetadata(string $proofPath, int $now): array
         || $metadata['status'] !== 'ACTIVE'
         || (int)$metadata['created_at'] > $now
         || (int)$metadata['expires_at'] <= $now) {
-        throw new RuntimeException('P0-E lease 未激活、已过期或 metadata 合同不匹配');
+        throw new RuntimeException('active lease 未激活、已过期或 metadata 合同不匹配');
     }
     return $metadata;
 }
@@ -154,11 +154,11 @@ function activeLeaseResources(string $proofPath): array
 {
     $resourcesPath = $proofPath . '/resources.tsv';
     if (!is_file($resourcesPath) || is_link($resourcesPath)) {
-        throw new RuntimeException('P0-E active lease resources 不可用');
+        throw new RuntimeException('active lease resources 不可用');
     }
     $lines = file($resourcesPath, FILE_IGNORE_NEW_LINES);
     if (!is_array($lines)) {
-        throw new RuntimeException('P0-E active lease resources 无法读取');
+        throw new RuntimeException('active lease resources 无法读取');
     }
     $resources = [];
     $pairs = [];
@@ -172,7 +172,7 @@ function activeLeaseResources(string $proofPath): array
             || !hash_equals(hash('sha256', $type . "\t" . $value), $digest)
             || preg_match('/^[a-z][a-z0-9_-]{0,31}$/D', $type) !== 1
             || isset($pairs[$type . "\t" . $value])) {
-            throw new RuntimeException('P0-E active lease resource identity 无效');
+            throw new RuntimeException('active lease resource identity 无效');
         }
         $pairs[$type . "\t" . $value] = true;
         $resources[$type] ??= [];
@@ -356,6 +356,88 @@ function assertP0eLeaseContract(
     }
 }
 
+/**
+ * @param array<string,string> $metadata
+ * @param array<string,list<string>> $resources
+ * @param array<string,mixed> $database
+ * @param array{run_id:string,scenario:string} $identity
+ */
+function assertConsumerUpgradeLeaseContract(
+    array $metadata,
+    array $resources,
+    array $database,
+    array $identity,
+    string $resourceId,
+    string $deploymentTarget,
+    string $deploymentMode
+): void {
+    $expectedCounts = [
+        'backup-root' => 2,
+        'cache-dir' => 1,
+        'candidate-tree' => 1,
+        'consumer' => 1,
+        'deployment-target' => 1,
+        'endpoint' => 1,
+        'environment' => 1,
+        'gate' => 1,
+        'instance-root' => 2,
+        'lease-proof-dir' => 1,
+        'mysql-db' => count($database['allowed_scenarios']),
+        'output-dir' => 1,
+        'resource-id' => 1,
+        'run-id' => 1,
+        'worktree' => 1,
+    ];
+    $actualCounts = [];
+    foreach ($resources as $type => $values) $actualCounts[$type] = count($values);
+    ksort($actualCounts, SORT_STRING);
+    if ($actualCounts !== $expectedCounts || array_sum($actualCounts) !== array_sum($expectedCounts)) {
+        throw new RuntimeException('consumer-upgrade lease resource set 存在缺失、额外项或 cardinality 冲突');
+    }
+
+    $runId = $identity['run_id'];
+    $scenarios = $database['allowed_scenarios'];
+    $expectedDatabases = array_map(
+        static fn(string $scenario): string => str_replace(['<run_id>', '<scenario>'], [$runId, $scenario], (string)$database['database']),
+        $scenarios
+    );
+    assertLeaseResourceValues($resources, 'resource-id', [$resourceId]);
+    assertLeaseResourceValues($resources, 'environment', ['development']);
+    assertLeaseResourceValues($resources, 'deployment-target', [$deploymentTarget]);
+    assertLeaseResourceValues($resources, 'consumer', ['host']);
+    assertLeaseResourceValues($resources, 'endpoint', [(string)$database['upstream_endpoint']['host'] . ':' . (string)$database['upstream_endpoint']['port']]);
+    assertLeaseResourceValues($resources, 'run-id', [$runId]);
+    assertLeaseResourceValues($resources, 'mysql-db', $expectedDatabases);
+    assertLeaseResourceValues($resources, 'gate', [$metadata['gate']]);
+    assertLeaseResourceValues($resources, 'worktree', [$metadata['worktree']]);
+    if ($metadata['lease'] !== 'consumer-upgrade-' . $runId
+        || $metadata['candidate_repository'] !== $metadata['worktree']
+        || !isLexicallyAbsolutePath($metadata['worktree'])
+        || preg_match('/^[a-f0-9]{40}$/D', $resources['candidate-tree'][0]) !== 1) {
+        throw new RuntimeException('consumer-upgrade lease candidate/run_id/worktree identity 不匹配');
+    }
+
+    $cacheDir = $resources['cache-dir'][0];
+    $outputDir = $resources['output-dir'][0];
+    $proofDir = $resources['lease-proof-dir'][0];
+    $expectedRoots = array_map(static fn(string $scenario): string => $cacheDir . '/instances/' . $scenario, $scenarios);
+    $expectedBackups = array_map(static fn(string $scenario): string => $cacheDir . '/backups/' . $scenario, $scenarios);
+    if (!isLexicallyAbsolutePath($cacheDir)
+        || !isLexicallyAbsolutePath($outputDir)
+        || !isLexicallyAbsolutePath($proofDir)
+        || $outputDir !== rtrim($metadata['worktree'], '/') . '/output/cr03-upgrade-' . $runId
+        || !str_ends_with($cacheDir, '/.cache/peanut-admin/cr03-upgrade-' . $runId)
+        || !str_ends_with($proofDir, '/peanut-admin-resource-leases/leases/' . $metadata['lease'])) {
+        throw new RuntimeException('consumer-upgrade lease path identity 不匹配精确 run_id 合同');
+    }
+    assertLeaseResourceValues($resources, 'instance-root', $expectedRoots);
+    assertLeaseResourceValues($resources, 'backup-root', $expectedBackups);
+    $expectedMode = $identity['scenario'] === 'multi_tenant_upgrade' ? 'multi-tenant' : 'standalone';
+    if (!hash_equals($expectedMode, $deploymentMode)) {
+        throw new RuntimeException('consumer-upgrade deployment mode 与 database scenario 不匹配');
+    }
+}
+
 /** @return array{environment:string,deployment_target:string,resource_id:string,endpoint_id:string,consumer:string,host:string,port:string,database:string,user:string,password:string} */
 function guardedDatabaseConfig(?string $leaseProofPath = null, ?int $now = null): array {
     $registry = projectResourceRegistry();
@@ -402,32 +484,35 @@ function guardedDatabaseConfig(?string $leaseProofPath = null, ?int $now = null)
     }
     $deploymentMode = requiredEnvironment('DEPLOYMENT_MODE');
     if ($isTemplated) {
-        if ($resourceId !== 'peanut-admin-p0e-mysql84-gate'
-            || $deploymentTarget !== 'local-production-preview'
-            || !in_array($consumer, ['host', 'container'], true)
-            || ($database['application_runtime'] ?? null) !== false
+        if (($database['application_runtime'] ?? null) !== false
             || ($database['lifecycle'] ?? null) !== 'ephemeral') {
-            throw new RuntimeException('templated database 仅允许登记的 P0-E ephemeral Gate 使用');
+            throw new RuntimeException('templated database 必须是登记的 ephemeral qualification resource');
         }
         $identity = templatedDatabaseIdentity($database, $actual['database']);
-        if ($leaseProofPath === null) {
-            $leaseProofPath = requiredEnvironment('PEANUT_RESOURCE_LEASE_PROOF');
-            if ($leaseProofPath !== '/run/peanut-admin/resource-lease') {
-                throw new RuntimeException('P0-E 容器必须使用固定只读 active-lease proof mount');
+        if ($resourceId === 'peanut-admin-p0e-mysql84-gate') {
+            if ($deploymentTarget !== 'local-production-preview' || !in_array($consumer, ['host', 'container'], true)) {
+                throw new RuntimeException('P0-E 只允许固定 production-preview 容器 lease proof');
             }
+            if ($leaseProofPath === null) {
+                $leaseProofPath = requiredEnvironment('PEANUT_RESOURCE_LEASE_PROOF');
+                if ($leaseProofPath !== '/run/peanut-admin/resource-lease') {
+                    throw new RuntimeException('P0-E 容器必须使用固定只读 active-lease proof mount');
+                }
+            }
+            $metadata = activeLeaseMetadata($leaseProofPath, $now ?? time(), 'p0e-runtime-qualification');
+            $resources = activeLeaseResources($leaseProofPath);
+            assertP0eLeaseContract($metadata, $resources, $database, $endpoint, $identity, $resourceId, $deploymentTarget, $deploymentMode);
+        } elseif ($resourceId === 'peanut-admin-consumer-upgrade-mysql84-gate') {
+            if ($deploymentTarget !== 'local-development' || $consumer !== 'host') {
+                throw new RuntimeException('consumer-upgrade 只允许 lease-bound local-development Host execution');
+            }
+            $leaseProofPath ??= requiredEnvironment('PEANUT_RESOURCE_LEASE_PROOF');
+            $metadata = activeLeaseMetadata($leaseProofPath, $now ?? time(), 'consumer-upgrade-qualification');
+            $resources = activeLeaseResources($leaseProofPath);
+            assertConsumerUpgradeLeaseContract($metadata, $resources, $database, $identity, $resourceId, $deploymentTarget, $deploymentMode);
+        } else {
+            throw new RuntimeException('templated database resource 未获 qualification guard 授权');
         }
-        $metadata = activeLeaseMetadata($leaseProofPath, $now ?? time());
-        $resources = activeLeaseResources($leaseProofPath);
-        assertP0eLeaseContract(
-            $metadata,
-            $resources,
-            $database,
-            $endpoint,
-            $identity,
-            $resourceId,
-            $deploymentTarget,
-            $deploymentMode
-        );
     } else {
         if (!is_string($registeredName) || !hash_equals($registeredName, $actual['database'])) {
             throw new RuntimeException("数据库资源 {$resourceId} 的 database 不匹配固定登记值");

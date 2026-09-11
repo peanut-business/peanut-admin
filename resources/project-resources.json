@@ -669,7 +669,9 @@
           "database": "after claim, perform the registered credential-backed ping and SELECT DATABASE(), then confirm each exact schema is absent before installation"
         },
         "fallback": "none",
-        "lifecycle": "ephemeral fixed-candidate CR03 qualification",
+        "lifecycle": "ephemeral",
+        "qualification_gate": "consumer-upgrade-qualification",
+        "deployment_target": "local-development",
         "claim_precondition": "before connection, creation, installer extraction, backup, upgrade, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, this resource ID, both exact run_id databases, instance roots, backup roots, cache path and output path",
         "creation_policy": "the active CR03 lease owner may create and drop only peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>",
         "cleanup_responsibility": "after desensitized evidence capture, the active lease owner removes only exact run_id databases, synthetic instances/backups, temporary accounts and owned listeners; unmatched paths or schemas require an explicit project-owner gate",

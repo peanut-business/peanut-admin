@@ -19,15 +19,21 @@ const P0E_FRESH_GROUPS = [
     'standalone-browser',
     'multi-tenant-browser',
 ];
+const CONSUMER_UPGRADE_SCENARIO_MODES = [
+    'standalone_upgrade' => 'standalone',
+    'multi_tenant_upgrade' => 'multi-tenant',
+];
 
 $root = dirname(__DIR__, 3);
 $registryPath = $root . '/resources/project-resources.json';
 $p0eRegistryPath = $root . '/resources/p0e-runtime-qualification.json';
 $p0eMatrixPath = $root . '/server/tests/fixtures/p0e-runtime-qualification/matrix.json';
+$consumerUpgradeMatrixPath = $root . '/server/tests/fixtures/consumer-upgrade-qualification/matrix.json';
 $registryJson = (string)file_get_contents($registryPath);
 $registry = json_decode($registryJson, true, 512, JSON_THROW_ON_ERROR);
 $p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
 $p0eMatrix = json_decode((string)file_get_contents($p0eMatrixPath), true, 512, JSON_THROW_ON_ERROR);
+$consumerUpgradeMatrix = json_decode((string)file_get_contents($consumerUpgradeMatrixPath), true, 512, JSON_THROW_ON_ERROR);
 
 $expect = static function (bool $condition, string $message): void {
     if (!$condition) {
@@ -192,6 +198,34 @@ $expect(($qualificationDatabase['data_source'] ?? '') !== '', 'P0-E authoritativ
 $expect(($qualificationDatabase['freshness_requirement'] ?? '') !== '', 'P0-E freshness requirement is missing');
 $expect(is_array($qualificationDatabase['health_check'] ?? null), 'P0-E health check is missing');
 
+$consumerUpgradeDatabases = array_values(array_filter(
+    $registry['resources']['databases'] ?? [],
+    static fn (array $item): bool => ($item['stable_resource_id'] ?? '') === 'peanut-admin-consumer-upgrade-mysql84-gate'
+));
+$expect(count($consumerUpgradeDatabases) === 1, 'consumer-upgrade database registration is missing');
+$consumerUpgradeDatabase = $consumerUpgradeDatabases[0];
+foreach ($requiredQualificationFields as $field) {
+    $expect(array_key_exists($field, $consumerUpgradeDatabase), "consumer-upgrade required field {$field} is missing");
+}
+$expect(($consumerUpgradeDatabase['application_runtime'] ?? null) === false, 'consumer-upgrade database must not be selected as an application runtime');
+$expect(($consumerUpgradeDatabase['environments'] ?? null) === ['development'], 'consumer-upgrade database must stay in development');
+$expect(($consumerUpgradeDatabase['database'] ?? null) === 'peanut_admin_development_cr03_<run_id>_<scenario>', 'consumer-upgrade database template is invalid');
+$expect(($consumerUpgradeDatabase['namespace'] ?? null) === 'peanut_admin_development_cr03_<run_id>_', 'consumer-upgrade database namespace is invalid');
+$expect(($consumerUpgradeDatabase['run_id_pattern'] ?? null) === '^[a-z0-9]{1,11}$', 'consumer-upgrade run_id policy is invalid');
+$expect(($consumerUpgradeDatabase['database_name_max_length'] ?? null) === 64, 'consumer-upgrade database name limit is invalid');
+$expect(($consumerUpgradeDatabase['allowed_scenarios'] ?? null) === array_keys(CONSUMER_UPGRADE_SCENARIO_MODES), 'consumer-upgrade scenarios are invalid');
+$expect(($consumerUpgradeDatabase['lifecycle'] ?? null) === 'ephemeral', 'consumer-upgrade database lifecycle must be ephemeral');
+$expect(($consumerUpgradeDatabase['qualification_gate'] ?? null) === 'consumer-upgrade-qualification', 'consumer-upgrade Gate is invalid');
+$expect(($consumerUpgradeDatabase['deployment_target'] ?? null) === 'local-development', 'consumer-upgrade deployment target is invalid');
+$expect(($consumerUpgradeDatabase['fallback'] ?? null) === 'none', 'consumer-upgrade database must fail closed');
+$expect(($consumerUpgradeDatabase['container_endpoint'] ?? null) === null, 'consumer-upgrade must not expose a container endpoint');
+$expect(($consumerUpgradeDatabase['upstream_endpoint']['endpoint_id'] ?? null) === 'peanut-admin-consumer-upgrade-mysql84-gate-host-direct', 'consumer-upgrade Host endpoint is invalid');
+$expect(($consumerUpgradeDatabase['upstream_endpoint']['host'] ?? null) === '192.168.192.2' && ($consumerUpgradeDatabase['upstream_endpoint']['port'] ?? null) === 20183, 'consumer-upgrade Host address is invalid');
+$expect(($consumerUpgradeDatabase['upstream_endpoint']['consumers'] ?? null) === ['host'], 'consumer-upgrade must permit only Host execution');
+$expect(($consumerUpgradeMatrix['gate'] ?? null) === 'consumer-upgrade-qualification', 'consumer-upgrade fixture Gate is invalid');
+$expect(($consumerUpgradeMatrix['database_resource']['stable_resource_id'] ?? null) === 'peanut-admin-consumer-upgrade-mysql84-gate', 'consumer-upgrade fixture resource is invalid');
+$expect(array_keys($consumerUpgradeMatrix['scenarios'] ?? []) === array_keys(CONSUMER_UPGRADE_SCENARIO_MODES), 'consumer-upgrade fixture scenarios diverge from the registry');
+
 $expect(($p0eRegistry['schema_version'] ?? null) === 1, 'P0-E resource registry schema version is invalid');
 $expect(($p0eRegistry['project_id'] ?? null) === 'peanut-admin', 'P0-E resource registry project id is invalid');
 $expect(($p0eRegistry['gate'] ?? null) === 'p0e-runtime-qualification', 'P0-E resource registry Gate changed');
@@ -322,6 +356,32 @@ $expect($exitCode !== 0, 'templated database selection unexpectedly allowed an u
 ]);
 $expect($exitCode !== 0, 'templated database selection unexpectedly allowed an invalid run_id');
 
+$consumerUpgradeName = 'peanut_admin_development_cr03_run123_standalone_upgrade';
+[$exitCode, $output] = $runSelector([
+    'database-env', '--deployment-target', 'local-development', '--consumer', 'host',
+    '--resource-id', 'peanut-admin-consumer-upgrade-mysql84-gate', '--database-name', $consumerUpgradeName,
+]);
+$expect($exitCode === 0, "explicit consumer-upgrade database selection failed: {$output}");
+$expect(str_contains($output, 'PEANUT_DATABASE_RESOURCE_ID=peanut-admin-consumer-upgrade-mysql84-gate'), 'consumer-upgrade resource identity is missing');
+$expect(str_contains($output, "DB_NAME={$consumerUpgradeName}"), 'consumer-upgrade database name is missing');
+
+foreach ([
+    ['local-development', 'host', null, 'missing database name'],
+    ['production', 'host', $consumerUpgradeName, 'production target'],
+    ['local-development', 'container', $consumerUpgradeName, 'container consumer'],
+    ['local-development', 'host', 'peanut_admin_development_cr03_run123_unknown', 'unknown scenario'],
+    ['local-development', 'host', 'peanut_admin_development_p0e_run123_standalone_upgrade', 'foreign namespace'],
+] as [$target, $consumer, $name, $case]) {
+    $arguments = [
+        'database-env', '--deployment-target', $target, '--consumer', $consumer,
+        '--resource-id', 'peanut-admin-consumer-upgrade-mysql84-gate',
+    ];
+    if ($name !== null) $arguments[] = '--database-name';
+    if ($name !== null) $arguments[] = $name;
+    [$exitCode, $output] = $runSelector($arguments);
+    $expect($exitCode !== 0, "consumer-upgrade selection unexpectedly allowed {$case}");
+}
+
 $selectorSource = (string)file_get_contents($root . '/scripts/project-resource-registry');
 $expect(!str_contains($selectorSource, 'P0E_RESOURCE_ID'), 'resource selector still hard-codes a project resource identity');
 $expect(!str_contains($selectorSource, 'P0-E database'), 'resource selector still exposes project-specific database semantics');
@@ -411,6 +471,24 @@ function resourceGuardP0eEnvironment(string $runId, string $scenario, string $mo
     ], $overrides);
 }
 
+/** @param array<string,string> $overrides @return array<string,string> */
+function resourceGuardConsumerUpgradeEnvironment(string $runId, string $scenario, string $mode, array $overrides = []): array
+{
+    return array_replace([
+        'APP_ENV' => 'development',
+        'PEANUT_DEPLOYMENT_TARGET' => 'local-development',
+        'PEANUT_DATABASE_RESOURCE_ID' => 'peanut-admin-consumer-upgrade-mysql84-gate',
+        'PEANUT_DATABASE_CONSUMER' => 'host',
+        'PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-consumer-upgrade-mysql84-gate-host-direct',
+        'DB_HOST' => '192.168.192.2',
+        'DB_PORT' => '20183',
+        'DB_NAME' => 'peanut_admin_development_cr03_' . $runId . '_' . $scenario,
+        'DB_USER' => 'guard-test',
+        'DB_PASS' => 'guard-test',
+        'DEPLOYMENT_MODE' => $mode,
+    ], $overrides);
+}
+
 function resourceGuardDelete(string $path): void
 {
     if (!file_exists($path) && !is_link($path)) return;
@@ -471,6 +549,63 @@ function resourceGuardWriteProof(string $directory, string $runId, int $now, ?ca
             '/Users/xing/Documents/company-projects/peanut-admin/.git/peanut-admin-resource-leases/leases/' . $lease,
         ],
         'gate' => ['p0e-runtime-qualification'],
+        'worktree' => [$worktree],
+    ];
+    if ($mutate !== null) $mutate($metadata, $resources);
+    $metadataRows = [];
+    foreach ($metadata as $key => $value) $metadataRows[] = $key . "\t" . $value;
+    file_put_contents($directory . '/metadata.tsv', implode("\n", $metadataRows) . "\n");
+    $resourceRows = [];
+    foreach ($resources as $type => $values) {
+        foreach ($values as $value) {
+            $resourceRows[] = hash('sha256', $type . "\t" . $value) . "\t" . $type . "\t" . $value;
+        }
+    }
+    file_put_contents($directory . '/resources.tsv', implode("\n", $resourceRows) . "\n");
+}
+
+/**
+ * @param callable(array<string,string>&,array<string,list<string>>&):void|null $mutate
+ */
+function resourceGuardWriteConsumerUpgradeProof(string $directory, string $runId, int $now, ?callable $mutate = null): void
+{
+    mkdir($directory, 0700, true);
+    $worktree = '/Users/xing/Documents/company-projects/peanut-admin-cr03-consumer-upgrade';
+    $lease = 'consumer-upgrade-' . $runId;
+    $cache = '/Users/xing/.cache/peanut-admin/cr03-upgrade-' . $runId;
+    $metadata = [
+        'lease' => $lease,
+        'owner' => 'environment-guard-test',
+        'thread' => 'environment-guard-test-thread',
+        'candidate' => str_repeat('c', 40),
+        'candidate_repository' => $worktree,
+        'gate' => 'consumer-upgrade-qualification',
+        'worktree' => $worktree,
+        'created_at' => (string)($now - 30),
+        'expires_at' => (string)($now + 3600),
+        'status' => 'ACTIVE',
+    ];
+    $scenarios = array_keys(CONSUMER_UPGRADE_SCENARIO_MODES);
+    $resources = [
+        'resource-id' => ['peanut-admin-consumer-upgrade-mysql84-gate'],
+        'environment' => ['development'],
+        'deployment-target' => ['local-development'],
+        'consumer' => ['host'],
+        'endpoint' => ['192.168.192.2:20183'],
+        'run-id' => [$runId],
+        'candidate-tree' => [str_repeat('d', 40)],
+        'mysql-db' => array_map(
+            static fn(string $scenario): string => 'peanut_admin_development_cr03_' . $runId . '_' . $scenario,
+            $scenarios
+        ),
+        'instance-root' => array_map(static fn(string $scenario): string => $cache . '/instances/' . $scenario, $scenarios),
+        'backup-root' => array_map(static fn(string $scenario): string => $cache . '/backups/' . $scenario, $scenarios),
+        'cache-dir' => [$cache],
+        'output-dir' => [$worktree . '/output/cr03-upgrade-' . $runId],
+        'lease-proof-dir' => [
+            '/Users/xing/Documents/company-projects/peanut-admin/.git/peanut-admin-resource-leases/leases/' . $lease,
+        ],
+        'gate' => ['consumer-upgrade-qualification'],
         'worktree' => [$worktree],
     ];
     if ($mutate !== null) $mutate($metadata, $resources);
@@ -612,6 +747,46 @@ try {
         static fn(): array => guardedDatabaseConfig($temporary . '/released-and-deleted', $guardNow),
         'deleted proof directory'
     );
+
+    $consumerProof = $temporary . '/consumer-active';
+    resourceGuardWriteConsumerUpgradeProof($consumerProof, $guardRunId, $guardNow);
+    foreach (CONSUMER_UPGRADE_SCENARIO_MODES as $scenario => $mode) {
+        resourceGuardSetEnvironment(resourceGuardConsumerUpgradeEnvironment($guardRunId, $scenario, $mode));
+        $config = guardedDatabaseConfig($consumerProof, $guardNow);
+        $expect($config['consumer'] === 'host', "consumer-upgrade guard did not allow exact scenario {$scenario}");
+    }
+    $consumerProofMutations = [
+        'wrong-gate' => static function (array &$metadata): void { $metadata['gate'] = 'p0e-runtime-qualification'; },
+        'missing-backup' => static function (array &$metadata, array &$resources): void { array_pop($resources['backup-root']); },
+        'extra-port' => static function (array &$metadata, array &$resources): void { $resources['port'] = ['20190']; },
+        'wrong-endpoint' => static function (array &$metadata, array &$resources): void { $resources['endpoint'] = ['127.0.0.1:3306']; },
+        'wrong-instance-root' => static function (array &$metadata, array &$resources): void { $resources['instance-root'][0] = '/tmp/other'; },
+        'wrong-candidate-tree' => static function (array &$metadata, array &$resources): void { $resources['candidate-tree'] = ['moving-head']; },
+        'wrong-worktree' => static function (array &$metadata, array &$resources): void { $resources['worktree'] = ['/tmp/other']; },
+        'wrong-lease' => static function (array &$metadata): void { $metadata['lease'] = 'consumer-upgrade-other'; },
+    ];
+    foreach ($consumerProofMutations as $case => $mutate) {
+        $proof = $temporary . '/consumer-' . $case;
+        resourceGuardWriteConsumerUpgradeProof($proof, $guardRunId, $guardNow, $mutate);
+        resourceGuardSetEnvironment(resourceGuardConsumerUpgradeEnvironment($guardRunId, 'standalone_upgrade', 'standalone'));
+        resourceGuardMustFail(static fn(): array => guardedDatabaseConfig($proof, $guardNow), 'consumer-upgrade ' . $case);
+    }
+    $consumerConfigRejections = [
+        'missing-proof' => [],
+        'production-target' => ['APP_ENV' => 'production', 'PEANUT_DEPLOYMENT_TARGET' => 'production'],
+        'container-consumer' => ['PEANUT_DATABASE_CONSUMER' => 'container'],
+        'wrong-endpoint-id' => ['PEANUT_DATABASE_ENDPOINT_ID' => 'peanut-admin-p0e-mysql84-gate-host-direct'],
+        'wrong-mode' => ['DEPLOYMENT_MODE' => 'multi-tenant'],
+        'foreign-run' => ['DB_NAME' => 'peanut_admin_development_cr03_other1_standalone_upgrade'],
+    ];
+    foreach ($consumerConfigRejections as $case => $overrides) {
+        resourceGuardSetEnvironment(resourceGuardConsumerUpgradeEnvironment($guardRunId, 'standalone_upgrade', 'standalone', $overrides));
+        if ($case === 'missing-proof') {
+            resourceGuardMustFail(static fn(): array => guardedDatabaseConfig(null, $guardNow), 'consumer-upgrade ' . $case);
+            continue;
+        }
+        resourceGuardMustFail(static fn(): array => guardedDatabaseConfig($consumerProof, $guardNow), 'consumer-upgrade ' . $case);
+    }
 } finally {
     resourceGuardDelete($temporary);
 }

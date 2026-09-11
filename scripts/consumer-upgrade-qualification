@@ -37,6 +37,11 @@ def safe_path(value: str, label: str, expected: Path) -> Path:
     path = Path(value)
     if not path.is_absolute() or path != expected or path.exists() or path.is_symlink():
         raise PlanError(f"{label} must be the absent fixed CR03 path: {expected}")
+    try:
+        if path.parent.resolve(strict=True) != expected.parent.resolve(strict=True):
+            raise PlanError(f"{label} parent escapes its fixed CR03 root")
+    except OSError as error:
+        raise PlanError(f"{label} parent is unavailable: {error}") from error
     return path
 
 def main() -> int:
@@ -65,7 +70,7 @@ def main() -> int:
     if len(matches) != 1:
         raise PlanError(f"registry must contain exactly one {RESOURCE_ID}")
     resource = matches[0]
-    expected = {"database": "peanut_admin_development_cr03_<run_id>_<scenario>", "namespace": "peanut_admin_development_cr03_<run_id>_", "allowed_scenarios": ["standalone_upgrade", "multi_tenant_upgrade"], "fallback": "none"}
+    expected = {"database": "peanut_admin_development_cr03_<run_id>_<scenario>", "namespace": "peanut_admin_development_cr03_<run_id>_", "allowed_scenarios": ["standalone_upgrade", "multi_tenant_upgrade"], "fallback": "none", "lifecycle": "ephemeral", "qualification_gate": "consumer-upgrade-qualification", "deployment_target": "local-development", "application_runtime": False}
     if resource.get("stable_resource_id") != RESOURCE_ID or any(resource.get(key) != value for key, value in expected.items()):
         raise PlanError("consumer-upgrade resource contract is invalid")
     scenarios = fixture.get("scenarios")
@@ -81,7 +86,38 @@ def main() -> int:
     output = safe_path(args.output_dir, "output-dir", ROOT / "output" / f"cr03-upgrade-{args.run_id}")
     cache = safe_path(args.cache_dir, "cache-dir", Path.home() / ".cache/peanut-admin" / f"cr03-upgrade-{args.run_id}")
     names = {scenario: resource["database"].replace("<run_id>", args.run_id).replace("<scenario>", scenario) for scenario in scenarios}
-    print(json.dumps({"schema_version": 1, "gate": fixture["gate"], "status": "ready-to-claim-after-main-freeze", "candidate": candidate, "candidate_tree": git("rev-parse", f"{candidate}^{{tree}}"), "run_id": args.run_id, "lease": args.lease, "resource_id": RESOURCE_ID, "databases": names, "paths": {"output-dir": str(output), "cache-dir": str(cache)}, "scenarios": scenarios, "lease_resources": [{"type": "resource-id", "value": RESOURCE_ID}, {"type": "environment", "value": "development"}, {"type": "run-id", "value": args.run_id}, *({"type": "mysql-db", "value": name} for name in names.values()), {"type": "cache-dir", "value": str(cache)}, {"type": "output-dir", "value": str(output)}], "stop": "No claim, network download, signing, database connection, instance write, or cleanup occurs in plan mode."}, ensure_ascii=False, indent=2))
+    if any(len(name) > resource.get("database_name_max_length", 0) for name in names.values()):
+        raise PlanError("generated database name exceeds the registered maximum")
+    for scenario, data in scenarios.items():
+        expected_edition = "multi_tenant" if scenario == "multi_tenant_upgrade" else "standalone"
+        if data.get("edition") != expected_edition or not data.get("inputs") or not data.get("assertions"):
+            raise PlanError(f"{scenario} edition, input, or assertion contract is invalid")
+    instance_roots = {scenario: cache / "instances" / scenario for scenario in scenarios}
+    backup_roots = {scenario: cache / "backups" / scenario for scenario in scenarios}
+    if any(path.exists() or path.is_symlink() for path in [*instance_roots.values(), *backup_roots.values()]):
+        raise PlanError("instance or backup root already exists for this run_id")
+    tree = git("rev-parse", f"{candidate}^{{tree}}")
+    proof_dir = Path(git("rev-parse", "--git-common-dir"))
+    if not proof_dir.is_absolute():
+        proof_dir = ROOT / proof_dir
+    proof_dir = proof_dir.resolve() / "peanut-admin-resource-leases" / "leases" / args.lease
+    resources = [
+        {"type": "resource-id", "value": RESOURCE_ID}, {"type": "environment", "value": "development"},
+        {"type": "deployment-target", "value": "local-development"}, {"type": "consumer", "value": "host"},
+        {"type": "endpoint", "value": "192.168.192.2:20183"}, {"type": "run-id", "value": args.run_id},
+        {"type": "candidate-tree", "value": tree}, *({"type": "mysql-db", "value": name} for name in names.values()),
+        *({"type": "instance-root", "value": str(path)} for path in instance_roots.values()),
+        *({"type": "backup-root", "value": str(path)} for path in backup_roots.values()),
+        {"type": "cache-dir", "value": str(cache)}, {"type": "output-dir", "value": str(output)},
+        {"type": "lease-proof-dir", "value": str(proof_dir)},
+    ]
+    claimed_resources = [
+        *resources,
+        {"type": "gate", "value": fixture["gate"]},
+        {"type": "worktree", "value": str(ROOT)},
+    ]
+    claim = ["scripts/project-resource-lease", "claim", "--lease", args.lease, "--owner", "<owner>", "--thread", "<thread>", "--candidate", candidate, "--candidate-repository", str(ROOT), "--gate", fixture["gate"], "--ttl", "<seconds>"] + [part for item in resources for part in ("--resource", f"{item['type']}={item['value']}")]
+    print(json.dumps({"schema_version": 1, "gate": fixture["gate"], "status": "structural-plan-valid-not-claimable-until-main-freeze", "candidate": candidate, "candidate_tree": tree, "worktree": str(ROOT), "run_id": args.run_id, "lease": args.lease, "resource_id": RESOURCE_ID, "databases": names, "paths": {"output-dir": str(output), "cache-dir": str(cache), "lease-proof-dir": str(proof_dir), "instance-roots": {key: str(value) for key, value in instance_roots.items()}, "backup-roots": {key: str(value) for key, value in backup_roots.items()}}, "scenarios": scenarios, "lease_metadata": {"lease": args.lease, "owner": "<owner>", "thread": "<thread>", "candidate": candidate, "candidate_repository": str(ROOT), "gate": fixture["gate"], "worktree": str(ROOT)}, "lease_resources": claimed_resources, "claim_command": claim, "dynamic_preconditions": ["root has frozen an exact origin/main candidate/tree", "official source installers/manifests and external trusted key match the fixture", "formal signing key public derivation matches UPGRADE_TRUSTED_KEYS.json", "lease claim is active and each exact database/root is absent", "remote MySQL allocation is healthy"], "stop": "Plan mode performs no claim, package download, signing, database connection, instance write, or cleanup."}, ensure_ascii=False, indent=2))
     return 0
 
 if __name__ == "__main__":
