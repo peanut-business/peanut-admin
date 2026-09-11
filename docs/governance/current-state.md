@@ -30,8 +30,8 @@ Owner: `product-architecture`
 
 **Non-blocking checkpoint（2026-09-09）：**版本对象、同号规则、历史不可变性和发布依赖顺序已经固定，临时审计等待解除。独立业务开发、公开历史纠正和不依赖新包的工作可以继续；文件与运行资源仍按唯一 owner 规则处理。
 
-3.1.0 的真实发布前置仍逐项生效。Core 固定候选 `985ee420b486a97325cdd0bb87412a76346aeb93` 已完成完整 Q01 与同候选九视角 D05；source tag、Composer split、npm、Packagist 和 GitHub Release 均已发布并由干净 Registry 消费者验证。Application 当前已把 Server/Web/Platform/PC/UniApp manifests 与 locks 指向真实 3.1.0 包，并采用产品/实例分字段的 V2 身份；双 Edition 生成输入、Creator 聚焦检查和文档正在本 CR02 收敛。完整 L2/P0-E、Application tag/Release、Edition 正式制品、客户 Instance 采用和部署仍未执行，归后续固定候选 Gate；不能把 Core 发布或当前开发锁当成 Consumer RC 或线上升级通过。
+3.1.0 的真实发布前置仍逐项生效。Core 固定候选 `985ee420b486a97325cdd0bb87412a76346aeb93` 已完成完整 Q01 与同候选九视角 D05；source tag、Composer split、npm、Packagist 和 GitHub Release 均已发布并由干净 Registry 消费者验证。Application 当前已把 Server/Web/Platform/PC/UniApp manifests 与 locks 指向真实 3.1.0 包，并采用产品/实例分字段的 V2 身份；双 Edition 生成输入、Creator 聚焦检查与 CR02-U 显式归属采用均已复核接受（交付 c5fea410）。完整 L2/P0-E、Application tag/Release、Edition 正式制品、客户 Instance 采用和部署仍未执行，归后续固定候选 Gate；不能把 Core 发布或当前开发锁当成 Consumer RC 或线上升级通过。
 
 公开事实投影已发布并通过 HTTPS 正文核验；[部署回执](../maintenance/fact-audit-2026-09-09/docs-deployment-receipt.json)记录固定来源。主审计已交付明确覆盖范围、冲突裁定与历史拒绝操作处置，新产品发布保持单独的受阻状态。
 
-上述历史交付不代表当前残留全部修复。阶段0–4、S5-T01、CQ及C01已验收；CR01开发修复`2278d9e1`与fixture补正`68812f1`也已验收：Module样板使用Services，25条Host精确纳管，客户所有权保护及真实升级合同通过。整应用生成仍受V1/Alpha.13前置阻塞，尚未通过。当前按[方案§12.7](../plans/history-rules-product-convergence-plan-2026-09-10.md)进入CR02协调发行，随后CR03独立安装升级资格与CR04交付；根核技术前置并安排新独立任务，不逐小步重复确认。C02–C12非消费阻塞项后置，保留原ID和ThinkPHP方向；不能用内部标签、版本数字或历史通过代替验证。已有安全/租户/数据和厂商支持目标不减，24–48小时仅为冲刺目标。详见原问题登记`consumer_delivery`；新候选资格、发布与部署尚未完成。不创建Goal或定时器，本机恢复控制继续保持未跟踪。
+上述历史交付不代表当前残留全部修复。阶段0–4、S5-T01、CQ及C01已验收；CR01开发修复`2278d9e1`与fixture补正`68812f1`也已验收：Module样板使用Services，25条Host精确纳管，客户所有权保护及真实升级合同通过。CR02已解除V1/Alpha.13前置并通过整应用生成检查，旧实例显式归属采用已通过双Edition聚焦升级验证；交付c5fea410已复核接受并集成dev。当前按[方案§12.7](../plans/history-rules-product-convergence-plan-2026-09-10.md)准备CR03固定候选、资源与独立安装升级资格，随后CR04交付；根核技术前置并安排新独立任务，不逐小步重复确认。C02–C12非消费阻塞项后置，保留原ID和ThinkPHP方向；不能用内部标签、版本数字或历史通过代替验证。已有安全/租户/数据和厂商支持目标不减，24–48小时仅为冲刺目标。详见原问题登记`consumer_delivery`；新候选资格、发布与部署尚未完成。不创建Goal或定时器，本机恢复控制继续保持未跟踪。

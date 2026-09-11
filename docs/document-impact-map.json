@@ -271,7 +271,7 @@
       "upstream": [
         "fixed local conversation corpus",
         "saved relevant evidence receipts; no exhaustive-reading gate",
-        "0–6 plan PA-USER-STEP-GATES-20260910; completed bounded historical evidence retained; consumer-first authorization PA-CONSUMER-FIRST-20260911 and CR01–CR04 per section12.6; CR01 development accepted, generated-app prerequisite remains CR02 under section12.7; root accepts technical gates before independent-stage handoff; internal C02–C12 deferred only when nonblocking; no renewed full audit, Goal or timer"
+        "0–6 plan PA-USER-STEP-GATES-20260910; completed bounded historical evidence retained; consumer-first authorization PA-CONSUMER-FIRST-20260911 and CR01–CR04 per section12.6; CR01 and CR02 development accepted; generated-app prerequisite resolved and explicit old-instance ownership adoption verified; CR03 fixed candidate/resources and independent qualification remain; root accepts technical gates before independent-stage handoff; internal C02–C12 deferred only when nonblocking; no renewed full audit, Goal or timer"
       ],
       "technical_docs": [
         "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",

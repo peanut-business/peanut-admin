@@ -4,7 +4,7 @@ Document ID: `pa-convergence-plan-20260910`
 
 Control revision: `PA-USER-STEP-GATES-20260910`
 
-Status: `current`（阶段0–4、T01、CQ、C01与CR01保留已验收成果；CR02-U实现候选为`21798b2c`并完成聚焦验证，待根验收/集成；CR03/CR04尚未开始；C02–C12非消费阻塞部分后置）
+Status: `current`（阶段0–4、T01、CQ、C01与CR01保留已验收成果；CR02-U实现`21798b2c`与聚焦验证已复核接受，交付已集成`dev@c5fea410`；CR03/CR04尚未开始；C02–C12非消费阻塞部分后置）
 
 Updated: 2026-09-11（Asia/Shanghai）
 
@@ -463,7 +463,7 @@ C02→C12既有顺序和单实现PDO repository/factory归属保持，不复制�
 | 批次 | 必需交付 | 依赖与推进 |
 | --- | --- | --- |
 | CR01 消费边界与生成物修正 | 新Module不再引导Application/service旧组织；官方Host/Provider/Core依赖和文件ownership有逐路径处置，受管升级与客户改动保护可验证；现有检查/文档同步 | 已完成并由根验收，最终进入`dev@0de6d7a7`；保留为CR02/CR03输入，不重复执行 |
-| CR02 协调发行准备 | 查明并正式处理Core已有供应链失败及当前依赖风险；实际同号Core PHP/Web包和应用锁；产品/实例V2、inventory、Module lock、制品及资格输入一致 | Core公开身份与原App交付已验收；CR02-U候选`21798b2c`补齐旧实例显式采用，待根验收/集成，不能扩成CR03资格 |
+| CR02 协调发行准备 | 查明并正式处理Core已有供应链失败及当前依赖风险；实际同号Core PHP/Web包和应用锁；产品/实例V2、inventory、Module lock、制品及资格输入一致 | Core公开身份与原App交付已验收；CR02-U补齐旧实例显式采用，已复核接受并集成`dev@c5fea410`，不能扩成CR03资格 |
 | CR03 独立消费与升级验收 | 两Edition clean create/install/bootstrap/开发CRUD；正式旧实例→新候选签名升级、客户定制/冲突/失败保护、依赖/迁移/数据；固定候选P0-E及支持范围内必要增补 | CR01/02实做与聚焦通过后，由独立验收任务执行。不能把源码静态检查或八组fresh-only资格冒称完整实例升级 |
 | CR04 发行与消费交付 | 仅发布通过资格的同一身份；同步公开消费/升级文档站和已验证支持矩阵；给下游精确制品、升级步骤、已知限制 | 根验收CR03后执行既有发布门禁；不从此推导客户生产部署、真实交易或缩减厂商支持许可 |
 
@@ -509,7 +509,7 @@ C02→C12既有顺序和单实现PDO repository/factory归属保持，不复制�
 
 当前状态：原CR02实现已完成，Core `dev@16f6433`与公开3.1.0包已验证；CR02-U在固定生成源
 `99c3f978`上重封3.1.0 scaffold/fixture，代码候选为`21798b2c`，已完成两Edition正式旧安装包的聚焦采用/升级闭环，
-待根验收并集成`dev`。Application完整P0-E、tag/Release仍未开始。
+2026-09-11经独立Sol/medium静态复核及执行回执核对，已接受为development-complete并集成`dev@c5fea410`。Application完整P0-E、tag/Release仍未开始。
 本节其余文字保留批准任务合同和执行顺序；现行结果/CR03缺口以`consumer_delivery.cr02`及同名人类审计顶部为准，
 不得从已完成的CR02重新派发Q01、发布或锁移动，也不得把prepare ready视为CR03资格。
 
@@ -536,7 +536,7 @@ CR02开始时整应用生成仍因V1/3.0.14+Alpha.13不满足V2同号builder前�
 
 #### CR02-U：旧实例共享 Host 显式归属采用
 
-状态：实现与聚焦验证已完成，候选`21798b2c`待根验收/集成；协调版本、公开Core、App锁/V2及`7adc3113`交接保持已验收。
+状态：实现`21798b2c`、聚焦验证及回执已复核接受，交付已集成`dev@c5fea410`；协调版本、公开Core、App锁/V2及`7adc3113`交接保持已验收。
 本卡在正式3.0.14来源的可丢弃Standalone/Multi-tenant实例上，为
 `consumer_delivery.cr01.ownership.approved_managed_paths`精确25条共享Host生成只读采用计划，经应用owner对
 实例、路径集合和计划摘要显式确认后，以现有锁、原子元数据写和恢复模式登记真实旧基线及managed归属，再让同一

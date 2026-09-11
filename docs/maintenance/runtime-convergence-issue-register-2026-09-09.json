@@ -2652,7 +2652,7 @@
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
     "cr02": {
-      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U候选21798b2c已聚焦验证、待根验收/集成，CR03未启动",
+      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U实现21798b2c及聚焦验证已复核接受，交付已集成dev@c5fea410，CR03未启动",
       "depends_on": [
         "CR01开发修复已集成",
         "CR03须由根另行绑定固定候选、资源、真实旧实例与缺失采用/签名输入"
@@ -2661,7 +2661,7 @@
       "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
       "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.",
       "cr02_u": {
-        "status": "implemented-focused-verified-awaiting-root-acceptance",
+        "status": "development-complete-accepted-integrated",
         "owner": "01a08d8e-fe57-7733-ab0a-da5cc1bdc922 / Sol medium",
         "goal": "Add an audited explicit ownership-adoption plan/apply path for exactly the 25 approved shared Host files so authentic v3.0.14 Standalone and Multi-tenant instances can safely proceed to signed same-Edition upgrade preflight.",
         "entry": "existing scripts/scaffold-upgrade and ScaffoldUpgradeRunner; no second migration framework",
@@ -2699,8 +2699,8 @@
         "composer_split_commit": "047f8e035c4ae14ab5a75581fdbb2a51be126787",
         "application_generation_source_commit": "99c3f978b4410c40cfda78b6619f893c0fbca6f2",
         "application_generation_source_tree": "84616b355a1cb8366add6d427085afd7732802a8",
-        "application_dev_commit": "21798b2cdadcd5d0455e4b646b778019e6156972",
-        "application_dev_tree": "14b30d64df5700d1a851ca8fce71ce0587d4ab1f",
+        "application_dev_commit": "c5fea41096e73464f000a9e9ccc3c0dfdb436132",
+        "application_dev_tree": "1c811795e62580f75f4bee8438b6681de7a9278f",
         "scaffold_manifest_sha256": "f1e41443b9165a2bc41842f7aba62e6072be599fd5f0b24db390e8ffc1206dd3",
         "inventory_entries": 1806,
         "managed_files": 441,
@@ -2798,9 +2798,9 @@
         },
         "binding_owner": "Root must bind exact CR03 candidate, resource IDs/endpoints, run parameters, owners and cleanup; this static handoff claims none of them."
       },
-      "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Root acceptance/dev integration and CR03 full qualification remain outstanding."
+      "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
-    "cr03": {"status": "待根在CR02验收后绑定；尚未领取、未运行", "depends_on": ["CR01", "CR02根最终验收", "consumer_delivery.cr02.handoff中的真实旧实例、签名3.1.0升级包、显式owner-adoption机制及资源/矩阵输入"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格；现有P0-E八组以外的旧实例升级、真实Provider和四端业务覆盖须按实际支持范围补齐"},
+    "cr03": {"status": "CR02已验收；待根绑定固定候选与资源，尚未领取、未运行", "depends_on": ["CR01", "CR02根最终验收", "consumer_delivery.cr02.handoff中的真实旧实例、签名3.1.0升级包、显式owner-adoption机制及资源/矩阵输入"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格；现有P0-E八组以外的旧实例升级、真实Provider和四端业务覆盖须按实际支持范围补齐"},
     "cr04": {"status": "待领取", "depends_on": ["CR03"], "deliverable": "仅发布真实通过候选及公开消费/升级文档；不自动部署客户生产"},
     "deferred_runtime": "C02-C12和其余services原ID/顺序保留；只有证明不影响消费/升级/安全的项可后置，不能整批标完成",
     "limits": "不重扫历史、不造兼容桥、不批量把业务改managed、不弱化测试或厂商有效支持；24-48小时不是通过承诺；根核前置后按用户授权安排衔接，无Goal/定时器"
