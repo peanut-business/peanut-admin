@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -52,6 +53,17 @@ def unique_resource(items: object, resource_id: str, label: str) -> dict:
     if len(matches) != 1:
         raise PlanError(f"registry must contain exactly one {label} {resource_id}")
     return matches[0]
+
+
+def remote_container_command(script: str, *, receives_stdin: bool = False) -> list[str]:
+    docker = ["/usr/local/bin/docker", "exec"]
+    if receives_stdin:
+        docker.append("-i")
+    docker.extend(["peanut-admin-mysql84-development", "/bin/sh", "-lc", script])
+    remote = shlex.join(docker)
+    if shlex.split(remote) != docker:
+        raise PlanError("remote database command quote round-trip is invalid")
+    return ["/usr/bin/ssh", "-o", "BatchMode=yes", "mac-14", remote]
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -147,7 +159,6 @@ def main() -> int:
         upgrader = f"{package}/upgrader/scripts/scaffold-upgrade"
         adoption_plan = instance / ".peanut/upgrades/plans/<adoption-plan_path-from-stdout>"
         upgrade_plan = instance / ".peanut/upgrades/plans/<upgrade-plan_path-from-stdout>"
-        remote = ["/usr/bin/ssh", "-o", "BatchMode=yes", "mac-14", "/usr/local/bin/docker", "exec", "peanut-admin-mysql84-development", "/bin/sh", "-lc"]
         instance_environment = {
             "APP_ENV": "development", "PEANUT_DEPLOYMENT_TARGET": "local-development",
             "PEANUT_DATABASE_RESOURCE_ID": f"peanut-admin-cr03-{args.run_id}-{scenario}-mysql84",
@@ -187,10 +198,10 @@ def main() -> int:
             "host_install_environment": instance_environment,
             "container_runtime_environment_overrides": {**instance_environment, "APP_ENV": "production", "PEANUT_DEPLOYMENT_TARGET": "local-production-preview", "PEANUT_DATABASE_CONSUMER": "container", "PEANUT_DATABASE_ENDPOINT_ID": instance_database_resource["container_endpoint"]["endpoint_id"], "HTTP_PORT": "20190"},
             "database_commands": {
-                "create": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot -e 'CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'"],
-                "dump": {"command": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF -uroot {database}"], "stdout_file": str(backup / "database.sql")},
-                "restore": {"command": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot {database}"], "stdin_file": str(backup / "database.sql")},
-                "drop_after_evidence": remote + [f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot -e 'DROP DATABASE `{database}`'"],
+                "create": remote_container_command(f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot -e 'CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'"),
+                "dump": {"command": remote_container_command(f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF -uroot {database}"), "stdout_file": str(backup / "database.sql")},
+                "restore": {"command": remote_container_command(f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot {database}", receives_stdin=True), "stdin_file": str(backup / "database.sql")},
+                "drop_after_evidence": remote_container_command(f"MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" exec /usr/bin/mysql -uroot -e 'DROP DATABASE `{database}`'"),
             },
             "dependency_commands": [
                 ["/usr/local/bin/composer", "install", f"--working-dir={instance / 'server'}", "--no-interaction", "--no-dev", "--optimize-autoloader"],

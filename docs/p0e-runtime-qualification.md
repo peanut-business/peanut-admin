@@ -123,11 +123,11 @@ object prefix。二者任一缺失都停止，不复制 source guard 到旧实�
 在 active lease 后，按每个 Edition 串行执行以下具体步骤，并把所有 stdout/stderr、JSON plan、SHA 和
 screenshot/trace 写入该 run 的 output：
 
-1. 将 release assets 下载到 `cache/instances/<scenario>/assets/`，以 fixture 的四个 SHA-256 做逐个比对，
+1. 将 release assets 下载到 `cache/assets/<scenario>/`，以 fixture 的四个 SHA-256 做逐个比对，
    从 package 外的 trusted-key source 读取 `peanut-admin-release-2026-01` 的 public key，再核对
    `UPGRADE_TRUSTED_KEYS.json` 的 key id 和 public key。解包 installer 前后都记录 archive SHA；解析 manifest
    必须得到 fixture 中的 source commit、tree、Edition 和 deployment mode。任一输入不一致立即停止。
-2. 解包旧 installer 到 `cache/instances/<scenario>/v3.0.14/`，按上面的固定字段写实例 registry 和0600环境；
+2. 将旧 installer 直接解包到 plan 输出的 `cache/instances/<scenario>/`（即该 scenario 的 `instance_root`），按上面的固定字段写实例 registry 和0600环境；
    `server/database/install.php` 的 stdout/exit code、guard读回的 resource/endpoint/database/mode 与旧 application
    manifest一并保存。Standalone创建一个Tenant内管理员；Multi-tenant另创建PlatformOperator、Tenant A/B、
    Tenant Owner与有/无目标权限的两组角色成员，账号标识带本 run ID且秘密只进入0600文件。
