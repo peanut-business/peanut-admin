@@ -2801,7 +2801,7 @@
       "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
     "cr03": {
-      "status": "执行任务书已补齐，待独立任务接手CR03-01；App资格未运行",
+      "status": "CR03-01执行中：仅资源/场景合同与无资源计划准备；App资格未运行",
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书",
       "authorization_id": "PA-CONSUMER-FIRST-20260911",
       "depends_on": ["CR01及CR02开发交付已验收", "CR03-01独立资源/资格场景就绪后才允许冻结"],
@@ -2824,6 +2824,18 @@
         "signing": "peanut-admin-edition-upgrade-release-signing-key; key ID peanut-admin-release-2026-01; credentials only from registry; no ephemeral key",
         "supplement": "CR03-01先登记peanut-admin-consumer-upgrade-mysql84-gate与环境/租约合同；同一mac-14物理分配、独立peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>；run cr03u0911；未登记/claim不得连接",
         "paths": "新执行树output/p0e-cr03a0911与output/cr03-upgrade-cr03u0911；登记缓存根下同名目录；实例/备份仅在增补缓存内；开始前核同名资源不存在，不复用旧run"
+      },
+      "cr03_01_execution": {
+        "owner": "CR03 executor task 01a08e89-4065-7c91-ac27-6bf4fc36c99d",
+        "status": "in-progress",
+        "narrow_write_set": [
+          "resources/project-resources.json#peanut-admin-consumer-upgrade-mysql84-gate",
+          "server/tests/fixtures/consumer-upgrade-qualification/matrix.json",
+          "scripts/consumer-upgrade-qualification",
+          "docs/p0e-runtime-qualification.md"
+        ],
+        "entry": "scripts/consumer-upgrade-qualification plan",
+        "boundary": "plan mode has no lease, download, signing, database connection, instance write or cleanup; CR03-04 remains blocked until root freezes a main candidate"
       },
       "external_blockers": [
         "COS有acceptance桶但master-key和测试账户仍待绑定；OSS/七牛无完整测试资源",

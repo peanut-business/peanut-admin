@@ -638,6 +638,45 @@
         "failure_retention_policy": "on failure, the lease owner preserves the exact run_id databases and output, renews or explicitly transfers the lease, and reports recovery coordinates; cleanup waits for evidence capture and the named owner decision"
       },
       {
+        "stable_resource_id": "peanut-admin-consumer-upgrade-mysql84-gate",
+        "purpose": "isolated disposable formal-v3.0.14 Standalone and Multi-tenant application upgrade and recovery qualification",
+        "environments": ["development"],
+        "owner": "Peanut Admin CR03 consumer-upgrade lease owner; remote host mac-14",
+        "runtime_resource_id": "peanut-admin-mysql84-development",
+        "service_type": "mysql",
+        "version": "8.4.10",
+        "application_runtime": false,
+        "database": "peanut_admin_development_cr03_<run_id>_<scenario>",
+        "schema": "pa_ table prefix",
+        "namespace": "peanut_admin_development_cr03_<run_id>_",
+        "run_id_pattern": "^[a-z0-9]{1,11}$",
+        "database_name_max_length": 64,
+        "allowed_scenarios": ["standalone_upgrade", "multi_tenant_upgrade"],
+        "upstream_endpoint": {
+          "endpoint_id": "peanut-admin-consumer-upgrade-mysql84-gate-host-direct",
+          "host": "192.168.192.2",
+          "port": 20183,
+          "consumers": ["host"],
+          "network_scope": "private direct-link LAN"
+        },
+        "container_endpoint": null,
+        "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env",
+        "data_source": "lease-owned synthetic formal-v3.0.14 Edition instances only; persistent development, P0-E fresh, demo and production data are forbidden",
+        "freshness_requirement": "each CR03 candidate uses a new lease-bound run_id; both exact databases and paired instance/backup roots are absent before installer setup, then the immutable v3.0.14 baseline and recovery coordinates remain until disposal",
+        "health_check": {
+          "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
+          "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer host --resource-id peanut-admin-consumer-upgrade-mysql84-gate --database-name <exact_lease_database>",
+          "database": "after claim, perform the registered credential-backed ping and SELECT DATABASE(), then confirm each exact schema is absent before installation"
+        },
+        "fallback": "none",
+        "lifecycle": "ephemeral fixed-candidate CR03 qualification",
+        "claim_precondition": "before connection, creation, installer extraction, backup, upgrade, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, this resource ID, both exact run_id databases, instance roots, backup roots, cache path and output path",
+        "creation_policy": "the active CR03 lease owner may create and drop only peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>",
+        "cleanup_responsibility": "after desensitized evidence capture, the active lease owner removes only exact run_id databases, synthetic instances/backups, temporary accounts and owned listeners; unmatched paths or schemas require an explicit project-owner gate",
+        "backup_responsibility": "immediately before adoption/apply, capture and checksum each exact synthetic database dump plus its paired instance archive inside the lease-owned cache root",
+        "failure_retention_policy": "on failure preserve exact databases, instances, backups, cache, output and active lease for one focused diagnosis and recovery; never substitute a P0-E fresh database or persistent development data"
+      },
+      {
         "stable_resource_id": "peanut-admin-application-version-fresh010-development",
         "purpose": "isolated Standalone application 0.1.0 fresh-install and scaffold migration verification database",
         "environments": [

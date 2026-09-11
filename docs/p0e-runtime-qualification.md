@@ -1,13 +1,13 @@
 # P0-E Runtime 资格 Gate
 
-`scripts/p0e-runtime-qualification` 是 2.0 fresh-only 固定候选的全量发布资格入口。它把
+`scripts/p0e-runtime-qualification` 是 3.1.x fixed-candidate 的 eight-group fresh-only qualification gate。它把
 create-app、冻结依赖安装、Standalone/Multi-tenant 空库安装、Plugin lifecycle、消费者 Module
 v1→v2 生命周期、生产 Compose 和两种部署模式的最小 Chromium smoke 绑定到同一个
 commit/tree、worktree、run_id 与项目资源租约。
-1.x 数据采用、原地前滚、migration fault recovery 和 scaffold upgrade 不属于 2.0.0 支持面，
-也不进入本 Gate。
+正式旧实例的 3.0.14→3.1.0 signed same-Edition upgrade、adoption、数据读回与失败恢复不属于 fresh
+场景；它们只使用独立的 `consumer-upgrade-qualification` CR03 resource contract，不能借用本 Gate。
 
-日常 PR 不运行这个 Gate；2.0 内容、scaffold identity 与依赖全部冻结后只运行一次。
+日常 PR 不运行这个 Gate；candidate、scaffold identity 与依赖全部冻结后才运行一次。
 
 ## 固定资源
 
@@ -31,7 +31,7 @@ commit/tree、worktree、run_id 与项目资源租约。
 
 项目日常资源登记为 `resources/project-resources.json`；源仓 Gate 专用的远端管理绑定登记为
 `resources/p0e-runtime-qualification.json`。`peanut_admin_development` 是持久开发库，禁止进入
-P0-E claim、连接、迁移或清理。runner 只创建本次 run_id 的五个 scenario 数据库；所有建库、
+P0-E claim、连接、迁移或清理。runner 只创建本次 run_id 的六个 registered fresh-scenario databases；所有建库、
 删库和状态查询均通过已登记的远端容器 CLI 完成，不使用主工作站 MySQL CLI。
 
 生产 Compose Gate 通过 lease overlay 把候选的项目资源登记和环境门禁只读挂载到 PHP/cron，
@@ -71,13 +71,39 @@ scripts/p0e-browser-tooling check
 
 P0-E 不扫描其他 worktree 的临时 `pwcli-cache`，也不使用系统 Chrome、用户会话或未登记 fallback。
 
+## CR03 旧实例增补（不属于 P0-E）
+
+`peanut-admin-consumer-upgrade-mysql84-gate` 只承载两个可丢弃的正式 `v3.0.14`
+安装实例：`standalone_upgrade` 与 `multi_tenant_upgrade`。它们使用
+`peanut_admin_development_cr03_<run_id>_<scenario>`，绝不复用 P0-E fresh 库、持久开发库、旧
+演示或生产数据。每一场景必须保留：官方安装包和 manifest SHA-256、正式 key 的外部可信绑定、
+25 条 Host ownership adoption 的逐条确认、preflight/apply/verify、业务数据读回，以及 paired
+database dump + instance archive 的恢复证据；秘密、Module 和 app-owned bytes 不得进入升级写集。
+
+CR03-01 只能先生成无资源计划。该命令要求一个干净、固定候选，但不 claim、下载、签名、连接
+数据库或创建任何实例；真实 claim 仅能在根冻结 main 候选后进行：
+
+```bash
+candidate="$(git rev-parse HEAD)"
+run_id="cr03u0911"
+scripts/consumer-upgrade-qualification plan \
+  --candidate "$candidate" --run-id "$run_id" --lease "consumer-upgrade-${run_id}" \
+  --output-dir "$PWD/output/cr03-upgrade-${run_id}" \
+  --cache-dir "/Users/xing/.cache/peanut-admin/cr03-upgrade-${run_id}"
+```
+
+失败时只保留该 lease 的两个精确 schema、实例、备份、cache 与 output，供一次定向诊断和
+recover；成功保存脱敏证据后由 active lease owner 清理其精确资源。无正式 signing resource、
+旧 Release asset、外部 trusted key 或 main candidate 时停止，不能回退到 CR02 临时 key 或任何
+fresh-only 场景。
+
 ## Claim 与运行
 
 凭据引用为 `mac-14:/Users/xing/.config/peanut-admin/development-db.env`。runner 会先调用项目
 登记的凭据同步脚本，再从本机受限 `server/.env` 读取数据库账户；每个 run 生成独立的
 `server/.env.p0e-<run-id>`，PDO、Think ORM 和 Compose 后台进程共同读取该文件。Tenant Owner
 与 PlatformOperator 测试账号会随机生成，并只写入该 run 的 0600 cache，以供失败后的同参数
-resume 使用。浏览器工具优先使用显式受控路径，否则使用本机已缓存的 Playwright CLI。以上秘密
+resume 使用。浏览器工具只使用显式受控的 fixed wrapper，不扫描其他工作树或采用任意 cache fallback。以上秘密
 均不得写入命令、输出、租约或仓库。
 
 ```bash

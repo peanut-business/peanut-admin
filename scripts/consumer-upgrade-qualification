@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Print the no-resource CR03 legacy-Edition upgrade plan."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+FIXTURE = ROOT / "server/tests/fixtures/consumer-upgrade-qualification/matrix.json"
+REGISTRY = ROOT / "resources/project-resources.json"
+RESOURCE_ID = "peanut-admin-consumer-upgrade-mysql84-gate"
+
+class PlanError(RuntimeError):
+    pass
+
+def read_json(path: Path) -> dict:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise PlanError(f"cannot read {path.relative_to(ROOT)}: {error}") from error
+    if not isinstance(value, dict):
+        raise PlanError(f"{path.relative_to(ROOT)} must have an object root")
+    return value
+
+def git(*arguments: str) -> str:
+    result = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True, check=False)
+    if result.returncode:
+        raise PlanError((result.stderr or result.stdout).strip())
+    return result.stdout.strip()
+
+def safe_path(value: str, label: str, expected: Path) -> Path:
+    path = Path(value)
+    if not path.is_absolute() or path != expected or path.exists() or path.is_symlink():
+        raise PlanError(f"{label} must be the absent fixed CR03 path: {expected}")
+    return path
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("plan", nargs="?", choices=["plan"])
+    parser.add_argument("--candidate", required=True)
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--lease", required=True)
+    parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--cache-dir", required=True)
+    args = parser.parse_args()
+    if not re.fullmatch(r"[a-z0-9]{1,11}", args.run_id):
+        raise PlanError("run_id must match ^[a-z0-9]{1,11}$")
+    if args.lease != f"consumer-upgrade-{args.run_id}":
+        raise PlanError("lease must equal consumer-upgrade-<exact run_id>")
+    if not re.fullmatch(r"[0-9a-f]{40}", args.candidate):
+        raise PlanError("candidate must be an exact lowercase 40-hex commit")
+    candidate = git("rev-parse", f"{args.candidate}^{{commit}}")
+    if candidate != args.candidate or git("rev-parse", "HEAD") != candidate:
+        raise PlanError("candidate must be the checked-out exact HEAD")
+    if git("status", "--porcelain=v1", "--untracked-files=all"):
+        raise PlanError("candidate worktree must be clean")
+    fixture, registry = read_json(FIXTURE), read_json(REGISTRY)
+    databases = registry.get("resources", {}).get("databases", [])
+    matches = [item for item in databases if item.get("stable_resource_id") == RESOURCE_ID]
+    if len(matches) != 1:
+        raise PlanError(f"registry must contain exactly one {RESOURCE_ID}")
+    resource = matches[0]
+    expected = {"database": "peanut_admin_development_cr03_<run_id>_<scenario>", "namespace": "peanut_admin_development_cr03_<run_id>_", "allowed_scenarios": ["standalone_upgrade", "multi_tenant_upgrade"], "fallback": "none"}
+    if resource.get("stable_resource_id") != RESOURCE_ID or any(resource.get(key) != value for key, value in expected.items()):
+        raise PlanError("consumer-upgrade resource contract is invalid")
+    scenarios = fixture.get("scenarios")
+    target = fixture.get("target_release", {})
+    if fixture.get("schema_version") != 1 or fixture.get("gate") != "consumer-upgrade-qualification" or fixture.get("database_resource", {}).get("stable_resource_id") != RESOURCE_ID or not isinstance(scenarios, dict) or list(scenarios) != resource["allowed_scenarios"]:
+        raise PlanError("consumer-upgrade fixture does not match the registered resource")
+    if fixture.get("source_release", {}).get("version") != "3.0.14" or target.get("version") != "3.1.0" or target.get("minimum_source_version") != "3.0.14" or target.get("signing_resource_id") != "peanut-admin-edition-upgrade-release-signing-key" or target.get("signature_key_id") != "peanut-admin-release-2026-01":
+        raise PlanError("formal source, target, or signing contract is invalid")
+    for edition in ("standalone", "multi_tenant"):
+        asset = fixture["source_release"].get("editions", {}).get(edition, {})
+        if not isinstance(asset.get("installer"), str) or not re.fullmatch(r"[0-9a-f]{64}", str(asset.get("installer_sha256"))) or not re.fullmatch(r"[0-9a-f]{64}", str(asset.get("manifest_sha256"))):
+            raise PlanError(f"{edition} formal source asset contract is invalid")
+    output = safe_path(args.output_dir, "output-dir", ROOT / "output" / f"cr03-upgrade-{args.run_id}")
+    cache = safe_path(args.cache_dir, "cache-dir", Path.home() / ".cache/peanut-admin" / f"cr03-upgrade-{args.run_id}")
+    names = {scenario: resource["database"].replace("<run_id>", args.run_id).replace("<scenario>", scenario) for scenario in scenarios}
+    print(json.dumps({"schema_version": 1, "gate": fixture["gate"], "status": "ready-to-claim-after-main-freeze", "candidate": candidate, "candidate_tree": git("rev-parse", f"{candidate}^{{tree}}"), "run_id": args.run_id, "lease": args.lease, "resource_id": RESOURCE_ID, "databases": names, "paths": {"output-dir": str(output), "cache-dir": str(cache)}, "scenarios": scenarios, "lease_resources": [{"type": "resource-id", "value": RESOURCE_ID}, {"type": "environment", "value": "development"}, {"type": "run-id", "value": args.run_id}, *({"type": "mysql-db", "value": name} for name in names.values()), {"type": "cache-dir", "value": str(cache)}, {"type": "output-dir", "value": str(output)}], "stop": "No claim, network download, signing, database connection, instance write, or cleanup occurs in plan mode."}, ensure_ascii=False, indent=2))
+    return 0
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except PlanError as error:
+        print(f"consumer-upgrade-qualification: {error}", file=sys.stderr)
+        raise SystemExit(1)

@@ -583,6 +583,10 @@ guard/签名消费类、`server/tests/Productization/ScaffoldUpgradeRunnerTest.p
 - 精确起始写集：本方案、原人类审计/问题登记/current入口、资源登记、
   `docs/p0e-runtime-qualification.md`、`scripts/p0e-runtime-qualification`、`scripts/p0e-browser-smoke`及
   `server/tests/fixtures/p0e-runtime-qualification/`的直接资格输入、已有Productization对应合同。
+  CR03-01 的窄旧实例增补写集固定为 `resources/project-resources.json` 的
+  `peanut-admin-consumer-upgrade-mysql84-gate`、`scripts/consumer-upgrade-qualification` 与
+  `server/tests/fixtures/consumer-upgrade-qualification/matrix.json`；它只打印无资源计划，不创建第二套
+  状态账本或 Runtime。
   旧实例增补优先复用现有`combined-upgrade-qualification`或P0-E的资源/证据能力；若其旧合同不能承载，
   只增加本项目有明确输入/资源/停止点的窄场景，先在原登记列明具体文件，不另建通用控制器、框架或第二套账本。
   不修改产品PHP/SQL/前端Runtime；实际阻塞缺陷回根定点授权同ID修复，再形成新候选。
