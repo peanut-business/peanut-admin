@@ -592,9 +592,9 @@ guard/签名消费类、`server/tests/Productization/ScaffoldUpgradeRunnerTest.p
   不修改产品PHP/SQL/前端Runtime；实际阻塞缺陷回根定点授权同ID修复，再形成新候选。
 - Core只消费已发布3.1.0：source/tag `16f643341ea454c9ce78d22a52ad776e498e89e9`，
   Composer split `047f8e035c4ae14ab5a75581fdbb2a51be126787`；四端npm完整integrity从当前锁取值核对。
-  不重跑Core Q01、不重发Core。当前未发布3.1.0 scaffold生成源为`cd2ac5d3b2a4081f3739aa8ca39aad02d1c507ac`/
-  `70954b43c0765897df2a2a9448eff96182713771`，inventory为`e22aea1c002c4ba585b062fb48f0ede1dc9329db1f0fa2e94005fe22085a6960`，
-  manifest为`9ca57d31285ae94b337340dff846565043bb1a7178fbc24c7d1131517125dfad`；历史`99c3f978`/`f1e41443`仍只属于CR02-U收据。
+  不重跑Core Q01、不重发Core。首次main候选`240eab8f`因生产浏览器chunk循环失败而失效；CR03-03修复后的当前未发布3.1.0 scaffold生成源为`73bc4572fd9b663ace19f074dcc65daf0b5ba877`/
+  `5f416ef01b9e4ecea57de06a8818f407f3b48f77`，inventory为`16934c8c4145f3c0240e5c986286c5ace6c328cfa38fc84782b9a8b5035f7f0e`，
+  manifest为`c687e6a0faac4a170d4c90bc10aefda833097fb6d77f07b3dd78b84ab8d37b5e`，managed tree为`06407fdde3fff6b32e1389ee726b4204bd175a76ba871300757fd683653bbd55`；历史`99c3f978`/`f1e41443`仍只属于CR02-U收据。
   资格工具/文档变更不自动触发Runtime reseal。正式main候选只能在就绪后由真实Git结果写入，不能预填未来SHA。
 
 #### 有限队列与验收
@@ -602,8 +602,8 @@ guard/签名消费类、`server/tests/Productization/ScaffoldUpgradeRunnerTest.p
 | ID | 实际工作及依赖 | 必须交出的证据/停止点 |
 | --- | --- | --- |
 | CR03-01 就绪与最小缺口补齐 | 已完成：核候选、锁、生成物实际形态；原位补独立旧实例、数据恢复和四端场景及资源登记；canonical lease proof/真实candidate-tree/固定实例guard/命令构造已由根验收，真实生成负控与`seal --check-remote`为ready | 记录当前未发布3.1.0生成身份；无资源计划和相邻合同通过。未运行完整八组，不恢复2.x/1.x支持或削弱有效断言 |
-| CR03-02 冻结 | 进行中：将已验证差异集成dev，形成dev→main PR并回根核实际diff与冻结输入 | 根技术验收后合并PR、fetch并在独立干净树绑定完整`origin/main` commit/tree；控制器qualify确实要求main，禁止直接push main或以dev绕过。无App tag/Release |
-| CR03-03 固定P0-E | 依赖02。执行对应qualify preflight、plan、claim、run；参数从本卡和实际登记绑定，八组同一候选 | 八组真实结果、summary/recovery、原退出码、candidate/tree/锁/资源身份；不把历史通过或skip算入。相同未变候选的环境恢复才允许同参resume |
+| CR03-02 冻结 | 已完成：PR #450经根核后正常合并并绑定`main@240eab8f`/tree`d04ac919` | 首次固定身份成立；无App tag/Release |
+| CR03-03 固定P0-E | 首次候选六组通过、Standalone browser因生产chunk循环失败并保留recovery；旧run清理释放。原ID定点修复已完成双Edition production Compose/browser聚焦验证，正准备修复PR | 新main候选须重新执行完整八组；不得继承首次六组或把Development聚焦结果冒称qualified |
 | CR03-04 正式旧实例升级与数据 | 与03共享固定候选，不共享可变运行资源。双Edition官方3.0.14安装包经SHA核验建立可丢弃旧应用；使用登记正式key签同一候选3.1.0包 | 独立review adoption plan→精确摘要/25路径确认→metadata-only adopt→package preflight/apply/verify→真实依赖/迁移→业务数据读回→失败恢复。实例版本、generation_source、定制/Module/secret保护和双改冲突均有实证；不是仅文件哈希演练 |
 | CR03-05 四端与厂商 | 四端业务在独立合成实例上验收；可与不争用资源的静态核对并行，HTTP20190必须串行独占。外部厂商只消费已登记且当前健康的测试账户 | 下表逐项给实际页面/API/保存后重开读回/截图或trace；内部合同、页面状态与真实外部操作分列。未绑定凭据只阻塞相应厂商资格，不能删除厂商支持或假称全通过 |
 | CR03-06 收口 | 回扣原TENANT-001/PROVIDER-001/UX-VERIFY-001/DCS-CONSUMPTION-001/VERIFY-004，保留内部后置ID | 脱敏固定证据、准确已完成/部分完成/外部阻塞、实际资源零残留或明确保留owner；根最终验收后才交CR04。无客户生产部署、真实支付/SMS发送或自行发布 |
