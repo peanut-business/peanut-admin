@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "gate": "consumer-upgrade-qualification",
+  "database_resource": {
+    "stable_resource_id": "peanut-admin-consumer-upgrade-mysql84-gate",
+    "environment": "development",
+    "host": "192.168.192.2",
+    "port": 20183,
+    "database_template": "peanut_admin_development_cr03_<run_id>_<scenario>"
+  },
+  "outer_resources": {
+    "administrative_tooling_resource_id": "peanut-admin-consumer-upgrade-mysql84-remote-admin-cli",
+    "http_listener_resource_id": "peanut-admin-local-production-preview-gateway",
+    "http_port": 20190,
+    "local_object_storage_resource_id": "peanut-admin-consumer-upgrade-local-storage",
+    "local_object_prefix_template": "cr03/<run_id>/<scenario>/",
+    "execution_order": "serial-by-scenario"
+  },
+  "source_release": {
+    "version": "3.0.14",
+    "commit": "e30b667bbfc25d70281ddf1864b99883850afa24",
+    "editions": {
+      "standalone": {
+        "installer": "peanut-admin-3.0.14-standalone.tar.gz",
+        "installer_sha256": "efecbfe40965d4a57765c66eb609407167b576e96fb8a804b1828ae21fe2d0a6",
+        "manifest_sha256": "e43d1094e59df804a2631c412174991077e694d807b301f2b2ebc0c525419c99"
+      },
+      "multi_tenant": {
+        "installer": "peanut-admin-3.0.14-multi-tenant.tar.gz",
+        "installer_sha256": "1d5616aa0e0db1a4201febff2e9398478e63deba4c17d6659d8822233a97acdd",
+        "manifest_sha256": "acef8c9287f62d6068ce97f0e14b7777e150eba5027e4c0ce3a8d64a97a42452"
+      }
+    }
+  },
+  "target_release": {
+    "version": "3.1.0",
+    "minimum_source_version": "3.0.14",
+    "signing_resource_id": "peanut-admin-edition-upgrade-release-signing-key",
+    "signature_key_id": "peanut-admin-release-2026-01"
+  },
+  "scenarios": {
+    "standalone_upgrade": {
+      "edition": "standalone",
+      "inputs": ["official-installer", "formal-signed-upgrade", "external-trusted-key", "synthetic-business-data", "paired-backup"],
+      "assertions": ["installer-and-manifest-digests-match", "all-25-host-paths-reviewed-before-metadata-adoption", "preflight-ready-before-apply", "apply-and-verify-succeed", "business-module-secret-and-customized-bytes-preserved", "recover-restores-exact-pre-upgrade-state"]
+    },
+    "multi_tenant_upgrade": {
+      "edition": "multi-tenant",
+      "inputs": ["official-installer", "formal-signed-upgrade", "external-trusted-key", "synthetic-business-data", "paired-backup"],
+      "assertions": ["installer-and-manifest-digests-match", "all-25-host-paths-reviewed-before-metadata-adoption", "preflight-ready-before-apply", "apply-and-verify-succeed", "tenant-membership-rbac-and-business-data-read-back", "recover-restores-exact-pre-upgrade-state"]
+    }
+  },
+  "execution": {
+    "entry": "scripts/consumer-upgrade-qualification plan",
+    "claim_entry": "scripts/project-resource-lease claim",
+    "database_admin": "/usr/bin/ssh -> /usr/local/bin/docker exec peanut-admin-mysql84-development -> /usr/bin/mysql",
+    "database_dump": "/usr/bin/ssh -> /usr/local/bin/docker exec peanut-admin-mysql84-development -> /usr/bin/mysqldump --single-transaction --quick --routines --events --triggers --hex-blob --set-gtid-purged=OFF",
+    "instance_upgrade_entry": "php scripts/scaffold-upgrade adoption-plan|adoption-apply|preflight|apply|verify|recover",
+    "http_entry": "/usr/local/bin/docker compose --project-name peanut-cr03-<run_id>-<scenario> --env-file .env --env-file server/.env.local-production-preview -f deploy/docker-compose.prod.yml",
+    "cleanup_owner": "active CR03 consumer-upgrade lease owner",
+    "forbidden": ["p0e-fresh-databases", "persistent-development-database", "demo-deployment", "production-data", "ephemeral-signing-key"]
+  }
+}

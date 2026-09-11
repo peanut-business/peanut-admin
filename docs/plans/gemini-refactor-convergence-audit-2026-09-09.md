@@ -8,6 +8,8 @@ Owner: `product-architecture`
 
 Audience: `maintainer, architect, operator, ai`
 
+> 本文分阶段表格保留当时审计身份；§2 中旧 canonical 和“待应用 Release”不是当前状态。当前恢复入口为[事实入口](../governance/current-state.md)，版本解释由[产品版本 ADR](../architecture/product-version-identity-adr.md)替代，历史操作与补做链由[全量事实审计](../maintenance/fact-convergence-audit-2026-09-09.md)收敛。不要重新执行已吸收切片或恢复 quarantine 脏工作树。
+
 Fixed inputs: Peanut Admin clean baseline `dev@e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d`、Application
 quarantine snapshot `1b2b66cd`、Peanut Admin Core Alpha.13 source candidate
 `a949a77728f2940153c6cfd76b104d5d8bb183e3`、Core quarantine snapshot `90bf92f`、
@@ -31,7 +33,7 @@ Application convergence `main@f61d41ffb7137447e7be0b8ae2f7f9aaf4e27f7f`（PR #43
 4. 现行应用层锁定为 ThinkPHP 原生 Model/Query/Scope + 构造函数注入。不得仅为隔离框架新增 Repository/
    Port/Adapter，也不得在业务方法内用 `app()` 定位依赖；跨 Module 公开合同和真实外部 Provider adapter
    仍可保留。
-5. 测试占位是迁移期间的显式临时工件，可以用来解开机械编辑顺序，但绝不能参与通过判断。正式处理是从
+5. 测试占位只能作为隔离现场中不可信的历史工件，不能作为允许的开发或验证流程，绝不能参与通过判断。正式处理是从
    canonical 的真实测试重放每个微批次，并让新门禁拒绝占位，不是在脏候选中继续修补“通过字符串”。
 
 ## 2. 仓库与分支事实
@@ -248,7 +250,7 @@ Registry 安装、不对公网暴露开发服务器、生产只发布构建输�
 仍需正式关闭：
 
 - Rich Text 独立发布仍缺浏览器、协同服务、签名、SBOM、review/漏洞响应 owner 与明确渠道；
-- v3.0.14 安装日志暴露的前端 high/moderate 依赖告警必须在下一不可变候选正式升级或以有 owner/期限的例外裁定；
+- 后续新候选必须重新核对已完成依赖修复与 UniApp 有期限的 accepted-risk；不能再次把已在 `1c836651` / `2803cdc6` 修复的告警列为未处理，也不能把旧 Release 写成漏洞清零；
 - 真实云 Provider 和第三方业务生产部署按各自登记资源与资格执行。
 
 ## 11. 集成、发布、生产与清理顺序

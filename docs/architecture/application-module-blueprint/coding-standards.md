@@ -9,6 +9,7 @@
 - PHP namespace：`app\\Modules\\<Vendor>\\<Module>`，遵循 PSR-4 大小写；
 - 前端根目录：`web/src/modules/<module-slug>/`；
 - 测试根目录：`server/tests/Modules/<Vendor>/<Module>/`；
+- Module 业务服务目录：`server/app/Modules/<Vendor>/<Module>/Services/`；
 - Module key 使用小写命名空间，如 `official.rich-text`。
 
 目录只由 key 通过 `ModuleHostLayout` 派生。不要手写第二套 `modules/<slug>/{server,web}` 布局，
@@ -16,13 +17,15 @@
 
 ## 2. ThinkPHP 原生应用层
 
-- Controller 负责 HTTP 映射，Application Service 负责用例与事务，Model/Query/Scope 负责数据访问；
+- Controller 负责 HTTP 映射，Module `Services/` 负责用例与事务，Model/Query/Scope 负责数据访问；
 - Application Service 直接使用 ThinkPHP Model、Query 和 Scope 是冻结的正常实现；
 - 运行时依赖由组合根构造注入，业务方法内不得使用 `app()`、Facade 或零参数静态工厂定位依赖；
 - 不得仅为了隔离框架而新增 Interface、Port、Repository Contract、Persistence Adapter、镜像实现或
   兼容桥；
 - `Contracts/` 只在存在真实跨 Module 消费者时定义稳定业务合同，且不能暴露 PDO、ORM Model 或
   Module-owned 表名。
+- 新 Module 不生成 `Application/`。该目录名不是迁移现有 Module 的指令；普通 App 服务仍采用
+  小写 `services/` 目录。
 
 ## 3. Tenant、权限与失败
 

@@ -25,5 +25,6 @@ This public-safe index shows where developer pages get their facts. It intention
 | `pa-site-getting-started` | `docs-site/getting-started.md` | `scripts/create-app`<br>`scripts/local-stack.sh`<br>`server/.env.example` | `cd docs-site && pnpm build` |
 | `pa-site-index` | `docs-site/index.md` | `docs/README.md`<br>`docs/governance/authoritative-source-map.md`<br>`docs-site/.vitepress/config.ts` | `cd docs-site && pnpm build` |
 | `pa-site-source-map` | `docs-site/reference/source-map.generated.md` | `docs/document-registry.json` | `./scripts/docs-governance generate --check` |
+| `pa-site-version-identity` | `docs-site/guide/version-identity.md` | `docs/architecture/product-version-identity-adr.md`<br>`docs/architecture/core-thinkphp-runtime-direction-adr.md` | `./scripts/docs-governance check` |
 
 For maintainer-only facts, use the repository technical documentation and its authoritative source map.

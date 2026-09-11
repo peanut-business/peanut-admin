@@ -6,6 +6,8 @@
 
 ## 5 分钟速读
 
+产品同号与客户实例独立版本的规则见[版本身份 ADR](architecture/product-version-identity-adr.md)。V2 合同中的 `source_product_version` 绑定产品/Edition/Core，`instance_version` 绑定客户发布序列；部署 tag 使用实例版本（若有），否则使用产品版本，并另行核对源产品身份。
+
 - 3.0 的首次安装使用 fresh 基线；常规更新只替换应用容器，绝不删除数据库或上传卷。
 - 默认一套部署对应一个应用实例。一个实例可服务多个 Tenant、客户端和 Module。
 - 生产推荐从不可变源码版本构建 Docker Compose；数据库、密钥、文件空间和备份由该实例
@@ -234,7 +236,7 @@ scaffold 跨大版本不得原地升级，必须先备份并走显式 `--fresh` 
 账本执行追加 SQL；目标读取发布内 `release-versions.json.scaffold_template`，应用 tag 仍只参与应用
 发布顺序。不得手工修改或删除已应用记录。需要保留旧系统时，继续隔离运行旧实例，并为新基线
 准备独立空库。Plugin Module 自己的 `pa_module_migration` 属于插件生命周期；Peanut 与应用追加
-migration 使用 `pa_schema_migration`，未标记的应用 SQL 以当前 `product_release` 写入账本但不受
+migration 使用 `pa_schema_migration`，未标记的应用自有 SQL 以当前实例发布序列（产品根则为源产品版本）写入账本，但不受
 scaffold 目标筛选。
 
 ## 发布最低检查

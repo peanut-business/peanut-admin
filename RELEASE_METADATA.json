@@ -1,9 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "protocol": "peanut.release-metadata.v2",
   "product": "Peanut Admin",
-  "version": "3.0.14",
-  "expected_tag": "v3.0.14",
-  "release_date": "2026-09-09",
+  "source_product_version": "3.1.0",
+  "instance_version": null,
+  "expected_tag": "v3.1.0",
+  "release_date": "2026-09-11",
   "repository": "https://github.com/peanut-business/peanut-admin",
   "license": {
     "type": "Apache-2.0",
@@ -26,28 +28,28 @@
     "nginx_image": "1.28.0-alpine"
   },
   "public_runtime_dependencies": {
-    "composer": "peanut-admin/core@0.1.0-alpha.13",
-    "web_npm": "@peanut-admin/admin@0.1.0-alpha.13",
-    "platform_npm": "@peanut-admin/admin@0.1.0-alpha.13",
-    "pc_npm": "@peanut-admin/admin@0.1.0-alpha.13",
-    "uniapp_npm": "@peanut-admin/admin@0.1.0-alpha.13"
+    "composer": "peanut-admin/core@3.1.0",
+    "web_npm": "@peanut-admin/admin@3.1.0",
+    "platform_npm": "@peanut-admin/admin@3.1.0",
+    "pc_npm": "@peanut-admin/admin@3.1.0",
+    "uniapp_npm": "@peanut-admin/admin@3.1.0"
   },
   "lockfiles": {
-    "server/composer.lock": "f9e749d01f37bb96cbcf7e0e3e16b6e3d6045883580d905a7d6c8253003b7d1d",
-    "web/pnpm-lock.yaml": "63b1d8f83d4826bd714845b57a8c4134a9773538e7865cb5272fae3447d77fb8",
-    "platform/package-lock.json": "7aad54b4d2754f67f4db55aa2976f21321045a3f04b98326f3af11932c21b70a",
-    "pc/package-lock.json": "84ce908f0e7f15af0ba9c88a04aad4a13f453c50d92abeec8c8cb758d4c65183",
-    "uniapp/package-lock.json": "3fa0bae625d5bd3b415de94c484197c040a226ee6009ef1c4c85117ca1c58e68",
+    "server/composer.lock": "f1aafcf3f75fe9a29021b420f319e6e9ff4999652e3609fe4a4c237c132da480",
+    "web/pnpm-lock.yaml": "267b5104148c054207029fa30cca965a8faaccfb83596a6f91fb78d76505147d",
+    "platform/package-lock.json": "a4498bac1446dc2541830ccad8505737d11dc8d67e46e975058c8f93c59919ec",
+    "pc/package-lock.json": "6c84bc2e5bbe030d232625be158398b9ce477ba0a0e7859b198d497f1e8238d9",
+    "uniapp/package-lock.json": "6157e264bb64ccf4b58dae9dad122ae69b1533a8bb260dd3681cb7e849ab3236",
     "docs-site/pnpm-lock.yaml": "afcbc2c01975027ff3e92cedb413eb8d492cc46f813b295c2f890d8016b726c6"
   },
   "legal_files": {
     "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "NOTICE": "908896ee207ef8973e8e40944112a19dec70a8b9a92501a0ff576d62895951c6",
-    "THIRD_PARTY_NOTICES.md": "562f7c2c95c0f68ca2651f4c29f405a9be453fcc8b32623037b06c7014dd1582",
-    "RELEASE_SBOM.spdx.json": "7777cf261bca41c577168e61e1bc7178fb00f3a2e80db216f160e42e7e2215d1"
+    "THIRD_PARTY_NOTICES.md": "feb511137757a8e260d02c6f7fdd44470b1cb2e52e0629f03cb7766668a90369",
+    "RELEASE_SBOM.spdx.json": "7d0738b553d3115612ced8496469e60bc259ea026b433eb52b56b07857ddccd7"
   },
   "technical_qualification": {
-    "phase": "3.0.14-pending-qualification",
+    "phase": "3.1.0-development-candidate",
     "result": "pending",
     "final_candidate_commit": null,
     "final_candidate_tree": null,
@@ -57,10 +59,10 @@
     "cleanup_residual_count": null,
     "lease_released": false,
     "migrations": 10,
-    "scaffold_version": "3.0.14",
+    "scaffold_version": "3.1.0",
     "application_initial_version": "0.1.0",
-    "evidence": "The fixed-candidate qualification is pending; the immutable external candidate lock will carry the exact commit, tree, eight groups and zero-residual result.",
-    "release_delta": "Converges the audited Gemini refactor into verified incremental changes, adopts qualified Core Alpha.13 storage and security fixes, formalizes Module package publication rules, and replaces temporary test skips with executable gates."
+    "evidence": "CR02 records only Development readiness: public Core 3.1.0 consumption, V2 release identity and deterministic scaffold inputs. Application fixed-candidate P0-E qualification remains pending for CR03.",
+    "release_delta": "Adopts the published Core 3.1.0 PHP and Web packages, separates source product identity from customer-owned instance identity, and prepares one-source deterministic Standalone and Multi-tenant scaffold inputs."
   },
   "self_reference_policy": "This file intentionally omits its own commit SHA and archive digest. RELEASE_MANIFEST.json is generated from the immutable tag and carries those values."
 }

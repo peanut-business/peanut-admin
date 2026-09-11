@@ -44,7 +44,8 @@ function scaffoldOwnedTree(string $root,array $manifest,string $classification):
 function scaffoldPlanPath(string $project,array $plan): string{return $project.'/'.$plan['plan_path'];}
 function scaffoldFails(callable $callback,string $message): void
 {
-    try{$callback();throw new RuntimeException('expected failure: '.$message);}catch(RuntimeException $exception){scaffoldExpect(str_contains($exception->getMessage(),$message),'unexpected failure: '.$exception->getMessage());}
+    try{$callback();}catch(RuntimeException $exception){scaffoldExpect(str_contains($exception->getMessage(),$message),'unexpected failure: '.$exception->getMessage());return;}
+    throw new RuntimeException('expected failure: '.$message);
 }
 function scaffoldFresh(string $source,string $target): void
 {
@@ -64,6 +65,23 @@ function scaffoldInstallVersionContract(string $target,string $productRelease='0
     $contract['product_release']=$productRelease;
     $written=file_put_contents($target.'/release-versions.json',json_encode($contract,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
     scaffoldExpect($written!==false,'historical scaffold fixture version contract must be written');
+}
+function scaffoldInstallV2VersionContract(string $target,string $instanceVersion,?string $coreVersion=null): void
+{
+    $manifest=json_decode((string)file_get_contents($target.'/.peanut/application-manifest.json'),true,512,JSON_THROW_ON_ERROR);
+    $sourceVersion=$manifest['template']['version']??null;
+    scaffoldExpect(is_string($sourceVersion),'v2 fixture source product version must be available');
+    $contract=[
+        'schema_version'=>2,
+        'protocol'=>'peanut.release-versions.v2',
+        'source_product_version'=>$sourceVersion,
+        'instance_version'=>$instanceVersion,
+        'scaffold_template'=>$sourceVersion,
+        'generated_instance_default'=>'0.1.0',
+        'core_php'=>$coreVersion??$sourceVersion,
+        'core_web'=>$sourceVersion,
+    ];
+    file_put_contents($target.'/release-versions.json',json_encode($contract,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
 }
 function scaffoldFreshAdopted(string $source,string $releasePath,string $target): void
 {
@@ -89,16 +107,47 @@ $temporaryRoot=realpath(sys_get_temp_dir());if($temporaryRoot===false)throw new 
 $temporary=$temporaryRoot.'/peanut-scaffold-e2e-'.bin2hex(random_bytes(8));mkdir($temporary,0700,true);
 $fromRelease=$root.'/scaffold/releases/v1.0.0/scaffold-manifest.json';$toRelease=$root.'/scaffold/releases/v1.1.0/scaffold-manifest.json';$patchRelease=$root.'/scaffold/releases/v1.1.1/scaffold-manifest.json';$latestRelease=$root.'/scaffold/releases/v1.1.2/scaffold-manifest.json';$nextRelease=$root.'/scaffold/releases/v1.1.3/scaffold-manifest.json';$currentRelease=$root.'/scaffold/releases/v1.1.4/scaffold-manifest.json';$runtimeRelease=$root.'/scaffold/releases/v1.1.5/scaffold-manifest.json';$releaseCandidate=$root.'/scaffold/releases/v1.1.6/scaffold-manifest.json';$productRelease=$root.'/scaffold/releases/v1.1.7/scaffold-manifest.json';$hotfixRelease=$root.'/scaffold/releases/v1.1.8/scaffold-manifest.json';$managedSeederRelease=$root.'/scaffold/releases/v1.1.9/scaffold-manifest.json';
 try{
+    try{scaffoldFails(static fn():null=>null,'SCAFFOLD_TEST_EXPECTED_FAILURE');throw new RuntimeException('scaffoldFails accepted a successful callback');}catch(RuntimeException $exception){scaffoldExpect($exception->getMessage()==='expected failure: SCAFFOLD_TEST_EXPECTED_FAILURE','scaffoldFails must reject a successful callback');}
     $source=$temporary.'/from-source';
     scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$source]);
     scaffoldRun(['git','checkout','--quiet','--detach',SCAFFOLD_FROM_COMMIT],$source);
     $from=$temporary.'/from-app';scaffoldFresh($source,$from);
     $fromManifest=json_decode((string)file_get_contents($from.'/.peanut/application-manifest.json'),true,512,JSON_THROW_ON_ERROR);
     scaffoldExpect($fromManifest['template']['source_commit']===SCAFFOLD_FROM_COMMIT,'from app must use the formal create-app commit');
+
+    $adoptionFromRelease=$temporary.'/adoption-from-release';$adoptionToRelease=$temporary.'/adoption-to-release';
+    scaffoldCopyRelease($fromRelease,$adoptionFromRelease);scaffoldCopyRelease($toRelease,$adoptionToRelease);
+    $adoptionPath='server/config/peanut.php';$adoptionSource=(string)file_get_contents($source.'/'.$adoptionPath);
+    foreach([$adoptionFromRelease,$adoptionToRelease]as$adoptionRelease){
+        $artifact=$adoptionRelease.'/files/'.$adoptionPath;if(!is_dir(dirname($artifact)))mkdir(dirname($artifact),0775,true);file_put_contents($artifact,$adoptionSource);
+        $manifestPath=$adoptionRelease.'/scaffold-manifest.json';$manifest=json_decode((string)file_get_contents($manifestPath),true,512,JSON_THROW_ON_ERROR);
+        $manifest['files'][]=['path'=>$adoptionPath,'source'=>'files/'.$adoptionPath,'template_sha256'=>hash('sha256',$adoptionSource),'classification'=>'managed','transform'=>'tokens','mode'=>0644,'policy'=>'managed','owner'=>'backend'];
+        file_put_contents($manifestPath,json_encode($manifest,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    }
+    $runner=new ScaffoldUpgradeRunner();$adoptionPlan=$runner->preflight($from,$adoptionFromRelease.'/scaffold-manifest.json',$adoptionToRelease.'/scaffold-manifest.json');
+    scaffoldExpect($adoptionPlan['status']==='blocked'&&count(array_filter($adoptionPlan['actions'],static fn(array $action):bool=>$action['reason']==='app_owned_adoption_required'))===1,'app-owned paths must require explicit adoption before becoming managed');
+    $adoptionBefore=scaffoldFileTree($from);scaffoldFails(fn()=>$runner->apply($from,scaffoldPlanPath($from,$adoptionPlan)),'SCAFFOLD_PLAN_BLOCKED');scaffoldExpect(hash_equals($adoptionBefore,scaffoldFileTree($from)),'blocked ownership transition must not write the product tree');
+    scaffoldDelete($from.'/.peanut/upgrades');
+
+    $deletionPlan=$runner->preflight($from,$adoptionFromRelease.'/scaffold-manifest.json',$toRelease);
+    scaffoldExpect($deletionPlan['status']==='blocked'&&count(array_filter($deletionPlan['actions'],static fn(array $action):bool=>$action['reason']==='app_owned_adoption_required'))===1,'upstream deletion of an app-owned path must require explicit adoption');
+    $deletionBefore=scaffoldFileTree($from);scaffoldFails(fn()=>$runner->apply($from,scaffoldPlanPath($from,$deletionPlan)),'SCAFFOLD_PLAN_BLOCKED');scaffoldExpect(hash_equals($deletionBefore,scaffoldFileTree($from)),'blocked app-owned deletion must not write the product tree');
+    scaffoldDelete($from.'/.peanut/upgrades');
+
+    $missingManifestPath=$from.'/.peanut/application-manifest.json';$missingManifestBytes=(string)file_get_contents($missingManifestPath);$missingManifest=json_decode($missingManifestBytes,true,512,JSON_THROW_ON_ERROR);
+    $missingManifest['files']=array_values(array_filter($missingManifest['files'],static fn(array $file):bool=>($file['path']??null)!=='README.md'));file_put_contents($missingManifestPath,json_encode($missingManifest,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    $missingPlan=$runner->preflight($from,$fromRelease,$toRelease);scaffoldExpect($missingPlan['status']==='blocked'&&count(array_filter($missingPlan['actions'],static fn(array $action):bool=>$action['reason']==='managed_adoption_required'))===1,'a missing managed adoption record must block');
+    $missingBefore=scaffoldFileTree($from);scaffoldFails(fn()=>$runner->apply($from,scaffoldPlanPath($from,$missingPlan)),'SCAFFOLD_PLAN_BLOCKED');scaffoldExpect(hash_equals($missingBefore,scaffoldFileTree($from)),'blocked missing adoption record must not write the product tree');
+    file_put_contents($missingManifestPath,$missingManifestBytes);scaffoldDelete($from.'/.peanut/upgrades');
+
+    $newTargetRelease=$temporary.'/new-target-release';scaffoldCopyRelease($toRelease,$newTargetRelease);$newPath='host/new-managed.txt';$newArtifact=$newTargetRelease.'/files/'.$newPath;if(!is_dir(dirname($newArtifact)))mkdir(dirname($newArtifact),0775,true);file_put_contents($newArtifact,"new host file\n");
+    $newManifestPath=$newTargetRelease.'/scaffold-manifest.json';$newManifest=json_decode((string)file_get_contents($newManifestPath),true,512,JSON_THROW_ON_ERROR);$newManifest['files'][]=['path'=>$newPath,'source'=>'files/'.$newPath,'template_sha256'=>hash('sha256',"new host file\n"),'classification'=>'managed','transform'=>'tokens','mode'=>0644,'policy'=>'managed','owner'=>'host'];file_put_contents($newManifestPath,json_encode($newManifest,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)."\n");
+    $newPlan=$runner->preview($from,$fromRelease,$newManifestPath);scaffoldExpect($newPlan['status']==='ready'&&count(array_filter($newPlan['actions'],static fn(array $action):bool=>($action['path']??null)==='host/new-managed.txt'&&($action['action']??null)==='create'))===1,'a target-only path without an instance file must remain creatable');
+
     $appOwnedPath='server/config/peanut.php';file_put_contents($from.'/'.$appOwnedPath,(string)file_get_contents($from.'/'.$appOwnedPath)."\n// application customization\n");
     $appOwnedDigest=hash_file('sha256',$from.'/'.$appOwnedPath);
 
-    $runner=new ScaffoldUpgradeRunner();$plan=$runner->preflight($from,$fromRelease,$toRelease);
+    $plan=$runner->preflight($from,$fromRelease,$toRelease);
     scaffoldExpect($plan['status']==='ready'&&$plan['summary']['conflicts']===0,'pristine managed tree must plan successfully');
     $apply=$runner->apply($from,scaffoldPlanPath($from,$plan));$verify=$runner->verify($from,scaffoldPlanPath($from,$plan));
     scaffoldExpect($apply['status']==='applied'&&$verify['status']==='verified','apply and verify must complete');
@@ -225,6 +274,8 @@ try{
     scaffoldExpect($legacyApply['status']==='applied'&&$legacyVerify['status']==='verified','v1.1.3 to v1.1.4 apply/verify must complete');
     $legacyApplied=json_decode((string)file_get_contents($legacyManifestPath),true,512,JSON_THROW_ON_ERROR);
     scaffoldExpect(($legacyApplied['schema_version']??null)===2&&($legacyApplied['protocol']??null)==='peanut.application-scaffold.v2'&&($legacyApplied['application']['version']??null)==='2.4.6','upgrade must normalize the application manifest without changing application.version');
+    $legacyAppliedVersions=json_decode((string)file_get_contents($legacyApp.'/release-versions.json'),true,512,JSON_THROW_ON_ERROR);
+    scaffoldExpect(($legacyAppliedVersions['product_release']??null)==='2.4.6'&&($legacyAppliedVersions['generated_application_default']??null)==='0.1.0','v1 upgrade must preserve the template default while retaining the instance release sequence');
     scaffoldExpect(hash_equals($legacyAppOwnedDigest,scaffoldOwnedTree($legacyApp,$legacyApplied,'app-owned')),'v1.1.4 upgrade must preserve all app-owned bytes');
     scaffoldExpect(hash_equals((string)$legacyUniappDigest,(string)hash_file('sha256',$legacyApp.'/uniapp/src/manifest.json')),'upgrade must preserve existing UniApp versionName/versionCode bytes');
     foreach(['web/package.json','pc/package.json','uniapp/package.json','server/config/project.php']as$versionPath)scaffoldExpect(str_contains((string)file_get_contents($legacyApp.'/'.$versionPath),'2.4.6'),'managed application version surface was not preserved: '.$versionPath);
@@ -235,6 +286,12 @@ try{
     $currentIdentity=json_decode((string)file_get_contents($currentRelease),true,512,JSON_THROW_ON_ERROR)['release'];
     $runtimeSource=$temporary.'/runtime-source';scaffoldRun(['git','clone','--quiet','--no-local','--no-checkout',$root,$runtimeSource]);scaffoldRun(['git','checkout','--quiet','--detach',$currentIdentity['source_commit']],$runtimeSource);
     $runtimeApp=$temporary.'/runtime-app';scaffoldFreshAdopted($runtimeSource,$currentRelease,$runtimeApp);
+    scaffoldInstallV2VersionContract($runtimeApp,'2.4.6',$currentIdentity['version'].'+different-spelling');
+    scaffoldFails(fn()=>$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease),'product-core-version-mismatch');
+    scaffoldInstallV2VersionContract($runtimeApp,'2.4.6');
+    $v2Plan=$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease);
+    scaffoldExpect(($v2Plan['identity']['application_version']??null)==='2.4.6'&&($v2Plan['identity']['version_contract']['source_product_version']??null)===$currentIdentity['version']&&($v2Plan['identity']['version_contract']['generated_instance_default']??null)==='0.1.0','v2 upgrade must consume separate source, instance and default identities');
+    scaffoldInstallVersionContract($runtimeApp);
     $runtimeAppOwnedPath='server/config/peanut.php';file_put_contents($runtimeApp.'/'.$runtimeAppOwnedPath,(string)file_get_contents($runtimeApp.'/'.$runtimeAppOwnedPath)."\n// v1.1.5 preservation proof\n");$runtimeAppOwnedDigest=hash_file('sha256',$runtimeApp.'/'.$runtimeAppOwnedPath);
     $runtimeBefore=scaffoldFileTree($runtimeApp);
     $runtimePlan=$runner->preflight($runtimeApp,$currentRelease,$runtimeRelease);scaffoldExpect($runtimePlan['status']==='ready'&&$runtimePlan['summary']['conflicts']===0,'v1.1.4 to v1.1.5 plan must be ready');

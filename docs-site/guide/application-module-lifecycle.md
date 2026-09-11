@@ -29,18 +29,23 @@ managed tree 和 app-owned tree 摘要；它们是后续升级和问题提交的
 `full` profile。`create-app` 只用于首次生成；已有应用不能重新生成并覆盖，而应在自己的开发分支
 通过签名 scaffold 包升级受管文件。
 
-应用版本、scaffold 来源、Core lock 与 Module 版本是四种独立身份：应用版本对应完整应用
-Release；scaffold manifest 对应受管源码基线；Composer/npm lock 对应实际安装的 Core；Module
-manifest、archive 摘要和签名对应业务模块。升级其中一项不会自动升级其余三项。
+客户 Instance 版本、源产品/scaffold 来源、Core lock 与 Module manifest 分别记录自己的事实。
+Instance 版本对应客户完整 Release；scaffold manifest 对应受管源码基线；lock 对应实际安装的
+Core；Module manifest、archive 摘要和签名对应业务模块。升级实例不会自动升级源产品或 Module。
 
-下一次正式发布起，Peanut Admin 的 scaffold、PHP Core 和 Web Core 采用同一个基础发行号，
-包括同步的预发布后缀；应用版本仍按自身节奏递增。这项规则不改变四种身份：相同版本号不能代替
+下一次正式发布起，Peanut Admin 产品 Application、scaffold、PHP Core、Web Core 与双 Edition 采用同一个产品发行号，
+包括同步的预发布后缀；客户 Instance 版本仍按自身节奏递增。相同版本号不能代替
 manifest、lock、不可变包引用或兼容验证，共同版本号也不能把 alpha 自动说成稳定版。第三方或
 私有 Module 继续使用自己的版本和 archive SHA-256。当前 `3.0.14` scaffold 已采用正式发布的
-`0.1.0-alpha.13` Core；两者仍是独立版本轴，后续不能靠改 manifest 假装对齐，必须依次完成 Core 包
+`0.1.0-alpha.13` Core；这两个不同号的历史身份保持不变。后续不能靠改 manifest 假装对齐，必须依次完成 Core 包
 发布与验证、应用锁定消费、同号 scaffold 资格；任一步失败时，整套基础发行不能标记为 ready。
 
+字段与例子见[产品与实例版本](version-identity.md)。新版本完成资格和正式发布前，不应将目标版本填入依赖安装命令。
+
 ## 2. 创建并检查 Module
+
+新建 Module 的业务用例放在后端复数 `Services/` 目录；生成器不会创建旧的 `Application/` 骨架。
+这不要求迁移已有 Module，也不改变普通 App 服务使用小写 `services/` 的约定。
 
 在生成应用的 `server/` 目录运行：
 

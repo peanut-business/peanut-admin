@@ -45,9 +45,13 @@ freshSchemaExpect(str_contains($installer, "'core.tenant-owner'"), 'installer he
 freshSchemaExpect(str_contains($installer, "'--migrate'"), 'application migration runner is not available');
 freshSchemaExpect(
     str_contains($installer, 'applicationReleaseVersions($serverDir)')
+        && str_contains($installer, "'source_product_version' => \$contract->sourceProductVersion()")
+        && str_contains($installer, "'release_sequence_version' => \$contract->releaseSequenceVersion()")
+        && str_contains($installer, "\$versions['source_product_version']")
+        && str_contains($installer, "\$versions['release_sequence_version']")
         && str_contains($installer, "\$releaseIdentity['peanut_release']")
         && str_contains($installationHost, '$this->migrationTargetVersion()'),
-    'fresh install and migration selection do not use the scaffold version contract'
+    'fresh install and migration selection do not preserve source, instance and scaffold version axes'
 );
 $migrations = glob($serverRoot . '/database/migrations/*.sql') ?: [];
 // These migrations reached the shared ledger before the release marker became mandatory.

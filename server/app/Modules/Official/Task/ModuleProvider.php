@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Task;
 
-use app\common\composition\ModuleBindingContributor;
 use app\Modules\Official\Task\Application\CrontabSchedulerService;
 use app\Modules\Official\Task\Application\TaskSchedulerService;
 use app\Modules\Official\Task\Application\TaskBootstrapService;
@@ -23,7 +22,7 @@ use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PDO;
 use think\App;
 
-final class ModuleProvider implements ModuleProviderContract, ModuleBindingContributor
+final class ModuleProvider implements ModuleProviderContract
 {
     public function moduleKey(): string
     {

@@ -13,6 +13,7 @@ use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\PlatformTenantDataGateway;
 use app\common\tenancy\StandaloneDataScopePolicy;
+use app\adminapi\service\generator\GeneratorRenderService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -373,7 +374,7 @@ expectTpq51($mapper->map(new RuntimeException('unknown')) === null, 'unknown exc
 
 $applicationRoot = dirname(__DIR__, 2) . '/app/adminapi/application';
 foreach ([
-    $applicationRoot . '/generator/GeneratorApplicationService.php',
+    dirname(__DIR__, 2) . '/app/adminapi/services/generator/GeneratorService.php',
     $applicationRoot . '/dept/JobsApplicationService.php',
 ] as $applicationFile) {
     $applicationSource = (string)file_get_contents($applicationFile);
@@ -387,6 +388,65 @@ expectTpq51(
     preg_match('/catch\s*\(\\\\Throwable[^)]*\)\s*\{\s*throw\s+\$[A-Za-z_][A-Za-z0-9_]*\s*;\s*\}/s', $jobsApplicationSource) !== 1,
     'JobsApplicationService retained a no-op catch/rethrow block',
 );
+
+$generatedFiles = GeneratorRenderService::render([
+    'table_name' => 'pa_demo_article',
+    'module_name' => 'demo',
+    'entity_name' => 'Article',
+    'data_owner' => 'tenant',
+    'target_edition' => 'multi-tenant',
+    'columns' => [
+        ['column_name' => 'id', 'php_type' => 'int', 'is_pk' => true, 'is_required' => true],
+        ['column_name' => 'tenant_id', 'php_type' => 'int', 'is_required' => true],
+        ['column_name' => 'title', 'php_type' => 'string', 'is_required' => true, 'is_insert' => true, 'is_update' => true],
+    ],
+]);
+$assertGeneratedServiceOutput = static function (array $files): void {
+    $byPath = array_column($files, 'content', 'path');
+    $servicePath = 'server/app/adminapi/services/demo/ArticleService.php';
+    if (count($files) !== 7
+        || !isset($byPath[$servicePath])
+        || !str_contains($byPath[$servicePath], 'namespace app\\adminapi\\services\\demo;')
+        || !str_contains($byPath[$servicePath], 'class ArticleService')
+        || !str_contains($byPath['server/app/adminapi/controller/demo/ArticleController.php'] ?? '', 'use app\\adminapi\\services\\demo\\ArticleService;')
+        || !str_contains($byPath['server/app/adminapi/controller/demo/ArticleController.php'] ?? '', 'ArticleService $service')) {
+        throw new RuntimeException('generator services output contract violated');
+    }
+    foreach (array_keys($byPath) as $path) {
+        if (str_contains($path, 'adminapi/' . 'application') || str_contains($path, 'Application' . 'Service.php')) {
+            throw new RuntimeException('generator services output contract violated');
+        }
+    }
+};
+$assertGeneratedServiceOutput($generatedFiles);
+$generatedByPath = array_column($generatedFiles, 'content', 'path');
+$servicePath = 'server/app/adminapi/services/demo/ArticleService.php';
+expectTpq51(count($generatedFiles) === 7 && isset($generatedByPath[$servicePath]), 'generator did not render the services output path');
+expectTpq51(
+    str_contains($generatedByPath[$servicePath], 'namespace app\\adminapi\\services\\demo;')
+        && str_contains($generatedByPath[$servicePath], 'class ArticleService'),
+    'generator service output retained the application namespace or class',
+);
+$controllerContent = $generatedByPath['server/app/adminapi/controller/demo/ArticleController.php'] ?? '';
+expectTpq51(
+    str_contains($controllerContent, 'use app\\adminapi\\services\\demo\\ArticleService;')
+        && str_contains($controllerContent, 'ArticleService $service'),
+    'generator controller did not import the services class',
+);
+foreach (array_keys($generatedByPath) as $path) {
+    expectTpq51(!str_contains($path, 'adminapi/application') && !str_contains($path, 'ApplicationService.php'), 'generator reintroduced the retired application output path');
+}
+$legacyFiles = array_map(static function (array $file): array {
+    $file['path'] = str_replace('services/demo/ArticleService.php', 'application/demo/ArticleApplicationService.php', $file['path']);
+    $file['content'] = str_replace('services\\demo\\ArticleService', 'application\\demo\\ArticleApplicationService', $file['content']);
+    return $file;
+}, $generatedFiles);
+try {
+    $assertGeneratedServiceOutput($legacyFiles);
+    throw new RuntimeException('legacy generated output was accepted');
+} catch (RuntimeException $exception) {
+    expectTpq51($exception->getMessage() === 'generator services output contract violated', 'legacy generated output did not fail the services output contract');
+}
 
 $scannerProbe = <<<'PY'
 import importlib.machinery
@@ -419,6 +479,10 @@ cases = {
     ),
     "application_console": (
         "server/app/adminapi/application/ConsoleProbe.php",
+        "<?php\nuse think\\Console;\n",
+    ),
+    "services_console": (
+        "server/app/adminapi/services/ConsoleProbe.php",
         "<?php\nuse think\\Console;\n",
     ),
     "application_transport": (
@@ -472,6 +536,10 @@ expectTpq51(
 expectTpq51(
     in_array('application_framework_model', $probeHits['application_console'] ?? [], true),
     'Application import of ThinkPHP Console was not rejected',
+);
+expectTpq51(
+    in_array('application_framework_model', $probeHits['services_console'] ?? [], true),
+    'Services import of ThinkPHP Console was not rejected',
 );
 expectTpq51(
     in_array('application_composition_root', $probeHits['application_transport'] ?? [], true),

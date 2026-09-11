@@ -161,8 +161,10 @@ createApplicationExpect(
     'source qualification evidence must not participate in application template identity'
 );
 foreach ([
+    'README.md' => 'readme',
     'CHANGELOG.md' => 'changelog',
     'RELEASE_METADATA.json' => 'release-metadata',
+    'resources/project-resources.json' => 'resources',
     'docs-site/capabilities.md' => 'docs-page',
 ] as $path => $transform) {
     $semanticDigest = hash('sha256', "peanut.create-app-semantic-source.v1\0{$path}\0{$transform}");
@@ -411,7 +413,11 @@ try {
     createApplicationExpect(!str_contains($generatedModulesConfig, 'fixture.delivery-record'), 'demo Module identity leaked into generated deployment config');
     createApplicationExpect(str_contains($generatedModulesConfig, "env('PEANUT_PLUGIN_LOCK', '../plugins.lock')"), 'generated deployment must enable its scaffold-owned official Plugin lock');
     $releaseMetadata = json_decode((string)file_get_contents($first . '/RELEASE_METADATA.json'), true, 512, JSON_THROW_ON_ERROR);
-    createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $releaseMetadata['version'] === '0.1.0', 'release metadata must be regenerated for the new application');
+    $generatedReleaseVersion = ($releaseMetadata['schema_version'] ?? null) === 2
+        && ($releaseMetadata['protocol'] ?? null) === 'peanut.release-metadata.v2'
+        ? ($releaseMetadata['instance_version'] ?? null)
+        : ($releaseMetadata['version'] ?? null);
+    createApplicationExpect($releaseMetadata['product'] === 'Acme Console' && $generatedReleaseVersion === '0.1.0', 'release metadata must be regenerated for the new application');
     createApplicationExpect(str_contains((string)file_get_contents($first . '/CHANGELOG.md'), "## 0.1.0\n"), 'changelog must use application.version');
     $sbom = json_decode((string)file_get_contents($first . '/RELEASE_SBOM.spdx.json'), true, 512, JSON_THROW_ON_ERROR);
     $sbomRoots = array_values(array_filter(
@@ -424,11 +430,18 @@ try {
             && ($sbomRoots[0]['versionInfo'] ?? null) === '0.1.0',
         'SBOM root package must use application.version'
     );
+    $sourceVersionContract = json_decode(
+        (string)file_get_contents($root . '/release-versions.json'),
+        true,
+        512,
+        JSON_THROW_ON_ERROR
+    );
+    $expectedPublicAdmin = (string)($sourceVersionContract['core_web'] ?? '');
+    createApplicationExpect($expectedPublicAdmin !== '', 'source public admin dependency must be declared');
     foreach (['web', 'pc', 'uniapp', 'docs-site'] as $client) {
         $package = json_decode((string)file_get_contents($first . "/{$client}/package.json"), true, 512, JSON_THROW_ON_ERROR);
         createApplicationExpect(($package['version'] ?? null) === '0.1.0', "{$client} root package must use application.version");
         if (in_array($client, ['web', 'pc', 'uniapp'], true)) {
-            $expectedPublicAdmin = '0.1.0-alpha.12';
             createApplicationExpect(
                 ($package['dependencies']['@peanut-admin/admin'] ?? null) === $expectedPublicAdmin,
                 "{$client} public admin dependency must remain {$expectedPublicAdmin}"
@@ -442,8 +455,8 @@ try {
             "{$client} root lock metadata must use application.version"
         );
         createApplicationExpect(
-            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === '0.1.0-alpha.12',
-            "{$client} lock root dependency must remain Alpha.12"
+            ($lock['packages']['']['dependencies']['@peanut-admin/admin'] ?? null) === $expectedPublicAdmin,
+            "{$client} lock root dependency must remain {$expectedPublicAdmin}"
         );
     }
     foreach (['server/config/project.php', 'server/app/adminapi/application/WorkbenchApplicationService.php', 'server/app/api/application/IndexApplicationService.php'] as $versionSurface) {

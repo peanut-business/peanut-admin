@@ -111,7 +111,7 @@ try {
     $expectedBackendFiles = [
         'module.json', 'ModuleProvider.php', 'Contracts/Generated' . ucfirst($suffix) . 'Commands.php',
         'Http/routes.php', 'Http/Controller/.gitkeep',
-        'Application/.gitkeep', 'Infrastructure/Persistence/.gitkeep', 'Model/.gitkeep',
+        'Services/.gitkeep', 'Infrastructure/Persistence/.gitkeep', 'Model/.gitkeep',
         'Resources/permissions.json', 'Resources/menus.json',
         'Resources/setting-definitions.json', 'Database/Migrations/README.md', 'composer.json',
     ];
@@ -121,6 +121,7 @@ try {
         foreach ($expectedBackendFiles as $relative) {
             moduleCreateExpect(is_file($root . '/' . $relative), "generated backend file is missing: {$relative}");
         }
+        moduleCreateExpect(!file_exists($root . '/Application/.gitkeep'), 'legacy Application scaffold path must be absent');
     }
     foreach ([$officialFrontend, $customFrontend] as $root) {
         foreach ($expectedFrontendFiles as $relative) {

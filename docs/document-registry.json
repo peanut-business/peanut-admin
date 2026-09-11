@@ -40,6 +40,223 @@
   },
   "documents": [
     {
+      "id": "pa-site-version-identity",
+      "path": "docs-site/guide/version-identity.md",
+      "title": "产品与实例版本",
+      "audience": [
+        "developer",
+        "operator"
+      ],
+      "content_type": "public-projection",
+      "authority": "projection",
+      "canonical_sources": [
+        "docs/architecture/product-version-identity-adr.md",
+        "docs/architecture/core-thinkphp-runtime-direction-adr.md"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "docs-site"
+      ],
+      "related": [
+        "release",
+        "core-thinkphp-runtime-direction",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-fact-convergence-audit-2026-09-09",
+      "path": "docs/maintenance/fact-convergence-audit-2026-09-09.md",
+      "title": "Peanut Admin 全量事实收敛审计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "bounded-audit",
+      "canonical_sources": [
+        "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md",
+        "release-versions.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-current-state",
+      "path": "docs/governance/current-state.md",
+      "title": "Peanut Admin 当前事实入口",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "index",
+      "authority": "authoritative-index",
+      "canonical_sources": [
+        "docs/product-status/capability-ledger.json",
+        "docs/architecture/product-version-identity-adr.md",
+        "resources/project-resources.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-convergence-plan-20260910",
+      "path": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
+      "title": "Peanut Admin 历史决策、规则与产品闭环方案",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "plan",
+      "authority": "accepted-execution-plan",
+      "canonical_sources": [
+        "AGENTS.md",
+        "AGENT_EXECUTION_RULES.md",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "history-rules-convergence",
+        "consumer-ready",
+        "consumer-first-delivery"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-conversation-audit-2026-09-09",
+      "path": "docs/maintenance/conversation-audit-2026-09-09.md",
+      "title": "Peanut Admin 历史决定与问题证据审计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "bounded-audit",
+      "canonical_sources": [
+        "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
+        "docs/maintenance/fact-audit-2026-09-09/source-index.json",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "owner": "conversation-audit",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "documentation",
+        "release"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-maintenance-runtime-convergence-audit-2026-09-09",
+      "path": "docs/maintenance/runtime-convergence-audit-2026-09-09.md",
+      "title": "ThinkPHP 8 Runtime 收敛与跨类别历史整改审计",
+      "audience": [
+        "maintainer",
+        "architect",
+        "operator",
+        "ai"
+      ],
+      "content_type": "evidence",
+      "authority": "bounded-audit",
+      "canonical_sources": [
+        "docs/architecture/core-thinkphp-runtime-direction-adr.md",
+        "server/app/AppService.php",
+        "server/app/Modules/Official/Article/ModuleProvider.php",
+        "server/app/Modules/Official/Member/ModuleProvider.php",
+        "server/app/Modules/Official/Oauth/ModuleProvider.php",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/docs/architecture/index.md",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-thinkphp-runtime-direction-adr",
+        "documentation",
+        "release"
+      ],
+      "site_projections": [],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
+      "id": "pa-docs-product-version-identity-adr",
+      "path": "docs/architecture/product-version-identity-adr.md",
+      "title": "产品、发行版、Module 与 Instance 版本身份",
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
+      "content_type": "decision",
+      "authority": "accepted-decision",
+      "canonical_sources": [
+        "release-versions.json",
+        "repo://peanut-admin-core/packages/php/composer.json"
+      ],
+      "owner": "product-architecture",
+      "status": "current",
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "release",
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-site-version-identity"
+      ],
+      "replaced_by": null,
+      "validation": "./scripts/docs-governance check"
+    },
+    {
       "id": "pa-docs-architecture-core-thinkphp-runtime-direction-adr",
       "path": "docs/architecture/core-thinkphp-runtime-direction-adr.md",
       "title": "Core ThinkPHP 8 运行时收敛方向 ADR",
@@ -49,10 +266,12 @@
       "canonical_sources": [
         "server/composer.json",
         "server/app/AppService.php",
+        "server/app/common/execution/",
         "server/app/Modules/",
         "repo://peanut-admin-core/composer.json",
         "repo://peanut-admin-core/packages/php/composer.json",
-        "repo://peanut-admin-core/packages/php/kernel/src/",
+        "repo://peanut-admin-core/packages/php/",
+        "repo://peanut-admin-core/backend/app/AppService.php",
         "AGENT_EXECUTION_RULES.md"
       ],
       "owner": "product-architecture",
@@ -83,14 +302,29 @@
       "id": "pa-docs-plans-storage-driver-extraction-queue",
       "path": "docs/plans/storage-driver-extraction-queue.md",
       "title": "Storage Driver 提取决策与后续队列",
-      "audience": ["maintainer", "architect", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
       "content_type": "plan",
       "authority": "interpretation",
-      "canonical_sources": ["docs/architecture/core-application-technical-boundary.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md"],
+      "canonical_sources": [
+        "docs/architecture/core-application-technical-boundary.md",
+        "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md",
+        "docs/product-status/releases/v3.0.14.json",
+        "server/composer.lock"
+      ],
       "owner": "architecture",
-      "status": "planned",
-      "scope": ["application"],
-      "related": ["storage", "execution-queue", "documentation"],
+      "status": "current",
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "storage",
+        "execution-queue",
+        "documentation"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"

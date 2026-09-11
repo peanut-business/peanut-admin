@@ -302,12 +302,23 @@ tag_tree="$(git rev-parse "$release_ref^{tree}")"
 [[ -z "$EXPECTED_TREE" || "$tag_tree" == "$EXPECTED_TREE" ]] \
   || fail "$TAG tree differs from the caller-bound expected tree"
 version="${TAG#v}"
-metadata_version="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r '.version // empty')"
+metadata_version="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r 'if .schema_version == 2 and .protocol == "peanut.release-metadata.v2" then (.instance_version // .source_product_version // empty) else .version // empty end')"
+metadata_source_version="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r 'if .schema_version == 2 and .protocol == "peanut.release-metadata.v2" then .source_product_version // empty else empty end')"
 metadata_tag="$(git show "$release_ref:RELEASE_METADATA.json" | jq -r '.expected_tag // empty')"
 [[ "$metadata_version" == "$version" && "$metadata_tag" == "$TAG" ]] || fail "RELEASE_METADATA.json does not match $TAG"
-contract_product_version="$(git show "$release_ref:release-versions.json" | jq -r '.product_release // empty')"
+contract_source_version="$(git show "$release_ref:release-versions.json" | jq -r 'if .schema_version == 2 and .protocol == "peanut.release-versions.v2" then .source_product_version // empty elif .schema_version == 1 and .protocol == "peanut.release-versions.v1" then .product_release // empty else empty end')"
+contract_release_version="$(git show "$release_ref:release-versions.json" | jq -r 'if .schema_version == 2 and .protocol == "peanut.release-versions.v2" then (.instance_version // .source_product_version // empty) elif .schema_version == 1 and .protocol == "peanut.release-versions.v1" then .product_release // empty else empty end')"
+contract_schema_version="$(git show "$release_ref:release-versions.json" | jq -r '.schema_version // empty')"
 scaffold_migration_version="$(git show "$release_ref:release-versions.json" | jq -r '.scaffold_template // empty')"
-[[ "$contract_product_version" == "$version" ]] || fail "release-versions.json product_release does not match $TAG"
+[[ "$contract_release_version" == "$version" ]] || fail "release-versions.json release sequence does not match $TAG"
+if [[ -n "$metadata_source_version" ]]; then
+  [[ "$metadata_source_version" == "$contract_source_version" ]] \
+    || fail 'RELEASE_METADATA.json source product version differs from release-versions.json'
+fi
+if [[ "$contract_schema_version" == 2 ]]; then
+  [[ -n "$metadata_source_version" ]] \
+    || fail 'v2 release-versions.json requires v2 RELEASE_METADATA.json'
+fi
 [[ "$scaffold_migration_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
   || fail 'release-versions.json scaffold_template is invalid'
 archive_kind=source
@@ -839,7 +850,7 @@ if [[ "$mode" == update ]]; then
   "${compose[@]}" up -d --wait --no-deps php nginx cron
   "${compose[@]}" ps
   curl --fail --silent --show-error --retry 12 --retry-delay 2 "http://127.0.0.1:${port}/healthz" >/dev/null
-  runtime_version="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/legal/RELEASE_METADATA.json" | jq -r '.version // empty')"
+  runtime_version="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/legal/RELEASE_METADATA.json" | jq -r 'if .schema_version == 2 and .protocol == "peanut.release-metadata.v2" then (.instance_version // .source_product_version // empty) else .version // empty end')"
   [[ "$runtime_version" == "${tag#v}" ]] || fail "runtime metadata is $runtime_version, expected ${tag#v}"
   printf 'updated_tag=%s\ncommit=%s\nruntime_version=%s\ntarget=%s\n' "$tag" "$expected_commit" "$runtime_version" "$target"
   exit 0
@@ -880,7 +891,7 @@ fi
 "${compose[@]}" ps
 
 curl --fail --silent --show-error --retry 12 --retry-delay 2 "http://127.0.0.1:${port}/healthz" >/dev/null
-runtime_version="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/legal/RELEASE_METADATA.json" | jq -r '.version // empty')"
+runtime_version="$(curl --fail --silent --show-error "http://127.0.0.1:${port}/legal/RELEASE_METADATA.json" | jq -r 'if .schema_version == 2 and .protocol == "peanut.release-metadata.v2" then (.instance_version // .source_product_version // empty) else .version // empty end')"
 [[ "$runtime_version" == "${tag#v}" ]] || fail "runtime metadata is $runtime_version, expected ${tag#v}"
 printf 'deployed_tag=%s\ncommit=%s\nruntime_version=%s\ntarget=%s\n' "$tag" "$actual_commit" "$runtime_version" "$target"
 if [[ -n "$expected_overlay_sha" ]]; then

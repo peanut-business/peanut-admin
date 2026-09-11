@@ -16,22 +16,24 @@ php scripts/create-app \
 `--edition` 必须明确选择 `standalone` 或 `multi-tenant`。这不是运行时开关：生成器会从同一份
 Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、索引、Tenant/Platform 能力和
 升级身份。生成后的应用只有一个 Edition；另一个 Edition 的安装包或升级包不能覆盖它。当前正式
-当前正式发布清单采用 full 配置，示例显式传入 `--profile=full`；省略 `--profile` 时仍采用
+发布清单采用 full 配置，示例显式传入 `--profile=full`；省略 `--profile` 时仍采用
 `standard`，需要完整应用能力时必须显式选择 `--profile=full`。
 
 四种版本身份各自拥有事实源：
 
 | 版本轴 | 事实源 | 用途 |
 | --- | --- | --- |
-| 应用发布 | `release-versions.json.product_release` | 应用 owner 的版本、tag 与完整应用 Release |
+| 源产品与实例发布 | V2 `source_product_version` / `instance_version`；历史 V1 `product_release` | Peanut 产品来源与客户实例各自的版本、tag 和 Release |
 | Scaffold 采用 | `scaffold_template` 与不可变 scaffold manifest | 受管技术基线、渲染快照与 Peanut migration 目标 |
 | Core 依赖 | Composer/npm 精确包版本与 lock | 应用实际安装的后端/前端 Core 身份 |
 | Module | Module manifest、archive SHA-256/签名与安装账本 | 可独立版本化的业务源码 contribution 及其依赖和 migration |
 
-这四种身份不会因为其中一项变化而自动同步。下一次正式发布起，scaffold 与 PHP/Web Core 使用
-同一个基础发行号（包括同步的预发布后缀），但相同号码不替代各自的 manifest、lock、不可变包
-引用或兼容证据；应用版本继续独立，共同号码也不能把 alpha 自动说成稳定版。当前 `3.0.14`
-scaffold 已锁定并验证 `0.1.0-alpha.13` Core，但仍是两个独立版本轴。Module 可独立开发和分发，
+表中 `product_release` 是已发布 v1 合同对客户实例版本的历史命名。新合同明确分为
+`source_product_version` 与 `instance_version`；客户独立版本不等于 Peanut 产品版本。
+下一次正式发布起，Peanut 产品 Application、scaffold 与 PHP/Web Core 使用同一个产品发行号
+（包括同步的预发布后缀），但相同号码不替代 manifest、lock、不可变包引用或兼容证据。
+当前正式 `3.0.14` / `0.1.0-alpha.13` 是保持不变的历史组合。Core 3.1.0 已发布且当前开发线已采用真实 locks；在 Application 3.1.0 完整资格和发布前，公开安装指令仍指向 v3.0.14。
+现行规则见[版本身份 ADR](architecture/product-version-identity-adr.md)。Module 可独立开发和分发，
 继续使用自己的版本与 archive SHA-256，并由应用仓采用、固定依赖、构建和验收，最后随应用自己的
 完整 Release 部署；Module archive 不是生产实例部署单位。
 
@@ -94,6 +96,20 @@ scaffold 升级把应用从当前版本退回初始版本；成功后再把 mani
 同时保留原 `generation_source`。升级器只处理受管文件，不执行数据库迁移。
 
 ## 后续升级边界
+
+### 共享 Host 的受管来源与人工采用
+
+当前 inventory 只将以下共享 Host 闭包列为 `managed`：`AppService.php`、Module governance 的
+五个 contract/DTO/state 文件、三个 common persistence helper、六个 `platform/service/module` 文件和
+十个 `platform/service/plugin` 文件。精确路径由
+`scripts/build-application-template-inventory` 的 `managedHostPaths` 维护；Core 类是
+package-managed 外部依赖，不属于派生应用的 `app-owned` 源码。
+
+旧实例若把这些路径登记为 `app-owned`，preflight 会给出 `app_owned_adoption_required`；若旧 release
+声称路径受管但实例 manifest 没有对应受管记录，会给出 `managed_adoption_required`。两者都表示零写入：
+owner 必须在自己的开发分支备份、比较上游和本地定制，并保留业务改动。不得通过删除文件、伪造
+classification/baseline 或改写已签 manifest 解除阻断。当前工具没有自动完成这类采用步骤；owner 需在
+后续完整交付项中验证人工采用，CR03 必须以真实旧实例演练，不能把本说明当成升级已通过。
 
 从正式 Release 创建派生应用不代表它会自动跟随 Peanut Admin 的 `dev/main`。应用只按同
 Edition 的正式升级包和自己的发布流程采用后续版本：

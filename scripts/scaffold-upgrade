@@ -17,23 +17,29 @@ function usage(): never
     fwrite(STDERR, "Usage:\n"
         . "  php scripts/scaffold-upgrade preflight --project-root=<path> --from-manifest=<path> --to-manifest=<path>\n"
         . "  php scripts/scaffold-upgrade preflight --project-root=<path> --package=<extracted-package> --signature-key-id=<id>\n"
+        . "  php scripts/scaffold-upgrade adoption-plan --project-root=<path> --package=<extracted-package> --signature-key-id=<id>\n"
+        . "  php scripts/scaffold-upgrade adoption-apply --project-root=<path> --plan=<path> --confirm-plan-sha256=<sha256:...> --confirm-paths=<comma-separated-exact-paths>\n"
+        . "  php scripts/scaffold-upgrade adoption-recover --project-root=<path> --plan=<path>\n"
         . "  php scripts/scaffold-upgrade apply|verify|recover|rollback --project-root=<path> --plan=<path>\n");
     exit(64);
 }
 
 $command = $argv[1] ?? null;
-if (!in_array($command, ['preflight', 'apply', 'verify', 'recover', 'rollback'], true)) usage();
+if (!in_array($command, ['preflight', 'adoption-plan', 'adoption-apply', 'adoption-recover', 'apply', 'verify', 'recover', 'rollback'], true)) usage();
 $options = [];
 foreach (array_slice($argv, 2) as $argument) {
-    if (preg_match('/^--(project-root|from-manifest|to-manifest|package|signature-key-id|plan)=(.+)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
+    if (preg_match('/^--(project-root|from-manifest|to-manifest|package|signature-key-id|plan|confirm-plan-sha256|confirm-paths)=(.+)$/D', $argument, $matches) !== 1 || isset($options[$matches[1]])) {
         usage();
     }
     $options[$matches[1]] = $matches[2];
 }
 $packagePreflight = $command === 'preflight' && isset($options['package']);
-$requiredOptions = $command === 'preflight'
-    ? ($packagePreflight ? ['project-root', 'package', 'signature-key-id'] : ['project-root', 'from-manifest', 'to-manifest'])
-    : ['project-root', 'plan'];
+$requiredOptions = match ($command) {
+    'preflight' => $packagePreflight ? ['project-root', 'package', 'signature-key-id'] : ['project-root', 'from-manifest', 'to-manifest'],
+    'adoption-plan' => ['project-root', 'package', 'signature-key-id'],
+    'adoption-apply' => ['project-root', 'plan', 'confirm-plan-sha256', 'confirm-paths'],
+    default => ['project-root', 'plan'],
+};
 foreach ($requiredOptions as $required) {
     if (!isset($options[$required]) || !is_string($options[$required]) || $options[$required] === '') {
         usage();
@@ -56,6 +62,14 @@ try {
             $manifests['from_manifest'] ?? $options['from-manifest'],
             $manifests['to_manifest'] ?? $options['to-manifest'],
         ),
+        'adoption-plan' => $runner->adoptionPlan($options['project-root'], $options['package'], $options['signature-key-id']),
+        'adoption-apply' => $runner->adoptionApply(
+            $options['project-root'],
+            $options['plan'],
+            $options['confirm-plan-sha256'],
+            explode(',', $options['confirm-paths']),
+        ),
+        'adoption-recover' => $runner->adoptionRecover($options['project-root'], $options['plan']),
         'apply' => $runner->apply($options['project-root'], $options['plan']),
         'verify' => $runner->verify($options['project-root'], $options['plan']),
         'recover', 'rollback' => $runner->recover($options['project-root'], $options['plan']),

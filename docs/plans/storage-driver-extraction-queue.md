@@ -1,8 +1,8 @@
 # Storage Driver 提取决策与后续队列
 
-> 当前状态：采用决定已经执行到应用收敛候选。Core `0.1.0-alpha.13` 已完成不可变发布，应用已更新 Composer/npm lock 并完成四 Provider 真实构造验证；应用 `dev/main`、固定候选资格与真实云账号资格仍未完成。
+> 当前状态（2026-09-09 复核）：窄 Storage Driver 已由 Core `0.1.0-alpha.13` 发布并随 Application v3.0.14 正式采用。应用合入与该版本资格见 [v3.0.14 不可变快照](../product-status/releases/v3.0.14.json)，不再是待合入候选；真实云账号资格仍未完成。
 >
-> 本次“先审计、后决定”是用户调整的当前工作顺序，不是永久人工 Gate。本文记录候选和恢复条件，不把未合 worktree、未发布源码或测试结果写成正式采用。
+> “先审计、后决定”是当时的工作顺序，不是永久人工 Gate。本文保留采用来源与剩余资格边界，不重复领取已发布采用，也不以源码支持代替真实厂商资格。
 
 ## 采用决定
 
@@ -22,12 +22,12 @@
 | 产物 | 固定身份 | 当前状态 | 能证明什么 |
 | --- | --- | --- | --- |
 | Core Storage Driver Release | source `a949a77728f2940153c6cfd76b104d5d8bb183e3`；Composer split `61f40dc2412338b4dfdcf7d2cd7514da45ea773a` | `0.1.0-alpha.13` 已发布到 GitHub/npm/Packagist | 四操作合同、对象 key、HTTP transport 与四个 Driver 的不可变发布身份 |
-| 独立应用 canonical | `peanut-admin` `dev@e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d` | 合入前基线 | 仍是旧应用 Driver 与 Core Alpha.12，不能代表本轮候选 |
-| 独立应用收敛候选 | 分支 `feat/refactor-convergence-remediation`，Storage 提交 `563df8c4` | 已锁 Core PHP/Web Alpha.13，应用低层重复 Driver 已删除 | 四 Provider 可从当前 Composer vendor 实际构造，凭据按次解析；待合入与固定候选资格 |
+| 独立应用采用前历史基线 | `e38e45d07752cd6b4834fbe4483bfd2dcaf5a95d` | 历史证据，不是当前 dev | 旧应用 Driver 与 Core Alpha.12，仅用于比较采用差异 |
+| 独立应用正式采用 | Storage 提交 `563df8c4`；正式身份见 v3.0.14 Release 快照 | 已合入并随 v3.0.14 发布，锁定 Core PHP/Web Alpha.13，应用低层重复 Driver 已删除 | 四 Provider 构造与同版本固定资格有历史证据；不证明真实云账号资格 |
 
 ## 候选边界
 
-若后续决定采用，Core 低层 `StorageDriver` 只保留：
+已采用的 Core 低层 `StorageDriver` 只保留：
 
 ```text
 put(objectKey, sourcePath)
@@ -73,10 +73,10 @@ object key、quota reservation、scan/quarantine、derivative、retention/legal 
 | D0b | 形成有依据的采用建议和具体写集 | 只做决定和必要文档；不自动改 Runtime | 建议对应 D0a 的真实调用、data owner、宿主责任与维护成本；保持现有窄 Driver 候选，不扩大高层 FileMedia | 根代理负责方向/审计 | 已完成：采用窄低层合同 |
 | D1 | 冻结最终公共合同与发布粒度 | Core Storage 文件、必要 dependency decision；不扩展高层 FileMedia/Schema | API、可选 SDK、兼容关系和 owner 明确 | 公共合同与依赖规则；高能力模型复核 | 已完成并进入 Alpha.13 |
 | D2 | 生成新的不可变 PHP split 身份 | Core 版本/发布元数据按正式发布流程；不得用 branch、path repository 或 vendor 复制替代 | 固定 source/tree/split、包可见性和 Composer metadata 一致，并完成 Core 正式发布所要求的固定候选资格 | 发布规则；根代理终审 | 已完成：source/split/tag/Registry 均固定 |
-| D3 | 在独立应用基于最新 `dev` 重放最小采用 diff，并更新 Composer lock | `AppService`、`common/service/storage`、现有 FileMedia Host gate 与精确 lock；不新建兼容桥/第二生命周期 | lock 指向 D2；provider 装配、对象 key、观测、账本/授权/补偿语义保持 | 应用边界与不可变依赖规则 | 已完成（收敛候选） |
-| D4 | 完成应用日常开发验证并合入 | 运行受影响 PHP lint、现有 FileMedia Host/直接 Tenant 安全组和文档检查；不主动扩大到无关开发组 | 同一应用候选上通过，失败按项目一次诊断/一次重跑规则 | 日常开发 §7.1；根代理终审 | 进行中：聚焦检查已通过，待合入与正式 P0-E |
+| D3 | 在独立应用基于最新 `dev` 重放最小采用 diff，并更新 Composer lock | `AppService`、`common/service/storage`、现有 FileMedia Host gate 与精确 lock；不新建兼容桥/第二生命周期 | lock 指向 D2；provider 装配、对象 key、观测、账本/授权/补偿语义保持 | 应用边界与不可变依赖规则 | 已完成并随 v3.0.14 发布 |
+| D4 | 完成应用日常开发验证并合入 | 运行受影响 PHP lint、现有 FileMedia Host/直接 Tenant 安全组和文档检查；不主动扩大到无关开发组 | 同一应用候选上通过，失败按项目一次诊断/一次重跑规则 | 日常开发 §7.1；根代理终审 | 已完成；v3.0.14 快照记录同版本资格，不继承为后续版本资格 |
 
-如果决定保留应用实现，D1-D4 不执行，只把 Core driver 标为未采用公共候选，并另外决定 Core 是否继续保留它。这个分支不要求删除已完成研究或伪造迁移证据。
+此前“保留应用实现、不采用 Core”的备选已被正式采用决定替代，不是当前待选项。
 
 D4 只描述应用采用阶段的日常开发检查，不豁免正式依赖采用或发布资格。D2 的 Core 发布以及应用正式锁定新 Core 的资格仍遵循 `AGENT_EXECUTION_RULES.md` §7.1/§7.2 对固定候选、不可变身份和授权的要求；本轮文档审计不运行或降级这些 Gate。
 
@@ -88,6 +88,6 @@ Core 当前只有 `peanut-admin/core` 与 `@peanut-admin/admin` 两个 aggregate
 
 ## 不属于本轮完成状态
 
-本页不把尚未执行的真实云 Provider、应用 P0-E、正式应用 Release 或生产部署标记为完成。高容量媒体
+本页不把尚未执行的真实云 Provider、新版本资格或生产部署标记为完成；已执行的 v3.0.14 资格与 Release 保留其历史身份。高容量媒体
 Spike 继续是隔离设计输入；`CrossProductAdoptionHost` 的 Collaboration 失效引用仍由独立删除或能力
 重建决定处理，不借 Storage 采用扩大范围。

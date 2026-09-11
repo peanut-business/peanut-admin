@@ -5,6 +5,8 @@ description: 认识源码 Release、双 Edition 安装包、升级包与派生�
 
 # 版本与发布
 
+产品/Core/双 Edition 的同号规则，以及客户 Instance、Module 的独立版本含义，见[产品与实例版本](guide/version-identity.md)。已发布 v3.0.14 实际采用历史 Core Alpha.13，不回写旧 tag 或制品来制造一致。
+
 ## 先分清你要下载的东西
 
 Peanut Admin 的源码 Release、正式安装包、升级包和派生应用版本各自解决不同问题：

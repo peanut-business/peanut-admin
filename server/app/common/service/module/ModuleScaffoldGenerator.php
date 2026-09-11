@@ -16,7 +16,7 @@ final class ModuleScaffoldGenerator
         'Contracts/${MODULE}Commands.php' => 'backend/Contracts/ModuleCommands.php.stub',
         'Http/routes.php' => 'backend/Http/routes.php.stub',
         'Http/Controller/.gitkeep' => null,
-        'Application/.gitkeep' => null,
+        'Services/.gitkeep' => null,
         'Infrastructure/Persistence/.gitkeep' => null,
         'Model/.gitkeep' => null,
         'Resources/permissions.json' => 'backend/empty-array.json.stub',

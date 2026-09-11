@@ -10,6 +10,7 @@ This page answers “where must this fact be changed first?”. Explanations and
 
 | Fact domain | Authoritative upstream | Explanation / projection owner |
 | --- | --- | --- |
+| Product, Core, Edition, Module and Instance version semantics | `docs/architecture/product-version-identity-adr.md`; actual version manifests, locks and immutable Release identities | `docs/governance/current-state.md`; historical task scans explain decisions but do not establish implementation |
 | Project identity, branches and execution rules | `AGENTS.md`, `AGENT_EXECUTION_RULES.md` | root indexes only |
 | Runtime resources, environments and fixed ports | `resources/project-resources.json`; P0-E-only bindings in `resources/p0e-runtime-qualification.json` | internal operations docs; public pages receive only safe local instructions |
 | Capability and completion status | `docs/product-status/capability-ledger.json`; immutable release/deployment snapshots in its sibling directories | `docs/product-status/README.md`; never imported wholesale into the public site |
@@ -25,6 +26,7 @@ This page answers “where must this fact be changed first?”. Explanations and
 | Commands, compatibility and configuration | executable `--help`, checked scripts, lifecycle services, `.env.example` files and configuration loaders | public consumer task, command index and support guides that invoke them |
 | Package and scaffold identity | package manifests, lock files, application/scaffold manifests and immutable release snapshots | release and upgrade guides |
 | Application/Core boundary | fixed Core dependency identity, module manifests, service registry and accepted architecture contracts | capability graph and developer projections |
+| Application/Core PHP Runtime direction | `docs/architecture/core-thinkphp-runtime-direction-adr.md`, fixed two-repository source snapshots and the accepted product version identity | `docs/architecture/core-application-technical-boundary.md`, `docs/governance/current-state.md` and Core's architecture projection; current PDO source remains migration input until an implementation batch passes its gates |
 | Documentation identity and lifecycle | `docs/document-registry.json` | this page and the generated catalog |
 | Documentation impact | `docs/document-impact-map.json` | `docs/governance/docs-impact.md` |
 

@@ -13,6 +13,8 @@ server/public/uploads/
 deploy/production.env
 /.env
 /.local/
+/docs/maintenance/fact-audit-2026-09-09/conversation-coverage.json
+/docs/maintenance/fact-audit-2026-09-09/execution-state.json
 
 # Web
 web/node_modules/

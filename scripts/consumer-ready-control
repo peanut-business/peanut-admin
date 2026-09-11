@@ -184,7 +184,19 @@ def preflight(args: argparse.Namespace) -> int:
     p0e_resources = read_json(policy_path(policy, "authorities", "p0e_resources"))
     ledger = read_json(policy_path(policy, "authorities", "capability_ledger"))
 
-    target_version = args.target_version or str(versions.get("product_release", ""))
+    metadata_v2 = (
+        metadata.get("schema_version") == 2
+        and metadata.get("protocol") == "peanut.release-metadata.v2"
+    )
+    metadata_source_version = metadata.get("source_product_version") if metadata_v2 else None
+    metadata_instance_version = metadata.get("instance_version") if metadata_v2 else None
+    metadata_release_version = (
+        metadata_instance_version or metadata_source_version or ""
+        if metadata_v2
+        else metadata.get("version")
+    )
+
+    target_version = args.target_version or str(versions.get("source_product_version", ""))
     candidate = git("rev-parse", f"{args.candidate}^{{commit}}")
     candidate_tree = git("rev-parse", f"{candidate}^{{tree}}")
     head = git("rev-parse", "HEAD^{commit}")
@@ -211,17 +223,37 @@ def preflight(args: argparse.Namespace) -> int:
                  "commit or remove candidate changes before freeze or qualification")
 
     version_values = {
-        "product_release": versions.get("product_release"),
+        "schema_version": versions.get("schema_version"),
+        "protocol": versions.get("protocol"),
+        "source_product_version": versions.get("source_product_version"),
+        "instance_version": versions.get("instance_version"),
         "scaffold_template": versions.get("scaffold_template"),
-        "metadata_version": metadata.get("version"),
+        "generated_instance_default": versions.get("generated_instance_default"),
+        "core_php": versions.get("core_php"),
+        "core_web": versions.get("core_web"),
+        "metadata_schema_version": metadata.get("schema_version"),
+        "metadata_protocol": metadata.get("protocol"),
+        "metadata_source_product_version": metadata_source_version,
+        "metadata_instance_version": metadata_instance_version,
+        "metadata_release_version": metadata_release_version,
         "metadata_tag": metadata.get("expected_tag"),
         "inventory_template": inventory.get("template_version"),
         "fixture_version": fixture.get("target_release", {}).get("version"),
     }
     expected_values = {
-        "product_release": target_version,
+        "schema_version": 2,
+        "protocol": "peanut.release-versions.v2",
+        "source_product_version": target_version,
+        "instance_version": None,
         "scaffold_template": target_version,
-        "metadata_version": target_version,
+        "generated_instance_default": inventory.get("application", {}).get("version"),
+        "core_php": target_version,
+        "core_web": target_version,
+        "metadata_schema_version": 2,
+        "metadata_protocol": "peanut.release-metadata.v2",
+        "metadata_source_product_version": target_version,
+        "metadata_instance_version": None,
+        "metadata_release_version": target_version,
         "metadata_tag": f"v{target_version}",
         "inventory_template": target_version,
         "fixture_version": target_version,

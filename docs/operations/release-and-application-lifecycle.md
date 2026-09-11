@@ -10,15 +10,18 @@ Peanut Admin 提供可复用后台底座，独立应用拥有自己的业务源�
 | Core 依赖 | Composer/npm manifest 与 lock 中的精确包身份 | 应用实际安装的 PHP/Web 公共底座版本 |
 | Module 版本 | Module manifest、不可变 archive SHA-256 与签名、安装账本 | 独立业务模块的内容、依赖、migration 与生命周期 |
 
-Peanut Admin 应用 Release 与 scaffold 使用同一个稳定发行号；`peanut-admin/core` 和
-`@peanut-admin/admin` 保持自己的 SemVer/预发布历史，由应用 Composer/npm lock 固定精确版本、来源
-reference 与完整性摘要。三者可以进入同一发行列车，但不得为追求数字相同而重发内容不变的 Core，
-也不得只改号码把 alpha 冒充稳定版。第三方或私有 Module 同样保留自身版本、archive SHA-256 与签名。
+表中 `product_release` 是已发布 v1 合同对客户实例版本的旧字段名。现行[版本身份 ADR](../architecture/product-version-identity-adr.md)
+明确 Peanut 产品 Application、Core PHP/Web、scaffold 与双 Edition 共用产品版本；客户 Instance
+使用独立 `instance_version` 并另记 `source_product_version`。Module 也独立编号。
+Core 即使没有运行时改动也必须发布同号的新不可变包身份并完成资格，不能只修改号码或重新标记旧包。
 
 当前正式应用/scaffold 是 `3.0.14`，并采用已经独立资格、发布且完成消费验证的 Core
 `0.1.0-alpha.13`。发行列车必须先验证 Core 公共身份可消费，再更新应用 lock、生成同号 scaffold，
 最后在应用固定候选完成资格与发布。任一步失败时只阻塞依赖它的下游状态，不创建不对应真实包版本的
-别名。此前“Core 必须与 scaffold 数字同号”的文档要求与现行独立版本事实冲突，现已撤销。
+别名。此前本页“撤销 Core/scaffold 同号”的决定已由新 ADR supersede；历史不同号事实保留，不能据此继续发布不同号的新产品。
+当前 3.1.0 开发线已经完成 Core 同号公共身份验证与 Application manifests/locks 采用；同号 scaffold
+生成输入和聚焦检查由 CR02 收敛，完整 Application P0-E、tag、Release 与 Edition 正式制品仍由后续
+固定候选 Gate 决定。
 
 Standalone 与 Multi-tenant 安装包来自同一个 Peanut Admin Release，是两种确定性 Edition 构建物，
 不是两套人工源码。对应的签名升级包只提供同 Edition 的 scaffold 采用输入，也不是完整应用

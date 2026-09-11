@@ -46,6 +46,43 @@ plan 的 `impact` 用 `will_change`、`will_preserve` 与 `must_resolve` 分组�
 
 ## 当前 3.x 维护者诊断路径
 
+### 共享 Host 采用停止线
+
+受管共享 Host 只限 inventory builder 的精确 allowlist：App bootstrap、Module governance 的
+contract/DTO/state、关联 persistence helper，以及直接共同演进的 platform module/plugin Host 实现。
+Core 是 package-managed 外部依赖；业务/第三方 Module、配置、秘密和业务 Schema 仍是 app-owned。
+`app_owned_adoption_required` 表示旧实例把目标共享 Host 作为 app-owned；
+`managed_adoption_required` 表示实例没有该路径的受管采用记录。两种 preflight 冲突均零写入，
+包括上游删除路径。
+
+对 v3.0.14 两种 Edition，正式 3.1.0 升级包可携带恰好 25 个已批准共享 Host 路径的旧发布内容。
+这些内容来自 v3.0.14 固定 commit/tree，并与目标 manifest 一起进入包 inventory 和 Ed25519 签名。
+只有 `--package` 正式入口可以建立采用计划；维护者诊断 manifest 不能提供或绕过采用授权。
+
+应用 owner 先审阅 `adoption-plan` 输出的每一路径 old/current/target SHA-256、mode 和全部 metadata
+写集，再把计划摘要和输出的 25 个路径逐字回传给 `adoption-apply`。采用只安装可信旧 baseline、
+把对应 application manifest 记录改为 managed，并保留 live/custom 字节、产品/实例版本和
+`generation_source`。如果当前字节已被应用修改且目标也变化，随后同一签名包的普通 preflight
+仍报告 `both_project_and_upstream_modified`，不会自动解冲突。
+
+```bash
+php peanut-admin-3.1.0-standalone-upgrade/upgrader/scripts/scaffold-upgrade adoption-plan \
+  --project-root=/absolute/path/to/application \
+  --package=/absolute/path/to/peanut-admin-3.1.0-standalone-upgrade \
+  --signature-key-id=<official-key-id>
+
+php peanut-admin-3.1.0-standalone-upgrade/upgrader/scripts/scaffold-upgrade adoption-apply \
+  --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<ownership-candidate>.json \
+  --confirm-plan-sha256='<exact-plan-sha256>' \
+  --confirm-paths='<exact-comma-separated-path-list>'
+```
+
+项目锁、路径/符号链接/硬链接检查、application manifest 与 live 文件漂移重验、原子写和 recovery
+同样适用于采用。采用 metadata 写失败后，使用 `adoption-recover --project-root=... --plan=...`
+恢复原 manifest 和 baseline 状态。不得删除文件、伪造 classification/baseline 或修改已签 manifest
+来绕过冲突。未来若 Core 删除 API，必须先完成真实调用者采用并由 CR02 阻断不兼容发行。
+
 包内 `--package` 是普通用户的唯一升级输入。显式 `--from-manifest/--to-manifest` 仍保留给维护者
 诊断不可变 scaffold Release 之间的三方比较，不是正式下载或用户操作入口：
 
@@ -72,7 +109,7 @@ php scripts/scaffold-upgrade recover --project-root=/absolute/path/to/applicatio
 `--fresh`（配对备份、显式确认和重建空库）。升级前先运行 `preflight`，看到 `status=ready`
 且冲突为 0 后再 apply。
 
-当前应用发布版本读取根 `release-versions.json.product_release`；`.peanut/application-manifest.json`
+已发布 v1 合同的客户实例版本读取根 `release-versions.json.product_release`；该历史字段不是新规则下的 Peanut 产品版本。新合同以 `instance_version` 和 `source_product_version` 分开记录；具体行为须与采用的正式制品匹配。`.peanut/application-manifest.json`
 中的 `application.version` 保留最近一次采用 scaffold 时的渲染快照。preflight 分别用快照重现旧
 baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标渲染参数写入不可变 plan；apply
 只使用 plan 中冻结的目标参数，不在替换 `release-versions.json` 后重读 live 文件。因此应用从
@@ -90,8 +127,8 @@ baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标
 生产 Runtime 再次合并 scaffold。应用 `product_release` 可以在 `scaffold_template` 不变时独立
 递增；这种纯应用升级要求 from/to scaffold manifest 摘要完全一致。
 
-下一次正式发布窗口起，`scaffold_template`、`peanut-admin/core` 与 `@peanut-admin/admin` 使用
-同一个基础发行号，预发布后缀同步；`product_release` 仍由应用独立决定。正式顺序是先发布并验证
+下一次正式发布窗口起，Peanut 产品 Application、`scaffold_template`、`peanut-admin/core` 与 `@peanut-admin/admin` 使用
+同一个产品发行号，预发布后缀同步；客户 `instance_version` 独立决定，Module 也保持自己的版本。正式顺序是先发布并验证
 同号 PHP/Web Core 包，再让应用锁定两份依赖并完成消费检查，最后完成同号 scaffold 资格与发布。
 任何一步失败都不能把整套基础发行标记为 ready。版本号一致不能替代 manifest、lock、包引用和
 兼容证据，也不能把 alpha 自动视为稳定版；未变化的 Core 也要产生同号不可变包。当前 `3.0.14`

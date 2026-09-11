@@ -1,6 +1,6 @@
 # Peanut Admin Third-Party Notices
 
-Generated for Peanut Admin 3.0.14 on 2026-09-09.
+Generated for Peanut Admin 3.1.0 on 2026-09-11.
 
 Peanut Admin is licensed under Apache-2.0: Copyright 2026 花生科技. Third-party components remain governed by their own licenses.
 
@@ -18,8 +18,8 @@ Peanut Admin is licensed under Apache-2.0: Copyright 2026 花生科技. Third-pa
 | Arco Design Pro Vue | MIT | The initial management client used Arco Design Pro Vue material; applicable upstream MIT attribution is retained. Source: https://github.com/arco-design/arco-design-pro-vue |
 | LikeAdmin 1.9.4 | MIT | Used as the documented behavioral parity reference. This notice does not claim the application is a clean-room implementation. Source: https://github.com/likeadmin-likeshop/likeadmin_php |
 | ThinkPHP 8 | Apache-2.0 | Backend framework. Its upstream notice is also retained at `server/LICENSE.txt`. Source: https://github.com/top-think/framework |
-| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 0.1.0-alpha.13. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
-| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 0.1.0-alpha.13 for Web, 0.1.0-alpha.13 for PC and 0.1.0-alpha.13 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
+| `peanut-admin/core` | Apache-2.0 | Composer core package locked at 3.1.0. Source: https://github.com/peanut-opensource/peanut-admin-core-php |
+| `@peanut-admin/admin` | Apache-2.0 | npm core package locked at 3.1.0 for Web, 3.1.0 for PC and 3.1.0 for UniApp. Source: https://github.com/peanut-opensource/peanut-admin-core |
 
 ## License handling
 
@@ -60,7 +60,7 @@ Peanut Admin is licensed under Apache-2.0: Copyright 2026 花生科技. Third-pa
 | platform | `BSD-2-Clause` | 1 |
 | platform | `BSD-3-Clause` | 2 |
 | platform | `ISC` | 3 |
-| platform | `MIT` | 95 |
+| platform | `MIT` | 143 |
 | uniapp | `Apache-2.0` | 47 |
 | uniapp | `BlueOak-1.0.0` | 1 |
 | uniapp | `BSD-2-Clause` | 12 |
@@ -68,21 +68,20 @@ Peanut Admin is licensed under Apache-2.0: Copyright 2026 花生科技. Third-pa
 | uniapp | `CC-BY-4.0` | 1 |
 | uniapp | `CC0-1.0` | 1 |
 | uniapp | `ISC` | 48 |
-| uniapp | `MIT` | 876 |
+| uniapp | `MIT` | 875 |
 | uniapp | `MIT AND Zlib` | 1 |
 | uniapp | `MIT OR CC0-1.0` | 1 |
 | web | `0BSD` | 3 |
-| web | `Apache-2.0` | 18 |
-| web | `BlueOak-1.0.0` | 3 |
-| web | `BSD-2-Clause` | 28 |
-| web | `BSD-3-Clause` | 13 |
+| web | `Apache-2.0` | 17 |
+| web | `BlueOak-1.0.0` | 1 |
+| web | `BSD-2-Clause` | 23 |
+| web | `BSD-3-Clause` | 10 |
 | web | `CC-BY-3.0` | 1 |
 | web | `CC-BY-4.0` | 1 |
 | web | `CC0-1.0` | 3 |
-| web | `ISC` | 53 |
-| web | `LicenseRef-BSD-ambiguous` | 1 |
-| web | `MIT` | 948 |
-| web | `MIT OR Apache-2.0` | 2 |
+| web | `ISC` | 48 |
+| web | `MIT` | 733 |
+| web | `MIT OR Apache-2.0` | 1 |
 | web | `MIT OR CC0-1.0` | 6 |
 | web | `MPL-2.0 OR Apache-2.0` | 1 |
 | web | `Python-2.0` | 1 |
@@ -112,7 +111,7 @@ These 39 packages are installed with `composer install --no-dev` in the producti
 | `opis/json-schema` | `2.6.0` | `Apache-2.0` | https://github.com/opis/json-schema.git |
 | `opis/string` | `2.1.0` | `Apache-2.0` | https://github.com/opis/string.git |
 | `opis/uri` | `1.1.0` | `Apache-2.0` | https://github.com/opis/uri.git |
-| `peanut-admin/core` | `0.1.0-alpha.13` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
+| `peanut-admin/core` | `3.1.0` | `Apache-2.0` | https://github.com/peanut-opensource/peanut-admin-core-php.git |
 | `psr/container` | `2.0.2` | `MIT` | https://github.com/php-fig/container.git |
 | `psr/http-client` | `1.0.3` | `MIT` | https://github.com/php-fig/http-client.git |
 | `psr/http-factory` | `1.1.0` | `MIT` | https://github.com/php-fig/http-factory.git |
@@ -143,9 +142,8 @@ The following deduplicated package/version entries are outside the common MIT, A
 | pc | `glob` | `13.0.6` | `BlueOak-1.0.0` | https://registry.npmmirror.com/glob/-/glob-13.0.6.tgz |
 | pc | `isexe` | `4.0.0` | `BlueOak-1.0.0` | https://registry.npmmirror.com/isexe/-/isexe-4.0.0.tgz |
 | pc | `jackspeak` | `3.4.3` | `BlueOak-1.0.0` | https://registry.npmmirror.com/jackspeak/-/jackspeak-3.4.3.tgz |
-| web | `lru-cache` | `11.5.2` | `BlueOak-1.0.0` | https://registry.npmjs.org/lru-cache/11.5.2 |
+| pc | `lru-cache` | `11.5.2` | `BlueOak-1.0.0` | https://registry.npmmirror.com/lru-cache/-/lru-cache-11.5.2.tgz |
 | pc | `minimatch` | `10.2.6` | `BlueOak-1.0.0` | https://registry.npmmirror.com/minimatch/-/minimatch-10.2.6.tgz |
-| web | `minimatch` | `10.2.5` | `BlueOak-1.0.0` | https://registry.npmjs.org/minimatch/10.2.5 |
 | pc | `minipass` | `7.1.3` | `BlueOak-1.0.0` | https://registry.npmmirror.com/minipass/-/minipass-7.1.3.tgz |
 | pc | `package-json-from-dist` | `1.0.1` | `BlueOak-1.0.0` | https://registry.npmmirror.com/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz |
 | pc | `path-scurry` | `1.11.1` | `BlueOak-1.0.0` | https://registry.npmmirror.com/path-scurry/-/path-scurry-1.11.1.tgz |
@@ -165,11 +163,9 @@ The following deduplicated package/version entries are outside the common MIT, A
 | web | `mdn-data` | `2.0.14` | `CC0-1.0` | https://registry.npmjs.org/mdn-data/2.0.14 |
 | web | `spdx-license-ids` | `3.0.23` | `CC0-1.0` | https://registry.npmjs.org/spdx-license-ids/3.0.23 |
 | uniapp | `string-hash` | `1.1.3` | `CC0-1.0` | https://registry.npmmirror.com/string-hash/-/string-hash-1.1.3.tgz |
-| web | `glob-to-regexp` | `0.3.0` | `LicenseRef-BSD-ambiguous` | https://registry.npmjs.org/glob-to-regexp/0.3.0 |
 | docs-site | `speakingurl` | `14.0.1` | `LicenseRef-BSD-ambiguous` | https://registry.npmjs.org/speakingurl/14.0.1 |
 | uniapp | `pako` | `1.0.11` | `MIT AND Zlib` | https://registry.npmmirror.com/pako/-/pako-1.0.11.tgz |
 | pc | `@cloudflare/kv-asset-handler` | `0.4.2` | `MIT OR Apache-2.0` | https://registry.npmmirror.com/@cloudflare/kv-asset-handler/-/kv-asset-handler-0.4.2.tgz |
-| web | `atob` | `2.1.2` | `MIT OR Apache-2.0` | https://registry.npmjs.org/atob/2.1.2 |
 | web | `JSONStream` | `1.3.5` | `MIT OR Apache-2.0` | https://registry.npmjs.org/JSONStream/1.3.5 |
 | pc | `type-fest` | `5.8.0` | `MIT OR CC0-1.0` | https://registry.npmmirror.com/type-fest/-/type-fest-5.8.0.tgz |
 | uniapp | `type-fest` | `0.21.3` | `MIT OR CC0-1.0` | https://registry.npmmirror.com/type-fest/-/type-fest-0.21.3.tgz |

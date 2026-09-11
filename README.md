@@ -1,8 +1,9 @@
 # Peanut Admin
 
 Peanut Admin 是基于 ThinkPHP 8、Vue 3、Element Plus、Nuxt 3 与 UniApp 的企业应用脚手架。
-当前源码是已正式发布的 `3.0.14` 版本，同一代码线支持单实例（`standalone`）和多租户
-（`multi-tenant`）部署，覆盖管理端、PC、H5/小程序、Tenant 隔离和实例内平台管理。
+当前开发源码正在准备未发布的 `3.1.0` Application 候选；最新正式 Application Release 仍是
+`3.0.14`。同一代码线支持单实例（`standalone`）和多租户（`multi-tenant`）部署，覆盖管理端、PC、
+H5/小程序、Tenant 隔离和实例内平台管理。开发锁或准备检查通过不代表 `3.1.0` 已完成资格或发布。
 
 [当前 Standalone 演示](https://peanut-admin.007345.xyz/admin/) ·
 [当前多租户演示](https://pa-admin.007345.xyz/admin/) ·

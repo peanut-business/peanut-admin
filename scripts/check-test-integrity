@@ -10,6 +10,117 @@ if (!is_string($root)) {
 
 $testsRoot = $root . '/server/tests';
 $violations = [];
+
+/** @param list<array{0:int,1:string,2:int}|string> $tokens
+ *  @return array{index:int,token:array{0:int,1:string,2:int}|string}|null */
+function nextSignificantToken(array $tokens, int $offset): ?array
+{
+    for ($index = $offset; $index < count($tokens); $index++) {
+        $token = $tokens[$index];
+        if (is_string($token)) {
+            if (trim($token) !== '') {
+                return ['index' => $index, 'token' => $token];
+            }
+            continue;
+        }
+        if (!in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            return ['index' => $index, 'token' => $token];
+        }
+    }
+    return null;
+}
+
+/** @param list<array{0:int,1:string,2:int}|string> $tokens
+ *  @return array{index:int,token:array{0:int,1:string,2:int}|string}|null */
+function previousSignificantToken(array $tokens, int $offset): ?array
+{
+    for ($index = $offset; $index >= 0; $index--) {
+        $token = $tokens[$index];
+        if (is_string($token)) {
+            if (trim($token) !== '') {
+                return ['index' => $index, 'token' => $token];
+            }
+            continue;
+        }
+        if (!in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            return ['index' => $index, 'token' => $token];
+        }
+    }
+    return null;
+}
+
+/** @param list<array{0:int,1:string,2:int}|string> $tokens
+ *  @return 'success-zero'|'success-string'|'failure-nonzero'|'unknown' */
+function exitKind(array $tokens, int $offset): string
+{
+    $next = nextSignificantToken($tokens, $offset + 1);
+    if ($next === null || $next['token'] === ';') {
+        return 'success-zero';
+    }
+    if ($next['token'] === '(') {
+        $next = nextSignificantToken($tokens, $next['index'] + 1);
+        if ($next === null || $next['token'] === ')') {
+            return 'success-zero';
+        }
+    }
+    if (is_array($next['token']) && $next['token'][0] === T_LNUMBER) {
+        $afterLiteral = nextSignificantToken($tokens, $next['index'] + 1);
+        if ($afterLiteral !== null && !in_array($afterLiteral['token'], [')', ';'], true)) {
+            return 'unknown';
+        }
+        return (int) $next['token'][1] === 0 ? 'success-zero' : 'failure-nonzero';
+    }
+    if (is_array($next['token']) && $next['token'][0] === T_CONSTANT_ENCAPSED_STRING) {
+        $afterLiteral = nextSignificantToken($tokens, $next['index'] + 1);
+        if ($afterLiteral !== null && !in_array($afterLiteral['token'], [')', ';'], true)) {
+            return 'unknown';
+        }
+        return 'success-string';
+    }
+    return 'unknown';
+}
+
+/** @param list<array{0:int,1:string,2:int}|string> $tokens */
+function isAssertionCall(array $tokens, int $offset): bool
+{
+    $name = strtolower($tokens[$offset][1]);
+    if (preg_match('/^(?:assert|expect|fail)/', $name) !== 1) {
+        return false;
+    }
+    $next = nextSignificantToken($tokens, $offset + 1);
+    if ($next === null || $next['token'] !== '(') {
+        return false;
+    }
+    $previous = previousSignificantToken($tokens, $offset - 1);
+    if (is_array($previous['token'] ?? null) && $previous['token'][0] === T_FUNCTION) {
+        return false;
+    }
+    if (($previous['token'] ?? null) === '&'
+        || (is_array($previous['token'] ?? null) && $previous['token'][1] === '&')) {
+        $beforeReference = previousSignificantToken($tokens, $previous['index'] - 1);
+        if (is_array($beforeReference['token'] ?? null) && $beforeReference['token'][0] === T_FUNCTION) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** @param list<array{0:int,1:string,2:int}|string> $tokens */
+function hasFailureCapability(array $tokens): bool
+{
+    foreach ($tokens as $offset => $token) {
+        if (!is_array($token)) {
+            continue;
+        }
+        if ($token[0] === T_THROW || ($token[0] === T_EXIT && exitKind($tokens, $offset) === 'failure-nonzero')) {
+            return true;
+        }
+        if ($token[0] === T_STRING && isAssertionCall($tokens, $offset)) {
+            return true;
+        }
+    }
+    return false;
+}
 $iterator = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($testsRoot, FilesystemIterator::SKIP_DOTS),
 );
@@ -23,12 +134,24 @@ foreach ($iterator as $entry) {
         continue;
     }
     $source = file_get_contents($entry->getPathname());
-    if (!is_string($source) || strlen($source) > 1024) {
+    if (!is_string($source)) {
         continue;
     }
-    $hasUnconditionalSuccessExit = preg_match('/\becho\b[\s\S]*\bpass(?:ed)?\b[\s\S]*\b(?:exit|die)\s*(?:\(\s*0\s*\)|0)\s*;/i', $source) === 1;
-    $hasRealControlOrAssertion = preg_match('/\b(?:if|foreach|for|while|function|class|interface|trait|throw|assert)\b/', $source) === 1;
-    if ($hasUnconditionalSuccessExit && !$hasRealControlOrAssertion) {
+    $tokens = token_get_all($source);
+    $hasSuccessOutput = false;
+    $hasSuccessExit = false;
+    foreach ($tokens as $offset => $token) {
+        if (!is_array($token)) {
+            continue;
+        }
+        if ($token[0] === T_CONSTANT_ENCAPSED_STRING && preg_match('/\bpass(?:ed)?\b/i', $token[1]) === 1) {
+            $hasSuccessOutput = true;
+        }
+        if ($token[0] === T_EXIT && in_array(exitKind($tokens, $offset), ['success-zero', 'success-string'], true)) {
+            $hasSuccessExit = true;
+        }
+    }
+    if ($hasSuccessOutput && $hasSuccessExit && !hasFailureCapability($tokens)) {
         $violations[] = $relative;
     }
 }

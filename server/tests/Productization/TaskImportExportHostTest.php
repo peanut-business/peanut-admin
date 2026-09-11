@@ -30,6 +30,12 @@ function expectTaskHost(bool $condition, string $message): void
     }
 }
 
+function failTaskHost(Throwable $exception): never
+{
+    fwrite(STDERR, 'TaskImportExportHostTest failed: ' . $exception->getMessage() . PHP_EOL);
+    exit(1);
+}
+
 /** @return array<string,mixed> */
 function taskHostJob(int $tenantId, string $identity): array
 {
@@ -42,7 +48,15 @@ function taskHostJob(int $tenantId, string $identity): array
 
 $serverRoot = dirname(__DIR__, 2);
 $app = new think\App();
-$app->initialize();
+try {
+    $app->initialize();
+} catch (Throwable $exception) {
+    failTaskHost($exception);
+}
+set_exception_handler('failTaskHost');
+if (in_array('--verify-failure-propagation', $_SERVER['argv'] ?? [], true)) {
+    throw new RuntimeException('TASK_IMPORT_EXPORT_CONTROLLED_FAILURE');
+}
 $app->config->set(['mode' => 'multi-tenant'], 'deployment');
 $app->config->set(['signing_key' => hash('sha256', 'PB04-TASK-OPS-HOST-001')], 'async');
 putenv('DEPLOYMENT_MODE=multi-tenant');
@@ -80,7 +94,8 @@ $moduleProviderSource = (string)file_get_contents($serverRoot . '/app/Modules/Of
 expectTaskHost(
     str_contains($moduleProviderSource, 'TaskImportExportRuntime::class')
         && str_contains($moduleProviderSource, 'TaskJobRuntime::class')
-        && str_contains($moduleProviderSource, 'StorageService::class'),
+        && str_contains($moduleProviderSource, 'AppFileMediaGateway::class')
+        && !str_contains($moduleProviderSource, 'StorageService::class'),
     'Import/Export container assembly is incomplete',
 );
 $taskRuntimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php');
@@ -245,7 +260,7 @@ try {
     foreach ([
         'app/command/Crontab.php',
         'app/Modules/Official/Task/Application/CrontabApplicationService.php',
-        'app/adminapi/application/generator/GeneratorApplicationService.php',
+        'app/adminapi/services/generator/GeneratorService.php',
         'app/adminapi/service/generator/GeneratorArchiveService.php',
     ] as $relativePath) {
         $source = (string)file_get_contents($serverRoot . '/' . $relativePath);

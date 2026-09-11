@@ -26,7 +26,10 @@ $fixture = json_decode((string)file_get_contents($fixturePath), true, 512, JSON_
 $registry = json_decode((string)file_get_contents($registryPath), true, 512, JSON_THROW_ON_ERROR);
 $p0eRegistry = json_decode((string)file_get_contents($p0eRegistryPath), true, 512, JSON_THROW_ON_ERROR);
 $releaseMetadata = json_decode((string)file_get_contents($releaseMetadataPath), true, 512, JSON_THROW_ON_ERROR);
-$releaseVersion = (string)($releaseMetadata['version'] ?? '');
+$releaseVersion = ($releaseMetadata['schema_version'] ?? null) === 2
+    && ($releaseMetadata['protocol'] ?? null) === 'peanut.release-metadata.v2'
+    ? (string)($releaseMetadata['instance_version'] ?? $releaseMetadata['source_product_version'] ?? '')
+    : (string)($releaseMetadata['version'] ?? '');
 $scaffoldManifestPath = $root . '/scaffold/releases/v' . $releaseVersion . '/scaffold-manifest.json';
 $scaffoldManifestText = (string)file_get_contents($scaffoldManifestPath);
 $scaffoldManifest = json_decode($scaffoldManifestText, true, 512, JSON_THROW_ON_ERROR);

@@ -7,6 +7,8 @@ description: 为同一 Edition 完成预检查、备份、冲突计划、迁移�
 
 这页面向已经拿到正式包的应用 owner。首次安装请先看[快速开始](/getting-started)；已经部署的应用只使用与当前 Edition 相同的升级包。
 
+[产品与实例版本](/guide/version-identity)是两个对象：产品/Core/双 Edition 共享产品号，客户 Instance 发布自己的版本，并记录源产品版本。升级产品来源不会自动改变客户业务发布号；部署时同时核对实例 Release 与产品来源，不能只比较一个通用版本数字。
+
 > 首个正确的双 Edition Release 只建立安装基线，没有合格的旧 Edition 可以升级，因此不会提供
 > 升级包。请先用该版本的安装包建立 Standalone 或 Multi-tenant 应用；从下一补丁版本开始，才按
 > Release 声明的兼容范围执行本页流程。缺少升级附件时不能用完整安装包覆盖。
