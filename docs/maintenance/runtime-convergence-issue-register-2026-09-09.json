@@ -2627,7 +2627,7 @@
   },
   "consumer_delivery": {
     "authorization_id": "PA-CONSUMER-FIRST-20260911",
-    "status": "cr02-implementation-delivered-app-dev-955978ac-correction-awaiting-root-acceptance-cr03-not-started",
+    "status": "cr02-u-candidate-21798b2c-focused-verified-awaiting-root-acceptance-and-dev-integration-cr03-not-started",
     "scope": "消费前阻塞修复、协调发行、同源双Edition独立安装升级资格与对应交付；不要求内部C02-C12全部完成后才消费",
     "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#126-当前消费优先路线与cr01实施任务书",
     "baseline": {"application": "464dee420e7203deca9281da8584d07f0f8401b1", "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4"},
@@ -2652,7 +2652,7 @@
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
     "cr02": {
-      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；仅CR02-U旧实例共享Host显式归属采用工具实施中，CR03未启动",
+      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U候选21798b2c已聚焦验证、待根验收/集成，CR03未启动",
       "depends_on": [
         "CR01开发修复已集成",
         "CR03须由根另行绑定固定候选、资源、真实旧实例与缺失采用/签名输入"
@@ -2661,7 +2661,7 @@
       "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
       "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.",
       "cr02_u": {
-        "status": "approved-implementing",
+        "status": "implemented-focused-verified-awaiting-root-acceptance",
         "owner": "01a08d8e-fe57-7733-ab0a-da5cc1bdc922 / Sol medium",
         "goal": "Add an audited explicit ownership-adoption plan/apply path for exactly the 25 approved shared Host files so authentic v3.0.14 Standalone and Multi-tenant instances can safely proceed to signed same-Edition upgrade preflight.",
         "entry": "existing scripts/scaffold-upgrade and ScaffoldUpgradeRunner; no second migration framework",
@@ -2679,16 +2679,29 @@
           "automatically resolving a real three-way content conflict",
           "Core/PDO/business/SQL/customer-project/history-release changes or starting CR03/P0-E"
         ],
-        "success": "Unmodified approved paths can move blocked to explicitly adopted to ready; customized paths remain preserved and any true upstream/local conflict stays blocked until a real owner merge. All failures write zero business files and restore metadata."
+        "success": "Unmodified approved paths move blocked to explicitly adopted to ready on both formal v3.0.14 Edition instances; customized paths remain preserved and true upstream/local conflict stays blocked. Confirmation/signature/edition/scope/drift/fault/replay controls are covered without business-file writes.",
+        "implementation_commit": "21798b2cdadcd5d0455e4b646b778019e6156972",
+        "implementation_tree": "14b30d64df5700d1a851ca8fce71ce0587d4ab1f",
+        "generation_source_commit": "99c3f978b4410c40cfda78b6619f893c0fbca6f2",
+        "generation_source_tree": "84616b355a1cb8366add6d427085afd7732802a8",
+        "scaffold_manifest_sha256": "f1e41443b9165a2bc41842f7aba62e6072be599fd5f0b24db390e8ffc1206dd3",
+        "focused_checks": [
+          "EditionUpgradePackageTest: both Editions adoption, explicit confirmation, signature/edition/scope/drift/replay/fault recovery and custom conflict controls passed",
+          "ScaffoldUpgradeRunnerTest and existing EditionUpgradePackageTest behavior passed after locked Composer installation",
+          "official v3.0.14 installer SHA-256 values matched the frozen release snapshot",
+          "both disposable formal Edition instances: adoption adopted, same candidate signed package preflight ready, apply applied, verify verified, recover recovered; protected customer/Module/secret bytes unchanged",
+          "authentic Standalone customized AppService: same signed package preflight blocked with both_project_and_upstream_modified and retained customer bytes"
+        ],
+        "qualification_boundary": "Candidate packages used an ephemeral CR02-U test signing key and were not published. No database, provider, App P0-E, tag/Release, production or customer-project action was performed."
       },
       "delivery": {
         "core_dev_commit": "16f643341ea454c9ce78d22a52ad776e498e89e9",
         "composer_split_commit": "047f8e035c4ae14ab5a75581fdbb2a51be126787",
-        "application_generation_source_commit": "4d3840f42e6611c619b82b0fa9b6bf67d6d526ee",
-        "application_generation_source_tree": "f38dc2de65edb73f9c288fc9effa746907e905cf",
-        "application_dev_commit": "955978ac2749d762ebd75b3323273ffb71bc03df",
-        "application_dev_tree": "27544a9540fc2edab89931dfc9fd917a4e730118",
-        "scaffold_manifest_sha256": "f527e7c686efb2d594b617075a19e4a17609f4b75fe90a5836bb50ddeafbba41",
+        "application_generation_source_commit": "99c3f978b4410c40cfda78b6619f893c0fbca6f2",
+        "application_generation_source_tree": "84616b355a1cb8366add6d427085afd7732802a8",
+        "application_dev_commit": "21798b2cdadcd5d0455e4b646b778019e6156972",
+        "application_dev_tree": "14b30d64df5700d1a851ca8fce71ce0587d4ab1f",
+        "scaffold_manifest_sha256": "f1e41443b9165a2bc41842f7aba62e6072be599fd5f0b24db390e8ffc1206dd3",
         "inventory_entries": 1806,
         "managed_files": 441,
         "official_plugin_lock_entries": 9,
@@ -2746,14 +2759,14 @@
         },
         "old_shared_host_adoption": {
           "paths": "the exact 25 approved_managed_paths in consumer_delivery.cr01.ownership",
-          "current_detection_entry": "scripts/scaffold-upgrade preflight with the official --package and external --signature-key-id; maintainer-only --from-manifest/--to-manifest remains diagnostic",
+          "current_detection_entry": "scripts/scaffold-upgrade adoption-plan/adoption-apply/adoption-recover plus preflight with the official --package and external --signature-key-id; maintainer-only --from-manifest/--to-manifest remains diagnostic and cannot authorize adoption",
           "current_stop_codes": ["app_owned_adoption_required", "managed_adoption_required"],
           "current_write_behavior": "blocked plans write zero product files; apply refuses SCAFFOLD_PLAN_BLOCKED",
-          "automatic_or_supported_adoption_writer": null,
-          "manual_owner_operation": "On each disposable old application's own development branch, the application owner must back up and compare every affected path, preserve or deliberately reconcile local customization, and review the resulting per-path ownership decision. Editing the signed manifest, deleting the path or fabricating baseline/classification is forbidden.",
-          "missing_input": "There is currently no supported writer that records this explicit owner adoption and creates a valid new managed baseline/application manifest after the review. Therefore a blocked old instance cannot yet be advanced to ready by an approved command.",
-          "minimum_preparation": "Before claiming old-instance upgrade support, bind an owner to design and review the smallest explicit adoption record/writer for these 25 paths, exercise its refusal and preservation controls on disposable formal v3.0.14 Standalone and Multi-tenant instances, then rerun signed-package preflight. If the supported scope is instead reduced, that is a user-visible support decision and is not implied by CR02.",
-          "acceptance_entry": "docs/scaffold-upgrade.md#当前-3x-维护者诊断路径, scripts/scaffold-runtime/ScaffoldUpgradeRunner.php::classify/apply/verify/recover, and server/tests/Productization/ScaffoldUpgradeRunnerTest.php ownership-transition negative controls",
+          "automatic_or_supported_adoption_writer": "Supported metadata-only adoption requires a formally authenticated package, exact 25-path scope, per-path old/current/target digest and mode review, and explicit confirmation of the plan digest plus ordered paths. No force or diagnostic-manifest path exists.",
+          "manual_owner_operation": "On each disposable old application's own development branch, the application owner reviews adoption-plan, confirms its exact digest and ordered paths, then runs adoption-apply. The tool installs the signed old baseline and managed records while preserving live bytes; editing the signed manifest, deleting paths or fabricating baseline/classification remains forbidden.",
+          "missing_input": null,
+          "minimum_preparation": "CR03 must rebuild the signed package from its final fixed candidate with a registered external signing key, independently review the plan on its own disposable instances, and retain the fixed evidence. CR02-U ephemeral packages are not publication inputs.",
+          "acceptance_entry": "docs/scaffold-upgrade.md#当前-3x-维护者诊断路径, scripts/scaffold-runtime/ScaffoldUpgradeRunner.php::adoptionPlan/adoptionApply/adoptionRecover/classify/apply/verify/recover, EditionUpgradePackage signed adoption payload validation, and server/tests/Productization/EditionUpgradePackageTest.php",
           "acceptance_condition": "For each Edition: authentic old manifest/baseline and source identity retained; explicit adoption evidence covers all affected paths; preflight is ready with zero conflicts; apply/verify succeed; recover restores the exact source tree; remaining app-owned, third-party Module, secret and business-Schema bytes remain unchanged."
         },
         "cr03_missing_inputs": [
@@ -2764,13 +2777,8 @@
           },
           {
             "input": "signed 3.1.0 same-Edition upgrade packages plus external trusted-key binding",
-            "why_missing": "CR02 generated scaffold/fixture inputs only; it did not run App P0-E or publish/build a qualified v3.0.14 to v3.1.0 signed upgrade release.",
+            "why_missing": "CR02-U built and consumed ephemeral test-key candidate packages only; it did not run App P0-E or publish/build a qualified registered-key v3.0.14 to v3.1.0 upgrade release.",
             "minimum_preparation": "After the exact CR03 candidate is bound, use the existing Edition builders/signing boundary to create deterministic candidate-only packages, record archive/manifest/signature identities outside production, and reject any mismatch before instance writes."
-          },
-          {
-            "input": "supported explicit owner-adoption record/writer for the 25 reclassified shared Host paths",
-            "why_missing": "Current tooling detects and blocks the transition but intentionally exposes no automatic adoption action.",
-            "minimum_preparation": "Implement and independently review a bounded development-only adoption mechanism or obtain an explicit support-scope decision; do not edit manifests by hand."
           },
           {
             "input": "CR03 resource/run binding and additional supported-provider/four-client scenarios",
@@ -2790,7 +2798,7 @@
         },
         "binding_owner": "Root must bind exact CR03 candidate, resource IDs/endpoints, run parameters, owners and cleanup; this static handoff claims none of them."
       },
-      "deliverable": "Core public 3.1.0, Application exact locks/V2 identity, inventory, official Plugin lock, dual-Edition generation inputs and focused checks are complete at dev@955978ac. CR03 inputs and concrete gaps are recorded without claiming Application qualification."
+      "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Root acceptance/dev integration and CR03 full qualification remain outstanding."
     },
     "cr03": {"status": "待根在CR02验收后绑定；尚未领取、未运行", "depends_on": ["CR01", "CR02根最终验收", "consumer_delivery.cr02.handoff中的真实旧实例、签名3.1.0升级包、显式owner-adoption机制及资源/矩阵输入"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格；现有P0-E八组以外的旧实例升级、真实Provider和四端业务覆盖须按实际支持范围补齐"},
     "cr04": {"status": "待领取", "depends_on": ["CR03"], "deliverable": "仅发布真实通过候选及公开消费/升级文档；不自动部署客户生产"},

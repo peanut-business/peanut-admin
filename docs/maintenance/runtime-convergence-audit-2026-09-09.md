@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01、CQ、C01、CR01已验收；CR02实现已交付并推送`dev@955978ac`、待根完成本次状态补正验收；CR03资格与内部Runtime整改未开始）
+Status: `current`（T01、CQ、C01、CR01已验收；CR02-U候选`21798b2c`已完成聚焦验证、待根验收/集成；CR03资格与内部Runtime整改未开始）
 
 Owner: `product-architecture`
 
@@ -35,14 +35,18 @@ GitHub Release和Packagist `3.1.0`已发布，干净Composer/npm消费者解析�
 Application Alpha.13直接消费者对照确认公共PHP roots、requirements和Web exports未破坏，故没有新增兼容桥或
 直接调用者补丁。Application已在固定生成源`4d3840f4`上生成V2身份、1806项inventory、441项managed scaffold、
 9项官方Plugin派生lock与双Edition输入；`CreateApplicationTest`、inventory/scaffold check、直接身份检查及
-consumer-ready prepare通过，候选/远端`dev`为`955978ac`。这仍只是Development准备：未运行Application完整
-P0-E，未创建Application `v3.1.0` tag/Release，也未连接客户项目或生产资源。
+consumer-ready prepare通过，原候选/远端`dev`为`955978ac`。CR02-U随后在固定生成源`99c3f978`重封
+3.1.0 scaffold/fixture，代码候选`21798b2c`新增仅限正式签名包、精确25路径、显式摘要/路径确认的
+ownership adoption。它在官方v3.0.14 Standalone/Multi-tenant安装包生成的可丢弃实例上均完成
+adopt→同签名包preflight ready→apply→verify→recover，并证明客户字节、Module和secret不变；客户与
+上游同时修改仍blocked。这仍不是Application完整P0-E；未创建Application `v3.1.0` tag/Release，也未连接
+客户项目或生产资源。
 
 CR03的可执行输入与缺口统一记录在主登记`consumer_delivery.cr02.handoff`。正式`v3.0.14` Release可提供
 两Edition安装包、3.0.13→3.0.14同Edition签名升级包、manifest摘要及受信公钥入口，用于建立可丢弃的真实旧实例；
 它们不是3.0.14→3.1.0升级包。现有upgrade preflight能在写入前报告`app_owned_adoption_required`或
-`managed_adoption_required`，但没有自动或受支持的显式owner-adoption writer；旧实例25条共享Host的逐路径审阅、
-采用记录工具及新3.1.0签名upgrade制品仍是具体缺口。现有P0-E八组覆盖生成、fresh、Module、compose及两Edition
+`managed_adoption_required`；CR02-U已提供受支持的显式owner-adoption plan/apply/recover，并让候选签名包
+绑定真实v3.0.14旧基线。CR03仍须绑定其最终候选、正式签名凭据/制品和独立资源。现有P0-E八组覆盖生成、fresh、Module、compose及两Edition
 浏览器组，不覆盖真实旧实例升级、全部真实Provider操作或Web/Platform/PC/UniApp完整业务矩阵，不能由CR02结果推定。
 
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
