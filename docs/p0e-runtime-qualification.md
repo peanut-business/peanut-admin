@@ -154,8 +154,9 @@ screenshot/trace 写入该 run 的 output：
    回到采用前；普通升级恢复则在`apply`成功、`verify`前注入一次中断，用 `UPGRADER recover --plan=<upgrade-plan>`
    恢复受管文件，再从步骤3校验过的DB dump和instance archive成对restore。恢复后必须读回相同主键、Tenant/RBAC、
    Module与customization摘要；任何差异都停止，不能通过重建合成数据伪造恢复成功。
-7. HTTP `127.0.0.1:20190` 和 `cr03/<run-id>/<scenario>/` Local object prefix 均须出现在独立CR03 active lease
-   资源中，由同一owner独占且四端串行；Host-only数据库不默认获得P0-E Compose或浏览器资源。Web路由 `/login`：登录后验证文章/分类、
+7. HTTP 使用已登记的 `peanut-admin-local-production-preview-gateway`（`127.0.0.1:20190`），Local object prefix
+   使用 `cr03/<run-id>/<scenario>/`；二者均须出现在独立CR03 active lease资源中，由同一owner独占且四端串行。
+   Host-only数据库不默认获得P0-E Compose或浏览器资源。Web路由 `/login`：登录后验证文章/分类、
    `/app-setting/website` 保存并重开、菜单/Module/权限、Tenant A→B 拒绝和 Local upload/read/delete。Platform
    路由 `/platform/`：用该 run 的 PlatformOperator 登录，验证 Tenant enable/disable/authorization 与 secret non-echo。
    PC 路由 `/login`、`/information`、`/information/detail/<id>`：验证登录/失效、文章列表/详情/分类及允许保存后重进。

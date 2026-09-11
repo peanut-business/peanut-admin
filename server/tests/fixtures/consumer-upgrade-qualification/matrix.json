@@ -10,7 +10,7 @@
   },
   "outer_resources": {
     "administrative_tooling_resource_id": "peanut-admin-consumer-upgrade-mysql84-remote-admin-cli",
-    "http_listener_resource_id": "peanut-admin-consumer-upgrade-http-gate",
+    "http_listener_resource_id": "peanut-admin-local-production-preview-gateway",
     "http_port": 20190,
     "local_object_storage_resource_id": "peanut-admin-consumer-upgrade-local-storage",
     "local_object_prefix_template": "cr03/<run_id>/<scenario>/",

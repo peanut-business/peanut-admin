@@ -703,7 +703,7 @@
         "qualification_gate": "consumer-upgrade-qualification",
         "deployment_target": "local-development",
         "administrative_tooling_resource_id": "peanut-admin-consumer-upgrade-mysql84-remote-admin-cli",
-        "http_listener_resource_id": "peanut-admin-consumer-upgrade-http-gate",
+        "http_listener_resource_id": "peanut-admin-local-production-preview-gateway",
         "local_object_storage_resource_id": "peanut-admin-consumer-upgrade-local-storage",
         "claim_precondition": "before connection, creation, installer extraction, backup, upgrade, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed candidate, this resource ID, both exact run_id databases, instance roots, backup roots, cache path and output path",
         "creation_policy": "the active CR03 lease owner may create and drop only peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>",
@@ -1471,23 +1471,6 @@
         "lifecycle": "single Development deployment-upgrade proof",
         "claim_precondition": "the active lease includes listener=20283, the generated-application build resource and runtime database",
         "cleanup_responsibility": "the active lease owner stops only the PID recorded under /private/tmp/peanut-admin-generated-application-upgrade-development and proves port 20283 is unbound"
-      },
-      {
-        "stable_resource_id": "peanut-admin-consumer-upgrade-http-gate",
-        "environment": "local-production-preview",
-        "owner": "Peanut Admin CR03 consumer-upgrade lease owner",
-        "host": "127.0.0.1",
-        "port": 20190,
-        "port_env": "CR03_HTTP_PORT",
-        "service_type": "serial generated-instance Docker Compose HTTP listener",
-        "namespace": "cr03/<run_id>/<scenario>",
-        "credential_ref": null,
-        "data_source": "one exact lease-owned generated Edition instance at a time",
-        "freshness_requirement": "port 20190 is unbound before claim; standalone_upgrade and multi_tenant_upgrade run serially under one fixed candidate and never overlap P0-E or the ordinary local production preview",
-        "health_check": "GET http://127.0.0.1:20190/healthz and /legal/RELEASE_METADATA.json from the currently selected exact instance",
-        "fallback": "none; no alternate listener or port",
-        "lifecycle": "single fixed-candidate CR03 run",
-        "cleanup_responsibility": "the active CR03 lease owner stops only the exact scenario Compose project and proves port 20190 is unbound before switching scenarios or releasing the lease"
       },
       {
         "stable_resource_id": "peanut-admin-local-production-preview-gateway",

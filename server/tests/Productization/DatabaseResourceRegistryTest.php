@@ -223,7 +223,7 @@ $expect(($consumerUpgradeDatabase['upstream_endpoint']['endpoint_id'] ?? null) =
 $expect(($consumerUpgradeDatabase['upstream_endpoint']['host'] ?? null) === '192.168.192.2' && ($consumerUpgradeDatabase['upstream_endpoint']['port'] ?? null) === 20183, 'consumer-upgrade Host address is invalid');
 $expect(($consumerUpgradeDatabase['upstream_endpoint']['consumers'] ?? null) === ['host'], 'consumer-upgrade must permit only Host execution');
 $expect(($consumerUpgradeDatabase['administrative_tooling_resource_id'] ?? null) === 'peanut-admin-consumer-upgrade-mysql84-remote-admin-cli', 'consumer-upgrade administrative tooling binding is invalid');
-$expect(($consumerUpgradeDatabase['http_listener_resource_id'] ?? null) === 'peanut-admin-consumer-upgrade-http-gate', 'consumer-upgrade HTTP listener binding is invalid');
+$expect(($consumerUpgradeDatabase['http_listener_resource_id'] ?? null) === 'peanut-admin-local-production-preview-gateway', 'consumer-upgrade HTTP listener binding is invalid');
 $expect(($consumerUpgradeDatabase['local_object_storage_resource_id'] ?? null) === 'peanut-admin-consumer-upgrade-local-storage', 'consumer-upgrade Local storage binding is invalid');
 $consumerAdminTools = array_values(array_filter(
     $registry['resources']['tooling'] ?? [],
@@ -434,7 +434,6 @@ $expect($registeredPorts === [
     'MOBILE_PORT' => 20182,
     'DOCS_PORT' => 20186,
     'PEANUT_GENERATED_APPLICATION_UPGRADE_PORT' => 20283,
-    'CR03_HTTP_PORT' => 20190,
     'HTTP_PORT' => 20190,
     'P0E_DB_TUNNEL_PORT' => 20189,
     'MYSQL_PORT' => 20276,
@@ -669,7 +668,7 @@ function resourceGuardWriteConsumerUpgradeProof(
         'instance-root' => array_map(static fn(string $scenario): string => $cache . '/instances/' . $scenario, $scenarios),
         'backup-root' => array_map(static fn(string $scenario): string => $cache . '/backups/' . $scenario, $scenarios),
         'tooling-resource-id' => ['peanut-admin-consumer-upgrade-mysql84-remote-admin-cli'],
-        'listener-resource-id' => ['peanut-admin-consumer-upgrade-http-gate'],
+        'listener-resource-id' => ['peanut-admin-local-production-preview-gateway'],
         'object-storage-resource-id' => ['peanut-admin-consumer-upgrade-local-storage'],
         'object-prefix' => array_map(static fn(string $scenario): string => 'cr03/' . $runId . '/' . $scenario . '/', $scenarios),
         'port' => ['20190'],

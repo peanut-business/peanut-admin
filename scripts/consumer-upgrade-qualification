@@ -15,7 +15,7 @@ FIXTURE = ROOT / "server/tests/fixtures/consumer-upgrade-qualification/matrix.js
 REGISTRY = ROOT / "resources/project-resources.json"
 RESOURCE_ID = "peanut-admin-consumer-upgrade-mysql84-gate"
 ADMIN_TOOL_ID = "peanut-admin-consumer-upgrade-mysql84-remote-admin-cli"
-HTTP_RESOURCE_ID = "peanut-admin-consumer-upgrade-http-gate"
+HTTP_RESOURCE_ID = "peanut-admin-local-production-preview-gateway"
 LOCAL_STORAGE_RESOURCE_ID = "peanut-admin-consumer-upgrade-local-storage"
 
 class PlanError(RuntimeError):
@@ -87,7 +87,7 @@ def main() -> int:
         raise PlanError("consumer-upgrade outer resource bindings are invalid")
     if admin_tool.get("mysql_command") != "/usr/bin/mysql" or admin_tool.get("mysqldump_command") != "/usr/bin/mysqldump" or admin_tool.get("database_name_pattern") != r"^peanut_admin_development_cr03_[a-z0-9]{1,11}_(standalone_upgrade|multi_tenant_upgrade)$" or "generic database runners are forbidden" not in str(admin_tool.get("fallback")):
         raise PlanError("consumer-upgrade exact administrative tooling is invalid")
-    if http_resource.get("host") != "127.0.0.1" or http_resource.get("port") != 20190 or http_resource.get("fallback") != "none; no alternate listener or port":
+    if http_resource.get("host") != "127.0.0.1" or http_resource.get("port") != 20190 or http_resource.get("fallback") != "none":
         raise PlanError("consumer-upgrade HTTP 20190 resource is invalid")
     if local_storage.get("namespace") != "<instance-root>/server/private/storage with object prefix cr03/<run_id>/<scenario>/" or local_storage.get("fallback") != "none; another worktree, persistent storage root or cloud provider is forbidden":
         raise PlanError("consumer-upgrade Local storage resource is invalid")
