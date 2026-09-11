@@ -2801,7 +2801,7 @@
       "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
     "cr03": {
-      "status": "CR03-01执行中：仅资源/场景合同与无资源计划准备；App资格未运行",
+      "status": "CR03-01已完成，待根冻结技术验收；App资格未运行",
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书",
       "authorization_id": "PA-CONSUMER-FIRST-20260911",
       "depends_on": ["CR01及CR02开发交付已验收", "CR03-01独立资源/资格场景就绪后才允许冻结"],
@@ -2827,7 +2827,7 @@
       },
       "cr03_01_execution": {
         "owner": "CR03 executor task 01a08e89-4065-7c91-ac27-6bf4fc36c99d",
-        "status": "in-progress",
+        "status": "completed-awaiting-root-technical-acceptance",
         "narrow_write_set": [
           "resources/project-resources.json#peanut-admin-consumer-upgrade-mysql84-gate",
           "server/tests/fixtures/consumer-upgrade-qualification/matrix.json",
@@ -2835,7 +2835,19 @@
           "docs/p0e-runtime-qualification.md"
         ],
         "entry": "scripts/consumer-upgrade-qualification plan",
-        "boundary": "plan mode has no lease, download, signing, database connection, instance write or cleanup; CR03-04 remains blocked until root freezes a main candidate"
+        "readiness_receipts": {
+          "browser_tooling": "scripts/p0e-browser-tooling install/check: @playwright/cli 0.1.18 valid in the CR03 worktree",
+          "p0e_plan": "eight fresh groups and six exact P0-E schemas planned for cr03a0911 without claim or runtime connection",
+          "legacy_upgrade_plan": "two exact CR03 schemas planned for cr03u0911 without claim, download, signing, database connection, instance write or cleanup",
+          "consumer_prepare": "consumer-ready-control preflight --phase prepare: ready for dcc32454c5a06520e0f4d18a8d4990ad3cecd452 / 16a865e8e18983b06fe4b312ba98c77b248bfc83"
+        },
+        "advisory_review": {
+          "checked_at": "2026-09-11",
+          "pc_and_platform": "npm audit --package-lock-only --omit=dev: zero vulnerabilities",
+          "web": "pnpm audit: no high or critical event",
+          "uniapp": "npm audit reports Vite 5.2.8 high aggregate; this matches the existing controlled DCloud/Vite exception in capability ledger, with no lock change and expiry 2026-10-09; it is not a clean-security claim or a reason to weaken future qualification"
+        },
+        "boundary": "plan mode has no lease, download, signing, database connection, instance write or cleanup; CR03-02 remains blocked until root accepts this preparation and freezes a main candidate"
       },
       "external_blockers": [
         "COS有acceptance桶但master-key和测试账户仍待绑定；OSS/七牛无完整测试资源",
