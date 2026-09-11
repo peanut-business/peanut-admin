@@ -2652,7 +2652,7 @@
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
     "cr02": {
-      "status": "实现交付完成并推送dev，根已核实代码/检查收据；本次现行状态与CR03交接补正待根最终验收",
+      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；仅CR02-U旧实例共享Host显式归属采用工具实施中，CR03未启动",
       "depends_on": [
         "CR01开发修复已集成",
         "CR03须由根另行绑定固定候选、资源、真实旧实例与缺失采用/签名输入"
@@ -2660,6 +2660,27 @@
       "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书",
       "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
       "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.",
+      "cr02_u": {
+        "status": "approved-implementing",
+        "owner": "01a08d8e-fe57-7733-ab0a-da5cc1bdc922 / Sol medium",
+        "goal": "Add an audited explicit ownership-adoption plan/apply path for exactly the 25 approved shared Host files so authentic v3.0.14 Standalone and Multi-tenant instances can safely proceed to signed same-Edition upgrade preflight.",
+        "entry": "existing scripts/scaffold-upgrade and ScaffoldUpgradeRunner; no second migration framework",
+        "scope": [
+          "read-only per-path adoption plan bound to authenticated from/to package identity, application manifest and old/current/target content plus mode digests",
+          "explicit application-owner confirmation of the exact plan digest and path set before metadata-only adoption",
+          "real old-release baseline and managed ownership recording while preserving current local bytes and all app-owned/module/secret/schema content",
+          "atomic metadata backup/write/recovery, drift/replay/symlink/path/range/edition/signature rejection",
+          "focused Standalone and Multi-tenant adoption to signed preflight/apply/verify/recover checks"
+        ],
+        "forbidden": [
+          "force flag or prefix-based path expansion",
+          "using current customized bytes as the old baseline",
+          "editing signed manifests or trusting a package-contained key",
+          "automatically resolving a real three-way content conflict",
+          "Core/PDO/business/SQL/customer-project/history-release changes or starting CR03/P0-E"
+        ],
+        "success": "Unmodified approved paths can move blocked to explicitly adopted to ready; customized paths remain preserved and any true upstream/local conflict stays blocked until a real owner merge. All failures write zero business files and restore metadata."
+      },
       "delivery": {
         "core_dev_commit": "16f643341ea454c9ce78d22a52ad776e498e89e9",
         "composer_split_commit": "047f8e035c4ae14ab5a75581fdbb2a51be126787",

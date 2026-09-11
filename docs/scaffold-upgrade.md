@@ -55,9 +55,33 @@ Core 是 package-managed 外部依赖；业务/第三方 Module、配置、秘�
 `managed_adoption_required` 表示实例没有该路径的受管采用记录。两种 preflight 冲突均零写入，
 包括上游删除路径。
 
-应用 owner 只能在自身开发分支备份、比较并保留定制后，完成明确的人工采用验证；不得删除文件、
-伪造 classification/baseline 或修改已签 manifest 来绕过冲突。执行器不提供自动采用动作，CR03 必须
-在真实旧实例完成该演练。未来若 Core 删除 API，必须先完成真实调用者采用并由 CR02 阻断不兼容发行。
+对 v3.0.14 两种 Edition，正式 3.1.0 升级包可携带恰好 25 个已批准共享 Host 路径的旧发布内容。
+这些内容来自 v3.0.14 固定 commit/tree，并与目标 manifest 一起进入包 inventory 和 Ed25519 签名。
+只有 `--package` 正式入口可以建立采用计划；维护者诊断 manifest 不能提供或绕过采用授权。
+
+应用 owner 先审阅 `adoption-plan` 输出的每一路径 old/current/target SHA-256、mode 和全部 metadata
+写集，再把计划摘要和输出的 25 个路径逐字回传给 `adoption-apply`。采用只安装可信旧 baseline、
+把对应 application manifest 记录改为 managed，并保留 live/custom 字节、产品/实例版本和
+`generation_source`。如果当前字节已被应用修改且目标也变化，随后同一签名包的普通 preflight
+仍报告 `both_project_and_upstream_modified`，不会自动解冲突。
+
+```bash
+php peanut-admin-3.1.0-standalone-upgrade/upgrader/scripts/scaffold-upgrade adoption-plan \
+  --project-root=/absolute/path/to/application \
+  --package=/absolute/path/to/peanut-admin-3.1.0-standalone-upgrade \
+  --signature-key-id=<official-key-id>
+
+php peanut-admin-3.1.0-standalone-upgrade/upgrader/scripts/scaffold-upgrade adoption-apply \
+  --project-root=/absolute/path/to/application \
+  --plan=/absolute/path/to/application/.peanut/upgrades/plans/<ownership-candidate>.json \
+  --confirm-plan-sha256='<exact-plan-sha256>' \
+  --confirm-paths='<exact-comma-separated-path-list>'
+```
+
+项目锁、路径/符号链接/硬链接检查、application manifest 与 live 文件漂移重验、原子写和 recovery
+同样适用于采用。采用 metadata 写失败后，使用 `adoption-recover --project-root=... --plan=...`
+恢复原 manifest 和 baseline 状态。不得删除文件、伪造 classification/baseline 或修改已签 manifest
+来绕过冲突。未来若 Core 删除 API，必须先完成真实调用者采用并由 CR02 阻断不兼容发行。
 
 包内 `--package` 是普通用户的唯一升级输入。显式 `--from-manifest/--to-manifest` 仍保留给维护者
 诊断不可变 scaffold Release 之间的三方比较，不是正式下载或用户操作入口：

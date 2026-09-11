@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 use app\common\service\scaffold\DeterministicEditionArchive;
+use app\common\service\scaffold\EditionUpgradePackage;
 
 function editionUpgradeUsage(): never
 {
-    fwrite(STDERR, "Usage: php scripts/build-edition-upgrades --version=<semver> --minimum-source-version=<semver> --source-commit=<full-sha> --output=<absolute-directory> --signing-key-id=<id> --signing-secret-key-file=<path> [--check]\n");
+    fwrite(STDERR, "Usage: php scripts/build-edition-upgrades --version=<semver> --minimum-source-version=<semver> --source-commit=<full-sha> --output=<absolute-directory> --signing-key-id=<id> --signing-secret-key-file=<path> [--adoption-source-version=<semver> --adoption-source-commit=<full-sha>] [--check]\n");
     exit(64);
 }
 
@@ -66,7 +67,7 @@ $options = [];
 $check = false;
 foreach (array_slice($argv, 1) as $argument) {
     if ($argument === '--check') { $check = true; continue; }
-    if (preg_match('/^--(version|minimum-source-version|source-commit|output|signing-key-id|signing-secret-key-file)=(.+)$/D', $argument, $matches) !== 1
+    if (preg_match('/^--(version|minimum-source-version|source-commit|output|signing-key-id|signing-secret-key-file|adoption-source-version|adoption-source-commit)=(.+)$/D', $argument, $matches) !== 1
         || isset($options[$matches[1]])) editionUpgradeUsage();
     $options[$matches[1]] = $matches[2];
 }
@@ -80,6 +81,15 @@ if (preg_match('/^\d+\.\d+\.\d+$/D', $options['version']) !== 1
     || preg_match('/^[a-f0-9]{40}$/D', $options['source-commit']) !== 1
     || preg_match('/^[A-Za-z0-9._-]{1,96}$/D', $options['signing-key-id']) !== 1
     || !str_starts_with($options['output'], '/')) editionUpgradeUsage();
+$hasAdoptionVersion = isset($options['adoption-source-version']);
+$hasAdoptionCommit = isset($options['adoption-source-commit']);
+if ($hasAdoptionVersion !== $hasAdoptionCommit
+    || ($hasAdoptionVersion && (preg_match('/^\d+\.\d+\.\d+$/D', $options['adoption-source-version']) !== 1
+        || preg_match('/^[a-f0-9]{40}$/D', $options['adoption-source-commit']) !== 1
+        || version_compare($options['adoption-source-version'], $options['minimum-source-version'], '<')
+        || version_compare($options['adoption-source-version'], $options['version'], '>=')))) {
+    editionUpgradeUsage();
+}
 
 if (!is_file($options['signing-secret-key-file']) || is_link($options['signing-secret-key-file'])) {
     throw new RuntimeException('EDITION_UPGRADE_SIGNING_KEY_INVALID');
@@ -91,6 +101,15 @@ if (!is_string($secret) || strlen($secret) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES
 $commit = trim(editionUpgradeRun(['git', '-C', $root, 'rev-parse', $options['source-commit'] . '^{commit}']));
 if (!hash_equals($options['source-commit'], $commit)) throw new RuntimeException('EDITION_UPGRADE_SOURCE_NOT_COMMIT');
 $tree = trim(editionUpgradeRun(['git', '-C', $root, 'rev-parse', $commit . '^{tree}']));
+$adoptionCommit = $hasAdoptionCommit
+    ? trim(editionUpgradeRun(['git', '-C', $root, 'rev-parse', $options['adoption-source-commit'] . '^{commit}']))
+    : null;
+if ($adoptionCommit !== null && !hash_equals($options['adoption-source-commit'], $adoptionCommit)) {
+    throw new RuntimeException('EDITION_UPGRADE_ADOPTION_SOURCE_NOT_COMMIT');
+}
+$adoptionTree = $adoptionCommit === null
+    ? null
+    : trim(editionUpgradeRun(['git', '-C', $root, 'rev-parse', $adoptionCommit . '^{tree}']));
 $temporaryRoot = realpath(sys_get_temp_dir());
 if (!is_string($temporaryRoot)) throw new RuntimeException('EDITION_UPGRADE_TEMP_ROOT_INVALID');
 $temporary = $temporaryRoot . '/peanut-edition-upgrades-' . bin2hex(random_bytes(8));
@@ -130,6 +149,25 @@ try {
         $package = $temporary . '/' . $archiveRoot;
         if (!mkdir($package, 0700, true) || !rename($target, $package . '/target')) {
             throw new RuntimeException('EDITION_UPGRADE_STAGE_FAILED');
+        }
+        $adoptionFiles = [];
+        if ($adoptionCommit !== null) {
+            foreach (EditionUpgradePackage::OWNERSHIP_ADOPTION_PATHS as $path) {
+                if (!isset($files[$path]) || ($files[$path]['classification'] ?? null) !== 'managed') {
+                    throw new RuntimeException('EDITION_UPGRADE_ADOPTION_TARGET_INVALID: ' . $path);
+                }
+                $contents = editionUpgradeRun(['git', '-C', $root, 'show', $adoptionCommit . ':' . $path]);
+                $source = 'adoption/files/' . $path;
+                editionUpgradeWrite($package . '/' . $source, $contents, 0644);
+                $adoptionFiles[] = [
+                    'path' => $path,
+                    'source' => $source,
+                    'sha256' => hash('sha256', $contents),
+                    'mode' => 0644,
+                    'classification' => 'managed',
+                    'owner' => 'scaffold',
+                ];
+            }
         }
         foreach ([
             'scripts/scaffold-upgrade' => 0755,
@@ -183,6 +221,17 @@ try {
             ],
             'signing' => ['algorithm' => 'ed25519', 'authority' => $options['signing-key-id']],
         ];
+        if ($adoptionCommit !== null) {
+            $manifest['ownership']['adoption'] = [
+                'protocol' => 'peanut.ownership-adoption.v1',
+                'source' => [
+                    'version' => $options['adoption-source-version'],
+                    'commit' => $adoptionCommit,
+                    'tree' => $adoptionTree,
+                ],
+                'files' => $adoptionFiles,
+            ];
+        }
         editionUpgradeWrite(
             $package . '/upgrade-manifest.json',
             json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n",

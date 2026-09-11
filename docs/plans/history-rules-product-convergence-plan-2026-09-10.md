@@ -533,6 +533,35 @@ CR02开始时整应用生成仍因V1/3.0.14+Alpha.13不满足V2同号builder前�
 5. **新生成及资格输入**：已知阻塞集中修完后，按实际builder从固定源码生成inventory、Module派生lock和双Edition制品输入，严禁改历史`scaffold/releases/v*`。依次补CR01受阻的`CreateApplicationTest`及直接身份检查，验证实际25条受管baseline和客户文件边界；只重跑受本批影响的组。旧实例的显式人工采用与新同Edition升级必须形成CR03可执行输入，不能以‘需人工’一句话宣布问题已解决，也不能伪造采用metadata。App完整P0-E由CR03独立执行，不在本批反复全矩阵调试。
 6. **文档和交付**：当前失败/已修复/接受风险/未验证分别写回原问题登记、人类审计和Core现行状态；删除直接失效口径，历史失败保留历史身份。运行受影响两仓文档检查。给根准确commit/tree、包版本和Registry可见性、锁摘要、每组exit及私有日志位置、下一候选资源/真实旧实例和采用输入。完成开发集成推送；没有完整App资格不得称Consumer RC已发布。
 
+#### CR02-U：旧实例共享 Host 显式归属采用
+
+状态：已由根在CR02同范围内批准并由原owner实施；协调版本、公开Core、App锁/V2及`7adc3113`交接保持已验收，
+只有本卡未完成。目标是在正式3.0.14来源的可丢弃Standalone/Multi-tenant实例上，为
+`consumer_delivery.cr01.ownership.approved_managed_paths`精确25条共享Host生成只读采用计划，经应用owner对
+实例、路径集合和计划摘要显式确认后，以现有锁、原子元数据写和恢复模式登记真实旧基线及managed归属，再让同一
+已验签目标签名包重新preflight。不得缩减既定旧实例升级支持面，也不得启动CR03或Application P0-E。
+
+正式入口只扩展现有`scripts/scaffold-upgrade`和`ScaffoldUpgradeRunner`：计划必须绑定真实应用manifest、from/to
+同Edition身份、外置信任key已验证的正式`--package`路径、25条固定allowlist、旧release认证内容、当前内容/mode、
+目标内容及将写元数据的摘要。采用执行要求完整plan文件与SHA-256显式确认；写前重验实例/路径/摘要，拒绝symlink、
+path traversal、超范围、错误Edition/来源、坏签名、摘要漂移和跨实例重放。不得提供无条件`--force`，不得信任包内key，
+不得通过维护者`--from-manifest/--to-manifest`进入正式采用。
+
+旧baseline只能来自已认证的真实旧release内容，不能把当前客户定制字节登记为未修改旧基线。采用保留本地文件和
+客户修改；未修改路径可从blocked→adopt→ready，上下游同时修改仍保持冲突并交应用owner人工合并，不为ready自动
+消除。`source_product_version`/`instance_version`和`generation_source`在采用阶段不改变；业务Module、秘密、业务Schema
+继续app-owned。元数据失败须恢复，失败零业务文件写入；采用、apply、verify、recover分别产生可核结果。
+
+起始写集：`scripts/scaffold-upgrade`、`scripts/scaffold-runtime/ScaffoldUpgradeRunner.php`、确有必要的既有manifest/path
+guard/签名消费类、`server/tests/Productization/ScaffoldUpgradeRunnerTest.php`、直接受影响的既有Edition/Creator合同、
+`docs/scaffold-upgrade.md`及本方案/主登记/人类审计。只有实际生成输入受影响才更新未发布3.1.0 inventory/scaffold/fixture；
+历史正式发行物、Core公共包、PDO/业务领域、SQL和客户项目禁止修改。
+
+聚焦验收覆盖两Edition正式旧归属→显式采用→同一签名包preflight/apply/verify/recover，客户定制/业务Module/秘密不变，
+以及错误Edition、坏签名、超范围、漂移、重复确认/幂等、失败零写入。现有CR01负控不得删除或削弱。实现完成后生成新的
+未发布App候选及受影响3.1.0身份输入，只重跑本卡直接影响组；不重跑Core Q01，不运行App P0-E。最终精确合入本地dev、
+推送远端并回根，57aa由根在任务结束后清理。
+
 #### 写集与真实停止点
 
 - Core初始写集是实际失败涉及的依赖manifest/lock、`scripts/check-supply-chain`的证据/错误处理（仅确有缺口时）、现行release/status/qualification文档与包版本/投影验证入口；最小必要公共API采用修复必须先经根核范围，不能借此开展大规模Runtime迁移。

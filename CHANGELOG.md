@@ -28,8 +28,9 @@ and the two public core packages have independent version histories.
 ### Fixed
 
 - Preserved customer-owned application files during managed scaffold adoption
-  and rejected missing, deleted or previously app-owned managed paths until an
-  explicit owner adoption is recorded.
+  and added a signed-package-only, exact-path ownership adoption plan for the 25
+  approved v3.0.14 shared Host paths. Adoption records the authentic old baseline
+  without replacing customized bytes; real three-way conflicts remain blocked.
 - Remediated the Core build-chain high advisory without weakening supply-chain,
   license, candidate identity or public compatibility gates.
 

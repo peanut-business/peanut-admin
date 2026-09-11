@@ -35,7 +35,9 @@ php scripts/build-edition-upgrades \
   --source-commit=<same-full-candidate-commit> \
   --output=/absolute/path/to/release-artifacts \
   --signing-key-id=<official-release-key-id> \
-  --signing-secret-key-file=/credential-store/release-ed25519-secret.base64
+  --signing-secret-key-file=/credential-store/release-ed25519-secret.base64 \
+  --adoption-source-version=3.0.14 \
+  --adoption-source-commit=e30b667bbfc25d70281ddf1864b99883850afa24
 ```
 
 首个正确 Edition 分发版本没有合格的旧 Edition 可作为升级源，因此不得伪造兼容范围或复用旧
@@ -46,6 +48,10 @@ php scripts/build-edition-upgrades \
 外部 manifest、SHA-256、Edition、source commit/tree 和 inventory 必须一致；升级包内只包含自带
 升级器、目标受管文件与完整 migration 列表。Standalone 与 Multi-tenant 分别生成，不能用一个
 包在运行时切换 Edition。
+
+`--adoption-source-*` 只用于 3.1.0 对 v3.0.14 已批准的 25 个共享 Host 路径。builder 从该固定
+旧发布 commit 读取内容，把旧版本/commit/tree、逐文件摘要和 mode 一并纳入签名 inventory；
+其他版本没有经批准的 ownership 转换时不得自行增加该参数。
 
 开发分支生成物只能用于聚焦验证。正式附件必须来自后续唯一冻结、通过 L2 资格并合入 `main`
 的候选；不得把开发 key、移动分支或本地 output 目录发布给用户。
@@ -82,7 +88,9 @@ php scripts/build-edition-installers \
 php scripts/build-edition-upgrades \
   --version=X.Y.Z --minimum-source-version=<oldest-supported-X.Y.Z> \
   --source-commit=<full-main-commit> --output=<same-artifact-dir> \
-  --signing-key-id=<registered-key-id> --signing-secret-key-file=<registered-secret-ref>
+  --signing-key-id=<registered-key-id> --signing-secret-key-file=<registered-secret-ref> \
+  --adoption-source-version=3.0.14 \
+  --adoption-source-commit=e30b667bbfc25d70281ddf1864b99883850afa24
 
 # 4. 先本地生成并检查完整 Release，再只发布一次。
 scripts/publish-github-release X.Y.Z \
