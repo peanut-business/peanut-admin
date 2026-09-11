@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01、CQ与C01已验收；消费优先路线已批准，CR01开始安排；内部Runtime整改与新发行资格未完成）
+Status: `current`（T01、CQ、C01、CR01已验收；CR02实现已交付并推送`dev@955978ac`、待根完成本次状态补正验收；CR03资格与内部Runtime整改未开始）
 
 Owner: `product-architecture`
 
@@ -30,10 +30,20 @@ Runner真实合同与inventory检查exit0，修正必需版本文件后的Editio
 
 CR02已在Core Development模式实际定位并修复供应链根因：`js-yaml@4.3.1`经
 `openapi-typescript → @redocly/openapi-core`触发高危公告，根锁已受控升级至4.3.2；pnpm高危审计、许可证、
-secret scan与供应链PHPUnit均通过。Application Alpha.13直接消费者对照Core
-`a949a777..2ed77f38`显示仅PHP/Web包版本常量与manifest版本改变，PSR-4 roots、PHP requirements和Web
-exports未变，故没有需要补写的实际采用者。该结论仅覆盖静态兼容与Development供应链修复；3.1.0候选Q01/D05、
-Registry实包、应用锁、V2身份、生成与旧实例采用输入仍未完成，不能发布或移动下游锁。
+secret scan与供应链PHPUnit均通过。Core固定候选Q01与D05已通过，source tag、Composer split、npm、
+GitHub Release和Packagist `3.1.0`已发布，干净Composer/npm消费者解析成功；Core `dev`为`16f6433`。
+Application Alpha.13直接消费者对照确认公共PHP roots、requirements和Web exports未破坏，故没有新增兼容桥或
+直接调用者补丁。Application已在固定生成源`4d3840f4`上生成V2身份、1806项inventory、441项managed scaffold、
+9项官方Plugin派生lock与双Edition输入；`CreateApplicationTest`、inventory/scaffold check、直接身份检查及
+consumer-ready prepare通过，候选/远端`dev`为`955978ac`。这仍只是Development准备：未运行Application完整
+P0-E，未创建Application `v3.1.0` tag/Release，也未连接客户项目或生产资源。
+
+CR03的可执行输入与缺口统一记录在主登记`consumer_delivery.cr02.handoff`。正式`v3.0.14` Release可提供
+两Edition安装包、3.0.13→3.0.14同Edition签名升级包、manifest摘要及受信公钥入口，用于建立可丢弃的真实旧实例；
+它们不是3.0.14→3.1.0升级包。现有upgrade preflight能在写入前报告`app_owned_adoption_required`或
+`managed_adoption_required`，但没有自动或受支持的显式owner-adoption writer；旧实例25条共享Host的逐路径审阅、
+采用记录工具及新3.1.0签名upgrade制品仍是具体缺口。现有P0-E八组覆盖生成、fresh、Module、compose及两Edition
+浏览器组，不覆盖真实旧实例升级、全部真实Provider操作或Web/Platform/PC/UniApp完整业务矩阵，不能由CR02结果推定。
 
 ## 2026-09-11 CQ-AUDIT-01 根补正结果
 

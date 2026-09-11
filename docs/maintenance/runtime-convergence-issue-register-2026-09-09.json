@@ -2627,7 +2627,7 @@
   },
   "consumer_delivery": {
     "authorization_id": "PA-CONSUMER-FIRST-20260911",
-    "status": "cr02-executing-core-310-published-app-locks-adopted-generation-inputs-in-progress",
+    "status": "cr02-implementation-delivered-app-dev-955978ac-correction-awaiting-root-acceptance-cr03-not-started",
     "scope": "消费前阻塞修复、协调发行、同源双Edition独立安装升级资格与对应交付；不要求内部C02-C12全部完成后才消费",
     "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#126-当前消费优先路线与cr01实施任务书",
     "baseline": {"application": "464dee420e7203deca9281da8584d07f0f8401b1", "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4"},
@@ -2651,8 +2651,127 @@
       },
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
-    "cr02": {"status": "执行中：Core 3.1.0 Q01/D05、source/split/npm/Packagist/GitHub Release和干净Registry消费已完成；Application五份真实依赖锁与V2身份已采用，生成输入及聚焦检查收尾中", "depends_on": ["CR01开发修复集成", "CR03在CR02生成输入完成后独立绑定固定候选与资源"], "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书", "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"], "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks now resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.", "deliverable": "已完成Core真实资格/发布与应用同号真实locks/V2身份；本批继续完成inventory、双Edition生成输入、Creator/身份聚焦检查和准确交付，完整App P0-E留给CR03"},
-    "cr03": {"status": "待领取", "depends_on": ["CR01", "CR02"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格，独立于实施者验收"},
+    "cr02": {
+      "status": "实现交付完成并推送dev，根已核实代码/检查收据；本次现行状态与CR03交接补正待根最终验收",
+      "depends_on": [
+        "CR01开发修复已集成",
+        "CR03须由根另行绑定固定候选、资源、真实旧实例与缺失采用/签名输入"
+      ],
+      "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书",
+      "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
+      "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.",
+      "delivery": {
+        "core_dev_commit": "16f643341ea454c9ce78d22a52ad776e498e89e9",
+        "composer_split_commit": "047f8e035c4ae14ab5a75581fdbb2a51be126787",
+        "application_generation_source_commit": "4d3840f42e6611c619b82b0fa9b6bf67d6d526ee",
+        "application_generation_source_tree": "f38dc2de65edb73f9c288fc9effa746907e905cf",
+        "application_dev_commit": "955978ac2749d762ebd75b3323273ffb71bc03df",
+        "application_dev_tree": "27544a9540fc2edab89931dfc9fd917a4e730118",
+        "scaffold_manifest_sha256": "f527e7c686efb2d594b617075a19e4a17609f4b75fe90a5836bb50ddeafbba41",
+        "inventory_entries": 1806,
+        "managed_files": 441,
+        "official_plugin_lock_entries": 9,
+        "checks": [
+          "CreateApplicationTest: CREATE-APP-001 passed after replacing the stale Alpha.12 literal with release-versions.json.core_web",
+          "build-application-template-inventory --check: CREATE-APP-INVENTORY-001 passed",
+          "build-scaffold-release --check: SCAFFOLD-RELEASE-3.1.0 verified",
+          "check-release-consistency --candidate 955978ac2749d762ebd75b3323273ffb71bc03df: PASS",
+          "consumer-ready-control preflight --phase prepare: ready"
+        ],
+        "qualification_boundary": "No Application P0-E, Application v3.1.0 tag/Release, production deployment or customer-project operation was performed."
+      },
+      "handoff": {
+        "formal_v3014_source": {
+          "snapshot": "docs/product-status/releases/v3.0.14.json",
+          "github_release": "https://github.com/peanut-business/peanut-admin/releases/tag/v3.0.14",
+          "release_commit": "e30b667bbfc25d70281ddf1864b99883850afa24",
+          "release_tree": "c956641c976ce4e35d7a1abdc159bb3ee2fd958e"
+        },
+        "formal_v3014_edition_assets": {
+          "standalone": {
+            "installer": "peanut-admin-3.0.14-standalone.tar.gz",
+            "installer_sha256": "efecbfe40965d4a57765c66eb609407167b576e96fb8a804b1828ae21fe2d0a6",
+            "installer_manifest": "peanut-admin-3.0.14-standalone.tar.gz.manifest.json",
+            "installer_manifest_sha256": "e43d1094e59df804a2631c412174991077e694d807b301f2b2ebc0c525419c99",
+            "signed_upgrade": "peanut-admin-3.0.14-standalone-upgrade.tar.gz",
+            "signed_upgrade_scope": "3.0.13 <= source < 3.0.14, same Edition only",
+            "signed_upgrade_sha256": "616e0d8792272a7b896b652e3f04a590f863a79226fa7c7fb8682ae299d692a9",
+            "signed_upgrade_manifest": "peanut-admin-3.0.14-standalone-upgrade.tar.gz.manifest.json",
+            "signed_upgrade_manifest_sha256": "b02d210369fc3979af5e042cd12a6e9df3fe722781b53e93c82690f146c62b39"
+          },
+          "multi_tenant": {
+            "installer": "peanut-admin-3.0.14-multi-tenant.tar.gz",
+            "installer_sha256": "1d5616aa0e0db1a4201febff2e9398478e63deba4c17d6659d8822233a97acdd",
+            "installer_manifest": "peanut-admin-3.0.14-multi-tenant.tar.gz.manifest.json",
+            "installer_manifest_sha256": "acef8c9287f62d6068ce97f0e14b7777e150eba5027e4c0ce3a8d64a97a42452",
+            "signed_upgrade": "peanut-admin-3.0.14-multi-tenant-upgrade.tar.gz",
+            "signed_upgrade_scope": "3.0.13 <= source < 3.0.14, same Edition only",
+            "signed_upgrade_sha256": "f9b2efd61b27fe935e8222cbe57c0d5fe9cab5ff5fe1a5f599c1735403a74376",
+            "signed_upgrade_manifest": "peanut-admin-3.0.14-multi-tenant-upgrade.tar.gz.manifest.json",
+            "signed_upgrade_manifest_sha256": "72a8c53908bf7dc7b7aad3b04bef5d402ea55b4e3f45db3388f92daa2d19198d"
+          },
+          "signature_authority": {
+            "asset": "UPGRADE_TRUSTED_KEYS.json",
+            "asset_sha256": "5b01f1cea07e599130297ca7fea900559f70cf8d00d27a94e14d507c5b969936",
+            "key_id": "peanut-admin-release-2026-01",
+            "source": "the immutable v3.0.14 GitHub Release; key material must remain external to the upgrade package"
+          },
+          "sha_sources": [
+            "docs/product-status/releases/v3.0.14.json",
+            "v3.0.14 GitHub Release asset digests checked 2026-09-11",
+            "the two downloaded manifest JSON files checked read-only for protocol, source identity, compatibility range and key id"
+          ],
+          "limit": "The v3.0.14 signed upgrades prove only 3.0.13 to 3.0.14. They are source evidence and preparation inputs, not a 3.0.14 to 3.1.0 upgrade artifact."
+        },
+        "old_shared_host_adoption": {
+          "paths": "the exact 25 approved_managed_paths in consumer_delivery.cr01.ownership",
+          "current_detection_entry": "scripts/scaffold-upgrade preflight with the official --package and external --signature-key-id; maintainer-only --from-manifest/--to-manifest remains diagnostic",
+          "current_stop_codes": ["app_owned_adoption_required", "managed_adoption_required"],
+          "current_write_behavior": "blocked plans write zero product files; apply refuses SCAFFOLD_PLAN_BLOCKED",
+          "automatic_or_supported_adoption_writer": null,
+          "manual_owner_operation": "On each disposable old application's own development branch, the application owner must back up and compare every affected path, preserve or deliberately reconcile local customization, and review the resulting per-path ownership decision. Editing the signed manifest, deleting the path or fabricating baseline/classification is forbidden.",
+          "missing_input": "There is currently no supported writer that records this explicit owner adoption and creates a valid new managed baseline/application manifest after the review. Therefore a blocked old instance cannot yet be advanced to ready by an approved command.",
+          "minimum_preparation": "Before claiming old-instance upgrade support, bind an owner to design and review the smallest explicit adoption record/writer for these 25 paths, exercise its refusal and preservation controls on disposable formal v3.0.14 Standalone and Multi-tenant instances, then rerun signed-package preflight. If the supported scope is instead reduced, that is a user-visible support decision and is not implied by CR02.",
+          "acceptance_entry": "docs/scaffold-upgrade.md#当前-3x-维护者诊断路径, scripts/scaffold-runtime/ScaffoldUpgradeRunner.php::classify/apply/verify/recover, and server/tests/Productization/ScaffoldUpgradeRunnerTest.php ownership-transition negative controls",
+          "acceptance_condition": "For each Edition: authentic old manifest/baseline and source identity retained; explicit adoption evidence covers all affected paths; preflight is ready with zero conflicts; apply/verify succeed; recover restores the exact source tree; remaining app-owned, third-party Module, secret and business-Schema bytes remain unchanged."
+        },
+        "cr03_missing_inputs": [
+          {
+            "input": "disposable formal v3.0.14 Standalone and Multi-tenant application instances",
+            "why_missing": "No bound CR03 instance paths or owners exist; the persistent Standalone demo is v3.0.5 and the online multi-tenant deployment includes a separate demo overlay.",
+            "minimum_preparation": "Create isolated instances from the two immutable v3.0.14 installer assets, retain their original application manifests/baselines, register their resources, and bind cleanup owners."
+          },
+          {
+            "input": "signed 3.1.0 same-Edition upgrade packages plus external trusted-key binding",
+            "why_missing": "CR02 generated scaffold/fixture inputs only; it did not run App P0-E or publish/build a qualified v3.0.14 to v3.1.0 signed upgrade release.",
+            "minimum_preparation": "After the exact CR03 candidate is bound, use the existing Edition builders/signing boundary to create deterministic candidate-only packages, record archive/manifest/signature identities outside production, and reject any mismatch before instance writes."
+          },
+          {
+            "input": "supported explicit owner-adoption record/writer for the 25 reclassified shared Host paths",
+            "why_missing": "Current tooling detects and blocks the transition but intentionally exposes no automatic adoption action.",
+            "minimum_preparation": "Implement and independently review a bounded development-only adoption mechanism or obtain an explicit support-scope decision; do not edit manifests by hand."
+          },
+          {
+            "input": "CR03 resource/run binding and additional supported-provider/four-client scenarios",
+            "why_missing": "CR02 was prohibited from claiming resources or running qualification, and current P0-E groups do not enumerate every provider or complete Web/Platform/PC/UniApp business flow.",
+            "minimum_preparation": "Root binds registered disposable resources, unique run IDs, provider credential references/owners and exact additional scenarios in the CR03 taskbook before any runtime action."
+          }
+        ],
+        "existing_p0e_coverage": {
+          "groups": ["generated-application", "standalone-fresh", "multi-tenant-fresh", "plugin-lifecycle", "consumer-module-lifecycle", "production-compose", "standalone-browser", "multi-tenant-browser"],
+          "covers": "deterministic generation, fresh Edition installation/bootstrap, bounded Plugin/consumer-Module lifecycle, production Compose and registered browser smoke on a fixed candidate",
+          "does_not_cover": [
+            "a real formal v3.0.14 application upgraded to 3.1.0 with a signed same-Edition package",
+            "the explicit owner-adoption transition for all 25 formerly app-owned shared Host paths",
+            "all real payment, messaging, OAuth and storage Provider operations",
+            "the complete supported business matrix across Web, Platform, PC and UniApp"
+          ]
+        },
+        "binding_owner": "Root must bind exact CR03 candidate, resource IDs/endpoints, run parameters, owners and cleanup; this static handoff claims none of them."
+      },
+      "deliverable": "Core public 3.1.0, Application exact locks/V2 identity, inventory, official Plugin lock, dual-Edition generation inputs and focused checks are complete at dev@955978ac. CR03 inputs and concrete gaps are recorded without claiming Application qualification."
+    },
+    "cr03": {"status": "待根在CR02验收后绑定；尚未领取、未运行", "depends_on": ["CR01", "CR02根最终验收", "consumer_delivery.cr02.handoff中的真实旧实例、签名3.1.0升级包、显式owner-adoption机制及资源/矩阵输入"], "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"], "deliverable": "固定双Edition真实安装/升级、客户改动保护、数据与支持范围资格；现有P0-E八组以外的旧实例升级、真实Provider和四端业务覆盖须按实际支持范围补齐"},
     "cr04": {"status": "待领取", "depends_on": ["CR03"], "deliverable": "仅发布真实通过候选及公开消费/升级文档；不自动部署客户生产"},
     "deferred_runtime": "C02-C12和其余services原ID/顺序保留；只有证明不影响消费/升级/安全的项可后置，不能整批标完成",
     "limits": "不重扫历史、不造兼容桥、不批量把业务改managed、不弱化测试或厂商有效支持；24-48小时不是通过承诺；根核前置后按用户授权安排衔接，无Goal/定时器"
