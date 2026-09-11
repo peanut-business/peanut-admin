@@ -89,7 +89,7 @@ def main() -> int:
     if any(len(name) > resource.get("database_name_max_length", 0) for name in names.values()):
         raise PlanError("generated database name exceeds the registered maximum")
     for scenario, data in scenarios.items():
-        expected_edition = "multi_tenant" if scenario == "multi_tenant_upgrade" else "standalone"
+        expected_edition = "multi-tenant" if scenario == "multi_tenant_upgrade" else "standalone"
         if data.get("edition") != expected_edition or not data.get("inputs") or not data.get("assertions"):
             raise PlanError(f"{scenario} edition, input, or assertion contract is invalid")
     instance_roots = {scenario: cache / "instances" / scenario for scenario in scenarios}
