@@ -7,6 +7,9 @@ $root=dirname(__DIR__,3);
 require $root.'/scripts/scaffold-runtime/ScaffoldPathGuard.php';
 require $root.'/scripts/scaffold-runtime/ScaffoldManifest.php';
 require $root.'/scripts/scaffold-runtime/ScaffoldUpgradeLedger.php';
+require $root.'/server/app/platform/service/plugin/PluginLifecycleException.php';
+require $root.'/server/app/platform/service/plugin/PluginDescriptor.php';
+require $root.'/server/app/platform/service/plugin/PluginLockResolver.php';
 require $root.'/scripts/scaffold-runtime/ScaffoldUpgradeRunner.php';
 
 const SCAFFOLD_FROM_COMMIT='14412607ba36f1816e39f7117f77eea4a9e7419e';

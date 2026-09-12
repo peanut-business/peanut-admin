@@ -66,6 +66,11 @@ php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade preflight \
 
 预检查会核对当前应用的来源、Edition、源版本和目标版本、签名、checksum、依赖/Module lock、migration chain 以及文件所有权。只接受 `status=ready` 的结果，并记下它返回的唯一 plan 文件；任何 `blocked` 或 `error` 都保持应用不变并停在这里。
 
+对于 3.x 应用，预检查还会核验当前 `plugins.lock`、能力包 manifest 以及对应的后端/前端源码根。
+已安装能力包会作为完整边界保留，并以实例中经核验的现有字节建立下一版 baseline；升级包不会用
+目标模板局部覆盖它。目标新增能力包或根目录拓扑不一致时会返回 `plugin_adoption_required`，需要
+应用 owner 先完成独立采用再重新 preflight；不要编辑 lock、manifest 或 plan 绕过。
+
 ### 2. 备份：建立配对恢复点
 
 在任何写入前，备份数据库、用户上传等持久文件，以及应用 owner 负责的配置和部署状态，并记录它们对应的当前版本。确认备份可被识别和恢复，再继续下一步。备份必须与这次升级使用同一个恢复点，不能用不明时间的旧副本代替。

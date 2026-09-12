@@ -44,6 +44,13 @@ plan 的 `impact` 用 `will_change`、`will_preserve` 与 `must_resolve` 分组�
 `baseline_sha256`，因此用户曾保留的 managed 定制和上游目标基线不再混为同一个摘要。
 `app-owned`、第三方 Module 和秘密不进入升级包默认写集。
 
+3.x preflight 还会用正式 `PluginLockResolver` 核验实例当前的 `plugins.lock`、Plugin manifest、
+后端 Module root 与前端 root，并把这份完整投影绑定进不可变 plan。升级器保留已安装 Plugin 的
+现有 lock、manifest 和源码字节，以经核验的实例字节建立下一版 baseline；目标模板不能只覆盖
+其中一部分。目标新增 Plugin、manifest/root 拓扑不一致时以 `plugin_adoption_required` 零写入
+阻断，Plugin 投影在 apply、verify、幂等重放或 recover 前后漂移也会 fail-closed。这个流程不执行
+Plugin 安装、升级或移除；这些动作仍由应用 owner 作为独立采用步骤完成。
+
 ## 当前 3.x 维护者诊断路径
 
 ### 共享 Host 采用停止线

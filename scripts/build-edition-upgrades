@@ -177,6 +177,9 @@ try {
             'scripts/scaffold-runtime/ScaffoldUpgradeLedger.php' => 0644,
             'scripts/scaffold-runtime/ScaffoldUpgradeRunner.php' => 0644,
             'scripts/scaffold-runtime/EditionUpgradePackage.php' => 0644,
+            'server/app/platform/service/plugin/PluginLifecycleException.php' => 0644,
+            'server/app/platform/service/plugin/PluginDescriptor.php' => 0644,
+            'server/app/platform/service/plugin/PluginLockResolver.php' => 0644,
         ] as $path => $mode) {
             $contents = editionUpgradeRun(['git', '-C', $root, 'show', $commit . ':' . $path]);
             editionUpgradeWrite($package . '/upgrader/' . $path, $contents, $mode);

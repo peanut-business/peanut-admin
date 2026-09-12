@@ -73,6 +73,7 @@ description: Peanut Admin API、命令、配置、manifest 和扩展点的事实
 | `plugin:release-composition`、`plugin:reconcile` | composition 的只读比较结果；reconcile 的逐 Package 状态（含 `preserved_disabled`） | 保留当前 Release、数据库和恢复坐标；不要删除 lock、源码或账本来绕过异常状态 |
 | `scripts/create-app`、`scripts/scaffold-upgrade` | JSON `status`；无效 usage 退出 64 | 不猜参数；按脚本打印的固定 usage 重试 |
 | `scripts/scaffold-upgrade preflight` | `actions[].reason` 为 `app_owned_adoption_required` 或 `managed_adoption_required`，计划 `blocked` | 客户文件被请求接管/删除，或缺实例受管记录；停止应用计划，由 owner 备份、比对并验证显式采用。不得伪造 ownership/baseline 或改写签名包解除冲突 |
+| `scripts/scaffold-upgrade preflight` | `actions[].reason` 为 `plugin_adoption_required`，计划 `blocked` | 目标新增能力包或已安装能力包的 manifest/root 拓扑与目标不一致；先在应用仓完成独立能力包采用并重新生成合法 lock，再重新 preflight。不得局部覆盖 Plugin 元数据或源码根 |
 | `ops-module:request` | `ok/result` 或 `ok=false,error_code` | 修复登记、inbox、target 或双确认，不改写 opaque task |
 | `scripts/ops-module-worker --once` | 单次任务结果写入受控任务状态；stderr 只给安全摘要 | 失败保持维护和恢复指针，由 deployment owner 检查受限日志 |
 
