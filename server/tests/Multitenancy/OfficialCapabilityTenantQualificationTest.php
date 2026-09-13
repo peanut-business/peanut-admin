@@ -55,7 +55,6 @@ foreach ([
     'recharge_settings' => 'app/Modules/Official/Payment/Application/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
     'tenant_settings_provider' => 'app/common/service/tenant/ThinkPhpTenantSettingsProvider.php',
-    'tenant_settings_runtime' => 'app/common/service/tenant/TenantSettingsRuntimeFactory.php',
     'tenant_settings_bootstrap_runtime' => 'app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php',
     'application_tenant_bootstrap' => 'app/platform/service/ApplicationTenantBootstrapService.php',
     'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',

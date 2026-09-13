@@ -13723,20 +13723,6 @@
             "source_sha256": "717a9713830ae081696aae6f2fcbd9ba08c0f726f6107c8014b2bfbab712320e"
         },
         {
-            "path": "server/app/common/service/tenant/TenantSettingsRuntimeFactory.php",
-            "target": "server/app/common/service/tenant/TenantSettingsRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "7155e417bad340fc4ae167627eafec7671d43df164e7ef50f79ce7bd2d9d5bc5"
-        },
-        {
             "path": "server/app/common/service/tenant/ThinkPhpTenantCacheStore.php",
             "target": "server/app/common/service/tenant/ThinkPhpTenantCacheStore.php",
             "classification": "app-owned",
