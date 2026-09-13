@@ -89,7 +89,7 @@ foreach ([
     'oauth_controller' => 'app/api/controller/OAuthController.php',
     'payment_notify_controller' => 'app/api/controller/PaymentNotifyController.php',
     'official_account_controller' => 'app/api/controller/OfficialAccountController.php',
-    'module_worker' => 'app/common/service/async/ModuleAwareTaskHandler.php',
+    'module_worker' => 'app/common/infrastructure/async/ModuleAwareTaskHandler.php',
     'console' => 'config/console.php',
     'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
     'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',

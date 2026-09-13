@@ -7,28 +7,30 @@ use app\Modules\Official\Task\Application\CrontabTaskDefinition;
 use app\Modules\Official\Task\Application\TaskAuthorizationRouter;
 use app\Modules\Official\Task\Contracts\TaskJobRuntime;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
-use app\common\service\async\ModuleAwareTaskHandler;
+use app\common\infrastructure\async\ModuleAwareTaskHandler;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\org\AdminDirectoryQuery;
-use app\common\service\CrontabCommandService;
+use app\common\services\CrontabCommandService;
 use Closure;
 use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
 use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\TaskJob\Application\TaskJobService;
 use PeanutAdmin\TaskJob\Execution\LocalWorker;
 use PeanutAdmin\TaskJob\Execution\TaskHandlerRegistry;
-use PeanutAdmin\TaskJob\Persistence\PdoTaskJobRepository;
+use PeanutAdmin\TaskJob\Persistence\TaskJobStore;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionProvider;
 use PeanutAdmin\TaskJob\Submission\TaskSubmissionRegistry;
 use PeanutAdmin\TaskJob\Submission\TrustedJobPublisher;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
-final readonly class PdoTaskJobRuntime implements TaskJobRuntime
+final readonly class ThinkPhpTaskJobRuntime implements TaskJobRuntime
 {
     public function __construct(
-        private PdoTaskJobRepository $repository,
+        private TaskJobStore $repository,
+        private TransactionManager $transactions,
         private string $signingKey,
         private ExecutionContextStore $executionContexts,
         private CurrentExecutionContext $currentExecution,
@@ -47,6 +49,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
     {
         return new TrustedJobPublisher(
             $this->repository,
+            $this->transactions,
             new TaskSubmissionRegistry($providers),
             $this->envelopes(),
         );
@@ -54,7 +57,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
 
     public function jobs(): TaskJobService
     {
-        return new TaskJobService($this->repository);
+        return new TaskJobService($this->repository, $this->transactions);
     }
 
     public function enqueueCrontab(TenantScope $scope, int $scheduleId, string $contextIdentity): void
@@ -88,6 +91,7 @@ final readonly class PdoTaskJobRuntime implements TaskJobRuntime
             $tenantId,
             $workerId,
             $this->repository,
+            $this->transactions,
             new TaskHandlerRegistry($handlers),
             new JobHandlerAdapter($this->envelopes(), new TaskAuthorizationRouter($definitions)),
         );

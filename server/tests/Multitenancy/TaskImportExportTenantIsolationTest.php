@@ -227,7 +227,7 @@ SQL);
             app(\app\common\execution\CurrentExecutionContext::class),
             app(\app\common\service\org\AdminDirectoryQuery::class),
             app(\app\common\service\module\ModuleExecutionBoundary::class),
-            app(\app\common\service\CrontabCommandService::class),
+            app(\app\common\services\CrontabCommandService::class),
             static fn(string $command, array $params): never => throw new LogicException('unexpected crontab dispatch'),
             25,
         ),

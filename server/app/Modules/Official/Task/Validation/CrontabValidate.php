@@ -5,7 +5,7 @@ namespace app\Modules\Official\Task\Validation;
 
 use Cron\CronExpression;
 use think\Validate;
-use app\common\service\CrontabCommandService;
+use app\common\services\CrontabCommandService;
 
 class CrontabValidate extends Validate
 {

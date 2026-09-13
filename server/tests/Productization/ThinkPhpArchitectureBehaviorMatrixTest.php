@@ -475,7 +475,7 @@ cases = {
     ),
     "module_internal": (
         "server/app/Modules/Official/Task/Application/Probe.php",
-        "<?php\nuse app\\Modules\\Official\\Task\\Infrastructure\\Runtime\\PdoTaskJobRuntime;\n",
+        "<?php\nuse app\\Modules\\Official\\Task\\Infrastructure\\Runtime\\ThinkPhpTaskJobRuntime;\n",
     ),
     "application_console": (
         "server/app/adminapi/application/ConsoleProbe.php",

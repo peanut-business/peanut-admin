@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\crontab;
+namespace app\common\infrastructure\crontab;
 
 use PeanutAdmin\Kernel\Tenancy\PdoTenantLockStore;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;

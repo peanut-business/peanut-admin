@@ -7,7 +7,7 @@ use app\common\contract\audit\AuditResource;
 use app\common\service\audit\AuditContractHost;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\crontab\CrontabTenantLock;
+use app\common\infrastructure\crontab\CrontabTenantLock;
 use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
 use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;

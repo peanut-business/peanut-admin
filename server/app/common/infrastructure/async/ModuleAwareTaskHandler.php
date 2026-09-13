@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\async;
+namespace app\common\infrastructure\async;
 
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;

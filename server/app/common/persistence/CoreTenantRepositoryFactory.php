@@ -10,7 +10,7 @@ use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use PeanutAdmin\Kernel\Persistence\Tenancy\TenantPersistenceMode;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Settings\Persistence\SettingStore;
-use PeanutAdmin\TaskJob\Persistence\PdoTaskJobRepository;
+use PeanutAdmin\TaskJob\Persistence\TaskJobStore;
 use think\db\PDOConnection;
 
 /** The application composition root for Core repositories with Edition-shaped tenant storage. */
@@ -42,9 +42,13 @@ final readonly class CoreTenantRepositoryFactory
         return new SettingStore($connection, $this->mode, $this->instanceTenantId);
     }
 
-    public function taskJobs(): PdoTaskJobRepository
+    public function taskJobs(PDOConnection $connection): TaskJobStore
     {
-        return new PdoTaskJobRepository($this->pdo, $this->mode, $this->instanceTenantId);
+        if ($connection->connect() !== $this->pdo) {
+            throw new \RuntimeException('CORE_TASK_JOB_TRANSACTION_CONNECTION_MISMATCH');
+        }
+
+        return new TaskJobStore($connection, $this->mode, $this->instanceTenantId);
     }
 
     public function importExport(): PdoImportExportRepository

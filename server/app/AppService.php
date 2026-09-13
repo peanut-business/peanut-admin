@@ -37,7 +37,7 @@ use app\common\service\installation\InstallationExecutionHost;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\CoreServiceOverrides;
-use app\common\service\CrontabCommandService;
+use app\common\services\CrontabCommandService;
 use app\common\service\DemoAccountPolicy;
 use app\common\service\FileService;
 use app\common\service\ProductAssetReferenceService;

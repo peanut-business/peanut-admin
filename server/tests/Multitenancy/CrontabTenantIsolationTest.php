@@ -215,7 +215,7 @@ SQL);
         app(\app\common\execution\CurrentExecutionContext::class),
         app(\app\common\service\org\AdminDirectoryQuery::class),
         app(\app\common\service\module\ModuleExecutionBoundary::class),
-        app(\app\common\service\CrontabCommandService::class),
+        app(\app\common\services\CrontabCommandService::class),
         $dispatch,
         25,
     );
@@ -332,7 +332,7 @@ SQL)->fetchAll();
     );
     $schedulerSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Application/CrontabSchedulerService.php');
     $commandSource = (string)file_get_contents($serverRoot . '/app/command/Crontab.php');
-    $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php');
+    $runtimeSource = (string)file_get_contents($serverRoot . '/app/Modules/Official/Task/Infrastructure/Runtime/ThinkPhpTaskJobRuntime.php');
     expectCrontabTenant(
         !str_contains($schedulerSource, 'Console::call')
             && !str_contains($commandSource, 'Console::call')

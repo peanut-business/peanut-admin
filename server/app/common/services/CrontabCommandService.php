@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service;
+namespace app\common\services;
 
 /** 定时任务只允许调用显式注册且非调度器自身的控制台命令。 */
 class CrontabCommandService

@@ -1272,14 +1272,14 @@
         "server/app/Modules/Official/Task/Application/CrontabApplicationService.php",
         "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php",
         "server/app/Modules/Official/Task/Application/CrontabTaskDefinition.php",
-        "server/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php",
+        "server/app/Modules/Official/Task/Infrastructure/Runtime/ThinkPhpTaskJobRuntime.php",
         "server/app/Modules/Official/Task/Application/TaskAuthorizationRouter.php",
         "server/app/Modules/Official/Task/Application/TaskSchedulerService.php",
         "server/app/Modules/Official/Task/Contracts/TaskJobRuntime.php",
         "server/app/Modules/Official/Task/Contracts/TaskScheduler.php",
         "server/app/Modules/Official/Task/Contracts/TaskWorkerDefinition.php",
         "server/app/Modules/Official/Task/Infrastructure/Persistence/CrontabTenantRepository.php",
-        "server/app/common/service/async/ModuleAwareTaskHandler.php",
+        "server/app/common/infrastructure/async/ModuleAwareTaskHandler.php",
         "server/app/command/TenantTaskWorker.php"
       ],
       "actual_callers": [
@@ -1294,14 +1294,14 @@
         "policy": "Task 只拥有调度和执行事实；业务 payload/handler 由提交 Module 拥有"
       },
       "dependencies": ["PA-SVC-MODULE-GOVERNANCE", "PA-SVC-AUDIT", "Admin authorization"],
-      "current_issue": "Task Runtime、scheduler、Module/授权复核、幂等和结果下载隔离已合入 dev；原子失败注入因登记账号缺少 SUPER 明确 skipped。",
+      "current_issue": "Task Runtime 正在 3.1.1 收敛切片中改用 ThinkPHP PDOConnection/TransactionManager；lease、retry、cancel、Module/授权复核、幂等和结果下载隔离边界保持不变，动态资格尚待固定提交与登记资源验收。",
       "recommended_boundary": "TaskJobRuntime、TaskScheduler 和 TaskWorkerDefinition；执行前统一复核 Module 与授权 revision",
       "delivery": {
-        "readiness": "complete",
+        "readiness": "in_progress",
         "can_start_dedicated_thread_now": false,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "已合入 dev；后续异步业务继续消费 Task Runtime"
+        "recommended_next_action": "完成固定提交上的 Task 动态资格，再由异步业务消费统一 Task Runtime"
       }
     },
     {
