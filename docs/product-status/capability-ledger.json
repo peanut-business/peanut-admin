@@ -801,7 +801,7 @@
         },
         {
           "kind": "document",
-          "ref": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-architecture-v3.3.md"
+          "ref": "docs/scaffold-upgrade.md"
         }
       ],
       "dependencies": [
