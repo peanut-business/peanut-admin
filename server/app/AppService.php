@@ -20,6 +20,7 @@ use app\common\contract\AdminPermissionPolicy;
 use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
+use app\common\contract\module\ModuleQualificationQuery;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\external\ThinkPhpExternalTenantAudit;
 use app\common\execution\CurrentExecutionContext;
@@ -60,10 +61,9 @@ use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
 use app\common\validate\InputValidator;
-use app\platform\invitation\PlatformInvitationRuntimeFactory;
-use app\platform\invitation\TenantOwnerInvitationAdminService;
-use app\platform\invitation\TenantOwnerInvitationPublicService;
-use app\platform\query\PlatformControlPlaneQueryService;
+use app\platform\invitation\OwnerInvitationDeliveryPort;
+use app\platform\invitation\OwnerInvitationRuntimePolicy;
+use app\platform\invitation\UnavailableOwnerInvitationDeliveryPort;
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\PlatformRuntimeFactory;
 use app\platform\service\PlatformTenantQueryService;
@@ -91,17 +91,24 @@ use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
+use PeanutAdmin\Kernel\Identity\IdentityRepository;
+use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
 use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantAudit;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
+use PeanutAdmin\Kernel\Membership\MembershipRepository;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantRepository;
 use PeanutAdmin\Settings\Persistence\SettingStore;
 use app\common\persistence\CoreTenantRepositoryFactory;
 
@@ -132,6 +139,16 @@ class AppService extends Service
         $this->app->bind(TransactionManager::class, fn(): TransactionManager => new ThinkPhpTransactionManager(
             $this->app->make(PDOConnection::class),
         ));
+        $this->app->bind(IdentityRepository::class, fn(): IdentityRepository => new PdoIdentityRepository(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(MembershipRepository::class, fn(): MembershipRepository => new PdoMembershipRepository(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(TenantRepository::class, fn(): TenantRepository => new PdoTenantRepository(
+            $this->app->make(PDO::class),
+        ));
+        $this->app->bind(PasswordHasher::class, fn(): PasswordHasher => ApplicationPasswordPolicy::hasher());
         $this->app->bind(SettingStore::class, fn(): SettingStore => (new CoreTenantRepositoryFactory(
             $this->app->make(PDO::class),
         ))->settings($this->app->make(PDOConnection::class)));
@@ -302,6 +319,12 @@ class AppService extends Service
             TenantApplicationBootstrapPersistence::class,
             ThinkPhpTenantApplicationBootstrapPersistence::class,
         );
+        $this->app->bind(OwnerInvitationDeliveryPort::class, UnavailableOwnerInvitationDeliveryPort::class);
+        $this->app->bind(OwnerInvitationRuntimePolicy::class, fn(): OwnerInvitationRuntimePolicy =>
+            OwnerInvitationRuntimePolicy::fromEnvironment(
+                (string)env('APP_ENV', ''),
+                (string)Config::get('platform_invitation.delivery_mode', 'auto'),
+            ));
         $this->app->bind(DefaultTenantContextResolver::class, fn(): DefaultTenantContextResolver => new DefaultTenantContextResolver(
             $this->app->make(PDO::class),
         ));
@@ -388,15 +411,6 @@ class AppService extends Service
         $this->app->bind(PlatformModuleRuntimeService::class, fn(): PlatformModuleRuntimeService => $this->app
             ->make(PlatformRuntimeFactory::class)
             ->moduleRuntime());
-        $this->app->bind(TenantOwnerInvitationAdminService::class, fn(): TenantOwnerInvitationAdminService => $this->app
-            ->make(PlatformInvitationRuntimeFactory::class)
-            ->invitations());
-        $this->app->bind(TenantOwnerInvitationPublicService::class, fn(): TenantOwnerInvitationPublicService => $this->app
-            ->make(PlatformInvitationRuntimeFactory::class)
-            ->publicInvitations());
-        $this->app->bind(PlatformControlPlaneQueryService::class, fn(): PlatformControlPlaneQueryService => $this->app
-            ->make(PlatformInvitationRuntimeFactory::class)
-            ->queries());
         $this->app->bind(PlatformOpsRuntimeFactory::class, function (): PlatformOpsRuntimeFactory {
             $moduleConfig = Config::get('modules', []);
             if (!is_array($moduleConfig)) {
@@ -422,6 +436,9 @@ class AppService extends Service
         $this->app->bind(PdoModuleGovernanceProvider::class, fn(): PdoModuleGovernanceProvider => $this->app
             ->make(PlatformOpsRuntimeFactory::class)
             ->moduleGovernance());
+        $this->app->bind(ModuleQualificationQuery::class, fn(): ModuleQualificationQuery => $this->app
+            ->make(PdoModuleGovernanceProvider::class)
+            ->qualification());
         $this->app->bind(ApplicationRuntimeStatusProvider::class, fn(): ApplicationRuntimeStatusProvider => $this->app
             ->make(PlatformOpsRuntimeFactory::class)
             ->runtimeStatusProvider());

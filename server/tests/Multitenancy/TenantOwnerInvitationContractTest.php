@@ -144,7 +144,7 @@ ownerInvitationExpect(
     'acceptance does not activate and authorize the owner membership'
 );
 ownerInvitationExpect(
-    str_contains($publicService, 'appendTenantSystem'),
+    str_contains($publicService, 'recordTenantSystem'),
     'acceptance does not append a Core audit event'
 );
 $memberAdmin = (string)file_get_contents(

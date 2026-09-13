@@ -4816,7 +4816,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c80c8cdc80e65faf05af4de89b7454f58f090f5e441fb5bb99f877cd5e4b7e1e"
+            "source_sha256": "4bcee3f6ea060ab867f687931f8acafbfa17d521bcef1c3c0acfe6b6ba00fbf4"
         },
         {
             "path": "server/app/BaseController.php",
@@ -14234,18 +14234,6 @@
             "source_sha256": "4e80276b3895f77053bd4b0dd36b471e0d6024453a2f0227b3a9a3d92a1f7d9d"
         },
         {
-            "path": "server/app/platform/invitation/PlatformInvitationRuntimeFactory.php",
-            "target": "server/app/platform/invitation/PlatformInvitationRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "5db5bd5ba195f5a3ff2ebeaf63dda9a0cd2257fbec2b031a4b7a247d8e42f85f"
-        },
-        {
             "path": "server/app/platform/invitation/TenantOwnerInvitationAdminService.php",
             "target": "server/app/platform/invitation/TenantOwnerInvitationAdminService.php",
             "classification": "app-owned",
@@ -14255,7 +14243,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5e159280c197c41035f79b129c816ba5eb20238727dc3d75334db18f5ab8a762"
+            "source_sha256": "d5481e753fc937834dce21915906f19365d645e3ee3f87be366abc6757878a0c"
         },
         {
             "path": "server/app/platform/invitation/TenantOwnerInvitationException.php",
@@ -14279,7 +14267,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "6387427f4954b8ef71d8c3ecd2a01506a71ecab48b060e7b9dc78775b491c69d"
+            "source_sha256": "75a65202c0698059b2581226e28ebc87d7ba7d8a6f94e064571a31706a380c93"
         },
         {
             "path": "server/app/platform/invitation/UnavailableOwnerInvitationDeliveryPort.php",

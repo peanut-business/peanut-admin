@@ -12,12 +12,11 @@ use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Identity\AccountStatus;
 use PeanutAdmin\Kernel\Identity\CredentialStatus;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
+use PeanutAdmin\Kernel\Identity\IdentityRepository;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Membership\MembershipRepository;
 use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 final class TenantOwnerInvitationPublicService
@@ -26,8 +25,8 @@ final class TenantOwnerInvitationPublicService
 
     public function __construct(
         private readonly PDO $pdo,
-        private readonly PdoTransactionManager $transactions,
-        private readonly PdoIdentityRepository $identity,
+        private readonly TransactionManager $transactions,
+        private readonly IdentityRepository $identity,
         private readonly MembershipRepository $memberships,
         private readonly ApplicationTenantBootstrapService $applicationBootstrap,
         private readonly AuditContractHost $audit,

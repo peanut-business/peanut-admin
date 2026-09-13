@@ -13,9 +13,8 @@ use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
 use PeanutAdmin\Kernel\Membership\MembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\Kernel\Tenancy\TenantRepository;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 final class TenantOwnerInvitationAdminService
@@ -26,8 +25,8 @@ final class TenantOwnerInvitationAdminService
 
     public function __construct(
         private readonly PDO $pdo,
-        private readonly PdoTransactionManager $transactions,
-        private readonly PdoTenantRepository $tenants,
+        private readonly TransactionManager $transactions,
+        private readonly TenantRepository $tenants,
         private readonly MembershipRepository $memberships,
         private readonly PlatformOperatorSessionService $sessions,
         private readonly OwnerInvitationDeliveryPort $delivery,
