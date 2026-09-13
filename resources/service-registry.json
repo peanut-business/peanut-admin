@@ -846,7 +846,7 @@
         "把系统参考码改成 Tenant 可写数据"
       ],
       "current_implementation": [
-        "server/app/common/service/dict/DictionaryRuntimeFactory.php",
+        "server/app/common/service/dict/DictionaryRuntime.php",
         "server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php",
         "server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php"
       ],

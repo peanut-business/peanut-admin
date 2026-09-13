@@ -12129,21 +12129,6 @@
             "source_sha256": "095d1de08a2c47cbcb3f3455878ea8fb78dd6be63eb5552b5cef198aa5daaf6c"
         },
         {
-            "path": "server/app/common/service/dict/DictionaryRuntimeFactory.php",
-            "target": "server/app/common/service/dict/DictionaryRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "06452de7e9d826138f2cfd2b4502014bc8145790e8c4157def3defe87a503228",
-            "adapter_kind": "framework-adapter"
-        },
-        {
             "path": "server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php",
             "target": "server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php",
             "classification": "app-owned",

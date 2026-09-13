@@ -221,7 +221,6 @@ function adapterKind(string $path): ?string
         'server/app/common/service/external/ExternalTenantResolver.php' => 'deprecated-bridge',
         'server/app/common/service/tenant/ThinkPhpTenantCacheStore.php',
         'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
-        'server/app/common/service/dict/DictionaryRuntimeFactory.php',
         'server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',
         'server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php',
         'server/app/common/service/crontab/CrontabSchedulerService.php',
