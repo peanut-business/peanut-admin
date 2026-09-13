@@ -3099,5 +3099,40 @@
     ],
     "resource_execution": "No C10 database connection, lease claim, schema creation or provider operation was attempted. The current resource registry has no FileMedia scenario for this candidate; the only P1-ED01 dynamic resource permits TaskJob and ImportExport databases and its registered credential is already proven to lack CREATE/DROP privilege.",
     "resource_stop": "Do not reuse the historical Alpha.11 qualification allocation, widen the TaskJob/ImportExport resource, guess privileged credentials or perform live provider operations without the retained resource and provider Gates."
+  },
+  "stage5_c11_execution": {
+    "status": "development-source-implemented-dynamic-gate-blocked",
+    "issue_id": "S5-C11",
+    "core_commit": "e1ca91cb4f9b361b0f2822fb5ab1ecf12d098d94",
+    "core_tree": "2251100a704149a92aee7968576bc1d2c7d496b4",
+    "application_commit": "4bebefb4e31b7b9c41c934ab228fcc4a9dcb902d",
+    "application_tree": "c3d2f1057b509b0d301e184ab0a625fb5746964a",
+    "completed": [
+      "Core PdoPolicyRepository and PdoResourceOperationCatalog were replaced by PolicyStore and ResourceOperationStore on the caller-supplied ThinkPHP connection",
+      "department hierarchy and target-set membership providers now use ThinkPHP query APIs, and DataPolicyAdminService plus EffectiveAccessPreviewService receive TransactionManager instead of owning manual PDO transactions",
+      "DataPermissionRuntimeFactory and every Module Provider registration path now pass one ThinkPHP PDOConnection; only the explicitly sequenced C12 Kernel authorization and audit repositories temporarily receive its underlying PDO",
+      "all active controller, example, performance, Workflow and authorization acceptance consumers were migrated without aliases or compatibility paths",
+      "Application has no production DataPermission engine consumer; its existing native RBAC, TenantOwnedModel and TenantScope boundaries were retained and the service registry now records that deliberate boundary"
+    ],
+    "verified": [
+      "all affected Core PHP files linted and both repository diffs passed whitespace checks",
+      "focused Core DataPermission source PHPStan passed with no errors",
+      "DataPermission Unit passed 19 tests and 28 assertions",
+      "the no-resource collection run loaded 50 tests, passed the 19 Unit tests and reported 31 database tests skipped; the skips were retained as unqualified rather than promoted to pass",
+      "the focused test and fixture PHPStan rerun passed with no errors after correcting the two affected example/performance connection call sites",
+      "Application documentation governance and service-registry JSON uniqueness checks passed",
+      "old PdoPolicyRepository, PdoResourceOperationCatalog, PdoDepartmentHierarchyProvider and PdoTargetSetMembershipProvider names are absent from active non-historical source and callers"
+    ],
+    "failed": [
+      "the first test-side PHPStan command included WorkflowCapabilityCompositionTest and reported nine pre-existing findings outside the C11 lines plus two stale example/performance InstallWorkflow connection call sites; the affected call sites were corrected and the single narrowed rerun passed"
+    ],
+    "pending": [
+      "register an isolated DataPermission database target, credential or pre-provisioned schema contract before running Integration and AuthorizationPathParityTest with PEANUT_INTEGRATION=1",
+      "qualify fail-closed policy, target, constraint, concurrent revision and Tenant isolation behavior dynamically without skips",
+      "complete C12 Kernel Identity, Tenant, RBAC and final legacy exit before declaring Runtime convergence complete",
+      "qualify Standalone and Multi-tenant from one fixed 3.1.1 candidate"
+    ],
+    "resource_execution": "No C11 database connection, lease claim, schema creation or destructive operation was attempted. The current resource registry has no DataPermission scenario; the existing Core P1-ED01 allocation permits only TaskJob and ImportExport and its registered credential was already proven unable to create or drop the isolated databases required by this PHPUnit group.",
+    "resource_stop": "Do not reuse historical qualification databases, widen another domain allocation, guess privileged credentials or run the integration/security group until a current DataPermission resource and lease contract are registered."
   }
 }
