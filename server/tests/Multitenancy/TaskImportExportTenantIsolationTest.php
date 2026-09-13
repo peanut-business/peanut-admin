@@ -14,6 +14,8 @@ use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use think\db\PDOConnection;
+use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -177,6 +179,8 @@ SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
+    $connection = Db::connect();
+    expectAsyncTenant($connection instanceof PDOConnection, 'Task Runtime requires the registered ThinkPHP PDO connection');
 
     $alphaTenant = asyncTenantContext(101, 1001, 501, 'fresh-async-alpha-' . $runId);
     $betaTenant = asyncTenantContext(202, 1002, 502, 'fresh-async-beta-' . $runId);
@@ -221,7 +225,7 @@ SQL);
     $runtime = new TaskImportExportRuntime(
         $pdo,
         (new TaskModuleProvider())->jobs(
-            $pdo,
+            $connection,
             $signingKey,
             app(\app\common\execution\ExecutionContextStore::class),
             app(\app\common\execution\CurrentExecutionContext::class),

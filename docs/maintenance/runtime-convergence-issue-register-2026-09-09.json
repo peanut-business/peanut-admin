@@ -3006,5 +3006,38 @@
       "Standalone and Multi-tenant qualification from one fixed candidate"
     ],
     "resource_stop": "Do not run the B03 Notification MySQL harness until its three credential inputs resolve from an approved registered test resource and the exclusive lease is held."
+  },
+  "stage5_c08_execution": {
+    "status": "development-source-implemented-dynamic-gate-blocked",
+    "issue_id": "S5-C08",
+    "core_commit": "f9df1397d48a5a3a6a1aab4df969336c3fb8bdb3",
+    "application_commit": "1ae96a89",
+    "completed": [
+      "Core PdoTaskJobRepository replaced by injected ThinkPHP TaskJobStore",
+      "TaskJobService, TrustedJobPublisher and LocalWorker receive TransactionManager by constructor injection; claim, publish, cancel, retry and completion mutations use the same ThinkPHP connection transaction owner",
+      "Core Task HTTP, Notification worker/publisher and ImportExport composition share their caller-supplied ThinkPHP connection while preserving provider and handler work outside persistence transactions",
+      "Application official.task runtime now consumes the shared PDOConnection and derives its Store and transaction manager from that exact connection",
+      "CrontabCommandService, ModuleAwareTaskHandler and CrontabTenantLock moved to their approved services or infrastructure directories without compatibility aliases"
+    ],
+    "verified": [
+      "all affected Core and Application PHP files linted and both repository diffs passed whitespace checks",
+      "Core ServiceOverrideHostWiringTest passed 3 tests and 7 assertions",
+      "Application PluginModuleContractTest, OfficialCapabilityTenantQualificationTest and ThinkPhpArchitectureBehaviorMatrixTest passed",
+      "focused Core PHPStan first run exposed five concrete list/type/redundancy findings; one focused correction and the allowed rerun passed with no errors",
+      "old PdoTaskJobRepository and PdoTaskJobRuntime production source/call sites are absent",
+      "registered MySQL 8.4.10 container health check passed and the lease database was confirmed absent during the focused diagnostic"
+    ],
+    "failed": [
+      "the first TaskJob MySQL harness attempt reached the registered endpoint but the registered peanut_admin_development account was denied CREATE/DROP access to peanut_admin_core_c08a1_task_job with MySQL 1044",
+      "the pre/post absence probe in the same orchestration command initially failed because registry shell values were not exported; the focused diagnostic corrected only the probe and did not rerun the harness"
+    ],
+    "pending": [
+      "correct the registered Core TaskJob resource credential/grant contract and authorize a new dynamic failure-group run",
+      "run Application Crontab and Task/ImportExport Tenant isolation on their exact registered P0-E allocation",
+      "qualify lease, heartbeat, retry, dead-state recovery and context cleanup dynamically without skips",
+      "Standalone and Multi-tenant qualification from one fixed candidate"
+    ],
+    "resource_execution": "The task claimed s5-c08-task-job-c08a1 for the fixed Core commit and exact database, verified the registered MySQL container healthy, captured one read-only grant diagnostic, confirmed the database was absent and released the lease. No database was created or dropped.",
+    "resource_stop": "Do not rerun the TaskJob MySQL group, change grants, guess privileged credentials or reuse another database until the resource fact source is corrected and a new failure-group budget is authorized."
   }
 }

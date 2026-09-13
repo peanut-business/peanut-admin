@@ -15,6 +15,7 @@ use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
+use think\db\PDOConnection;
 use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -136,6 +137,8 @@ SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
+    $connection = Db::connect();
+    expectCrontabTenant($connection instanceof PDOConnection, 'Task Runtime requires the registered ThinkPHP PDO connection');
 
     $alpha = crontabTenantContext(101, 1001, 501, 'crontab-alpha-' . $runId);
     $beta = crontabTenantContext(202, 1002, 502, 'crontab-beta-' . $runId);
@@ -209,7 +212,7 @@ SQL);
     };
     $taskProvider = new TaskModuleProvider();
     $tasks = $taskProvider->jobs(
-        $pdo,
+        $connection,
         $signingKey,
         app(\app\common\execution\ExecutionContextStore::class),
         app(\app\common\execution\CurrentExecutionContext::class),
