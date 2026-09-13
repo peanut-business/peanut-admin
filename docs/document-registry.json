@@ -650,8 +650,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/docs/p0e-runtime-qualification.md",
         "locator": "## 固定资源",
-        "revision": "sha256:df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3",
-        "sha256": "df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3"
+        "revision": "sha256:1b2b7f1c1cee8062d4e9e4509cb475d753f3c1b08f5fc10c9621065724614673",
+        "sha256": "1b2b7f1c1cee8062d4e9e4509cb475d753f3c1b08f5fc10c9621065724614673"
       },
       "owner": "release-qualification",
       "source_span": "#固定资源",

@@ -147,8 +147,9 @@ screenshot/trace 写入该 run 的 output：
    不接受手工重排、缺项、额外项或archive未声明写集。
 5. 仍用 `UPGRADER` 运行 package `preflight` 并从stdout读取新普通升级 `plan_path`，再以此不同的instance内plan
    运行 `apply`、`verify`。按目标package locks安装Composer/npm依赖，然后严格运行
-   `php server/database/install.php --migrate --target-version=3.1.0 --dry-run`；确认pending集合后以相同
-   `--target-version=3.1.0`执行apply。记录application/instance/generation_source versions、migration ledger、
+   `php server/database/install.php --migrate --target-version=<target_release.version> --dry-run`；目标值必须由候选
+   `release-versions.json.scaffold_template` 解析并与升级矩阵的 `target_release.version` 一致，确认 pending 集合后以相同
+   `--target-version` 执行 apply。记录 application/instance/generation_source versions、migration ledger、
    定制/Module/secret摘要、Tenant/RBAC与步骤3业务主键读回。
 6. 采用恢复单独在metadata写入故障后用 `UPGRADER adoption-recover --plan=<adoption-plan>`，证明manifest/baseline
    回到采用前；普通升级恢复则在`apply`成功、`verify`前注入一次中断，用 `UPGRADER recover --plan=<upgrade-plan>`

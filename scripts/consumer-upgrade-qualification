@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "server/tests/fixtures/consumer-upgrade-qualification/matrix.json"
 REGISTRY = ROOT / "resources/project-resources.json"
+VERSIONS = ROOT / "release-versions.json"
 RESOURCE_ID = "peanut-admin-consumer-upgrade-mysql84-gate"
 ADMIN_TOOL_ID = "peanut-admin-consumer-upgrade-mysql84-remote-admin-cli"
 HTTP_RESOURCE_ID = "peanut-admin-local-production-preview-gateway"
@@ -85,7 +86,17 @@ def main() -> int:
         raise PlanError("candidate must be the checked-out exact HEAD")
     if git("status", "--porcelain=v1", "--untracked-files=all"):
         raise PlanError("candidate worktree must be clean")
-    fixture, registry = read_json(FIXTURE), read_json(REGISTRY)
+    fixture, registry, versions = read_json(FIXTURE), read_json(REGISTRY), read_json(VERSIONS)
+    target_version = versions.get("scaffold_template")
+    if (
+        versions.get("schema_version") != 2
+        or versions.get("protocol") != "peanut.release-versions.v2"
+        or versions.get("instance_version") is not None
+        or not isinstance(target_version, str)
+        or not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", target_version)
+        or any(versions.get(field) != target_version for field in ("source_product_version", "core_php", "core_web"))
+    ):
+        raise PlanError("candidate release version contract is invalid")
     databases = registry.get("resources", {}).get("databases", [])
     resource = unique_resource(databases, RESOURCE_ID, "database")
     admin_tool = unique_resource(registry.get("resources", {}).get("tooling", []), ADMIN_TOOL_ID, "tool")
@@ -110,7 +121,8 @@ def main() -> int:
     outer = fixture.get("outer_resources", {})
     if outer != {"administrative_tooling_resource_id": ADMIN_TOOL_ID, "http_listener_resource_id": HTTP_RESOURCE_ID, "http_port": 20190, "local_object_storage_resource_id": LOCAL_STORAGE_RESOURCE_ID, "local_object_prefix_template": "cr03/<run_id>/<scenario>/", "execution_order": "serial-by-scenario"}:
         raise PlanError("consumer-upgrade fixture outer resource plan is invalid")
-    if fixture.get("source_release", {}).get("version") != "3.0.14" or target.get("version") != "3.1.0" or target.get("minimum_source_version") != "3.0.14" or target.get("signing_resource_id") != "peanut-admin-edition-upgrade-release-signing-key" or target.get("signature_key_id") != "peanut-admin-release-2026-01":
+    source_version = fixture.get("source_release", {}).get("version")
+    if source_version != "3.0.14" or target.get("version") != target_version or target.get("minimum_source_version") != source_version or target.get("signing_resource_id") != "peanut-admin-edition-upgrade-release-signing-key" or target.get("signature_key_id") != "peanut-admin-release-2026-01":
         raise PlanError("formal source, target, or signing contract is invalid")
     for edition in ("standalone", "multi_tenant"):
         asset = fixture["source_release"].get("editions", {}).get(edition, {})
@@ -155,7 +167,7 @@ def main() -> int:
         database = names[scenario]
         instance = instance_roots[scenario]
         backup = backup_roots[scenario]
-        package = f"<exact-signed-3.1.0-{data['edition']}-package>"
+        package = f"<exact-signed-{target_version}-{data['edition']}-package>"
         upgrader = f"{package}/upgrader/scripts/scaffold-upgrade"
         adoption_plan = instance / ".peanut/upgrades/plans/<adoption-plan_path-from-stdout>"
         upgrade_plan = instance / ".peanut/upgrades/plans/<upgrade-plan_path-from-stdout>"
@@ -180,7 +192,7 @@ def main() -> int:
             "service_type": "mysql", "version": "8.4.10", "database": database, "schema": "pa_ table prefix", "namespace": database,
             "upstream_endpoint": {"endpoint_id": instance_environment["PEANUT_DATABASE_ENDPOINT_ID"], "host": "192.168.192.2", "port": 20183, "consumers": ["host"], "network_scope": "private direct-link LAN"},
             "container_endpoint": {"endpoint_id": f"peanut-admin-cr03-{args.run_id}-{scenario}-mysql84-container", "host": "192.168.192.2", "port": 20183, "consumers": ["container"], "network_scope": "Docker Desktop direct route to private direct-link LAN"},
-            "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env", "data_source": "lease-owned synthetic formal-v3.0.14 Edition instance",
+            "credential_ref": "mac-14:/Users/xing/.config/peanut-admin/development-db.env", "data_source": f"lease-owned synthetic formal-v{source_version} Edition instance",
             "freshness_requirement": "exact database is absent before installation and remains bound to this scenario until cleanup", "health_check": "credential-backed ping, SELECT DATABASE(), then instance environment-guard.php --current",
             "fallback": "none", "lifecycle": "single fixed-candidate CR03 scenario", "cleanup_responsibility": "active CR03 lease owner drops only this exact database after evidence capture", "backup_responsibility": f"exact dump under {backup}",
         }
@@ -221,8 +233,8 @@ def main() -> int:
                 ["/opt/homebrew/bin/php", upgrader, "recover", f"--project-root={instance}", f"--plan={upgrade_plan}"],
             ],
             "migration_commands": [
-                ["/opt/homebrew/bin/php", str(instance / "server/database/install.php"), "--migrate", "--target-version=3.1.0", "--dry-run"],
-                ["/opt/homebrew/bin/php", str(instance / "server/database/install.php"), "--migrate", "--target-version=3.1.0"],
+                ["/opt/homebrew/bin/php", str(instance / "server/database/install.php"), "--migrate", f"--target-version={target_version}", "--dry-run"],
+                ["/opt/homebrew/bin/php", str(instance / "server/database/install.php"), "--migrate", f"--target-version={target_version}"],
             ],
             "recovery_pair": {"instance_archive": str(backup / "instance.tar"), "database_dump": str(backup / "database.sql"), "order": ["recover managed files with the distinct upgrade plan", "restore the exact instance archive", "restore the exact database dump", "read back business, Tenant, RBAC, Module and customization identities"]},
             "http_command": {"cwd": str(instance), "environment": {"HTTP_PORT": "20190"}, "argv": ["/usr/local/bin/docker", "compose", "--project-name", f"peanut-cr03-{args.run_id}-{scenario}", "--env-file", ".env", "--env-file", "server/.env.local-production-preview", "-f", "deploy/docker-compose.prod.yml", "up", "-d", "--build"]},
