@@ -22,6 +22,8 @@ Core 拥有产品无关机制及明示技术状态，但正式 PHP 运行时只�
 
 应用层沿用 ThinkPHP 原生 Model/Scope 构造注入；Core/Application 的正式数据边界同样收敛到 ThinkPHP，不为隔离 ThinkPHP 增加 Repository 或洋葱式包装。本轮必要的 Core 技术接口及应用宿主 adapter 属于跨仓合同装配，不是应用 persistence 镜像层。可信 Tenant 必须由宿主 HTTP 请求或 Worker 上下文建立，缺失时 fail-closed。
 
+本轮开发分支已经完成事务边界的第一步：Core `61287a9` 提供原生 `ThinkPhpTransactionManager`，Application `14ce7b1b` 在主组合根改为使用该实现。现存领域 PDO Repository 和直接 `PdoTransactionManager` 调用仍须按领域退出，因此这只是后续迁移的事务基础，不表示 Runtime 收敛、消费资格或 3.1.1 候选已经完成。
+
 ## 3. 存储驱动候选合同与仓库事实
 
 Core 在 `FileMedia\Storage` 提供低层 `StorageDriver`，只保留以下四个操作：

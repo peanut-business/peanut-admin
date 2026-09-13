@@ -16,7 +16,9 @@ Owner: `product-architecture`
 Application/Core采用ThinkPHP 8目标，应用使用原生Model/Scope构造注入；保留真实跨Module合同、ExecutionContext、Tenant/RBAC/Module生命周期及厂商SDK/Transport/Storage Driver。
 产品/Application/Core PHP/Web/双Edition必须同号，Module/Instance独立；具体身份以[版本ADR](../architecture/product-version-identity-adr.md)及实际版本输入为准。
 不重开已验收历史审计，不把29项或任何旧计数当范围上限。只对影响当前决定的缺口定向补证，禁止重新穷尽全部聊天。
-消费前必须项优先于内部架构队列；C02–C12的非消费阻塞部分保持原问题ID后置，不标完成、不自动扩大范围。
+本轮 3.1.1 先完成 Core 与 Application 对 ThinkPHP 已有能力的按领域收敛，再完成实际消费、安全与升级验收，随后冻结统一候选并协调 Application、Core PHP、Core Web 和两种 Edition 的同号交付。此前把相关收敛排到发布后的安排在这一顺序内失效；已发布的历史制品、标签和证据保持不变。
+
+每个领域在 Core 实现、Application 调用、服务目录和启动接线、旧路径退出及必要验证均闭合后才进入下一领域。保留真实跨 Module 合同、ExecutionContext、Tenant/RBAC、厂商 SDK 与 Storage Driver；不以形式统一删除业务语义。C02–C12 中与已选领域无关的事项仍以原问题 ID 后置，不标完成、不自动扩大范围。
 
 ## 2. 范围与真实停止条件
 
@@ -37,6 +39,8 @@ Application/Core采用ThinkPHP 8目标，应用使用原生Model/Scope构造注�
 | CR03四端与厂商 | 下表逐端保留实际页面/API、写后重读及截图/trace；真实厂商操作单列，不以配置成功冒称外部资格 |
 | CR03收口 | 回扣TENANT-001/PROVIDER-001/UX-VERIFY-001/DCS-CONSUMPTION-001/VERIFY-004及已确认范围；脱敏固定证据、剩余风险、实际清理/保留责任明确；独立验收后才交CR04 |
 | CR04正式交付 | 仅发布通过相应资格并获批准的确切源码/包/站点/部署身份；App Release与两Edition附件一致，Core先发布不代表产品完成；未获批准或未完成项保持明确状态 |
+
+本轮顺序为：先以真实调用填实一个 ThinkPHP 收敛领域并在两仓完成其闭包；再处理下一个已验证领域，直至本轮收敛范围闭合；之后修复消费与升级链路（含客户代码、配置、秘密、已安装 Module 和业务数据保护）、处理当前依赖安全告警，并运行对应的迁移读回和失败恢复；最后才为同一 3.1.1 产品身份冻结候选、执行双 Edition 安装/升级/隔离及四端/厂商资格，并提交人工 Gate 所需材料。C2 的 `ScaffoldManifest` 导入修复仅按私有控制状态中记录的单次失败组恢复额度执行，不改变本顺序或其他资格预算。
 
 正式旧源的版本、commit和四资产摘要从`consumer_delivery.cr02.handoff.formal_v3014_edition_assets`及不可变Release取得；不能用当前create-app或另一升级区间冒充。
 目标包从同一最终Application候选生成，使用登记的`peanut-admin-edition-upgrade-release-signing-key`；不复制临时key、不公开秘密、不替换已验证字节。

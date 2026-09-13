@@ -24,10 +24,10 @@
       "impact": "duplicate ThinkPHP connection and transaction boundary",
       "owner": "application-runtime",
       "historical_status": "open",
-    "historical_verification": "source reviewed; scanner rerun after the >1024-byte coverage fix",
+      "historical_verification": "source reviewed; scanner rerun after the >1024-byte coverage fix",
       "historical_ruling": "remove public PDO binding after domain migration",
-      "current_status": "pending-current-verification",
-      "classification": "historical-claim-pending-current-verification",
+      "current_status": "transaction-foundation-implemented-domain-exit-pending",
+      "classification": "current-partial-implementation",
       "effective_requirement": "Application 使用 ThinkPHP 数据与事务边界；领域原子迁移时删除旧公共 PDO 绑定。",
       "pending_decision": null,
       "related_issue_ids": [
@@ -35,8 +35,8 @@
         "RUNTIME-APP-003",
         "BOOTSTRAP-001"
       ],
-      "next_current_source_check": "Inspect the current Application composition root and transaction callers against the retained ADR; then run only affected domain checks if a change is approved.",
-      "source_limit": "沿用已有报告、保存回执和源码定位；本阶段未重读原始聊天或当前源码，未定位的原始记录不作为直接证据。",
+      "next_current_source_check": "Migrate and validate the next selected domain, then remove its direct PdoTransactionManager/PDO wiring without retaining a bridge.",
+      "source_limit": "2026-09-13 已核对当前 Application 组合根与直接事务调用者；Application 开发提交 14ce7b1b 只替换全局 TransactionManager 绑定，PDO::class 与领域直接调用仍在，不能据此关闭本问题。",
       "decision_refs": [
         "DEC-01",
         "DEC-02"
@@ -45,7 +45,7 @@
         "LESSON-03"
       ],
       "knowledge_refs": [],
-      "stage2_disposition": "要求与证据去向已裁定；实现/故障现状待阶段3，不据历史状态直接修复或跳过。",
+      "stage2_disposition": "事务基础已实施；领域 PDO 退出仍按真实调用逐域完成，本问题保持未关闭。",
       "proposed_write_set": [
         "server/app/AppService.php",
         "server/app/common/service/transaction/**",
@@ -175,16 +175,16 @@
       "historical_status": "open",
       "historical_verification": "not re-executed by this continuation",
       "historical_ruling": "replace public PDO persistence by domain ThinkPHP boundaries and delete old exports",
-      "current_status": "pending-current-verification",
-      "classification": "historical-claim-pending-current-verification",
+      "current_status": "transaction-foundation-implemented-domain-migration-pending",
+      "classification": "current-partial-implementation",
       "effective_requirement": "Core 正式依赖 ThinkPHP 8，不再以框架中立为目标；保留跨 Module 业务合同。",
       "pending_decision": null,
       "related_issue_ids": [
         "RUNTIME-CORE-002",
         "RELEASE-001"
       ],
-      "next_current_source_check": "Inspect the current Core package boundaries and exact candidate identity before claiming a persistence migration is required or complete.",
-      "source_limit": "沿用已有报告、保存回执和源码定位；本阶段未重读原始聊天或当前源码，未定位的原始记录不作为直接证据。",
+      "next_current_source_check": "Migrate and validate the next selected Core domain to native ThinkPHP persistence, then remove its old PDO exports and Application wiring as one slice.",
+      "source_limit": "2026-09-13 已核对当前 Core 包边界；Core 开发提交 61287a9 增加 ThinkORM 依赖与原生 ThinkPhpTransactionManager，但现存 PDO Repository 和直接事务调用仍未退出，不能据此关闭本问题或认定包已发布。",
       "decision_refs": [
         "DEC-01",
         "DEC-03"
@@ -193,7 +193,7 @@
         "LESSON-01"
       ],
       "knowledge_refs": [],
-      "stage2_disposition": "要求与证据去向已裁定；实现/故障现状待阶段3，不据历史状态直接修复或跳过。",
+      "stage2_disposition": "原生事务基础已实施；按领域迁移及旧 PDO export 退出仍未完成，本问题保持未关闭。",
       "proposed_write_set": [
         "peanut-admin-core/packages/php/<domain>",
         "peanut-admin-core/packages/php/composer manifests"
