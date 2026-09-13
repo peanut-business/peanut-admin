@@ -8,8 +8,7 @@ Owner: `product-architecture`
 
 Audience: `maintainer, architect, ai`
 
-Upstream: 官方产品文档、官方仓库、Peanut Admin 产品能力账本、产品闭环执行队列，以及
-Core/Application 所有权决定。
+Upstream: 官方产品文档、官方仓库、Peanut Admin 产品能力账本，以及 Core/Application 所有权决定。
 
 > 调研日期：2026-08-27。外部事实只采用官方文档或官方仓库；产品宣传中没有公开合同支撑的
 > 安装原子性、回滚、签名、沙箱和兼容承诺均保持“未知”，不按记忆补全。

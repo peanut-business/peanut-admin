@@ -527,7 +527,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "306a36a6ffd3f65c6377e9d13893a9c97f4cd818a8ca4860e5131b39414148f0"
+            "source_sha256": "227c7bc8ade319da2f761e83934481671d2e0c817a1b4e7b6e20bd5276600ca3"
         },
         {
             "path": "docs-site/.vitepress/theme/HomeTechVisual.vue",
@@ -612,18 +612,6 @@
                 "full"
             ],
             "source_sha256": "b032ec14a26a3e6c347f86f2593d62ea4744a4142f75bf13b34bd571a1a48eb2"
-        },
-        {
-            "path": "docs-site/architecture/module-execution-context.md",
-            "target": "docs-site/architecture/module-execution-context.md",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "docs-page",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "da0f6056cf28a9eefa8c2ae0a0820bf0a2f060893b17a3596cfd727e7f564701"
         },
         {
             "path": "docs-site/architecture/official-module-qualification.md",
@@ -1022,32 +1010,6 @@
             "source_sha256": "5e2d14fcab6e56ad428d6bda09c0e3d4c470ad49073ee366ee0f85006ac1c78a"
         },
         {
-            "path": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
-            "target": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/2026-08-05-core-packages-production-claude-review-prompt.md",
-            "target": "docs/2026-08-05-core-packages-production-claude-review-prompt.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/README.md",
             "target": "docs/README.md",
             "classification": "excluded",
@@ -1152,32 +1114,6 @@
             ]
         },
         {
-            "path": "docs/architecture/application-package-and-release-contract.md",
-            "target": "docs/architecture/application-package-and-release-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/cap06-private-downstream-adoption-contract.md",
-            "target": "docs/architecture/cap06-private-downstream-adoption-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/architecture/clean-native-multitenancy-baseline.md",
             "target": "docs/architecture/clean-native-multitenancy-baseline.md",
             "classification": "excluded",
@@ -1256,47 +1192,8 @@
             ]
         },
         {
-            "path": "docs/architecture/core_extraction_guide.md",
-            "target": "docs/architecture/core_extraction_guide.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/architecture/external-callback-tenant-routing-contract.md",
             "target": "docs/architecture/external-callback-tenant-routing-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/module-architecture-refinement-appendix.md",
-            "target": "docs/architecture/module-architecture-refinement-appendix.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/module-development-release-separation-plan.md",
-            "target": "docs/architecture/module-development-release-separation-plan.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -1334,58 +1231,6 @@
             ]
         },
         {
-            "path": "docs/architecture/mt02-article-tenant-ownership-contract.md",
-            "target": "docs/architecture/mt02-article-tenant-ownership-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/mt02-default-tenant-bootstrap-contract.md",
-            "target": "docs/architecture/mt02-default-tenant-bootstrap-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/mt03-nonsql-tenant-isolation-contract.md",
-            "target": "docs/architecture/mt03-nonsql-tenant-isolation-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/optimized-module-architecture-plan.md",
-            "target": "docs/architecture/optimized-module-architecture-plan.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/architecture/pb03-ownership-and-migration-gates.md",
             "target": "docs/architecture/pb03-ownership-and-migration-gates.md",
             "classification": "excluded",
@@ -1401,19 +1246,6 @@
         {
             "path": "docs/architecture/pb04-admin-rbac-crud-contract.md",
             "target": "docs/architecture/pb04-admin-rbac-crud-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/pb04-file-media-host-contract.md",
-            "target": "docs/architecture/pb04-file-media-host-contract.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -1466,19 +1298,6 @@
         {
             "path": "docs/architecture/pb04-task-import-export-host-contract.md",
             "target": "docs/architecture/pb04-task-import-export-host-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/architecture/pb04-website-settings-contract.md",
-            "target": "docs/architecture/pb04-website-settings-contract.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -1698,19 +1517,6 @@
             ]
         },
         {
-            "path": "docs/architecture/scaffold_core_extraction_analysis.md",
-            "target": "docs/architecture/scaffold_core_extraction_analysis.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/architecture/service-execution-status.md",
             "target": "docs/architecture/service-execution-status.md",
             "classification": "excluded",
@@ -1737,8 +1543,8 @@
             ]
         },
         {
-            "path": "docs/core-packages-release-status.md",
-            "target": "docs/core-packages-release-status.md",
+            "path": "docs/control-state.schema.json",
+            "target": "docs/control-state.schema.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2051,71 +1857,6 @@
         {
             "path": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.2-to-v3.3-claude-revision-prompt.md",
             "target": "docs/design/saas-roadmap/lifecycle/2026-07-25-lifecycle-v3.2-to-v3.3-claude-revision-prompt.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-24-peanut-application-lifecycle-and-upgrade-design.md",
-            "target": "docs/design/saas-roadmap/lifecycle/archive/2026-07-24-peanut-application-lifecycle-and-upgrade-design.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2-review.md",
-            "target": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2-review.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.1.md",
-            "target": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.1.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.2.md",
-            "target": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.2.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.md",
-            "target": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2686,19 +2427,6 @@
             ]
         },
         {
-            "path": "docs/likeadmin-material-contract.md",
-            "target": "docs/likeadmin-material-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/likeadmin-module-contract-index.md",
             "target": "docs/likeadmin-module-contract-index.md",
             "classification": "excluded",
@@ -2714,19 +2442,6 @@
         {
             "path": "docs/likeadmin-notice-contract.md",
             "target": "docs/likeadmin-notice-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/likeadmin-parity-plan.md",
-            "target": "docs/likeadmin-parity-plan.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2766,19 +2481,6 @@
         {
             "path": "docs/likeadmin-system-settings-contract.md",
             "target": "docs/likeadmin-system-settings-contract.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/likeadmin-system-tools-contract.md",
-            "target": "docs/likeadmin-system-tools-contract.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -2972,34 +2674,8 @@
             ]
         },
         {
-            "path": "docs/module-architecture-completion-report.md",
-            "target": "docs/module-architecture-completion-report.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/module-development-guide.md",
             "target": "docs/module-development-guide.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/operations/business-flow-audit-2026-08-21.md",
-            "target": "docs/operations/business-flow-audit-2026-08-21.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3063,34 +2739,8 @@
             ]
         },
         {
-            "path": "docs/operations/release-candidate-control.md",
-            "target": "docs/operations/release-candidate-control.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/p0e-runtime-qualification.md",
             "target": "docs/p0e-runtime-qualification.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/packaging-validation-report.md",
-            "target": "docs/packaging-validation-report.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3209,19 +2859,6 @@
             ]
         },
         {
-            "path": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
-            "target": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/plans/multi-tenancy-platform-management-plan.md",
             "target": "docs/plans/multi-tenancy-platform-management-plan.md",
             "classification": "excluded",
@@ -3237,19 +2874,6 @@
         {
             "path": "docs/plans/post-release-enhancement-plan.md",
             "target": "docs/plans/post-release-enhancement-plan.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/plans/product-closure-execution-queue.md",
-            "target": "docs/plans/product-closure-execution-queue.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3316,19 +2940,6 @@
         {
             "path": "docs/product-status/README.md",
             "target": "docs/product-status/README.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/product-status/acceptance-gates.md",
-            "target": "docs/product-status/acceptance-gates.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3483,32 +3094,6 @@
             ]
         },
         {
-            "path": "docs/product-status/current-task-list.md",
-            "target": "docs/product-status/current-task-list.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/product-status/deferred-scope.md",
-            "target": "docs/product-status/deferred-scope.md",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
             "path": "docs/product-status/deployments/v2.0.1-online-experience.json",
             "target": "docs/product-status/deployments/v2.0.1-online-experience.json",
             "classification": "excluded",
@@ -3589,19 +3174,6 @@
         {
             "path": "docs/product-status/deployments/v3.0.5-online-experience.json",
             "target": "docs/product-status/deployments/v3.0.5-online-experience.json",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "docs/product-status/evidence-guide.md",
-            "target": "docs/product-status/evidence-guide.md",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -3888,6 +3460,19 @@
         {
             "path": "docs/release-engineering.md",
             "target": "docs/release-engineering.md",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": "docs/rule-metadata.schema.json",
+            "target": "docs/rule-metadata.schema.json",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",
@@ -5170,7 +4755,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2003347eb4d8f5ca3e20a16e18e819e230569ed8a1e2615d96736e9e2c21eec4"
+            "source_sha256": "82f048be75ab459904e42d296d29c6490628d4e9d6c83898919a2532df61691f"
         },
         {
             "path": "scripts/generate-all-modules-packaging-evidence",

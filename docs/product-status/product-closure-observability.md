@@ -8,11 +8,10 @@ Owner: `product-architecture`
 
 Audience: `maintainer, architect, ai`
 
-Upstream: [`产品闭环执行任务队列`](../plans/product-closure-execution-queue.md)、产品能力账本、
+Upstream: [`产品闭环所有权与 Core 采用决定`](../architecture/product-closure-ownership-and-adoption.md)、产品能力账本、
 固定提交、PR 和已完成最低验证。
 
 > - 更新时间：2026-08-28
-> - 执行队列：[`../plans/product-closure-execution-queue.md`](../plans/product-closure-execution-queue.md)
 > - 所有权决定：[`../architecture/product-closure-ownership-and-adoption.md`](../architecture/product-closure-ownership-and-adoption.md)
 > - 产品能力唯一事实源：[`capability-ledger.json`](capability-ledger.json)
 

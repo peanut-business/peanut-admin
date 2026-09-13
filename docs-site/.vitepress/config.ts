@@ -44,7 +44,6 @@ const reference = [
 export default defineConfig({
   srcExclude: [
     'architecture/identity-and-tenancy.md',
-    'architecture/module-execution-context.md',
     'architecture/official-module-qualification.md',
   ],
   lang: 'zh-CN',

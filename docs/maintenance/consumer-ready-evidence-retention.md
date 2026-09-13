@@ -108,18 +108,16 @@ git restore --source=501c7db2e8507fe09f13ec85b03da70eadeef777 -- \
 稳定 ID、精确路径、删除基线和恢复命令由本清单与 Git 历史共同保留。历史
 `scaffold/releases/**` 保持不可变，CR23 不回写任何已发布制品。
 
-### 5.2 归档但保留
+### 5.2 归档、保留与清理
 
-三份正文已明确完成的计划只把 registry 状态从 `planned` 收敛为 `archived`，文件和入站引用保留：
+已完成计划只有在仍被固定 Release、scaffold、资格、代码消费者或当前 canonical 页面直接引用时才保留；
+`docs/productization-baseline-plan.md` 属于该集合。其余已被现有决定、账本、manifest 或审计完整替代的
+历史任务书、过渡设计和旧审核材料从工作树删除，并连同 registry 和生成 inventory 同步收敛；普通 Git
+历史继续保存原文，不建立第二套归档。
 
-- `docs/likeadmin-parity-plan.md`
-- `docs/productization-baseline-plan.md`
-- `docs/plans/product-closure-execution-queue.md`
-
-其余 55 个 `planned` 项继续表示 active consumer-ready、跨项目路线、完整 SaaS 暂缓或仍有效的
-未来设计输入；不在 CR23 猜测其 owner 决定。删除后 registry 保留 67 个 `archived` 物理文件，
-包括 PB/MT/LikeAdmin 合同、资格/审计证据、早期 lifecycle 迭代和 4 个 CR01 范围外的 docs-site
-架构/演示页面。它们仍提供不可变上下文，没有逐路径零价值证据，因此不删除。
+其余 `planned` 项继续表示 active consumer-ready、跨项目路线、完整 SaaS 暂缓或仍有效的未来设计输入；
+不在本次清理中猜测其 owner 决定。保留的 archived 物理文件只承载不可变 Release/scaffold/资格/代码消费
+所需的上下文；删除判定逐路径核对替代来源与消费者，而非依据目录或年份。
 
 `scripts/scaffold-doctor` 继续保留：它属于 current inventory 的 `managed` 集合，且 v3.0.0—v3.0.9
 历史 manifest/制品仍登记该路径；在新 seal 前移除会破坏既有 adoption managed-set 等价。

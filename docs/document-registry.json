@@ -52,12 +52,28 @@
       "scope": {
         "repository": "peanut-admin",
         "subject": "rule-authority-and-product-identity",
-        "modes": ["review", "development", "qualification", "release", "instance"],
-        "actions": ["resolve-authority", "resolve-version-identity"],
-        "exclusions": ["runtime-resource-health", "qualification-result", "publication-approval"]
+        "modes": [
+          "review",
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "resolve-authority",
+          "resolve-version-identity"
+        ],
+        "exclusions": [
+          "runtime-resource-health",
+          "qualification-result",
+          "publication-approval"
+        ]
       },
       "status": "active",
-      "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"},
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
       "supersedes": [],
       "source": {
         "kind": "repository-file",
@@ -70,11 +86,20 @@
       "source_span": "#rule-priority",
       "validation": "./scripts/docs-governance check --rules",
       "normative_sources": [
-        {"kind": "document", "target": "pa-docs-product-version-identity-adr"}
+        {
+          "kind": "document",
+          "target": "pa-docs-product-version-identity-adr"
+        }
       ],
       "observes": [
-        {"kind": "path", "target": "release-versions.json"},
-        {"kind": "path", "target": "RELEASE_METADATA.json"}
+        {
+          "kind": "path",
+          "target": "release-versions.json"
+        },
+        {
+          "kind": "path",
+          "target": "RELEASE_METADATA.json"
+        }
       ],
       "historical_sources": []
     },
@@ -90,12 +115,27 @@
       "scope": {
         "repository": "peanut-admin",
         "subject": "private-control-state",
-        "modes": ["development", "qualification", "release"],
-        "actions": ["dispatch", "resume", "write-control-state"],
-        "exclusions": ["ordinary-clone", "resource-lease-ownership", "candidate-lock-mutation"]
+        "modes": [
+          "development",
+          "qualification",
+          "release"
+        ],
+        "actions": [
+          "dispatch",
+          "resume",
+          "write-control-state"
+        ],
+        "exclusions": [
+          "ordinary-clone",
+          "resource-lease-ownership",
+          "candidate-lock-mutation"
+        ]
       },
       "status": "active",
-      "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"},
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
       "supersedes": [],
       "source": {
         "kind": "repository-file",
@@ -110,7 +150,11 @@
       "normative_sources": [],
       "observes": [],
       "historical_sources": [
-        {"kind": "external", "target": "sealed historical control evidence", "revision": "f1a7b0fadfc0577459100c5b9e766540c5e5e52b4e4947da63216872c9694ae7"}
+        {
+          "kind": "external",
+          "target": "sealed historical control evidence",
+          "revision": "f1a7b0fadfc0577459100c5b9e766540c5e5e52b4e4947da63216872c9694ae7"
+        }
       ]
     },
     {
@@ -125,12 +169,28 @@
       "scope": {
         "repository": "peanut-admin",
         "subject": "bootstrap-and-rule-routing",
-        "modes": ["review", "development", "qualification", "release", "instance"],
-        "actions": ["load-rules", "validate-rules", "handoff-minimal-context"],
-        "exclusions": ["model-executed-hashing", "historical-work-dispatch"]
+        "modes": [
+          "review",
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "load-rules",
+          "validate-rules",
+          "handoff-minimal-context"
+        ],
+        "exclusions": [
+          "model-executed-hashing",
+          "historical-work-dispatch"
+        ]
       },
       "status": "active",
-      "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"},
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
       "supersedes": [],
       "source": {
         "kind": "repository-file",
@@ -144,114 +204,667 @@
       "validation": "./scripts/docs-governance check --rules",
       "normative_sources": [],
       "observes": [
-        {"kind": "path", "target": "docs/control-state.schema.json"},
-        {"kind": "path", "target": "docs/rule-metadata.schema.json"}
+        {
+          "kind": "path",
+          "target": "docs/control-state.schema.json"
+        },
+        {
+          "kind": "path",
+          "target": "docs/rule-metadata.schema.json"
+        }
       ],
       "historical_sources": []
     },
     {
-      "id": "pa.authorization-boundaries", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "authorization-and-risk-boundaries", "modes": ["review", "development", "qualification", "release", "instance"], "actions": ["authorize-scoped-work", "stop-unknown-side-effect"], "exclusions": ["new-business-scope", "destructive-production-data", "history-rewrite"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "## 2. 授权、风险和停止线", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "application-maintainers", "source_span": "§2", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+      "id": "pa.authorization-boundaries",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "application-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "authorization-and-risk-boundaries",
+        "modes": [
+          "review",
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "authorize-scoped-work",
+          "stop-unknown-side-effect"
+        ],
+        "exclusions": [
+          "new-business-scope",
+          "destructive-production-data",
+          "history-rewrite"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "## 2. 授权、风险和停止线",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "§2",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": []
     },
     {
-      "id": "pa.development-migration-authorization", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "user-default", "issuer": "user", "decision_ref": "AGENT_EXECUTION_RULES.md#development-migration-authorization"},
-      "scope": {"repository": "peanut-admin", "subject": "development-database-migration", "modes": ["development"], "actions": ["dry-run-registered-migration", "apply-registered-migration"], "exclusions": ["qualification", "release", "production", "destructive-migration"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 2.1 高速开发期 development 数据库迁移临时授权", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "application-maintainers", "source_span": "§2.1", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/project-resources.json"}], "historical_sources": []
+      "id": "pa.development-migration-authorization",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "user-default",
+        "issuer": "user",
+        "decision_ref": "AGENT_EXECUTION_RULES.md#development-migration-authorization"
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "development-database-migration",
+        "modes": [
+          "development"
+        ],
+        "actions": [
+          "dry-run-registered-migration",
+          "apply-registered-migration"
+        ],
+        "exclusions": [
+          "qualification",
+          "release",
+          "production",
+          "destructive-migration"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "### 2.1 高速开发期 development 数据库迁移临时授权",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "§2.1",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [
+        {
+          "kind": "path",
+          "target": "resources/project-resources.json"
+        }
+      ],
+      "historical_sources": []
     },
     {
-      "id": "pa.failure-budget", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "failure-budget-and-verification", "modes": ["development", "qualification", "release"], "actions": ["diagnose-failure", "rerun-failed-group"], "exclusions": ["budget-reset-by-agent", "weaken-assertion"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "## 4. 验证与状态更新", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "application-maintainers", "source_span": "§4", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+      "id": "pa.failure-budget",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "application-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "failure-budget-and-verification",
+        "modes": [
+          "development",
+          "qualification",
+          "release"
+        ],
+        "actions": [
+          "diagnose-failure",
+          "rerun-failed-group"
+        ],
+        "exclusions": [
+          "budget-reset-by-agent",
+          "weaken-assertion"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "## 4. 验证与状态更新",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "§4",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": []
     },
     {
-      "id": "pa.git-and-resource-lease", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "git-delivery-and-resource-lease", "modes": ["development", "qualification", "release"], "actions": ["integrate-dev", "claim-runtime-resource", "release-runtime-resource"], "exclusions": ["dev-to-main-without-pr", "unregistered-resource", "shared-history-rewrite"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 5.1 本地批处理、资源租约与远程推送门禁", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "application-maintainers", "source_span": "§5.1", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/project-resources.json"}], "historical_sources": []
+      "id": "pa.git-and-resource-lease",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "application-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "git-delivery-and-resource-lease",
+        "modes": [
+          "development",
+          "qualification",
+          "release"
+        ],
+        "actions": [
+          "integrate-dev",
+          "claim-runtime-resource",
+          "release-runtime-resource"
+        ],
+        "exclusions": [
+          "dev-to-main-without-pr",
+          "unregistered-resource",
+          "shared-history-rewrite"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "### 5.1 本地批处理、资源租约与远程推送门禁",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "§5.1",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [
+        {
+          "kind": "path",
+          "target": "resources/project-resources.json"
+        }
+      ],
+      "historical_sources": []
     },
     {
-      "id": "pa.runtime-safety-boundaries", "revision": 1, "kind": "product-contract",
-      "authority": {"kind": "product-contract", "issuer": "product-architecture", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "tenant-source-upgrade-and-external-boundaries", "modes": ["development", "qualification", "release", "instance"], "actions": ["change-runtime", "change-upgrade-path"], "exclusions": ["manual-tenant-filter", "customer-code-overwrite", "external-system-runtime"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 6.2 租户隔离、单事实源与平滑升级长效红线", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "product-architecture", "source_span": "§6.2", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+      "id": "pa.runtime-safety-boundaries",
+      "revision": 1,
+      "kind": "product-contract",
+      "authority": {
+        "kind": "product-contract",
+        "issuer": "product-architecture",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "tenant-source-upgrade-and-external-boundaries",
+        "modes": [
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "change-runtime",
+          "change-upgrade-path"
+        ],
+        "exclusions": [
+          "manual-tenant-filter",
+          "customer-code-overwrite",
+          "external-system-runtime"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "### 6.2 租户隔离、单事实源与平滑升级长效红线",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "product-architecture",
+      "source_span": "§6.2",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": []
     },
     {
-      "id": "pa.fixed-candidate-qualification", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "project-policy", "issuer": "release-qualification", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "fixed-candidate-qualification-and-release", "modes": ["qualification", "release"], "actions": ["seal-candidate", "qualify-candidate", "publish-release"], "exclusions": ["development-debugging", "mutable-candidate", "qualification-inheritance"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 7.2 固定候选冻结与封存顺序", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "release-qualification", "source_span": "§7.2", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "server/tests/fixtures/p0e-runtime-qualification/matrix.json"}], "historical_sources": []
+      "id": "pa.fixed-candidate-qualification",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "release-qualification",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "fixed-candidate-qualification-and-release",
+        "modes": [
+          "qualification",
+          "release"
+        ],
+        "actions": [
+          "seal-candidate",
+          "qualify-candidate",
+          "publish-release"
+        ],
+        "exclusions": [
+          "development-debugging",
+          "mutable-candidate",
+          "qualification-inheritance"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "### 7.2 固定候选冻结与封存顺序",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "release-qualification",
+      "source_span": "§7.2",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [
+        {
+          "kind": "path",
+          "target": "server/tests/fixtures/p0e-runtime-qualification/matrix.json"
+        }
+      ],
+      "historical_sources": []
     },
     {
-      "id": "pa.local-execution-and-model-routing", "revision": 1, "kind": "method",
-      "authority": {"kind": "method", "issuer": "application-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "local-execution-and-model-routing", "modes": ["review", "development", "qualification", "release", "instance"], "actions": ["run-deterministic-check", "select-model"], "exclusions": ["model-for-deterministic-hash", "automatic-escalation"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 0.3 最小启动包与本地检查", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
-      "owner": "application-maintainers", "source_span": "§0.3", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+      "id": "pa.local-execution-and-model-routing",
+      "revision": 1,
+      "kind": "method",
+      "authority": {
+        "kind": "method",
+        "issuer": "application-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "local-execution-and-model-routing",
+        "modes": [
+          "review",
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "run-deterministic-check",
+          "select-model"
+        ],
+        "exclusions": [
+          "model-for-deterministic-hash",
+          "automatic-escalation"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "### 0.3 最小启动包与本地检查",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "§0.3",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": []
     },
     {
-      "id": "pa.product-version-identity", "revision": 1, "kind": "product-contract",
-      "authority": {"kind": "product-contract", "issuer": "product-architecture", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "product-version-identity", "modes": ["development", "qualification", "release", "instance"], "actions": ["declare-product-version", "validate-edition-version", "validate-instance-version"], "exclusions": ["historical-release-rewrite", "module-version-coupling"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/architecture/product-version-identity-adr.md", "locator": "## 决定", "revision": "sha256:8804095b7a88ed8337495f96dbbab43f82b51d929e92f4c063ce7d8feffad291", "sha256": "8804095b7a88ed8337495f96dbbab43f82b51d929e92f4c063ce7d8feffad291"},
-      "owner": "product-architecture", "source_span": "#决定", "validation": "./scripts/check-release-consistency --static-only", "normative_sources": [], "observes": [{"kind": "path", "target": "release-versions.json"}], "historical_sources": []
+      "id": "pa.product-version-identity",
+      "revision": 1,
+      "kind": "product-contract",
+      "authority": {
+        "kind": "product-contract",
+        "issuer": "product-architecture",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "product-version-identity",
+        "modes": [
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "declare-product-version",
+          "validate-edition-version",
+          "validate-instance-version"
+        ],
+        "exclusions": [
+          "historical-release-rewrite",
+          "module-version-coupling"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/docs/architecture/product-version-identity-adr.md",
+        "locator": "## 决定",
+        "revision": "sha256:8804095b7a88ed8337495f96dbbab43f82b51d929e92f4c063ce7d8feffad291",
+        "sha256": "8804095b7a88ed8337495f96dbbab43f82b51d929e92f4c063ce7d8feffad291"
+      },
+      "owner": "product-architecture",
+      "source_span": "#决定",
+      "validation": "./scripts/check-release-consistency --static-only",
+      "normative_sources": [],
+      "observes": [
+        {
+          "kind": "path",
+          "target": "release-versions.json"
+        }
+      ],
+      "historical_sources": []
     },
     {
-      "id": "pa.p0e-qualification", "revision": 1, "kind": "product-contract",
-      "authority": {"kind": "product-contract", "issuer": "release-qualification", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "p0e-fixed-qualification", "modes": ["qualification"], "actions": ["run-p0e", "record-p0e-result"], "exclusions": ["real-old-instance-upgrade", "signature-substitution", "resource-fallback"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/p0e-runtime-qualification.md", "locator": "## 固定资源", "revision": "sha256:df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3", "sha256": "df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3"},
-      "owner": "release-qualification", "source_span": "#固定资源", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/p0e-runtime-qualification.json"}], "historical_sources": []
+      "id": "pa.p0e-qualification",
+      "revision": 1,
+      "kind": "product-contract",
+      "authority": {
+        "kind": "product-contract",
+        "issuer": "release-qualification",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "p0e-fixed-qualification",
+        "modes": [
+          "qualification"
+        ],
+        "actions": [
+          "run-p0e",
+          "record-p0e-result"
+        ],
+        "exclusions": [
+          "real-old-instance-upgrade",
+          "signature-substitution",
+          "resource-fallback"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/docs/p0e-runtime-qualification.md",
+        "locator": "## 固定资源",
+        "revision": "sha256:df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3",
+        "sha256": "df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3"
+      },
+      "owner": "release-qualification",
+      "source_span": "#固定资源",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [
+        {
+          "kind": "path",
+          "target": "resources/p0e-runtime-qualification.json"
+        }
+      ],
+      "historical_sources": []
     },
     {
-      "id": "pa.consumer-ready-control", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "project-policy", "issuer": "release-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "consumer-ready-preflight", "modes": ["development", "qualification", "release"], "actions": ["run-consumer-preflight"], "exclusions": ["claim-resource", "run-qualification", "publish-release"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/operations/consumer-ready-control.md", "locator": "## 输入与权限边界", "revision": "sha256:405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0", "sha256": "405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0"},
-      "owner": "release-maintainers", "source_span": "#输入与权限边界", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/consumer-ready-control.json"}], "historical_sources": []
+      "id": "pa.consumer-ready-control",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "release-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "consumer-ready-preflight",
+        "modes": [
+          "development",
+          "qualification",
+          "release"
+        ],
+        "actions": [
+          "run-consumer-preflight"
+        ],
+        "exclusions": [
+          "claim-resource",
+          "run-qualification",
+          "publish-release"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/docs/operations/consumer-ready-control.md",
+        "locator": "## 输入与权限边界",
+        "revision": "sha256:405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0",
+        "sha256": "405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0"
+      },
+      "owner": "release-maintainers",
+      "source_span": "#输入与权限边界",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [
+        {
+          "kind": "path",
+          "target": "resources/consumer-ready-control.json"
+        }
+      ],
+      "historical_sources": []
     },
     {
-      "id": "pa.project-resource-registry", "revision": 1, "kind": "project-policy",
-      "authority": {"kind": "project-policy", "issuer": "resource-owner", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "project-runtime-resources", "modes": ["development", "qualification", "release", "instance"], "actions": ["select-resource", "validate-resource", "apply-registered-fallback"], "exclusions": ["guess-resource", "copy-secret", "cross-project-resource"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/resources/project-resources.json", "locator": "resource_observation_policy", "revision": "sha256:5224515cf1dc415461fa499b12544c05a31149d99c6d00be37977a90abf62feb", "sha256": "5224515cf1dc415461fa499b12544c05a31149d99c6d00be37977a90abf62feb"},
-      "owner": "resource-owner", "source_span": "/authority", "validation": "./scripts/project-resource-registry validate", "normative_sources": [], "observes": [], "historical_sources": []
+      "id": "pa.project-resource-registry",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "resource-owner",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "project-runtime-resources",
+        "modes": [
+          "development",
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "select-resource",
+          "validate-resource",
+          "apply-registered-fallback"
+        ],
+        "exclusions": [
+          "guess-resource",
+          "copy-secret",
+          "cross-project-resource"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/resources/project-resources.json",
+        "locator": "resource_observation_policy",
+        "revision": "sha256:5224515cf1dc415461fa499b12544c05a31149d99c6d00be37977a90abf62feb",
+        "sha256": "5224515cf1dc415461fa499b12544c05a31149d99c6d00be37977a90abf62feb"
+      },
+      "owner": "resource-owner",
+      "source_span": "/authority",
+      "validation": "./scripts/project-resource-registry validate",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": []
     },
     {
-      "id": "pa.codegraph-policy", "revision": 1, "kind": "method",
-      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "codegraph-routing", "modes": ["review", "development"], "actions": ["select-codegraph", "validate-codegraph-index"], "exclusions": ["pure-documentation", "automatic-index-build", "shared-worktree-index"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/resources/codegraph-registry.json", "locator": "not_global_policy", "revision": "sha256:664b92aae5cf9926b4f816ce93a4bdac183a257bc0251ee8ae8d2540a57a7607", "sha256": "664b92aae5cf9926b4f816ce93a4bdac183a257bc0251ee8ae8d2540a57a7607"},
-      "owner": "application-maintainers", "source_span": "/policy", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+      "id": "pa.codegraph-policy",
+      "revision": 1,
+      "kind": "method",
+      "authority": {
+        "kind": "project-policy",
+        "issuer": "application-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "codegraph-routing",
+        "modes": [
+          "review",
+          "development"
+        ],
+        "actions": [
+          "select-codegraph",
+          "validate-codegraph-index"
+        ],
+        "exclusions": [
+          "pure-documentation",
+          "automatic-index-build",
+          "shared-worktree-index"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/resources/codegraph-registry.json",
+        "locator": "not_global_policy",
+        "revision": "sha256:664b92aae5cf9926b4f816ce93a4bdac183a257bc0251ee8ae8d2540a57a7607",
+        "sha256": "664b92aae5cf9926b4f816ce93a4bdac183a257bc0251ee8ae8d2540a57a7607"
+      },
+      "owner": "application-maintainers",
+      "source_span": "/policy",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": []
     },
     {
-      "id": "pa.release-engineering", "revision": 1, "kind": "product-contract",
-      "authority": {"kind": "product-contract", "issuer": "release-maintainers", "decision_ref": null},
-      "scope": {"repository": "peanut-admin", "subject": "edition-packaging-signing-and-release", "modes": ["qualification", "release", "instance"], "actions": ["build-editions", "verify-upgrade-signature", "publish-application-release", "upgrade-instance"], "exclusions": ["unsigned-upgrade", "candidate-lock-mutation", "release-without-editions"]},
-      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
-      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/release-engineering.md", "locator": "## 双 Edition 安装包与升级包", "revision": "sha256:09ce9be5c4b1a185b7cc2e4491f9c42426e9d95079f636477212ee4337a7e1c5", "sha256": "09ce9be5c4b1a185b7cc2e4491f9c42426e9d95079f636477212ee4337a7e1c5"},
-      "owner": "release-maintainers", "source_span": "#双-edition-安装包与升级包", "validation": "./scripts/check-release-consistency --static-only", "normative_sources": [{"kind": "rule", "target": "pa.product-version-identity", "revision": 1}], "observes": [], "historical_sources": []
+      "id": "pa.release-engineering",
+      "revision": 1,
+      "kind": "product-contract",
+      "authority": {
+        "kind": "product-contract",
+        "issuer": "release-maintainers",
+        "decision_ref": null
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "edition-packaging-signing-and-release",
+        "modes": [
+          "qualification",
+          "release",
+          "instance"
+        ],
+        "actions": [
+          "build-editions",
+          "verify-upgrade-signature",
+          "publish-application-release",
+          "upgrade-instance"
+        ],
+        "exclusions": [
+          "unsigned-upgrade",
+          "candidate-lock-mutation",
+          "release-without-editions"
+        ]
+      },
+      "status": "active",
+      "effective_at": {
+        "value": "2026-09-13T00:33:21Z",
+        "precision": "timestamp"
+      },
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/docs/release-engineering.md",
+        "locator": "## 双 Edition 安装包与升级包",
+        "revision": "sha256:09ce9be5c4b1a185b7cc2e4491f9c42426e9d95079f636477212ee4337a7e1c5",
+        "sha256": "09ce9be5c4b1a185b7cc2e4491f9c42426e9d95079f636477212ee4337a7e1c5"
+      },
+      "owner": "release-maintainers",
+      "source_span": "#双-edition-安装包与升级包",
+      "validation": "./scripts/check-release-consistency --static-only",
+      "normative_sources": [
+        {
+          "kind": "rule",
+          "target": "pa.product-version-identity",
+          "revision": 1
+        }
+      ],
+      "observes": [],
+      "historical_sources": []
     }
   ],
   "documents": [
@@ -475,7 +1088,11 @@
       "id": "pa-docs-architecture-core-thinkphp-runtime-direction-adr",
       "path": "docs/architecture/core-thinkphp-runtime-direction-adr.md",
       "title": "Core ThinkPHP 8 运行时收敛方向 ADR",
-      "audience": ["maintainer", "architect", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
       "content_type": "decision",
       "authority": "accepted-decision",
       "canonical_sources": [
@@ -491,8 +1108,17 @@
       ],
       "owner": "product-architecture",
       "status": "current",
-      "scope": ["application", "core"],
-      "related": ["core-application-boundary", "module-boundary", "execution-context", "storage", "documentation"],
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-application-boundary",
+        "module-boundary",
+        "execution-context",
+        "storage",
+        "documentation"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -501,14 +1127,31 @@
       "id": "pa-docs-architecture-core-application-technical-boundary",
       "path": "docs/architecture/core-application-technical-boundary.md",
       "title": "Core 与应用技术边界",
-      "audience": ["maintainer", "architect", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
       "content_type": "architecture",
       "authority": "interpretation",
-      "canonical_sources": ["AGENTS.md", "AGENT_EXECUTION_RULES.md", "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md", "docs/architecture/core-thinkphp-runtime-direction-adr.md"],
+      "canonical_sources": [
+        "AGENTS.md",
+        "AGENT_EXECUTION_RULES.md",
+        "repo://peanut-admin-core/docs/architecture/storage-driver-boundary.md",
+        "docs/architecture/core-thinkphp-runtime-direction-adr.md"
+      ],
       "owner": "architecture",
       "status": "current",
-      "scope": ["application", "core"],
-      "related": ["core-thinkphp-runtime-direction-adr", "core-application-boundary", "storage", "documentation"],
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "core-thinkphp-runtime-direction-adr",
+        "core-application-boundary",
+        "storage",
+        "documentation"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -548,14 +1191,37 @@
       "id": "pa-docs-plans-gemini-refactor-convergence-audit-2026-09-09",
       "path": "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md",
       "title": "Gemini 大重构收敛审计与执行报告（2026-09-09）",
-      "audience": ["maintainer", "architect", "operator", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "operator",
+        "ai"
+      ],
       "content_type": "plan",
       "authority": "interpretation",
-      "canonical_sources": ["AGENT_EXECUTION_RULES.md", "server/app/", "server/tests/", "plugins.lock", "docs/architecture/application-module-blueprint/", "commit:190d47352adcd996384fcf83cd58524204fd1844", "repo://peanut-admin-core/packages/php/"],
+      "canonical_sources": [
+        "AGENT_EXECUTION_RULES.md",
+        "server/app/",
+        "server/tests/",
+        "plugins.lock",
+        "docs/architecture/application-module-blueprint/",
+        "commit:190d47352adcd996384fcf83cd58524204fd1844",
+        "repo://peanut-admin-core/packages/php/"
+      ],
       "owner": "product-architecture",
       "status": "current",
-      "scope": ["application", "core"],
-      "related": ["application-boundary", "core-application-boundary", "module-boundary", "storage", "release-contract", "execution-queue"],
+      "scope": [
+        "application",
+        "core"
+      ],
+      "related": [
+        "application-boundary",
+        "core-application-boundary",
+        "module-boundary",
+        "storage",
+        "release-contract",
+        "execution-queue"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -564,15 +1230,40 @@
       "id": "pa-docs-architecture-module-publication-contract",
       "path": "docs/architecture/module-publication-contract.md",
       "title": "Module 发布与制品合同",
-      "audience": ["maintainer", "architect", "developer", "operator", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "developer",
+        "operator",
+        "ai"
+      ],
       "content_type": "architecture",
       "authority": "interpretation",
-      "canonical_sources": ["server/app/command/ModulePack.php", "server/app/command/BundlePack.php", "server/app/platform/service/plugin/PluginPackageArchiveService.php", "server/app/platform/service/plugin/ModulePackagePreflight.php", "server/resources/schemas/plugin.schema.json", "plugins.lock", "server/app/Modules/", "web/src/modules/"],
+      "canonical_sources": [
+        "server/app/command/ModulePack.php",
+        "server/app/command/BundlePack.php",
+        "server/app/platform/service/plugin/PluginPackageArchiveService.php",
+        "server/app/platform/service/plugin/ModulePackagePreflight.php",
+        "server/resources/schemas/plugin.schema.json",
+        "plugins.lock",
+        "server/app/Modules/",
+        "web/src/modules/"
+      ],
       "owner": "release-engineering",
       "status": "current",
-      "scope": ["application"],
-      "related": ["module-lifecycle", "release-contract", "plugin-artifact", "documentation"],
-      "site_projections": ["pa-docs-site-guide-module-development", "pa-docs-site-guide-application-module-lifecycle"],
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "module-lifecycle",
+        "release-contract",
+        "plugin-artifact",
+        "documentation"
+      ],
+      "site_projections": [
+        "pa-docs-site-guide-module-development",
+        "pa-docs-site-guide-application-module-lifecycle"
+      ],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },
@@ -580,14 +1271,40 @@
       "id": "pa-docs-plans-application-scaffold-version-contract-queue",
       "path": "docs/plans/application-scaffold-version-contract-queue.md",
       "title": "独立应用与脚手架版本合同执行队列",
-      "audience": ["maintainer", "architect", "ai"],
+      "audience": [
+        "maintainer",
+        "architect",
+        "ai"
+      ],
       "content_type": "plan",
       "authority": "interpretation",
-      "canonical_sources": ["release-versions.json", "scripts/scaffold-runtime/ScaffoldManifest.php", "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "server/database/install.php", "scripts/deploy-release", "scripts/ops-upgrade-worker", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php", "docs/architecture/consumer-module-lifecycle-contract.md", "plugins.lock", "server/app/adminapi/route/app.php", "server/app/platform/service/module/ProductTenantModuleProfileService.php"],
+      "canonical_sources": [
+        "release-versions.json",
+        "scripts/scaffold-runtime/ScaffoldManifest.php",
+        "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+        "server/database/install.php",
+        "scripts/deploy-release",
+        "scripts/ops-upgrade-worker",
+        "server/app/common/service/installation/ApplicationReleaseVersions.php",
+        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "docs/architecture/consumer-module-lifecycle-contract.md",
+        "plugins.lock",
+        "server/app/adminapi/route/app.php",
+        "server/app/platform/service/module/ProductTenantModuleProfileService.php"
+      ],
       "owner": "application-maintainers",
       "status": "current",
-      "scope": ["application"],
-      "related": ["scaffold-upgrade", "release-contract", "migration", "execution-queue"],
+      "scope": [
+        "application"
+      ],
+      "related": [
+        "scaffold-upgrade",
+        "release-contract",
+        "migration",
+        "execution-queue"
+      ],
       "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
@@ -1190,58 +1907,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-2026-08-05-core-packages-production-claude-review-result",
-      "path": "docs/2026-08-05-core-packages-production-claude-review-RESULT.md",
-      "title": "Claude 审核结果 — 核心包 / 发布保护 / 生产候选架构",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-2026-08-05-core-packages-production-claude-review-prompt",
-      "path": "docs/2026-08-05-core-packages-production-claude-review-prompt.md",
-      "title": "Peanut Admin 核心包、发布保护与生产候选架构 Claude 审核包",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-index",
       "path": "docs/README.md",
       "title": "Peanut Admin technical documentation",
@@ -1267,67 +1932,6 @@
       "site_projections": [
         "pa-site-index"
       ],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-application-package-and-release-contract",
-      "path": "docs/architecture/application-package-and-release-contract.md",
-      "title": "Peanut Admin 应用、核心包与发布契约",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "release-versions.json",
-        "RELEASE_METADATA.json",
-        "server/composer.lock",
-        "web/pnpm-lock.yaml",
-        "scaffold/application-template-inventory.json"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-cap06-private-downstream-adoption-contract",
-      "path": "docs/architecture/cap06-private-downstream-adoption-contract.md",
-      "title": "CAP06 私有下游采用合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/composer.json",
-        "server/composer.lock",
-        "web/package.json",
-        "web/pnpm-lock.yaml",
-        "repo://peanut-admin-core/packages/php/",
-        "repo://peanut-admin-core/packages/web/"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
       "replaced_by": null,
       "validation": "./scripts/docs-governance check"
     },
@@ -1662,38 +2266,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-architecture-core-extraction-guide",
-      "path": "docs/architecture/core_extraction_guide.md",
-      "title": "核心代码下沉操作指南",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "scaffold/application-template-inventory.json",
-        "server/composer.json",
-        "web/package.json",
-        "repo://peanut-admin-core/"
-      ],
-      "owner": "architecture",
-      "status": "deprecated",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [
-        "pa-docs-site-releases",
-        "pa-docs-site-guide-deployment-upgrade"
-      ],
-      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-architecture-external-callback-tenant-routing-contract",
       "path": "docs/architecture/external-callback-tenant-routing-contract.md",
       "title": "外部回调可信 Tenant 路由合同",
@@ -1722,65 +2294,6 @@
         "pa-docs-site-reference"
       ],
       "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-module-architecture-refinement-appendix",
-      "path": "docs/architecture/module-architecture-refinement-appendix.md",
-      "title": "Peanut Admin 模块架构细化设计增补",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/app/Modules/",
-        "plugins.lock",
-        "scripts/package-release.sh"
-      ],
-      "owner": "architecture",
-      "status": "deprecated",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [
-        "pa-docs-site-guide-module-development"
-      ],
-      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-module-development-release-separation-plan",
-      "path": "docs/architecture/module-development-release-separation-plan.md",
-      "title": "Module 独立开发与能力包发布分离方案（评审稿）",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "deprecated",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [
-        "pa-docs-site-releases",
-        "pa-docs-site-guide-deployment-upgrade"
-      ],
-      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -1813,117 +2326,6 @@
         "pa-docs-site-guide-data-permissions-tenancy"
       ],
       "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-mt02-article-tenant-ownership-contract",
-      "path": "docs/architecture/mt02-article-tenant-ownership-contract.md",
-      "title": "MT02 Article Tenant 所有权与 Tenant-first Runtime 合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/app/Modules/Official/Article/module.json",
-        "server/database/migrations/20260822-classify-official-article-permissions.sql",
-        "server/database/install.php"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-mt02-default-tenant-bootstrap-contract",
-      "path": "docs/architecture/mt02-default-tenant-bootstrap-contract.md",
-      "title": "MT02 默认 Tenant bootstrap 与既有管理员/RBAC 映射合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "repo://peanut-admin-core/packages/php/kernel/src/Persistence/Schema/KernelSchema.php",
-        "server/database/install.php",
-        "server/database/migrations/"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-mt03-nonsql-tenant-isolation-contract",
-      "path": "docs/architecture/mt03-nonsql-tenant-isolation-contract.md",
-      "title": "MT03 非 SQL-Article Tenant 隔离合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/database/init.sql",
-        "server/database/install.php",
-        "server/database/migrations/",
-        "resources/project-resources.json"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-optimized-module-architecture-plan",
-      "path": "docs/architecture/optimized-module-architecture-plan.md",
-      "title": "Peanut Admin 模块架构优化方案（完整版 v2）",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "deprecated",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": "pa-docs-architecture-application-module-blueprint-index",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -1981,34 +2383,6 @@
       ],
       "site_projections": [],
       "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-pb04-file-media-host-contract",
-      "path": "docs/architecture/pb04-file-media-host-contract.md",
-      "title": "PB04-04 文件与素材 Host 合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/app/Modules/Official/File/module.json",
-        "resources/service-registry.json",
-        "server/route/official_file.php"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": "pa-docs-architecture-core-application-technical-boundary",
       "validation": "./scripts/docs-governance check"
     },
     {
@@ -2110,33 +2484,6 @@
         "server/app/Modules/Official/Task/module.json",
         "server/app/Modules/Official/ImportExport/module.json",
         "server/route/official_import_export.php"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-architecture-pb04-website-settings-contract",
-      "path": "docs/architecture/pb04-website-settings-contract.md",
-      "title": "PB04-02 网站设置唯一实现合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/route/app.php",
-        "resources/service-registry.json"
       ],
       "owner": "architecture",
       "status": "archived",
@@ -2621,34 +2968,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-architecture-scaffold-core-extraction-analysis",
-      "path": "docs/architecture/scaffold_core_extraction_analysis.md",
-      "title": "脚手架代码 vs 核心库：提取分析报告",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "architecture",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "scaffold/application-template-inventory.json",
-        "scaffold/releases/",
-        "repo://peanut-admin-core/"
-      ],
-      "owner": "architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-architecture-service-execution-status",
       "path": "docs/architecture/service-execution-status.md",
       "title": "Peanut Admin 服务执行状态与业务回报",
@@ -2690,36 +3009,6 @@
       ],
       "owner": "architecture",
       "status": "current",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-core-packages-release-status",
-      "path": "docs/core-packages-release-status.md",
-      "title": "Peanut Admin 核心包发布状态",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "reference",
-      "authority": "interpretation",
-      "canonical_sources": [
-        "server/composer.json",
-        "server/composer.lock",
-        "web/package.json",
-        "web/pnpm-lock.yaml",
-        "repo://peanut-admin-core/packages/"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
       "scope": [
         "application"
       ],
@@ -3367,136 +3656,6 @@
       ],
       "owner": "product-architecture",
       "status": "planned",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-24-peanut-application-lifecycle-and-upgrade-design",
-      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-24-peanut-application-lifecycle-and-upgrade-design.md",
-      "title": "Peanut Admin 应用创建、扩展与升级设计",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2-review",
-      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2-review.md",
-      "title": "Peanut Admin 应用生命周期架构 v2 外部评审",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2-1",
-      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.1.md",
-      "title": "Peanut Admin 应用生命周期架构 v2.1",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2-2",
-      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.2.md",
-      "title": "Peanut Admin 应用生命周期架构 v2.2",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-design-saas-roadmap-lifecycle-archive-2026-07-25-lifecycle-architecture-v2",
-      "path": "docs/design/saas-roadmap/lifecycle/archive/2026-07-25-lifecycle-architecture-v2.md",
-      "title": "Peanut Admin 应用生命周期架构 v2",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
       "scope": [
         "application"
       ],
@@ -4548,32 +4707,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-likeadmin-material-contract",
-      "path": "docs/likeadmin-material-contract.md",
-      "title": "M02 素材管理业务契约",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "historical-reference",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-likeadmin-module-contract-index",
       "path": "docs/likeadmin-module-contract-index.md",
       "title": "LikeAdmin 1.9.4 模块契约索引",
@@ -4614,32 +4747,6 @@
         "AGENTS.md"
       ],
       "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-likeadmin-parity-plan",
-      "path": "docs/likeadmin-parity-plan.md",
-      "title": "LikeAdmin 1.9.4 业务复刻实施计划",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "product-architecture",
       "status": "archived",
       "scope": [
         "application"
@@ -4707,32 +4814,6 @@
       "id": "pa-docs-likeadmin-system-settings-contract",
       "path": "docs/likeadmin-system-settings-contract.md",
       "title": "S01 系统设置、充值支付与微信登录业务契约",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "historical-reference",
-      "canonical_sources": [
-        "AGENTS.md"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-likeadmin-system-tools-contract",
-      "path": "docs/likeadmin-system-tools-contract.md",
-      "title": "LikeAdmin 系统设置与开发工具业务契约",
       "audience": [
         "maintainer",
         "architect",
@@ -4890,32 +4971,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-module-architecture-completion-report",
-      "path": "docs/module-architecture-completion-report.md",
-      "title": "模块架构改造完成报告",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-module-development-guide",
       "path": "docs/module-development-guide.md",
       "title": "模块开发指南",
@@ -4933,32 +4988,6 @@
       ],
       "owner": "application-maintainers",
       "status": "current",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-operations-business-flow-audit-2026-08-21",
-      "path": "docs/operations/business-flow-audit-2026-08-21.md",
-      "title": "业务全流程体验审计（2026-08-21）",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
       "scope": [
         "application"
       ],
@@ -5106,61 +5135,9 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-operations-release-candidate-control",
-      "path": "docs/operations/release-candidate-control.md",
-      "title": "发布候选控制：给人和智能体看的简单说明",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-p0e-runtime-qualification",
       "path": "docs/p0e-runtime-qualification.md",
       "title": "P0-E Runtime 资格 Gate",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-packaging-validation-report",
-      "path": "docs/packaging-validation-report.md",
-      "title": "Module 打包验收报告",
       "audience": [
         "maintainer",
         "architect",
@@ -5289,46 +5266,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-plans-luna-max-source-preaudit-2026-09-08",
-      "path": "docs/plans/luna-max-source-preaudit-2026-09-08.md",
-      "title": "Luna Max 源码预审登记（2026-09-08）",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "AGENT_EXECUTION_RULES.md",
-        "server/app/",
-        "server/route/",
-        "scripts/",
-        ".github/workflows/",
-        "web/",
-        "platform/",
-        "pc/",
-        "uniapp/",
-        "repo://peanut-admin-core/packages/php/",
-        "repo://peanut-admin-core/packages/web/",
-        "repo://peanut-admin-core/.github/workflows/"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
-      "scope": [
-        "application",
-        "core"
-      ],
-      "related": [
-        "documentation",
-        "architecture",
-        "qualification"
-      ],
-      "site_projections": [],
-      "replaced_by": "pa-docs-plans-luna-max-source-audit-report-2026-09-08",
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-plans-luna-max-source-audit-report-2026-09-08",
       "path": "docs/plans/luna-max-source-audit-report-2026-09-08.md",
       "title": "Luna Max 源码登记高等级审计报告（2026-09-08）",
@@ -5340,7 +5277,6 @@
       "content_type": "evidence",
       "authority": "interpretation",
       "canonical_sources": [
-        "docs/plans/luna-max-source-preaudit-2026-09-08.md",
         "AGENT_EXECUTION_RULES.md",
         "server/app/",
         "server/route/",
@@ -5395,39 +5331,6 @@
       "validation": "./scripts/docs-governance check"
     },
     {
-      "id": "pa-docs-plans-product-closure-execution-queue",
-      "path": "docs/plans/product-closure-execution-queue.md",
-      "title": "Peanut Admin 产品闭环执行任务队列",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "plan",
-      "authority": "proposal",
-      "canonical_sources": [
-        "docs/architecture/product-closure-ownership-and-adoption.md",
-        "docs/product-status/capability-ledger.json",
-        "resources/service-registry.json",
-        "server/composer.lock",
-        "web/pnpm-lock.yaml",
-        "pc/package.json",
-        "uniapp/package.json"
-      ],
-      "owner": "product-architecture",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "product-closure"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
       "id": "pa-docs-plans-consumer-ready-product-plan",
       "path": "docs/plans/consumer-ready-product-plan.md",
       "title": "Peanut Admin 可消费交付推进计划",
@@ -5439,7 +5342,7 @@
       "content_type": "plan",
       "authority": "proposal",
       "canonical_sources": [
-        "docs/plans/product-closure-execution-queue.md",
+        "docs/architecture/product-closure-ownership-and-adoption.md",
         "docs/product-status/product-closure-observability.md",
         "docs/product-status/capability-ledger.json",
         "server/config/console.php",
@@ -5476,7 +5379,7 @@
       "canonical_sources": [
         "docs/plans/consumer-ready-product-plan.md",
         "docs/product-status/capability-ledger.json",
-        "docs/product-status/current-task-list.md",
+        "docs/governance/current-state.md",
         "docs/product-status/deployments/v3.0.12-online-experience.json",
         "docs/plans/product-release-operations-saas-roadmap.md",
         "docs/plans/saas-enhancement-development-plan.md",
@@ -5650,7 +5553,6 @@
       "content_type": "evidence",
       "authority": "interpretation",
       "canonical_sources": [
-        "docs/plans/product-closure-execution-queue.md",
         "docs/architecture/product-closure-ownership-and-adoption.md",
         "docs/product-status/capability-ledger.json"
       ],
@@ -5662,110 +5564,6 @@
       "related": [
         "documentation",
         "product-closure"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-product-status-acceptance-gates",
-      "path": "docs/product-status/acceptance-gates.md",
-      "title": "能力状态与验收 Gate",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-product-status-current-task-list",
-      "path": "docs/product-status/current-task-list.md",
-      "title": "当前任务清单",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-product-status-deferred-scope",
-      "path": "docs/product-status/deferred-scope.md",
-      "title": "暂缓与范围外管理",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-product-status-evidence-guide",
-      "path": "docs/product-status/evidence-guide.md",
-      "title": "能力证据规则",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "evidence",
-      "authority": "historical-record",
-      "canonical_sources": [
-        "docs/product-status/capability-ledger.json"
-      ],
-      "owner": "release-qualification",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation"
       ],
       "site_projections": [],
       "replaced_by": null,
@@ -5907,7 +5705,6 @@
       "authority": "interpretation",
       "canonical_sources": [
         "docs/product-status/capability-ledger.json",
-        "docs/plans/product-closure-execution-queue.md",
         "docs/architecture/product-closure-ownership-and-adoption.md",
         "official vendor documentation linked in the document"
       ],
@@ -6067,35 +5864,6 @@
         "server/route/app.php",
         "server/database/migrations/",
         "resources/service-registry.json"
-      ],
-      "owner": "application-maintainers",
-      "status": "archived",
-      "scope": [
-        "application"
-      ],
-      "related": [
-        "documentation",
-        "scaffold"
-      ],
-      "site_projections": [],
-      "replaced_by": null,
-      "validation": "./scripts/docs-governance check"
-    },
-    {
-      "id": "pa-docs-site-architecture-module-execution-context",
-      "path": "docs-site/architecture/module-execution-context.md",
-      "title": "Module 执行上下文合同",
-      "audience": [
-        "maintainer",
-        "architect",
-        "ai"
-      ],
-      "content_type": "archive",
-      "authority": "scaffold-source",
-      "canonical_sources": [
-        "server/app/Modules/",
-        "resources/service-registry.json",
-        "repo://peanut-admin-core/packages/php/"
       ],
       "owner": "application-maintainers",
       "status": "archived",

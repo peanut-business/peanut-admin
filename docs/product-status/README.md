@@ -6,8 +6,8 @@
 本目录默认不进入 `docs-site` 首页、导航或公开构建。将来是否公开，应由独立的信息披露
 决定授权；公开站点不得通过复制本页形成第二份状态事实源。
 
-当前产品闭环的执行顺序见
-[`../plans/product-closure-execution-queue.md`](../plans/product-closure-execution-queue.md)，
+当前产品闭环的所有权与边界见
+[`../architecture/product-closure-ownership-and-adoption.md`](../architecture/product-closure-ownership-and-adoption.md)，
 人工进度、固定候选、验证和剩余 Gate 见
 [`product-closure-observability.md`](product-closure-observability.md)。两者不替代本目录的
 能力账本；稳定能力状态仍只在 `capability-ledger.json` 中维护。

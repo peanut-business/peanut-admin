@@ -8,7 +8,7 @@ Owner: `product-architecture`
 
 Audience: `maintainer, architect, ai`
 
-Upstream: [`产品闭环执行任务队列`](product-closure-execution-queue.md)、
+Upstream: [`产品闭环所有权与 Core 采用决定`](../architecture/product-closure-ownership-and-adoption.md)、
 [`产品闭环可观测面板`](../product-status/product-closure-observability.md)、
 [`产品能力账本`](../product-status/capability-ledger.json)、当前 Module/Plugin Runtime、
 scaffold Release、文档登记和固定资格证据。
