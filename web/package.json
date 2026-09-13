@@ -47,7 +47,7 @@
     "axios": "0.33.0",
     "dayjs": "^1.11.5",
     "dompurify": "^3.4.14",
-    "echarts": "^5.4.0",
+    "echarts": "6.1.0",
     "element-plus": "2.14.3",
     "lodash": "^4.17.21",
     "mitt": "^3.0.0",
@@ -57,7 +57,7 @@
     "query-string": "^8.0.3",
     "sortablejs": "^1.15.0",
     "vue": "^3.2.40",
-    "vue-echarts": "^6.2.3",
+    "vue-echarts": "8.3.0",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.0.14",
     "yjs": "13.6.32"
@@ -113,6 +113,7 @@
   },
   "pnpm": {
     "overrides": {
+      "decode-uri-component": "0.5.0",
       "js-yaml@4.3.1": "4.3.2",
       "postcss": "8.5.23"
     }

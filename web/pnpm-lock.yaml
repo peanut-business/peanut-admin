@@ -7,6 +7,7 @@ settings:
 overrides:
   bin-wrapper: npm:bin-wrapper-china
   gifsicle: 5.2.0
+  decode-uri-component: 0.5.0
   js-yaml@4.3.1: 4.3.2
   postcss: 8.5.23
 
@@ -48,8 +49,8 @@ importers:
         specifier: ^3.4.14
         version: 3.4.14
       echarts:
-        specifier: ^5.4.0
-        version: 5.6.0
+        specifier: 6.1.0
+        version: 6.1.0
       element-plus:
         specifier: 2.14.3
         version: 2.14.3(vue@3.5.40(typescript@4.9.5))
@@ -78,8 +79,8 @@ importers:
         specifier: ^3.2.40
         version: 3.5.40(typescript@4.9.5)
       vue-echarts:
-        specifier: ^6.2.3
-        version: 6.7.3(@vue/runtime-core@3.5.40)(echarts@5.6.0)(vue@3.5.40(typescript@4.9.5))
+        specifier: 8.3.0
+        version: 8.3.0(echarts@6.1.0)(vue@3.5.40(typescript@4.9.5))
       vue-i18n:
         specifier: ^9.2.2
         version: 9.14.5(vue@3.5.40(typescript@4.9.5))
@@ -1714,8 +1715,8 @@ packages:
     resolution: {integrity: sha512-z2S+W9X73hAUUki+N+9Za2lBlun89zigOyGrsax+KUQ6wKW4ZoWpEYBkGhQjwAjjDCkWxhY0VKEhk8wzY7F5cA==}
     engines: {node: '>=0.10.0'}
 
-  decode-uri-component@0.4.1:
-    resolution: {integrity: sha512-+8VxcR21HhTy8nOt6jf20w0c9CADrw1O8d+VZ/YzzCt4bJ3uBjw+D1q2osAB8RnpwwaeYBxy0HyKQxD5JBMuuQ==}
+  decode-uri-component@0.5.0:
+    resolution: {integrity: sha512-1BiQVoK8C9gUbQU6NzAtO/tkz2qOFpEObMWpcFvhx4fYnj4Oc5yzaJN/LD36ihkVUdXyh5ZekzX+yM+ty/SrPg==}
     engines: {node: '>=14.16'}
 
   deep-is@0.1.4:
@@ -1790,8 +1791,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  echarts@5.6.0:
-    resolution: {integrity: sha512-oTbVTsXfKuEhxftHqL5xprgLoc0k7uScAwtryCgWF6hPYFLRwOUHiFmHGCBKP5NPFNkDVopOieyUqYGH8Fa3kA==}
+  echarts@6.1.0:
+    resolution: {integrity: sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==}
 
   electron-to-chromium@1.5.396:
     resolution: {integrity: sha512-yHiw2Y3C3H9U6TMbOfoWK/BPreiOPXRfTWPBwQBoZG6/8TB6eOPnsy5oaRYuatR7Fw2SJ4kKforgufeo7fq0EQ==}
@@ -3118,9 +3119,6 @@ packages:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
 
-  resize-detector@0.3.0:
-    resolution: {integrity: sha512-R/tCuvuOHQ8o2boRP6vgx8hXCCy87H1eY9V5imBYeVNyNVpuL9ciReSccLj2gDcax9+2weXy3bc8Vv+NRXeEvQ==}
-
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
     engines: {node: '>=4'}
@@ -3658,17 +3656,6 @@ packages:
   vue-component-type-helpers@3.3.9:
     resolution: {integrity: sha512-3c/UfMe0SqyEfcGTyH7mfshHagJ9QTCbppCb0/uGpHZpFug7+If3GeGZN7I0YheKEExemx3xldQPoO7PQSOLQg==}
 
-  vue-demi@0.13.11:
-    resolution: {integrity: sha512-IR8HoEEGM65YY3ZJYAjMlKygDQn25D5ajNFNoKh9RSDMQtlzCxtfQjdQgv9jjK+m3377SsJXY8ysq8kLCZL25A==}
-    engines: {node: '>=12'}
-    hasBin: true
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^3.0.0-0 || ^2.6.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
-
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
     engines: {node: '>=12'}
@@ -3680,18 +3667,11 @@ packages:
       '@vue/composition-api':
         optional: true
 
-  vue-echarts@6.7.3:
-    resolution: {integrity: sha512-vXLKpALFjbPphW9IfQPOVfb1KjGZ/f8qa/FZHi9lZIWzAnQC1DgnmEK3pJgEkyo6EP7UnX6Bv/V3Ke7p+qCNXA==}
+  vue-echarts@8.3.0:
+    resolution: {integrity: sha512-gqOZ5uuBF4x4KTXQpTmgH5BuAwUSO+y9U7L1pHCIESQvgnTitXtnyjrfePH+9YXMRhmTLjchEx3EnsPhoiIX/A==}
     peerDependencies:
-      '@vue/composition-api': ^1.0.5
-      '@vue/runtime-core': ^3.0.0
-      echarts: ^5.4.1
-      vue: ^2.6.12 || ^3.1.1
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
-      '@vue/runtime-core':
-        optional: true
+      echarts: ^6.0.0
+      vue: ^3.3.0
 
   vue-eslint-parser@9.4.3:
     resolution: {integrity: sha512-2rYRLWlIpaiN8xbPiDyXZXRgLGOtWxERV7ND5fFAv5qo1D2N9Fu9MNajBNc6o13lZ+24DAWCkQCvj4klgmcITg==}
@@ -3830,8 +3810,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zrender@5.6.1:
-    resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
+  zrender@6.1.0:
+    resolution: {integrity: sha512-oEGMDB6pOP2S6OwRR4PdVv610zrjnA3Bh+JnSG12fYJlBKjtNAoEb5fSUoCOOINlH96I2fU38/A2UpRKs67xYQ==}
 
 snapshots:
 
@@ -5363,7 +5343,7 @@ snapshots:
 
   decamelize@1.2.0: {}
 
-  decode-uri-component@0.4.1: {}
+  decode-uri-component@0.5.0: {}
 
   deep-is@0.1.4: {}
 
@@ -5447,10 +5427,10 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  echarts@5.6.0:
+  echarts@6.1.0:
     dependencies:
       tslib: 2.3.0
-      zrender: 5.6.1
+      zrender: 6.1.0
 
   electron-to-chromium@1.5.396: {}
 
@@ -6898,7 +6878,7 @@ snapshots:
 
   query-string@8.2.0:
     dependencies:
-      decode-uri-component: 0.4.1
+      decode-uri-component: 0.5.0
       filter-obj: 5.1.0
       split-on-first: 3.0.0
 
@@ -6953,8 +6933,6 @@ snapshots:
   require-directory@2.1.1: {}
 
   require-from-string@2.0.2: {}
-
-  resize-detector@0.3.0: {}
 
   resolve-from@4.0.0: {}
 
@@ -7580,22 +7558,14 @@ snapshots:
 
   vue-component-type-helpers@3.3.9: {}
 
-  vue-demi@0.13.11(vue@3.5.40(typescript@4.9.5)):
-    dependencies:
-      vue: 3.5.40(typescript@4.9.5)
-
   vue-demi@0.14.10(vue@3.5.40(typescript@4.9.5)):
     dependencies:
       vue: 3.5.40(typescript@4.9.5)
 
-  vue-echarts@6.7.3(@vue/runtime-core@3.5.40)(echarts@5.6.0)(vue@3.5.40(typescript@4.9.5)):
+  vue-echarts@8.3.0(echarts@6.1.0)(vue@3.5.40(typescript@4.9.5)):
     dependencies:
-      echarts: 5.6.0
-      resize-detector: 0.3.0
+      echarts: 6.1.0
       vue: 3.5.40(typescript@4.9.5)
-      vue-demi: 0.13.11(vue@3.5.40(typescript@4.9.5))
-    optionalDependencies:
-      '@vue/runtime-core': 3.5.40
 
   vue-eslint-parser@9.4.3(eslint@8.57.1):
     dependencies:
@@ -7757,6 +7727,6 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zrender@5.6.1:
+  zrender@6.1.0:
     dependencies:
       tslib: 2.3.0
