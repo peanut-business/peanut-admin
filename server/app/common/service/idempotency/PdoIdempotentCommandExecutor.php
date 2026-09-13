@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\idempotency;
 
-use app\common\persistence\CoreTenantRepositoryFactory;
 use LogicException;
-use PDO;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\contract\idempotency\IdempotencyCommand;
 use app\common\contract\idempotency\IdempotencyReceipt;
@@ -14,12 +12,7 @@ use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 
 final class PdoIdempotentCommandExecutor implements IdempotentCommandExecutor
 {
-    private PdoIdempotencyRepository $repository;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->repository = (new CoreTenantRepositoryFactory($pdo))->idempotency();
-    }
+    public function __construct(private readonly PdoIdempotencyRepository $repository) {}
 
     public function begin(IdempotencyCommand $command): IdempotencyResult
     {

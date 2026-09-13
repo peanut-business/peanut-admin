@@ -31,7 +31,7 @@ use app\common\service\http\OutboundHttpTransport;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\instance\DeploymentMode;
-use app\common\service\idempotency\IdempotencyRuntimeFactory;
+use app\common\service\idempotency\PdoIdempotentCommandExecutor;
 use app\common\service\installation\InstallationExecutionHost;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\ApplicationPasswordPolicy;
@@ -93,6 +93,7 @@ use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
+use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
@@ -138,9 +139,10 @@ class AppService extends Service
             $this->app->make(PDOConnection::class),
             $this->app->make(SettingStore::class),
         ));
-        $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
+        $this->app->bind(PdoIdempotencyRepository::class, fn(): PdoIdempotencyRepository => (new CoreTenantRepositoryFactory(
             $this->app->make(PDO::class),
-        ));
+        ))->idempotency());
+        $this->app->bind(IdempotentCommandExecutor::class, PdoIdempotentCommandExecutor::class);
         $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport(
             $this->app->make(CurrentExecutionContext::class),
         ));

@@ -8,7 +8,6 @@ use app\common\contract\idempotency\IdempotencyCommand;
 use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\contract\idempotency\IdempotencyResult;
 use app\common\service\payment\contract\RefundGatewayInterface;
-use app\common\service\idempotency\IdempotencyRuntimeFactory;
 use app\common\services\FileService;
 use app\common\service\payment\PaymentRetryLock;
 use app\common\service\payment\PaymentServiceFactory;
@@ -345,7 +344,7 @@ try {
 
     $dbPdo = Db::connect()->connect();
     expectFinanceTenant($dbPdo instanceof PDO, 'ThinkPHP refund PDO is unavailable');
-    $idempotency = IdempotencyRuntimeFactory::forPdo($dbPdo);
+    $idempotency = $app->make(IdempotentCommandExecutor::class);
     $xlsx = (new ReflectionClass(XlsxExportService::class))->newInstanceWithoutConstructor();
     $refunds = financeRefundService($xlsx, $idempotency);
 

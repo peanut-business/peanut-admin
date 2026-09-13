@@ -1004,7 +1004,7 @@
         "can_start_dedicated_thread_now": true,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "优先建立通用 wrapper，并迁移余额调账、退款和导出三个真实调用方"
+        "recommended_next_action": "保留应用幂等编排合同，由 ThinkPHP 容器直接注入 Core 幂等仓储，不再引入运行时工厂或业务侧手工装配"
       }
     },
     {
