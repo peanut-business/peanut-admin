@@ -755,8 +755,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/resources/project-resources.json",
         "locator": "resource_observation_policy",
-        "revision": "sha256:962f1b5f5026f5cb88a50129edbae06d9f18c0d80fc7f7a9f1cebb727237da40",
-        "sha256": "962f1b5f5026f5cb88a50129edbae06d9f18c0d80fc7f7a9f1cebb727237da40"
+        "revision": "sha256:662406d05c5c34b7d156337ba3003798e063b8d0469d5869f0ffe1e15d6918a5",
+        "sha256": "662406d05c5c34b7d156337ba3003798e063b8d0469d5869f0ffe1e15d6918a5"
       },
       "owner": "resource-owner",
       "source_span": "/authority",
