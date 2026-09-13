@@ -8,7 +8,7 @@ use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAc
 use app\common\service\capability\CrossProductAdoptionHost;
 use PeanutAdmin\ArtifactRevision\Application\ArtifactRevisionService;
 use PeanutAdmin\ArtifactRevision\Database\Schema as ArtifactSchema;
-use PeanutAdmin\ArtifactRevision\Persistence\PdoArtifactRevisionRepository;
+use PeanutAdmin\ArtifactRevision\Persistence\ArtifactRevisionStore;
 use PeanutAdmin\Collaboration\Application\CollaborationService;
 use PeanutAdmin\Collaboration\ArtifactRevision\ArtifactRevisionCollaborationPublisher;
 use PeanutAdmin\Collaboration\Contract\CollaborationPolicy;
@@ -31,7 +31,10 @@ use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Idempotency\IdempotencySchema;
+use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use PeanutAdmin\Workflow\Adapter\WorkflowAssignmentResolver;
 use PeanutAdmin\Workflow\Adapter\WorkflowAttachment;
 use PeanutAdmin\Workflow\Adapter\WorkflowAttachmentResolver;
@@ -45,6 +48,7 @@ use PeanutAdmin\Workflow\Package as WorkflowPackage;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function expectCap06(bool $condition, string $message): void
 {
@@ -192,8 +196,15 @@ try {
     $pdo->exec("INSERT INTO pa_tenant_member VALUES (11, 1, 101, 'active'), (21, 2, 201, 'active')");
     $pdo->exec('INSERT INTO pa_article (is_show, delete_time) VALUES (1, NULL)');
 
-    $revisions = new ArtifactRevisionService(new PdoArtifactRevisionRepository($pdo));
-    $collaboration = new CollaborationService(new PdoCollaborationRepository($pdo), new Cap06CollaborationPolicy($pdo), new Cap06Submission($pdo), new ArtifactRevisionCollaborationPublisher(new PdoArtifactRevisionRepository($pdo)), static fn(): DateTimeImmutable => new DateTimeImmutable('2030-02-15T12:00:00Z'));
+    $connection = ThinkPhpTestConnection::fromPdo($pdo);
+    $revisionStore = new ArtifactRevisionStore($connection);
+    $revisions = new ArtifactRevisionService(
+        $revisionStore,
+        new ThinkPhpTransactionManager($connection),
+        new PdoIdempotencyRepository($pdo),
+        new PdoAuditRepository($pdo),
+    );
+    $collaboration = new CollaborationService(new PdoCollaborationRepository($pdo), new Cap06CollaborationPolicy($pdo), new Cap06Submission($pdo), new ArtifactRevisionCollaborationPublisher($revisionStore), static fn(): DateTimeImmutable => new DateTimeImmutable('2030-02-15T12:00:00Z'));
     $quota = new EntitlementQuotaService(new PdoEntitlementQuotaRepository($pdo), new Cap06MeterRegistry(), new Cap06PolicyProvider(), new Cap06Clock());
     $workflow = new WorkflowRuntime($pdo, new Cap06Assignments($pdo), new Cap06WorkflowAuthorization($pdo), new Cap06Subject($pdo), new Cap06Attachments($pdo), new Cap06SideEffects($pdo));
     $tenant = cap06Tenant(1, 101, 11, 'cap06-positive');

@@ -2927,5 +2927,29 @@
       "Standalone and Multi-tenant qualification from one fixed candidate"
     ],
     "resource_stop": "Do not rerun the Settings dynamic group, change grants, guess root credentials or reuse another database under the current failure budget."
+  },
+  "stage5_c05_execution": {
+    "status": "development-source-implemented-dynamic-and-consumer-gates-pending",
+    "issue_id": "S5-C05",
+    "completed": [
+      "Core PdoArtifactRevisionRepository replaced by injected ThinkPHP ArtifactRevisionStore",
+      "ArtifactRevisionRepository retains the business contract without exposing PDO",
+      "ArtifactRevisionService receives transaction, idempotency and audit collaborators by constructor injection",
+      "Workflow subject resolver keeps only the existing Workflow connection-identity contract pending S5-C06",
+      "Application cross-product adoption test consumes the shared ThinkPHP connection and ArtifactRevisionStore"
+    ],
+    "verified": [
+      "all changed ArtifactRevision PHP files linted",
+      "ArtifactRevision unit and Workflow resolver scope passed: 6 tests, 31 assertions",
+      "focused PHPStan reports no ArtifactRevisionStore error; three pre-existing service/resolver findings remain",
+      "old PdoArtifactRevisionRepository source and call sites are absent"
+    ],
+    "pending": [
+      "registered exclusive database lease permitting the ArtifactRevision and random CrossProduct schema names",
+      "ArtifactRevision integration, isolation, rollback and concurrency suites without skips",
+      "explicit product acceptance of the documented missing production Application consumer or a supplied real consumer",
+      "Standalone and Multi-tenant qualification from one fixed candidate"
+    ],
+    "resource_stop": "Do not run the dynamic ArtifactRevision or CrossProduct adoption groups until their fixed database names/CREATE-DROP permissions and exclusive lease are registered."
   }
 }
