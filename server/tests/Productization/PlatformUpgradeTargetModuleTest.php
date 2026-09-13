@@ -12,6 +12,9 @@ use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\plugin\PluginLockResolver;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
+use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
+use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
@@ -412,7 +415,10 @@ SQL);
     $moduleConfig = Config::get('modules', []);
     upgradeTargetExpect(is_array($moduleConfig), 'Module fixture configuration is unavailable');
     $audit = AuditContractHost::fromPdo($pdo);
-    $permissions = new PlatformOpsPermissionChecker($pdo);
+    $permissions = new PlatformOpsPermissionChecker(new PlatformAuthorizationEvaluator(
+        new PdoPlatformAuthorizationRepository($pdo),
+        new RevisionPermissionCache(),
+    ));
     $providers = new BackupRestoreProviderRegistry([new PairedBackupProvider()]);
     $tasks = new OpsTaskService($permissions, $providers, new PdoOpsTaskDispatcher($pdo, $audit));
     $maintenance = new MaintenanceService(

@@ -57,7 +57,6 @@ function platformAccessHttpSessions(PDO $pdo): PlatformOperatorSessionService
 
 $serverRoot = dirname(__DIR__, 2);
 $routes = peanut_route_registry_source($serverRoot);
-$factory = (string)file_get_contents($serverRoot . '/app/platform/service/PlatformRuntimeFactory.php');
 $composition = (string)file_get_contents($serverRoot . '/app/AppService.php');
 $controller = (string)file_get_contents($serverRoot . '/app/platform/controller/PlatformAccessController.php');
 $problemMapper = (string)file_get_contents($serverRoot . '/app/common/http/ApiProblemMapper.php');
@@ -93,7 +92,9 @@ foreach ($expectedRoutes as $path => [$action, $permission]) {
     );
 }
 platformAccessHttpExpect(
-    !str_contains($factory, 'PlatformAccessAdminService')
+    !str_contains($composition, 'PlatformRuntimeFactory')
+        && str_contains($composition, 'bind(PlatformAuthService::class')
+        && str_contains($composition, 'make(TransactionManager::class)')
         && str_contains($composition, 'bind(PasswordHasher::class')
         && str_contains($composition, 'ApplicationPasswordPolicy::hasher()'),
     'PlatformAccessAdminService is not using native constructor injection'

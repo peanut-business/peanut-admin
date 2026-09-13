@@ -18,7 +18,10 @@ use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
+use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Context\PlatformContext;
+use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
@@ -239,7 +242,10 @@ try {
         $tasks,
         $requests,
         $runtime,
-        new PlatformOpsPermissionChecker($pdo),
+        new PlatformOpsPermissionChecker(new PlatformAuthorizationEvaluator(
+            new PdoPlatformAuthorizationRepository($pdo),
+            new RevisionPermissionCache(),
+        )),
     );
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');

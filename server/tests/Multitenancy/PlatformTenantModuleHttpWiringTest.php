@@ -52,7 +52,6 @@ pm01ModuleHttpExpect(
         && str_contains($configSource, "'roots' => \$roots"),
     'default Module roots must be an explicit empty deployment input'
 );
-$runtime = (string)file_get_contents(dirname(__DIR__, 2) . '/app/platform/service/PlatformRuntimeFactory.php');
 $composition = (string)file_get_contents(dirname(__DIR__, 2) . '/app/AppService.php');
 $registryFactory = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php'
@@ -66,11 +65,10 @@ $serverMenuMapper = (string)file_get_contents(
 );
 pm01ModuleHttpExpect(
     str_contains($composition, "'MODULE_REGISTRY_UNAVAILABLE'")
-        && str_contains($composition, 'new PlatformRuntimeFactory(')
-        && !str_contains($runtime, 'Config::')
-        && str_contains($runtime, 'PdoModuleGovernanceProvider')
+        && !str_contains($composition, 'PlatformRuntimeFactory')
+        && str_contains($composition, 'PdoModuleGovernanceProvider')
         && str_contains($registryFactory, 'ModuleBoundaryChecker')
-        && str_contains($runtime, 'VerifiedTenantModuleRepository'),
+        && str_contains($composition, 'VerifiedTenantModuleRepository'),
     'production Module runtime lost fail-closed deployment verification'
 );
 pm01ModuleHttpExpect(

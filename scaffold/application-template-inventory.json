@@ -4816,7 +4816,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a50fd7f2194c79d24a1cb98d4bc40a38fb884fc763ecefbfe3d058407e9a4437"
+            "source_sha256": "53ac0b1cf4467ee7a188359c159c3e700d2f082363e0916492a8baaef3acf3d6"
         },
         {
             "path": "server/app/BaseController.php",
@@ -14213,18 +14213,6 @@
             "source_sha256": "34fcba5b1f0ca4f65fed0f6a26e6a2032a7c9be92b81a8f8637897c7e2c4edbd"
         },
         {
-            "path": "server/app/platform/service/PlatformRuntimeFactory.php",
-            "target": "server/app/platform/service/PlatformRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "aea7aae99950920fcf2e9919455f3d687a32fb55017296bb34d4d2fbee38e3d5"
-        },
-        {
             "path": "server/app/platform/service/PlatformTenantQueryService.php",
             "target": "server/app/platform/service/PlatformTenantQueryService.php",
             "classification": "app-owned",
@@ -14606,7 +14594,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "5662f5b21a1b92c30227bcd70e5edbc2a99fb512a3608627677cc89f44630213"
+            "source_sha256": "774b5642bfd9b97391e4b6ceba80e8688e065b785fc6ea9942bd667f8a7b6022"
         },
         {
             "path": "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",

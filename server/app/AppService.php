@@ -64,12 +64,19 @@ use app\common\validate\InputValidator;
 use app\platform\invitation\OwnerInvitationDeliveryPort;
 use app\platform\invitation\OwnerInvitationRuntimePolicy;
 use app\platform\invitation\UnavailableOwnerInvitationDeliveryPort;
+use app\platform\identity\CorePlatformOperatorIdentityPort;
+use app\platform\identity\PlatformOperatorIdentityPort;
+use app\platform\service\ApplicationTenantBootstrapService;
+use app\platform\service\CoreTenantOwnerAdminProvisioner;
 use app\platform\service\PlatformOperatorSessionService;
-use app\platform\service\PlatformRuntimeFactory;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\TenantApplicationBootstrapPersistence;
+use app\platform\service\TenantOwnerAdminProvisioner;
 use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
+use app\platform\service\module\DeployedTenantModuleRegistry;
+use app\platform\service\module\OpisTenantModuleConfigValidator;
 use app\platform\service\module\PlatformTenantModuleService;
+use app\platform\service\module\VerifiedTenantModuleRepository;
 use app\platform\service\ops\PlatformOpsApplicationService;
 use app\platform\service\ops\ApplicationRuntimeStatusProvider;
 use app\platform\service\ops\DeploymentModuleRequestService;
@@ -90,6 +97,7 @@ use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\ModuleDefinitionRegistryFactory;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\ModuleCatalogApplier;
+use app\platform\service\plugin\PluginCatalogSyncService;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use app\platform\service\provider\NotificationQualificationContributor;
 use app\platform\service\provider\OauthQualificationContributor;
@@ -104,10 +112,14 @@ use think\facade\Db;
 use think\db\PDOConnection;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
+use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
+use PeanutAdmin\Kernel\Audit\AuditRepository;
 use PeanutAdmin\Kernel\Identity\IdentityRepository;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
@@ -118,10 +130,18 @@ use PeanutAdmin\Kernel\Membership\MembershipRepository;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
+use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
 use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
+use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\TenantModuleManager;
+use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
+use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
+use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantRepository;
@@ -206,6 +226,7 @@ class AppService extends Service
             $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
         ));
+        $this->app->bind(AuditRepository::class, AuditContractHost::class);
         $this->app->bind(OperationLogService::class, fn(): OperationLogService => new OperationLogService(
             $this->app->make(AuditContractHost::class),
         ));
@@ -395,41 +416,66 @@ class AppService extends Service
                 $this->app->make(CurrentExecutionContext::class),
             );
         });
-        $this->app->bind(PlatformRuntimeFactory::class, function (): PlatformRuntimeFactory {
-            $moduleConfig = Config::get('modules', []);
-            if (!is_array($moduleConfig)) {
-                throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
-            }
-            $trustedModuleKeyConfig = Config::get('module_packages.trusted_ed25519_keys', []);
-            if (!is_array($trustedModuleKeyConfig)) {
-                throw new \RuntimeException('MODULE_TRUST_CONFIGURATION_INVALID');
-            }
-            return new PlatformRuntimeFactory(
+        $this->app->bind(PdoPlatformAuthRepository::class, PdoPlatformAuthRepository::class);
+        $this->app->bind(PdoPlatformAuthorizationRepository::class, PdoPlatformAuthorizationRepository::class);
+        $this->app->bind(PlatformAuthorizationRepository::class, PdoPlatformAuthorizationRepository::class);
+        $this->app->bind(RevisionPermissionCache::class, RevisionPermissionCache::class);
+        $this->app->bind(PlatformAuthorizationEvaluator::class, PlatformAuthorizationEvaluator::class);
+        $this->app->bind(PlatformAuthService::class, fn(): PlatformAuthService => new PlatformAuthService(
+            $this->app->make(TransactionManager::class),
+            $this->app->make(PdoPlatformAuthRepository::class),
+            $this->app->make(PasswordHasher::class),
+            new SystemClock(),
+            new TokenIssuer(),
+            $this->platformIdentifierHmacKey(),
+        ));
+        $this->app->bind(PlatformOperatorSessionService::class, PlatformOperatorSessionService::class);
+        $this->app->bind(CorePlatformOperatorIdentityPort::class, CorePlatformOperatorIdentityPort::class);
+        $this->app->bind(PlatformOperatorIdentityPort::class, CorePlatformOperatorIdentityPort::class);
+        $this->app->bind(ApplicationTenantBootstrapService::class, ApplicationTenantBootstrapService::class);
+        $this->app->bind(CoreTenantOwnerAdminProvisioner::class, CoreTenantOwnerAdminProvisioner::class);
+        $this->app->bind(TenantOwnerAdminProvisioner::class, CoreTenantOwnerAdminProvisioner::class);
+        $this->app->bind(PdoPlatformRepository::class, PdoPlatformRepository::class);
+        $this->app->bind(BootstrapService::class, fn(): BootstrapService => new BootstrapService(
+            $this->app->make(TransactionManager::class),
+            $this->app->make(IdentityRepository::class),
+            $this->app->make(TenantRepository::class),
+            $this->app->make(MembershipRepository::class),
+            $this->app->make(PdoPlatformRepository::class),
+            $this->app->make(AuditRepository::class),
+            $this->app->make(PasswordHasher::class),
+        ));
+        $this->app->bind(DeployedTenantModuleRegistry::class, fn(): DeployedTenantModuleRegistry =>
+            $this->app->make(PdoModuleGovernanceProvider::class)->registry());
+        $this->app->bind(OpisTenantModuleConfigValidator::class, OpisTenantModuleConfigValidator::class);
+        $this->app->bind(TenantModuleManager::class, fn(): TenantModuleManager => new TenantModuleManager(
+            $this->app->make(DeployedTenantModuleRegistry::class)->compiled(),
+            new VerifiedTenantModuleRepository(
+                new PdoModuleRuntimeRepository($this->app->make(PDO::class), true),
+                $this->app->make(DeployedTenantModuleRegistry::class),
+            ),
+            $this->app->make(OpisTenantModuleConfigValidator::class),
+        ));
+        $this->app->bind(PlatformTenantAdminService::class, PlatformTenantAdminService::class);
+        $this->app->bind(TenantGovernanceService::class, TenantGovernanceService::class);
+        $this->app->bind(PlatformTenantModuleService::class, PlatformTenantModuleService::class);
+        $this->app->bind(PluginCatalogSyncService::class, fn(): PluginCatalogSyncService =>
+            new PluginCatalogSyncService(
                 $this->app->make(PDO::class),
-                $this->app->make(AuditContractHost::class),
-                $this->app->make(\app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands::class),
-                $this->app->make(\app\Modules\Official\Task\Contracts\TaskBootstrapCommands::class),
-                $this->app->make(ExecutionContextStore::class),
-                $this->app->make(\app\common\service\tenant\TenantSettingService::class),
-                $this->app->make(TenantApplicationBootstrapPersistence::class),
-                (string)Config::get('platform_auth.identifier_hmac_key', ''),
-                $moduleConfig,
-                $trustedModuleKeyConfig,
+                dirname(__DIR__),
+                $this->moduleConfiguration(),
                 $this->app->make(ModuleCatalogApplier::class),
-            );
-        });
-        $this->app->bind(PlatformOperatorSessionService::class, fn(): PlatformOperatorSessionService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->sessions());
-        $this->app->bind(TenantGovernanceService::class, fn(): TenantGovernanceService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->tenantGovernance());
-        $this->app->bind(PlatformTenantModuleService::class, fn(): PlatformTenantModuleService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->tenantModules());
-        $this->app->bind(PlatformModuleRuntimeService::class, fn(): PlatformModuleRuntimeService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->moduleRuntime());
+            ));
+        $this->app->bind(PlatformModuleRuntimeService::class, fn(): PlatformModuleRuntimeService =>
+            new PlatformModuleRuntimeService(
+                $this->app->make(PDO::class),
+                dirname(__DIR__),
+                $this->moduleConfiguration(),
+                $this->trustedModuleKeys(),
+                $this->app->make(PluginRuntimeGovernanceService::class),
+                $this->app->make(PluginCatalogSyncService::class),
+                $this->app->make(ModuleCatalogApplier::class),
+            ));
         $this->app->bind(PlatformPermissionChecker::class, PlatformOpsPermissionChecker::class);
         $this->app->bind(PdoOpsTaskDispatcher::class, PdoOpsTaskDispatcher::class);
         $this->app->bind(OpsTaskDispatcher::class, PdoOpsTaskDispatcher::class);
@@ -499,12 +545,12 @@ class AppService extends Service
                 $this->app->make(PlatformPermissionChecker::class),
                 new PdoProviderQualificationEvidenceRepository($this->app->make(PDO::class)),
                 [
-                    new PaymentQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
-                    new NotificationQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
-                    new OauthQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
-                    new StorageQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
+                    new PaymentQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
+                    new NotificationQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
+                    new OauthQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
+                    new StorageQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
                 ],
-                $this->providerDigestKey(),
+                $this->platformIdentifierHmacKey(),
             ));
         $this->app->bind(PlatformDiagnosticBundleService::class, function (): PlatformDiagnosticBundleService {
             $permissions = $this->app->make(PlatformPermissionChecker::class);
@@ -712,7 +758,7 @@ class AppService extends Service
         return $trustedKeys;
     }
 
-    private function providerDigestKey(): string
+    private function platformIdentifierHmacKey(): string
     {
         return trim((string)Config::get('platform_auth.identifier_hmac_key', ''));
     }
