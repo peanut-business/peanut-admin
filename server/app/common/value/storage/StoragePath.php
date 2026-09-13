@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\value\storage;
 
 use PeanutAdmin\FileMedia\Storage\StorageObjectKey;
+use PeanutAdmin\FileMedia\Storage\TenantObjectNamespace;
 
 /** 生成应用拥有的 Tenant 对象命名空间，并委托 Core 做技术路径校验。 */
 final class StoragePath
@@ -17,12 +18,9 @@ final class StoragePath
         $directory = str_replace('.', '/', $purpose);
         $extension = strtolower(trim($extension, '.'));
         $suffix = $extension === '' ? '' : '.' . preg_replace('/[^a-z0-9]+/', '', $extension);
-        return StorageObjectKey::assert(sprintf(
-            'tenants/v1/%d/%s/%s%s',
-            $tenantId,
-            $directory,
-            $fileKey,
-            $suffix,
-        ));
+        return StorageObjectKey::assert(
+            TenantObjectNamespace::directory($tenantId, $directory)
+            . '/' . $fileKey . $suffix,
+        );
     }
 }

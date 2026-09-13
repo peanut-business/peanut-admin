@@ -212,7 +212,6 @@ function transform(string $path, string $classification): string
 function adapterKind(string $path): ?string
 {
     return match ($path) {
-        'server/app/common/service/file/FileObjectNamespace.php',
         'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
         'server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',
         'server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php',

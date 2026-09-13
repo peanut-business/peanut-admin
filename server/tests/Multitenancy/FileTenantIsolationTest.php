@@ -2,10 +2,9 @@
 declare(strict_types=1);
 
 use app\Modules\Official\File\Contracts\FileAdministration;
-use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\value\file\FileObjectNamespace;
+use app\common\value\storage\StoragePath;
 use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
@@ -124,7 +123,8 @@ try {
     }
 
     expectFileTenant(
-        FileObjectNamespace::directory($alpha, FileEnum::IMAGE) !== FileObjectNamespace::directory($beta, FileEnum::IMAGE),
+        StoragePath::objectKey($alpha->tenantId, 'image.upload', 'file_' . str_repeat('a', 32), 'png')
+            !== StoragePath::objectKey($beta->tenantId, 'image.upload', 'file_' . str_repeat('a', 32), 'png'),
         'two Tenants share the same object namespace'
     );
     expectFileTenant(

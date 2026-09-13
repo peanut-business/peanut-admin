@@ -172,6 +172,7 @@ namespace {
         'PeanutAdmin\\FileMedia\\Storage\\StorageDriver',
         'PeanutAdmin\\FileMedia\\Storage\\StorageHttpTransport',
         'PeanutAdmin\\FileMedia\\Storage\\StorageObjectKey',
+        'PeanutAdmin\\FileMedia\\Storage\\TenantObjectNamespace',
     ];
     foreach ($sources as $relativePath => $source) {
         preg_match_all('/PeanutAdmin\\\\FileMedia\\\\[A-Za-z0-9_\\\\]+/', $source, $coreImports);

@@ -36,7 +36,6 @@ foreach ([
     'member_subject_lookup' => 'app/Modules/Official/Member/Infrastructure/Persistence/ThinkPhpMemberSubjectLookup.php',
     'member_middleware' => 'app/api/middleware/CheckTokenMiddleware.php',
     'file_repository' => 'app/Modules/Official/File/Infrastructure/Persistence/FileTenantRepository.php',
-    'file_namespace' => 'app/common/value/file/FileObjectNamespace.php',
     'file_namespace_core' => 'vendor/peanut-admin/core/file-media/src/Storage/TenantObjectNamespace.php',
     'article_repository' => 'app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php',
     'decoration_repository' => 'app/common/service/decoration/DecorationTenantRepository.php',
@@ -128,8 +127,7 @@ qualificationExpect(
     'oauth persistence bypassed Tenant-owned ORM models',
 );
 qualificationExpect(
-    str_contains($sources['file_namespace'], 'TenantObjectNamespace::directory')
-        && str_contains($sources['file_namespace'], 'TenantObjectNamespace::ownsUri')
+    str_contains($sources['storage_path'], 'TenantObjectNamespace::directory')
         && str_contains($sources['file_namespace_core'], "sprintf('tenants/v1/%d/%s'")
         && str_contains($sources['file_namespace_core'], "sprintf('tenants/v1/%d/'")
         && str_contains($sources['file_namespace_core'], "str_contains(\$relativeDirectory, '..')")
@@ -139,7 +137,7 @@ qualificationExpect(
 qualificationExpect(
     str_contains($sources['async_files'], "'export.csv'")
         && str_contains($sources['async_files'], '->storePath(')
-        && str_contains($sources['storage_path'], "'tenants/v1/%d/%s/%s%s'"),
+        && str_contains($sources['storage_path'], 'TenantObjectNamespace::directory'),
     'async exports lost private Tenant namespace'
 );
 qualificationExpect(
