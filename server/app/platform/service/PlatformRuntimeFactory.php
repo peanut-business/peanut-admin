@@ -37,18 +37,13 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
-use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
-use PeanutAdmin\Kernel\Platform\Application\PlatformWorkspaceQueryService;
 
 final class PlatformRuntimeFactory
 {
     private ?PlatformOperatorSessionService $sessions = null;
-    private ?PlatformTenantQueryService $tenantQueries = null;
-    private ?TenantEntryBindingAdminService $tenantEntryBindings = null;
     private ?TenantGovernanceService $tenantGovernance = null;
     private ?PlatformTenantModuleService $tenantModules = null;
-    private ?PlatformAccessAdminService $platformAccess = null;
     private ?PlatformModuleRuntimeService $moduleRuntime = null;
 
     /** @param array<string,mixed> $moduleConfig @param array<string,mixed> $trustedModuleKeyConfig */
@@ -98,33 +93,6 @@ final class PlatformRuntimeFactory
     public function identities(): CorePlatformOperatorIdentityPort
     {
         return new CorePlatformOperatorIdentityPort($this->sessions());
-    }
-
-    public function tenantQueries(): PlatformTenantQueryService
-    {
-        if ($this->tenantQueries !== null) {
-            return $this->tenantQueries;
-        }
-
-        return $this->tenantQueries = new PlatformTenantQueryService(
-            $this->sessions(),
-            new PlatformWorkspaceQueryService($this->pdo)
-        );
-    }
-
-    public function tenantEntryBindings(): TenantEntryBindingAdminService
-    {
-        return $this->tenantEntryBindings ??= new TenantEntryBindingAdminService(
-            $this->pdo,
-            new PdoTransactionManager($this->pdo),
-            $this->sessions(),
-            $this->audit,
-        );
-    }
-
-    public function platformAccess(): PlatformAccessAdminService
-    {
-        return $this->platformAccess ??= new PlatformAccessAdminService($this->pdo, ApplicationPasswordPolicy::hasher());
     }
 
     public function tenantGovernance(): TenantGovernanceService

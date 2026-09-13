@@ -66,8 +66,6 @@ use app\platform\invitation\OwnerInvitationRuntimePolicy;
 use app\platform\invitation\UnavailableOwnerInvitationDeliveryPort;
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\PlatformRuntimeFactory;
-use app\platform\service\PlatformTenantQueryService;
-use app\platform\service\TenantEntryBindingAdminService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\TenantApplicationBootstrapPersistence;
 use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
@@ -105,7 +103,6 @@ use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
 use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
-use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantRepository;
@@ -393,15 +390,6 @@ class AppService extends Service
         $this->app->bind(PlatformOperatorSessionService::class, fn(): PlatformOperatorSessionService => $this->app
             ->make(PlatformRuntimeFactory::class)
             ->sessions());
-        $this->app->bind(PlatformTenantQueryService::class, fn(): PlatformTenantQueryService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->tenantQueries());
-        $this->app->bind(TenantEntryBindingAdminService::class, fn(): TenantEntryBindingAdminService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->tenantEntryBindings());
-        $this->app->bind(PlatformAccessAdminService::class, fn(): PlatformAccessAdminService => $this->app
-            ->make(PlatformRuntimeFactory::class)
-            ->platformAccess());
         $this->app->bind(TenantGovernanceService::class, fn(): TenantGovernanceService => $this->app
             ->make(PlatformRuntimeFactory::class)
             ->tenantGovernance());
