@@ -29,7 +29,11 @@ final class ModuleInstall extends DatabaseContextualCommand
             if (!is_array($config)) {
                 throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
             }
-            $identity = (new DeploymentModuleInstaller($pdo, dirname(__DIR__, 2)))->install(
+            $identity = (new DeploymentModuleInstaller(
+                $pdo,
+                dirname(__DIR__, 2),
+                $this->moduleCatalogs(),
+            ))->install(
                 trim((string)$input->getArgument('module_key')),
                 $config
             );

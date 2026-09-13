@@ -6,6 +6,7 @@ namespace app\common\service\installation;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\module\ProductTenantModuleProfileService;
 use app\platform\service\plugin\PluginLockResolver;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use PDO;
 use RuntimeException;
 use Throwable;
@@ -15,7 +16,10 @@ final class InstallationExecutionHost
 {
     private const MODES = ['guided', 'automatic'];
 
-    public function __construct(private readonly string $serverRoot)
+    public function __construct(
+        private readonly string $serverRoot,
+        private readonly ModuleCatalogApplier $catalogs,
+    )
     {
         require_once $serverRoot . '/database/install.php';
     }
@@ -279,7 +283,12 @@ final class InstallationExecutionHost
     {
         $pdo = $this->pdo();
         $config = $this->moduleConfig();
-        $lifecycle = (new PdoModuleGovernanceProvider($pdo, $this->serverRoot, $config))->pluginLifecycle();
+        $lifecycle = (new PdoModuleGovernanceProvider(
+            $pdo,
+            $this->serverRoot,
+            $config,
+            $this->catalogs,
+        ))->pluginLifecycle();
         $operations = [];
         foreach ($moduleKeys as $moduleKey) {
             $result = $lifecycle->reconcile($moduleKey);
@@ -292,7 +301,7 @@ final class InstallationExecutionHost
             $pdo,
             new \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager($pdo),
             new \PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository($pdo, true),
-            new PdoModuleGovernanceProvider($pdo, $this->serverRoot, $config),
+            new PdoModuleGovernanceProvider($pdo, $this->serverRoot, $config, $this->catalogs),
             \app\common\service\audit\AuditContractHost::fromPdo($pdo),
         ))->applyInstallationSelection($moduleKeys);
         return ['operations' => $operations, 'profile' => $profile];

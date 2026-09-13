@@ -8,6 +8,7 @@ use app\common\execution\ExecutionContextStore;
 use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\common\execution\DatabaseContextualCommand;
 use PDO;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -21,9 +22,10 @@ final class OpsModuleTask extends DatabaseContextualCommand
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
         PDO $pdo,
+        ModuleCatalogApplier $catalogs,
         private readonly PlatformOpsRuntimeFactory $runtime,
     ) {
-        parent::__construct($contexts, $executionContext, $pdo);
+        parent::__construct($contexts, $executionContext, $pdo, $catalogs);
     }
 
     protected function configure(): void

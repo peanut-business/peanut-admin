@@ -19,7 +19,12 @@ trait PluginCommandSupport
         if (!is_array($config)) {
             throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
         }
-        return (new PdoModuleGovernanceProvider($pdo, $serverRoot, $config))->pluginLifecycle();
+        return (new PdoModuleGovernanceProvider(
+            $pdo,
+            $serverRoot,
+            $config,
+            $this->moduleCatalogs(),
+        ))->pluginLifecycle();
     }
 
     /** @param callable(\app\common\contract\module\PluginLifecycleCommands):array<string,mixed> $operation */

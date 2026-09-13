@@ -17,6 +17,7 @@ use app\platform\service\module\VerifiedTenantModuleRepository;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginCatalogSyncService;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
@@ -62,6 +63,7 @@ final class PlatformRuntimeFactory
         private readonly string $identifierHmacKey,
         private readonly array $moduleConfig,
         private readonly array $trustedModuleKeyConfig,
+        private readonly ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -169,7 +171,12 @@ final class PlatformRuntimeFactory
         }
 
         $pdo = $this->pdo;
-        $governance = new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 3), $this->moduleConfig);
+        $governance = new PdoModuleGovernanceProvider(
+            $pdo,
+            dirname(__DIR__, 3),
+            $this->moduleConfig,
+            $this->catalogs,
+        );
         $registry = $governance->registry();
         $validator = new OpisTenantModuleConfigValidator();
         $repository = new VerifiedTenantModuleRepository(
@@ -216,8 +223,19 @@ final class PlatformRuntimeFactory
             dirname(__DIR__, 3),
             $this->moduleConfig,
             $trusted,
-            new PluginRuntimeGovernanceService($this->pdo, dirname(__DIR__, 3), $this->moduleConfig),
-            new PluginCatalogSyncService($this->pdo, dirname(__DIR__, 3), $this->moduleConfig),
+            new PluginRuntimeGovernanceService(
+                $this->pdo,
+                dirname(__DIR__, 3),
+                $this->moduleConfig,
+                $this->catalogs,
+            ),
+            new PluginCatalogSyncService(
+                $this->pdo,
+                dirname(__DIR__, 3),
+                $this->moduleConfig,
+                $this->catalogs,
+            ),
+            $this->catalogs,
         );
     }
 

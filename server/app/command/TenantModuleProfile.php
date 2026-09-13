@@ -36,7 +36,12 @@ final class TenantModuleProfile extends DatabaseContextualCommand
                 $pdo,
                 new PdoTransactionManager($pdo),
                 new PdoModuleRuntimeRepository($pdo, true),
-                new PdoModuleGovernanceProvider($pdo, dirname(__DIR__, 2), $config),
+                new PdoModuleGovernanceProvider(
+                    $pdo,
+                    dirname(__DIR__, 2),
+                    $config,
+                    $this->moduleCatalogs(),
+                ),
                 AuditContractHost::fromPdo($pdo),
             ))->apply(trim((string)$input->getArgument('profile')));
             $output->writeln((string)json_encode(

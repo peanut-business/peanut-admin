@@ -13,7 +13,8 @@ final readonly class DeploymentModuleInstaller
 {
     public function __construct(
         private PDO $pdo,
-        private string $serverRoot
+        private string $serverRoot,
+        private ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -72,7 +73,7 @@ SQL);
                 );
             }
             $this->assertSameIdentity($identity, $current);
-            (new ModuleCatalogApplier($this->pdo))->apply($registry->compiled(), [$moduleKey]);
+            $this->catalogs->apply($registry->compiled(), [$moduleKey]);
             $this->pdo->commit();
             return $identity;
         } catch (\Throwable $exception) {
@@ -89,7 +90,8 @@ SQL);
         return (new PdoModuleGovernanceProvider(
             $this->pdo,
             $this->serverRoot,
-            $deploymentConfig
+            $deploymentConfig,
+            $this->catalogs,
         ))->registry();
     }
 

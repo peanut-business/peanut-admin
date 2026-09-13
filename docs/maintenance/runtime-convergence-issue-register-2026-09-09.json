@@ -2899,5 +2899,33 @@
     },
     "limitations": "No C02 or remaining service units, full application generation, all-official package matrix, fixed-candidate qualification, release, deployment or real Provider qualification. OpsUpgradeTask remains unchanged and its empty trusted-key intent remains unknown.",
     "next_action": "C01 closed; do not redispatch. Any C02 or remaining services require their own approved task."
+  },
+  "stage5_c04_execution": {
+    "status": "development-source-implemented-dynamic-gate-blocked",
+    "issue_id": "S5-C04",
+    "completed": [
+      "Core PdoSettingRepository replaced by injected ThinkPHP SettingStore",
+      "SettingsRuntimeFactory and Application composition share one PDOConnection",
+      "Setting consumers and Module catalog synchronization use constructor injection",
+      "old Settings Runtime new PDO construction removed"
+    ],
+    "verified": [
+      "Core Settings non-database scope: 39 tests, 233 assertions",
+      "Application ThinkPHP behavior matrix passed",
+      "new database_connection_locator finding removed; seven pre-existing architecture findings remain",
+      "Application tenant/module source boundaries passed"
+    ],
+    "failed": [
+      "registered Settings MySQL first run rejected hard-coded root credentials before assertions",
+      "single authorized retry used registered DB_USER/DB_PASS but the account cannot create or access the fixed Settings schema",
+      "OpsModuleTaskWiringTest retry budget exhausted on constructor propagation fixture; source corrected afterward without another run"
+    ],
+    "pending": [
+      "registered Settings database credential/grant contract correction",
+      "Settings integration, security and upgrade suites without skips",
+      "OpsModuleTask wiring requalification under a new authorized budget",
+      "Standalone and Multi-tenant qualification from one fixed candidate"
+    ],
+    "resource_stop": "Do not rerun the Settings dynamic group, change grants, guess root credentials or reuse another database under the current failure budget."
   }
 }

@@ -19,6 +19,7 @@ use PeanutAdmin\Kernel\Module\ManifestLoader;
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
 require_once dirname(__DIR__) . '/Support/IsolatedBackendEnvironment.php';
+require_once dirname(__DIR__) . '/Support/ThinkPhpTestConnection.php';
 
 function moduleBundleExpect(bool $condition, string $message): void
 {
@@ -174,6 +175,7 @@ $pdo = new PDO(
     ],
 );
 moduleBundleExpect((string)$pdo->query('SELECT DATABASE()')->fetchColumn() === $database, 'isolated database selection changed');
+$catalogs = ThinkPhpTestConnection::moduleCatalogs($pdo);
 $contender = new PDO(
     "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
     $user,
@@ -321,7 +323,7 @@ try {
     );
 
     $moduleConfig = ['kernel_version' => '1.0.0', 'registered_client_keys' => ['admin-web', 'platform-web']];
-    $installer = new PluginPackageInstaller($pdo, $target . '/server', $moduleConfig, []);
+    $installer = new PluginPackageInstaller($pdo, $target . '/server', $moduleConfig, [], $catalogs);
     $installed = $installer->install($archivePath, $packed['sha256'], null);
     moduleBundleExpect(($installed['operation'] ?? null) === 'installed', 'bundle was not installed');
     moduleBundleExpect(array_column((array)$installed['modules'], 'module_key') === ['official.article', 'official.file'], 'bundle install returned another scope');
@@ -362,7 +364,7 @@ try {
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_module_installation WHERE module_key IN ('official.article','official.file') AND installed_version='2.0.0' AND status='active'")->fetchColumn() === 2, 'bundle Module identities did not update');
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key IN ('official.article','official.file')")->fetchColumn() === 0, 'bundle update changed TenantModule enablement');
     moduleBundleCopyTree($target, $releaseV2);
-    $composition = (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig))->verify($releaseV2);
+    $composition = (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig, $catalogs))->verify($releaseV2);
     moduleBundleExpect(
         ($composition['status'] ?? null) === 'ready'
             && ($composition['checked'][0]['operation'] ?? null) === 'preserve',
@@ -373,7 +375,7 @@ try {
     try {
         $pdo->exec("UPDATE pa_plugin_installation SET composer_identity_json='{}' WHERE plugin_key='official-content-bundle'");
         moduleBundleExpectLifecycleError(
-            static fn() => (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig))->verify($releaseV2),
+            static fn() => (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig, $catalogs))->verify($releaseV2),
             'PLUGIN_RELEASE_CURRENT_IDENTITY_INVALID',
             'invalid installed JSON identity did not fail closed',
         );
@@ -385,7 +387,7 @@ try {
     try {
         $pdo->exec("DELETE FROM pa_plugin_module WHERE plugin_key='official-content-bundle' AND module_key='official.file'");
         moduleBundleExpectLifecycleError(
-            static fn() => (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig))->verify($releaseV2),
+            static fn() => (new PluginReleaseCompositionGuard($pdo, $target, $moduleConfig, $catalogs))->verify($releaseV2),
             'PLUGIN_RELEASE_PACKAGE_SCOPE_CHANGED',
             'database Package member loss did not block release composition',
         );
@@ -394,7 +396,7 @@ try {
     }
 
     moduleBundleExpectLifecycleError(
-        static fn() => (new PluginReleaseCompositionGuard($pdo, $releaseV1, $moduleConfig))->verify($releaseV2),
+        static fn() => (new PluginReleaseCompositionGuard($pdo, $releaseV1, $moduleConfig, $catalogs))->verify($releaseV2),
         'PLUGIN_RELEASE_PACKAGE_DOWNGRADE',
         'application release Package downgrade was not blocked',
     );
@@ -406,7 +408,7 @@ try {
     $missingLock['plugins'] = [];
     file_put_contents($missingLockPath, json_encode($missingLock, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
     moduleBundleExpectLifecycleError(
-        static fn() => (new PluginReleaseCompositionGuard($pdo, $missingRelease, $moduleConfig))->verify($releaseV2),
+        static fn() => (new PluginReleaseCompositionGuard($pdo, $missingRelease, $moduleConfig, $catalogs))->verify($releaseV2),
         'PLUGIN_RELEASE_PACKAGE_REMOVED',
         'application release Package removal was not blocked',
     );
@@ -425,7 +427,7 @@ try {
     unset($conflictEntry);
     file_put_contents($conflictLockPath, json_encode($conflictLock, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
     moduleBundleExpectLifecycleError(
-        static fn() => (new PluginReleaseCompositionGuard($pdo, $identityConflictRelease, $moduleConfig))->verify($releaseV2),
+        static fn() => (new PluginReleaseCompositionGuard($pdo, $identityConflictRelease, $moduleConfig, $catalogs))->verify($releaseV2),
         'PLUGIN_RELEASE_PACKAGE_IDENTITY_CHANGED',
         'same-version Package identity change was not blocked',
     );
@@ -473,7 +475,7 @@ try {
         moduleBundleExpect(moduleBundleCount($pdo, $table, $moduleKeys, 'active') === $catalogExpected[$name], "bundle {$name} catalog is not active");
     }
 
-    $governance = new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig);
+    $governance = new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig, $catalogs);
     $retirePreview = $governance->preview('official.article', false);
     moduleBundleExpect(($retirePreview['confirm_plan']['package_key'] ?? null) === 'official-content-bundle', 'member key did not resolve the bundle package');
     moduleBundleExpect(array_column($retirePreview['affected_modules'], 'module_key') === $moduleKeys, 'retire preview did not display the complete bundle scope');
@@ -580,7 +582,8 @@ try {
         $moduleConfig,
         [],
         $governance,
-        new PluginCatalogSyncService($pdo, $target . '/server', $moduleConfig),
+        new PluginCatalogSyncService($pdo, $target . '/server', $moduleConfig, $catalogs),
+        $catalogs,
     );
     $runtimeProjection = $moduleRuntime->modules(1, 100, 'official.task');
     $runtimeTask = $runtimeProjection['items'][0] ?? null;
@@ -620,6 +623,7 @@ try {
         $pdo,
         $disabledTargetRelease,
         $moduleConfig,
+        $catalogs,
     ))->verify($disabledCurrentRelease);
     $disabledOperations = array_column($disabledComposition['checked'], 'operation', 'key');
     moduleBundleExpect(
@@ -627,7 +631,7 @@ try {
         'same-identity application release did not preserve a disabled Package',
     );
 
-    $recoverableGovernance = new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig);
+    $recoverableGovernance = new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig, $catalogs);
     $recoverableRetirePreview = $recoverableGovernance->preview('official.task', false);
     moduleBundleExpect(($recoverableRetirePreview['confirm_plan']['package_key'] ?? null) === 'official-runtime-bundle', 'recoverable member key did not resolve its bundle');
     moduleBundleExpect(array_column($recoverableRetirePreview['affected_modules'], 'module_key') === $recoverableModuleKeys, 'recoverable retire preview split its bundle scope');
@@ -657,7 +661,7 @@ try {
     );
     moduleBundleExpect(($recoverableRepeatRetire['operation'] ?? null) === 'unchanged', 'repeated recoverable bundle retire was not idempotent');
 
-    $recoverablePurgePreview = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
+    $recoverablePurgePreview = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig, $catalogs))
         ->preview('official.notification', true);
     moduleBundleExpect(($recoverablePurgePreview['confirm_plan']['package_key'] ?? null) === 'official-runtime-bundle', 'retired recoverable member key lost its bundle');
     moduleBundleExpect(array_column($recoverablePurgePreview['affected_modules'], 'module_key') === $recoverableModuleKeys, 'recoverable purge preview split its bundle scope');
@@ -668,6 +672,7 @@ try {
             $pdo,
             $target . '/server',
             $moduleConfig,
+            $catalogs,
             static function (string $point): void {
                 if ($point === 'after-first-module-drop') throw new RuntimeException('injected bundle interruption');
             },
@@ -691,7 +696,7 @@ try {
     moduleBundleExpect($interruptedModuleTableCounts[0] === 0 && $interruptedModuleTableCounts[1] > 0, 'bundle interruption did not stop between member completion points');
     moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_migration', $recoverableModuleKeys) === $recoverableMigrationCount, 'interrupted bundle purge deleted migration ledger early');
 
-    $purged = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
+    $purged = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig, $catalogs))
         ->uninstall(
             'official.notification',
             true,
@@ -706,7 +711,7 @@ try {
     }
     moduleBundleExpect(moduleBundleCount($pdo, 'pa_module_installation', $recoverableModuleKeys) === 0, 'bundle purge left Module installation rows');
     moduleBundleExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_plugin_module WHERE plugin_key='official-runtime-bundle'")->fetchColumn() === 2, 'bundle purge deleted ownership history');
-    $repeatPurge = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig))
+    $repeatPurge = (new PluginRuntimeGovernanceService($pdo, $target . '/server', $moduleConfig, $catalogs))
         ->uninstall(
             'official.notification',
             true,
@@ -717,13 +722,18 @@ try {
 
     $privateArchive = $temporary . '/private-fixture.tar';
     $privatePackage = (new PluginPackageArchiveService($projectRoot . '/server'))->packModule('fixture.delivery-record', $privateArchive);
-    (new PluginPackageInstaller($pdo, $target . '/server', $moduleConfig, []))->install($privateArchive, $privatePackage['sha256'], null);
+    (new PluginPackageInstaller($pdo, $target . '/server', $moduleConfig, [], $catalogs))->install($privateArchive, $privatePackage['sha256'], null);
     $privateLock = new \app\platform\service\plugin\PluginLockResolver($target . '/server', '../plugins.lock');
     $profile = new \app\platform\service\module\ProductTenantModuleProfileService(
         $pdo,
         new \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager($pdo),
         new \PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository($pdo, true),
-        new \app\platform\service\module\PdoModuleGovernanceProvider($pdo, $target . '/server', $moduleConfig + ['plugin_lock' => '../plugins.lock']),
+        new \app\platform\service\module\PdoModuleGovernanceProvider(
+            $pdo,
+            $target . '/server',
+            $moduleConfig + ['plugin_lock' => '../plugins.lock'],
+            $catalogs,
+        ),
         \app\common\service\audit\AuditContractHost::fromPdo($pdo),
     );
     foreach ([

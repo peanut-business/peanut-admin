@@ -38,13 +38,15 @@ final class ModuleDisablePackage extends DatabaseContextualCommand
             }
             $moduleKey = trim((string)$input->getArgument('module_key'));
             $serverRoot = dirname(__DIR__, 2);
+            $catalogs = $this->moduleCatalogs();
             $result = (new PlatformModuleRuntimeService(
                 $pdo,
                 $serverRoot,
                 $config,
                 [],
-                new PluginRuntimeGovernanceService($pdo, $serverRoot, $config),
-                new PluginCatalogSyncService($pdo, $serverRoot, $config),
+                new PluginRuntimeGovernanceService($pdo, $serverRoot, $config, $catalogs),
+                new PluginCatalogSyncService($pdo, $serverRoot, $config, $catalogs),
+                $catalogs,
             ))
                 ->disable($moduleKey);
             $output->writeln((string)json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));

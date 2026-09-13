@@ -35,7 +35,14 @@ final class OpsUpgradeTask extends DatabaseContextualCommand
                 throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
             }
             $audit = AuditContractHost::fromPdo($pdo);
-            $runtime = new PlatformOpsRuntimeFactory($pdo, $audit, dirname(__DIR__, 3), $moduleConfig, []);
+            $runtime = new PlatformOpsRuntimeFactory(
+                $pdo,
+                $audit,
+                dirname(__DIR__, 3),
+                $moduleConfig,
+                [],
+                $this->moduleCatalogs(),
+            );
             $service = $runtime->upgradeTaskExecution();
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {

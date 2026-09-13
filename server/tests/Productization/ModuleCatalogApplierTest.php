@@ -8,6 +8,7 @@ use app\platform\service\plugin\PluginModuleRegistryFactory;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
+require_once dirname(__DIR__) . '/Support/ThinkPhpTestConnection.php';
 
 function moduleCatalogExpect(bool $condition, string $message): void
 {
@@ -46,7 +47,7 @@ $registry = (new PluginModuleRegistryFactory($pdo, $serverRoot))->fromDeployment
     'kernel_version' => '1.0.0',
     'registered_client_keys' => ['admin-web', 'platform-web'],
 ])->compiled();
-$applier = new ModuleCatalogApplier($pdo);
+$applier = ThinkPhpTestConnection::moduleCatalogs($pdo);
 
 $first = $applier->apply($registry);
 moduleCatalogExpect($first['operation'] === 'synced', 'first catalog apply was not synchronized');

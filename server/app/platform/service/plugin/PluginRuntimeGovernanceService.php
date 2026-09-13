@@ -18,6 +18,7 @@ final class PluginRuntimeGovernanceService
         private readonly PDO $pdo,
         private readonly string $serverRoot,
         private readonly array $moduleConfig,
+        private readonly ModuleCatalogApplier $catalogs,
         private readonly mixed $faultInjector = null,
     ) {
     }
@@ -112,7 +113,7 @@ final class PluginRuntimeGovernanceService
                 $this->markMaintenance($packageKey, $moduleKeys, $marker);
                 $this->inject('after-marker');
 
-                $catalog = new ModuleCatalogApplier($this->pdo);
+                $catalog = $this->catalogs;
                 $currentCatalog = $catalog->plan($moduleKeys, $purge);
                 if ($currentCatalog['blockers'] !== []) {
                     throw new PluginLifecycleException('MODULE_UNINSTALL_BLOCKED', 'New catalog references block Module uninstall.');
@@ -129,7 +130,7 @@ final class PluginRuntimeGovernanceService
                     try {
                         $statement = $this->pdo->prepare('DELETE FROM pa_module_migration WHERE module_key IN (' . $this->placeholders($moduleKeys) . ')');
                         $statement->execute($moduleKeys);
-                        if ((new ModuleCatalogApplier($this->pdo))->plan($moduleKeys, true)['removed'] !== []) {
+                        if ($this->catalogs->plan($moduleKeys, true)['removed'] !== []) {
                             throw new PluginLifecycleException('MODULE_PURGE_INCOMPLETE', 'Module catalog remains after purge.');
                         }
                         $this->pdo->commit();
@@ -159,7 +160,7 @@ final class PluginRuntimeGovernanceService
     private function buildPlan(array $scope, bool $purge): array
     {
         $moduleKeys = array_column($scope['affected_modules'], 'module_key');
-        $catalog = (new ModuleCatalogApplier($this->pdo))->plan($moduleKeys, $purge);
+        $catalog = $this->catalogs->plan($moduleKeys, $purge);
         $removed = $catalog['removed'];
         $preserved = $catalog['preserved'];
         $blockers = [...$catalog['blockers'], ...$this->lifecycleBlockers($scope, $purge)];

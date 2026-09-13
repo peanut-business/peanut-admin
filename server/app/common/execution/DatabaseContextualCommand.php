@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\execution;
 
 use PDO;
+use app\platform\service\plugin\ModuleCatalogApplier;
 
 /** Adds the application database only for commands that actually use it. */
 abstract class DatabaseContextualCommand extends ContextualCommand
@@ -12,6 +13,7 @@ abstract class DatabaseContextualCommand extends ContextualCommand
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
         private readonly PDO $pdo,
+        private readonly ModuleCatalogApplier $catalogs,
     ) {
         parent::__construct($contexts, $executionContext);
     }
@@ -19,5 +21,10 @@ abstract class DatabaseContextualCommand extends ContextualCommand
     final protected function database(): PDO
     {
         return $this->pdo;
+    }
+
+    final protected function moduleCatalogs(): ModuleCatalogApplier
+    {
+        return $this->catalogs;
     }
 }

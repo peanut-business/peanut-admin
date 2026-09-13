@@ -14,6 +14,7 @@ final readonly class PluginReleaseCompositionGuard
         private PDO $pdo,
         private string $targetProjectRoot,
         private array $moduleConfig,
+        private ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -42,6 +43,7 @@ final readonly class PluginReleaseCompositionGuard
             $this->pdo,
             $targetRoot . '/server',
             $targetConfig,
+            $this->catalogs,
         ))->pluginLifecycle();
 
         $checked = [];

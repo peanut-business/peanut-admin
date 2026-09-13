@@ -40,7 +40,9 @@ final class TenantModuleEnableLockedPrivate extends DatabaseContextualCommand
             $pdo = $this->database();
             $root = dirname(__DIR__, 2);
             $service = new ProductTenantModuleProfileService($pdo, new PdoTransactionManager($pdo),
-                new PdoModuleRuntimeRepository($pdo, true), new PdoModuleGovernanceProvider($pdo, $root, $config), AuditContractHost::fromPdo($pdo));
+                new PdoModuleRuntimeRepository($pdo, true),
+                new PdoModuleGovernanceProvider($pdo, $root, $config, $this->moduleCatalogs()),
+                AuditContractHost::fromPdo($pdo));
             $result = $service->applyAdditionalInstallationSelection($input->getOption('module'), $mode, new PluginLockResolver($root, $config['plugin_lock']));
             $output->writeln(json_encode($result + ['rbac_granted' => false], JSON_THROW_ON_ERROR));
             return 0;

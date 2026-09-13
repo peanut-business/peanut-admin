@@ -44,7 +44,13 @@ final class ModuleInstallPackage extends DatabaseContextualCommand
             if (!is_array($config)) {
                 throw new PluginPackageException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
             }
-            $result = (new PluginPackageInstaller($pdo, dirname(__DIR__, 2), $config, $trusted))->install(
+            $result = (new PluginPackageInstaller(
+                $pdo,
+                dirname(__DIR__, 2),
+                $config,
+                $trusted,
+                $this->moduleCatalogs(),
+            ))->install(
                 (string)$input->getArgument('package'),
                 ($pin = trim((string)$input->getOption('sha256'))) === '' ? null : $pin,
                 ($keyId = trim((string)$input->getOption('signature-key-id'))) === '' ? null : $keyId,

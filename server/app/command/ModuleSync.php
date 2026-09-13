@@ -35,13 +35,15 @@ final class ModuleSync extends DatabaseContextualCommand
             if (!is_array($config)) throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module registry is unavailable.');
             $key = trim((string)$input->getOption('module'));
             $serverRoot = dirname(__DIR__, 2);
+            $catalogs = $this->moduleCatalogs();
             $result = (new PlatformModuleRuntimeService(
                 $pdo,
                 $serverRoot,
                 $config,
                 [],
-                new PluginRuntimeGovernanceService($pdo, $serverRoot, $config),
-                new PluginCatalogSyncService($pdo, $serverRoot, $config),
+                new PluginRuntimeGovernanceService($pdo, $serverRoot, $config, $catalogs),
+                new PluginCatalogSyncService($pdo, $serverRoot, $config, $catalogs),
+                $catalogs,
             ))->sync($key === '' ? null : $key);
             $output->writeln((string)json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
             return 0;

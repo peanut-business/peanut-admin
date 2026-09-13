@@ -10,6 +10,7 @@ use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
 use PDO;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use think\console\Input;
 use think\console\Output;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
@@ -25,10 +26,11 @@ class Crontab extends DatabaseContextualCommand
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
         PDO $pdo,
+        ModuleCatalogApplier $catalogs,
         private readonly TaskScheduler $taskScheduler,
         private readonly AdvisoryLockExecution $locks,
     ) {
-        parent::__construct($contexts, $executionContext, $pdo);
+        parent::__construct($contexts, $executionContext, $pdo, $catalogs);
     }
 
     protected function configure()

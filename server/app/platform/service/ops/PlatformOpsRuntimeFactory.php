@@ -6,6 +6,7 @@ namespace app\platform\service\ops;
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use DateTimeImmutable;
 use app\platform\service\provider\NotificationQualificationContributor;
 use app\platform\service\provider\OauthQualificationContributor;
@@ -32,6 +33,7 @@ final class PlatformOpsRuntimeFactory
         private readonly string $projectRoot,
         private readonly array $moduleConfig,
         private readonly array $trustedKeys,
+        private readonly ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -122,6 +124,7 @@ final class PlatformOpsRuntimeFactory
             $this->pdo,
             $this->projectRoot . '/server',
             $this->moduleConfig,
+            $this->catalogs,
         );
     }
 
@@ -212,7 +215,9 @@ final class PlatformOpsRuntimeFactory
                 $this->pdo,
                 $this->projectRoot . '/server',
                 $this->moduleConfig,
+                $this->catalogs,
             ),
+            $this->catalogs,
         );
     }
 }

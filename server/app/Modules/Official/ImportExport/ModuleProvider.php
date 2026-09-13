@@ -34,6 +34,7 @@ use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Settings\Secret\SecretProtector;
 use PeanutAdmin\Settings\Secret\SodiumSecretProtector;
+use PeanutAdmin\Settings\Persistence\SettingStore;
 use PDO;
 use think\App;
 use Throwable;
@@ -70,7 +71,7 @@ final class ModuleProvider implements ModuleProviderContract
                         new TenantModuleConfigurationAdapter($pdo, $app->make(\app\platform\service\module\PdoModuleGovernanceProvider::class)),
                         new ExternalBindingConfigurationAdapter($pdo),
                         new CoreSettingsConfigurationAdapter(
-                            $pdo,
+                            $app->make(SettingStore::class),
                             $app->make(\app\platform\service\module\PdoModuleGovernanceProvider::class),
                             $this->secretProtector(),
                         ),

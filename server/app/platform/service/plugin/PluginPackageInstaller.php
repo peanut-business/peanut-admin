@@ -19,6 +19,7 @@ final class PluginPackageInstaller
         private readonly string $serverRoot,
         private readonly array $moduleConfig,
         private readonly array $trustedPublicKeys,
+        private readonly ModuleCatalogApplier $catalogs,
     ) {}
 
     /** @return array<string,mixed> */
@@ -152,6 +153,7 @@ final class PluginPackageInstaller
                 $resolver,
                 new PluginModuleRegistryFactory($this->pdo, $this->serverRoot),
                 $this->moduleConfig,
+                $this->catalogs,
             );
             $lifecycleStarted = true;
             $result = $operation === 'update'

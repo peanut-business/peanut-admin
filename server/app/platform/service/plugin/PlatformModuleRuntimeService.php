@@ -20,6 +20,7 @@ final readonly class PlatformModuleRuntimeService
         private array $trustedPublicKeys,
         private PluginRuntimeGovernanceService $governance,
         private PluginCatalogSyncService $catalog,
+        private ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -103,7 +104,13 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
     /** @return array<string,mixed> */
     public function install(string $archivePath, string $expectedSha256, ?string $signatureKeyId): array
     {
-        $result = (new PluginPackageInstaller($this->pdo, $this->serverRoot, $this->moduleConfig, $this->trustedPublicKeys))
+        $result = (new PluginPackageInstaller(
+            $this->pdo,
+            $this->serverRoot,
+            $this->moduleConfig,
+            $this->trustedPublicKeys,
+            $this->catalogs,
+        ))
             ->install($archivePath, $expectedSha256, $signatureKeyId);
         $moduleKeys = array_values(array_map(static fn(array $module): string => (string)$module['module_key'], $result['modules'] ?? []));
         $catalog = $this->catalog();
@@ -184,7 +191,7 @@ SQL)->fetchAll(PDO::FETCH_ASSOC);
                 }
                 $this->pdo->beginTransaction();
                 try {
-                    (new ModuleCatalogApplier($this->pdo))->retire($moduleKeys);
+                    $this->catalogs->retire($moduleKeys);
                     $update = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key IN (" . $this->placeholders($moduleKeys) . ") AND status='active'");
                     $update->execute($moduleKeys);
                     $this->pdo->commit();

@@ -12,6 +12,7 @@ use think\Container;
 use think\facade\Config;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require_once dirname(__DIR__) . '/Support/ThinkPhpTestConnection.php';
 require_once dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginLifecycleException.php';
 require_once dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginDescriptor.php';
 require_once dirname(__DIR__, 2) . '/app/platform/service/plugin/PluginLockResolver.php';
@@ -407,6 +408,7 @@ SQL);
         $projectRoot,
         $moduleConfig,
         [],
+        ThinkPhpTestConnection::moduleCatalogs($pdo),
     ))->readiness();
     $moduleProjection = Closure::bind(
         fn(PlatformUpgradeTarget $value): array => $this->moduleProjection($value),

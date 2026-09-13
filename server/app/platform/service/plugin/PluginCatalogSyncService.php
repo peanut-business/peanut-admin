@@ -13,6 +13,7 @@ final readonly class PluginCatalogSyncService
         private PDO $pdo,
         private string $serverRoot,
         private array $moduleConfig,
+        private ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -31,7 +32,7 @@ final readonly class PluginCatalogSyncService
         if ($moduleKey !== null && !isset($registered[$moduleKey])) {
             throw new PluginLifecycleException('MODULE_NOT_REGISTERED', 'Module is not active in the deployed registry.');
         }
-        return (new ModuleCatalogApplier($this->pdo))->apply(
+        return $this->catalogs->apply(
             $compiled,
             $moduleKey === null ? null : [$moduleKey],
         );
@@ -39,12 +40,12 @@ final readonly class PluginCatalogSyncService
 
     public function catalogRevision(): string
     {
-        return (new ModuleCatalogApplier($this->pdo))->catalogRevision();
+        return $this->catalogs->catalogRevision();
     }
 
     /** @param list<string> $moduleKeys */
     public function invalidateTenantAuthorization(array $moduleKeys): void
     {
-        (new ModuleCatalogApplier($this->pdo))->invalidateTenantAuthorization($moduleKeys);
+        $this->catalogs->invalidateTenantAuthorization($moduleKeys);
     }
 }

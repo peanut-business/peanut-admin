@@ -82,10 +82,12 @@ use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\ModuleDefinitionRegistryFactory;
 use app\platform\service\plugin\PluginLockResolver;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use think\Service;
 use think\Model;
 use think\facade\Config;
 use think\facade\Db;
+use think\db\PDOConnection;
 use PDO;
 use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
 use PeanutAdmin\Kernel\Auth\SystemClock;
@@ -101,6 +103,8 @@ use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
+use PeanutAdmin\Settings\Persistence\SettingStore;
+use app\common\persistence\CoreTenantRepositoryFactory;
 
 /** 应用组合根，集中注册 Host 基础设施、业务服务与官方 Module Runtime。 */
 class AppService extends Service
@@ -124,9 +128,17 @@ class AppService extends Service
         $this->app->instance(CurrentExecutionContext::class, $current);
         $configuredOverrides = Config::get('peanut.overrides', []);
         CoreServiceOverrides::configure(is_array($configuredOverrides) ? $configuredOverrides : []);
-        $this->app->bind(PDO::class, fn(): PDO => $this->database());
+        $this->app->bind(PDOConnection::class, fn(): PDOConnection => $this->databaseConnection());
+        $this->app->bind(PDO::class, fn(): PDO => $this->app->make(PDOConnection::class)->connect());
         $this->app->bind(TransactionManager::class, fn(): TransactionManager => new ThinkPhpTransactionManager(
-            Db::connect(),
+            $this->app->make(PDOConnection::class),
+        ));
+        $this->app->bind(SettingStore::class, fn(): SettingStore => (new CoreTenantRepositoryFactory(
+            $this->app->make(PDO::class),
+        ))->settings($this->app->make(PDOConnection::class)));
+        $this->app->bind(ModuleCatalogApplier::class, fn(): ModuleCatalogApplier => new ModuleCatalogApplier(
+            $this->app->make(PDOConnection::class),
+            $this->app->make(SettingStore::class),
         ));
         $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
             $this->app->make(PDO::class),
@@ -140,7 +152,10 @@ class AppService extends Service
         ));
         $this->app->bind(
             InstallationExecutionHost::class,
-            fn(): InstallationExecutionHost => new InstallationExecutionHost(dirname(__DIR__)),
+            fn(): InstallationExecutionHost => new InstallationExecutionHost(
+                dirname(__DIR__),
+                $this->app->make(ModuleCatalogApplier::class),
+            ),
         );
         $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => new AuditContractHost(
             $this->app->make(PDO::class),
@@ -350,6 +365,7 @@ class AppService extends Service
                 (string)Config::get('platform_auth.identifier_hmac_key', ''),
                 $moduleConfig,
                 $trustedModuleKeyConfig,
+                $this->app->make(ModuleCatalogApplier::class),
             );
         });
         $this->app->bind(PlatformOperatorSessionService::class, fn(): PlatformOperatorSessionService => $this->app
@@ -401,6 +417,7 @@ class AppService extends Service
                 dirname(__DIR__, 2),
                 $moduleConfig,
                 $trustedKeys,
+                $this->app->make(ModuleCatalogApplier::class),
             );
         });
         $this->app->bind(PdoModuleGovernanceProvider::class, fn(): PdoModuleGovernanceProvider => $this->app
@@ -520,13 +537,13 @@ class AppService extends Service
         });
     }
 
-    private function database(): PDO
+    private function databaseConnection(): PDOConnection
     {
-        $pdo = Db::connect()->connect();
-        if (!$pdo instanceof PDO) {
+        $connection = Db::connect();
+        if (!$connection instanceof PDOConnection) {
             throw new \RuntimeException('APPLICATION_DATABASE_UNAVAILABLE');
         }
-        return $pdo;
+        return $connection;
     }
 
     private function databasePrefix(): string

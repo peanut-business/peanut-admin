@@ -5,6 +5,7 @@ namespace app\platform\service\ops;
 
 use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use PDO;
 
 /** Creates immutable, registry-bound requests before Platform submission. */
@@ -17,6 +18,7 @@ final readonly class DeploymentModuleRequestService
         private array $moduleConfig,
         private array $trustedKeys,
         private PluginRuntimeGovernanceService $governance,
+        private ModuleCatalogApplier $catalogs,
         private ?string $registryPath = null,
     ) {
     }
@@ -43,6 +45,7 @@ final readonly class DeploymentModuleRequestService
                 $this->projectRoot . '/server',
                 $this->moduleConfig,
                 $this->trustedKeys,
+                $this->catalogs,
             ))->update($archive, $archiveSha256, $signatureKeyId, true);
             if (!hash_equals($packageKey, (string)($plan['package_key'] ?? ''))) {
                 throw new \RuntimeException('OPS_MODULE_PACKAGE_IDENTITY_MISMATCH');
@@ -204,6 +207,7 @@ SQL);
                 $this->projectRoot . '/server',
                 $this->moduleConfig,
                 $this->trustedKeys,
+                $this->catalogs,
             ))->update(
                 $this->archivePath($resource, (string)$request['archive_sha256']),
                 (string)$request['archive_sha256'],

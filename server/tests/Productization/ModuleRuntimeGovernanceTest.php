@@ -11,6 +11,7 @@ use app\platform\service\plugin\PluginRuntimeGovernanceService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
+require_once dirname(__DIR__) . '/Support/ThinkPhpTestConnection.php';
 
 function moduleGovernanceExpect(bool $condition, string $message): void
 {
@@ -80,6 +81,7 @@ $user = getenv('DB_USER') ?: '';
 $password = getenv('DB_PASS') ?: '';
 moduleGovernanceExpect($host !== '' && $port !== '' && $database !== '' && $user !== '', 'registered database environment is required');
 $pdo = new PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false]);
+$catalogs = ThinkPhpTestConnection::moduleCatalogs($pdo);
 moduleGovernanceExpect((int)$pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()')->fetchColumn() === 0, 'governance test database must start empty');
 initializeCoreIdentity(
     $pdo,
@@ -106,7 +108,7 @@ try {
     $archive = new PluginPackageArchiveService($sourceProject . '/server');
     $packed = $archive->packModule('fixture.delivery-record', $archivePath);
     $moduleConfig = ['kernel_version' => '1.0.0', 'registered_client_keys' => ['admin-web', 'platform-web']];
-    $installer = new PluginPackageInstaller($pdo, $targetProject . '/server', $moduleConfig, []);
+    $installer = new PluginPackageInstaller($pdo, $targetProject . '/server', $moduleConfig, [], $catalogs);
     $installed = $installer->install($archivePath, $packed['sha256'], null);
     moduleGovernanceExpect(($installed['operation'] ?? null) === 'installed', 'fixture package install failed');
     $unchangedInstall = $installer->install($archivePath, $packed['sha256'], null);
@@ -117,7 +119,7 @@ try {
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_module WHERE module_key='fixture.delivery-record'")->fetchColumn() === 0, 'fixture package install changed TenantModule enablement');
 
     $purgeSeed = moduleGovernanceSeed($pdo);
-    $service = new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig);
+    $service = new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, $catalogs);
     $retirePreview = $service->preview('fixture.delivery-record', false);
     moduleGovernanceExpect($retirePreview['blockers'] === [], 'retire preview unexpectedly blocked');
     try {
@@ -145,14 +147,14 @@ SQL);
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_role_permission rp JOIN pa_permission p ON p.id=rp.permission_id WHERE p.module_key='fixture.delivery-record'")->fetchColumn() === 1, 'retire deleted tenant role binding');
     moduleGovernanceExpect((string)$pdo->query("SELECT status FROM pa_permission WHERE module_key='fixture.delivery-record'")->fetchColumn() === 'retired', 'retire left permission active');
 
-    $previewA = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->preview('fixture.delivery-record', true);
-    $previewB = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->preview('fixture.delivery-record', true);
+    $previewA = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, $catalogs))->preview('fixture.delivery-record', true);
+    $previewB = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, $catalogs))->preview('fixture.delivery-record', true);
     moduleGovernanceExpect($previewA['plan_digest'] === $previewB['plan_digest'], 'purge preview digest is not deterministic');
     moduleGovernanceExpect($previewA['blockers'] === [], 'purge preview unexpectedly blocked');
     moduleGovernanceExpect(count($previewA['affected_modules']) === 1, 'purge after retire lost the quarantined Module scope');
     moduleGovernanceExpect(count(array_filter($previewA['removed'], static fn(array $entry): bool => in_array($entry['table'], ['pa_role_permission', 'pa_platform_role_permission'], true))) === 2, 'purge preview omitted explicit role bindings');
     try {
-        (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, static function (string $point): void {
+        (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, $catalogs, static function (string $point): void {
             if ($point === 'after-first-drop-statement') throw new RuntimeException('injected interruption');
         }))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
         throw new RuntimeException('purge interruption was not injected');
@@ -165,7 +167,7 @@ SQL);
     $remainingTables = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('pa_fixture_delivery_record','pa_fixture_delivery_aux')")->fetchColumn();
     moduleGovernanceExpect($remainingTables === 1, 'interrupted purge did not leave a deterministic partial table set');
 
-    $purged = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
+    $purged = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, $catalogs))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
     moduleGovernanceExpect($purged['operation'] === 'purged', 'purge recovery did not finish');
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('pa_fixture_delivery_record','pa_fixture_delivery_aux')")->fetchColumn() === 0, 'purge left owned tables');
     moduleGovernanceExpect((int)$pdo->query("SELECT COUNT(*) FROM pa_module_migration WHERE module_key='fixture.delivery-record'")->fetchColumn() === 0, 'purge left migration ledger');
@@ -176,7 +178,7 @@ SQL);
     $bindingCount = $pdo->prepare('SELECT COUNT(*) FROM pa_platform_role_permission WHERE permission_id=?');
     $bindingCount->execute([$purgeSeed['permission_id']]);
     moduleGovernanceExpect((int)$bindingCount->fetchColumn() === 0, 'purge left platform role binding');
-    $unchanged = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
+    $unchanged = (new PluginRuntimeGovernanceService($pdo, $targetProject . '/server', $moduleConfig, $catalogs))->uninstall('fixture.delivery-record', true, $previewA['confirm_plan'], $previewA['plan_digest']);
     moduleGovernanceExpect($unchanged['operation'] === 'unchanged', 'repeated clean purge was not idempotent');
 
     $codec = new ModuleUninstallPlanCodec();

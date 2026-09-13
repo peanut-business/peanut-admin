@@ -45,6 +45,7 @@ final class PluginReleaseComposition extends DatabaseContextualCommand
                 $this->database(),
                 dirname($serverRoot),
                 $config,
+                $this->moduleCatalogs(),
             ))->verify($currentRoot);
             $output->writeln((string)json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
             return 0;

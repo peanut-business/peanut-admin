@@ -11,6 +11,7 @@ use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLifecycleService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
+use app\platform\service\plugin\ModuleCatalogApplier;
 
 /** Single Host assembly point for the Module Governance contracts. */
 final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
@@ -25,6 +26,7 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
         private readonly PDO $pdo,
         private readonly string $serverRoot,
         private readonly array $moduleConfig,
+        private readonly ModuleCatalogApplier $catalogs,
     ) {
         $this->registryFactory = new PluginModuleRegistryFactory($pdo, $serverRoot);
     }
@@ -52,7 +54,8 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
             $this->pdo,
             $this->lockResolver(),
             $this->registryFactory,
-            $this->moduleConfig
+            $this->moduleConfig,
+            $this->catalogs,
         );
     }
 

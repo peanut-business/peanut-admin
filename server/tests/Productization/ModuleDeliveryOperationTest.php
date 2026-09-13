@@ -22,6 +22,7 @@ use PeanutAdmin\Kernel\Context\PlatformContext;
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require_once dirname(__DIR__, 2) . '/database/install.php';
 require_once dirname(__DIR__) . '/Support/IsolatedBackendEnvironment.php';
+require_once dirname(__DIR__) . '/Support/ThinkPhpTestConnection.php';
 
 function moduleDeliveryExpect(bool $condition, string $message): void
 {
@@ -116,6 +117,7 @@ $pdo = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
 );
+$catalogs = ThinkPhpTestConnection::moduleCatalogs($pdo);
 $identity = initializeCoreIdentity(
     $pdo,
     'module-delivery@example.test',
@@ -182,7 +184,7 @@ try {
     $archive = new PluginPackageArchiveService($source . '/server');
     $v1Path = $temporary . '/v1.tar';
     $v1 = $archive->packBundle('official-content-bundle', '1.0.0', ['official.article', 'official.file'], $v1Path);
-    $installed = (new PluginPackageInstaller($pdo, $target . '/server', $config, []))
+    $installed = (new PluginPackageInstaller($pdo, $target . '/server', $config, [], $catalogs))
         ->install($v1Path, $v1['sha256'], null);
     moduleDeliveryExpect(($installed['operation'] ?? null) === 'installed', 'fixture v1 install failed');
 
@@ -198,7 +200,8 @@ try {
         $target,
         $config,
         [],
-        new PluginRuntimeGovernanceService($pdo, $target . '/server', $config),
+        new PluginRuntimeGovernanceService($pdo, $target . '/server', $config, $catalogs),
+        $catalogs,
         $registryPath,
     );
     $preview = $requests->preview(

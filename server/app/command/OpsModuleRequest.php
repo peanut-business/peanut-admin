@@ -36,12 +36,14 @@ final class OpsModuleRequest extends DatabaseContextualCommand
             $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
+            $catalogs = $this->moduleCatalogs();
             $service = new DeploymentModuleRequestService(
                 $pdo,
                 dirname(__DIR__, 3),
                 $config,
                 $this->trustedKeys(),
-                new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config),
+                new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config, $catalogs),
+                $catalogs,
             );
             $arguments = [
                 trim((string)$input->getOption('delivery-resource-id')),

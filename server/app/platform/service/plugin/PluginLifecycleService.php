@@ -18,6 +18,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         private PluginLockResolver $resolver,
         private PluginModuleRegistryFactory $registries,
         private array $moduleConfig,
+        private ModuleCatalogApplier $catalogs,
     ) {
     }
 
@@ -176,7 +177,7 @@ SQL);
         $now = $this->now();
         $this->pdo->beginTransaction();
         try {
-            (new ModuleCatalogApplier($this->pdo))->retire(array_map(
+            $this->catalogs->retire(array_map(
                 static fn(array $row): string => (string)$row['module_key'],
                 $modules,
             ));
@@ -445,7 +446,7 @@ SQL);
             $compiled = $this->registries
                 ->fromPluginLock($this->resolver, $this->moduleConfig)
                 ->compiled();
-            (new ModuleCatalogApplier($this->pdo))->apply($compiled, array_keys($manifests));
+            $this->catalogs->apply($compiled, array_keys($manifests));
             $owner = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE module_key=:module_key FOR UPDATE');
             $catalog = $this->pdo->prepare(<<<'SQL'
 INSERT INTO pa_plugin_module (plugin_key,module_key,module_version,manifest_digest,created_at,updated_at)

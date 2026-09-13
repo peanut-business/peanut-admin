@@ -35,7 +35,12 @@ final class ModuleUninstallPackage extends DatabaseContextualCommand
             $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
-            $service = new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config);
+            $service = new PluginRuntimeGovernanceService(
+                $pdo,
+                dirname(__DIR__, 2),
+                $config,
+                $this->moduleCatalogs(),
+            );
             $key = trim((string)$input->getArgument('module_key'));
             $purge = (bool)$input->getOption('purge');
             $planFile = trim((string)$input->getOption('confirm-plan-file'));

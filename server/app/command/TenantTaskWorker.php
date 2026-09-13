@@ -9,6 +9,7 @@ use app\common\execution\ExecutionContextStore;
 use app\common\service\runtime\OperationalLog;
 use app\common\execution\DatabaseContextualCommand;
 use PDO;
+use app\platform\service\plugin\ModuleCatalogApplier;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
@@ -19,9 +20,10 @@ final class TenantTaskWorker extends DatabaseContextualCommand
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
         PDO $pdo,
+        ModuleCatalogApplier $catalogs,
         private readonly ImportExportWorkerRuntime $runtime,
     ) {
-        parent::__construct($contexts, $executionContext, $pdo);
+        parent::__construct($contexts, $executionContext, $pdo, $catalogs);
     }
 
     protected function configure()

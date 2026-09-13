@@ -3,11 +3,9 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
 
-use app\common\persistence\CoreTenantRepositoryFactory;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Settings\Application\SettingAdminService;
@@ -16,6 +14,7 @@ use PeanutAdmin\Settings\Definition\SettingDefinition;
 use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
 use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
 use PeanutAdmin\Settings\Secret\SecretProtector;
+use PeanutAdmin\Settings\Persistence\SettingStore;
 
 /** Transfers deployment-scoped values through the Core Settings contract. */
 final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTransferAdapter
@@ -29,7 +28,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
      * and remains fail-closed when a configured secret is applied.
      */
     public function __construct(
-        private PDO $pdo,
+        private SettingStore $settings,
         private PdoModuleGovernanceProvider $moduleGovernance,
         SettingDefinitionRegistry|SecretProtector|null $definitions = null,
         ?SecretProtector $protector = null,
@@ -58,7 +57,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             return [];
         }
 
-        $repository = $this->settings();
+        $repository = $this->settings;
         $entries = [];
         foreach ($definitions as $definition) {
             $snapshot = $repository->deploymentSnapshot($definition);
@@ -91,7 +90,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             throw new \RuntimeException('TRANSFER_CORE_SETTING_SCOPE_INVALID');
         }
 
-        $snapshot = $this->settings()->deploymentSnapshot($definition);
+        $snapshot = $this->settings->deploymentSnapshot($definition);
         $row = $snapshot['deployment'];
         if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
@@ -165,12 +164,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
 
     private function admin(): SettingAdminService
     {
-        return new SettingAdminService($this->settings(), $this->protector);
-    }
-
-    private function settings(): \PeanutAdmin\Settings\Persistence\PdoSettingRepository
-    {
-        return (new CoreTenantRepositoryFactory($this->pdo))->settings();
+        return new SettingAdminService($this->settings, $this->protector);
     }
 
     /** @return list<SettingDefinition> */
