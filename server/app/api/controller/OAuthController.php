@@ -9,7 +9,7 @@ use app\api\service\UserTokenService;
 use app\common\services\FileService;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;

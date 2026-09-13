@@ -3,11 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth;
 
-use app\common\service\external\ExternalTenantBindingRepository;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalChannelBindingStore;
-use app\common\service\external\ExternalTenantAudit;
-use app\common\service\external\ExternalTenantResolver;
 use app\common\service\external\ThinkPhpExternalTenantBindingRepository;
 use app\Modules\Official\Oauth\Application\OAuthQueryService;
 use app\Modules\Official\Oauth\Application\OAuthCommandService;
@@ -20,6 +17,8 @@ use app\Modules\Official\Oauth\Infrastructure\Persistence\ThinkPhpOAuthCallbackL
 use app\Modules\Official\Oauth\Infrastructure\Persistence\ThinkPhpOAuthPersistence;
 use app\common\service\oauth\WechatOAuthTransport;
 use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBindingRepository;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
 

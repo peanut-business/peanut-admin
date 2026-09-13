@@ -47,10 +47,10 @@ foreach ([
     'oauth_identity_model' => 'app/Modules/Official/Oauth/Model/OAuthIdentity.php',
     'oauth_principal_model' => 'app/Modules/Official/Oauth/Model/OAuthPrincipal.php',
     'oauth_queries' => 'app/Modules/Official/Oauth/Application/OAuthQueryService.php',
-    'external_resolver' => 'app/common/service/external/ExternalTenantResolver.php',
+    'oauth_module_provider' => 'app/Modules/Official/Oauth/ModuleProvider.php',
     'external_resolver_core' => 'vendor/peanut-admin/core/integration-security/src/External/ExternalTenantResolver.php',
-    'external_binding_contract' => 'app/common/service/external/ExternalTenantBindingRepository.php',
-    'external_audit_contract' => 'app/common/service/external/ExternalTenantAudit.php',
+    'external_binding_adapter' => 'app/common/service/external/ThinkPhpExternalTenantBindingRepository.php',
+    'external_audit_adapter' => 'app/common/service/external/ThinkPhpExternalTenantAudit.php',
     'finance_repository' => 'app/Modules/Official/Payment/Infrastructure/Persistence/FinanceTenantRepository.php',
     'recharge_settings' => 'app/Modules/Official/Payment/Application/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
@@ -217,14 +217,12 @@ qualificationExpect(
     'public hot-search or policy route is missing a Host-bound Tenant guard'
 );
 qualificationExpect(
-    str_contains(
-        $sources['external_resolver'],
-        'new \\PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantResolver($bindings, $audit)'
-    )
-        && str_contains($sources['external_resolver'], '$this->core->verifiedCallback(')
-        && str_contains($sources['external_resolver'], '$this->core->bindingForTenant(')
-        && str_contains($sources['external_binding_contract'], 'extends \\PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantBindingRepository')
-        && str_contains($sources['external_audit_contract'], 'extends \\PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantAudit')
+    str_contains($sources['app_service'], 'use PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantAudit;')
+        && str_contains($sources['app_service'], 'bind(ExternalTenantAudit::class')
+        && str_contains($sources['oauth_module_provider'], 'use PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantBindingRepository;')
+        && str_contains($sources['oauth_module_provider'], 'use PeanutAdmin\\IntegrationSecurity\\External\\ExternalTenantResolver;')
+        && str_contains($sources['external_binding_adapter'], 'implements ExternalTenantBindingRepository')
+        && str_contains($sources['external_audit_adapter'], 'implements ExternalTenantAudit')
         && str_contains($sources['external_resolver_core'], '!$binding->tenantActive')
         && str_contains($sources['external_resolver_core'], 'count($bindings) !== 1')
         && str_contains($sources['external_resolver_core'], '!$binding->active')
@@ -232,6 +230,12 @@ qualificationExpect(
         && str_contains($sources['external_resolver_core'], "\$this->audit->record('rejected'"),
     'external callbacks do not reject ambiguous or suspended Tenant ownership'
 );
+foreach (['ExternalTenantAudit.php', 'ExternalTenantBinding.php', 'ExternalTenantBindingRepository.php', 'ExternalTenantResolution.php', 'ExternalTenantResolver.php'] as $bridge) {
+    qualificationExpect(
+        !is_file($root . '/app/common/service/external/' . $bridge),
+        'external callback consumption restored an application mirror bridge: ' . $bridge,
+    );
+}
 qualificationExpect(
     str_contains($sources['oauth_queries'], 'wechatSubjectForMember($context, $memberId, $terminal)')
         && str_contains($sources['oauth_repository'], "'member_id' => \$memberId")
@@ -452,7 +456,7 @@ qualificationExpect(
     str_contains($sources['oauth_controller'], "assertExternalCallback('official.oauth')")
         && str_contains($sources['official_account_controller'], "assertExternalCallback('official.oauth')")
         && str_contains($sources['payment_notify_controller'], "assertExternalCallback('official.payment')")
-        && !str_contains($sources['external_resolver'], 'assertExternalCallback(')
+        && !str_contains($sources['external_resolver_core'], 'assertExternalCallback(')
         && str_contains($sources['async_runtime'], 'ImportExportCommands')
         && str_contains($sources['async_module_provider'], 'TaskImportExportRuntime::class')
         && str_contains($sources['async_module_provider'], 'TaskJobRuntime::class')

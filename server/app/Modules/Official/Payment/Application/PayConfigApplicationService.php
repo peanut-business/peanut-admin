@@ -5,7 +5,7 @@ namespace app\Modules\Official\Payment\Application;
 
 use app\common\application\BusinessException;
 use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;

@@ -14,7 +14,8 @@ use app\common\service\payment\gateway\AlipayRefundGateway;
 use app\common\service\payment\gateway\WechatPayGateway;
 use app\common\service\payment\gateway\WechatRefundGateway;
 use app\common\service\payment\transport\CurlPaymentTransport;
-use app\common\service\external\ExternalTenantResolver;
+use app\common\service\external\ExternalTenantContext;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 
 /** Peanut 自有支付边界工厂，不承载参考系统的路由或参数兼容。 */
 final class PaymentServiceFactory
@@ -42,7 +43,7 @@ final class PaymentServiceFactory
             'alipay' => ExternalTenantResolver::ALIPAY_PAYMENT,
             default => throw new \RuntimeException('支付渠道不受支持'),
         };
-        $binding = $this->externalTenants->bindingForTenant($context, $provider);
+        $binding = $this->externalTenants->bindingForTenant(ExternalTenantContext::tenantId($context), $provider);
         return $this->forConfig($binding->config, $transport);
     }
 

@@ -5,7 +5,7 @@ namespace app\Modules\Official\Oauth\Application;
 
 use app\common\application\BusinessException;
 use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class OpenPlatformApplicationService

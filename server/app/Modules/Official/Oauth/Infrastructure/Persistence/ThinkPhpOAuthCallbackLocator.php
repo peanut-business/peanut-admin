@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Oauth\Infrastructure\Persistence;
 
-use app\common\service\external\ExternalTenantBinding;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBinding;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
 use app\Modules\Official\Oauth\Model\OAuthAttempt;
 use app\Modules\Official\Oauth\Model\OAuthCompletionTicket;

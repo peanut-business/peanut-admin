@@ -7,6 +7,7 @@ use app\common\contract\audit\AuditActor;
 use app\common\contract\audit\AuditEvent;
 use app\common\contract\audit\AuditTrace;
 use app\common\service\audit\AuditContractHost;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantAudit;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 
 final class ThinkPhpExternalTenantAudit implements ExternalTenantAudit

@@ -891,7 +891,7 @@
       ],
       "current_implementation": [
         "server/app/common/service/external/ExternalChannelBindingService.php",
-        "server/app/common/service/external/ExternalTenantResolver.php",
+        "PeanutAdmin IntegrationSecurity ExternalTenantResolver",
         "server/app/common/service/external/ThinkPhpExternalTenantBindingRepository.php"
       ],
       "actual_callers": [

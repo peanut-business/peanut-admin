@@ -5,7 +5,7 @@ namespace app\common\services\notice;
 
 use app\common\context\notice\NoticeTenantContext;
 use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantResolver;
+use app\common\service\external\ExternalTenantContext;
 use app\common\infrastructure\notice\sms\AliyunSms;
 use app\common\contract\notice\sms\SmsDriver;
 use app\common\value\notice\sms\SmsDriverResult;
@@ -15,6 +15,7 @@ use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 
 /** Tenant 短信凭据、默认 Provider、驱动选择与回执脱敏的唯一 Host。 */
 final class NoticeChannelService
@@ -193,7 +194,7 @@ final class NoticeChannelService
     {
         try {
             return $this->resolver
-                ->bindingForTenant($context, self::BINDING_PROVIDER, false)
+                ->bindingForTenant(ExternalTenantContext::tenantId($context), self::BINDING_PROVIDER, false)
                 ->config;
         } catch (ExternalTenantResolutionException) {
             return [];

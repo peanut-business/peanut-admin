@@ -213,11 +213,6 @@ function adapterKind(string $path): ?string
 {
     return match ($path) {
         'server/app/common/service/file/FileObjectNamespace.php',
-        'server/app/common/service/external/ExternalTenantAudit.php',
-        'server/app/common/service/external/ExternalTenantBinding.php',
-        'server/app/common/service/external/ExternalTenantBindingRepository.php',
-        'server/app/common/service/external/ExternalTenantResolution.php',
-        'server/app/common/service/external/ExternalTenantResolver.php' => 'deprecated-bridge',
         'server/app/common/service/tenant/ThinkPhpTenantCacheStore.php',
         'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
         'server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',

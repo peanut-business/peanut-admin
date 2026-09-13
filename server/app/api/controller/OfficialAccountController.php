@@ -8,7 +8,7 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
 use app\common\application\BusinessException;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;

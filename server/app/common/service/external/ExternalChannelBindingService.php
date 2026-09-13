@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace app\common\service\external;
 
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBinding;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBindingRepository;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 
 final class ExternalChannelBindingService
 {
@@ -23,7 +26,7 @@ final class ExternalChannelBindingService
 
     public function callbackKey(TenantContext $context, string $provider): string
     {
-        return $this->resolver->bindingForTenant($context, $provider)->callbackKey;
+        return $this->resolver->bindingForTenant(ExternalTenantContext::tenantId($context), $provider)->callbackKey;
     }
 
     public function update(TenantContext $context, string $provider, array $config, string $identity): void
@@ -80,7 +83,7 @@ final class ExternalChannelBindingService
             }
             return null;
         }
-        return $this->resolver->bindingForTenant($context, $provider, false);
+        return $this->resolver->bindingForTenant($tenantId, $provider, false);
     }
 
     private static function assertValidInput(string $provider, string $identity, bool $enabled): void

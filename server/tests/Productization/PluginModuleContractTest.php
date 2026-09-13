@@ -121,7 +121,7 @@ function pluginModuleContractMakeOfficial(App $app, string $abstract, string $co
         \app\common\contract\idempotency\IdempotentCommandExecutor::class => \app\common\service\idempotency\PdoIdempotentCommandExecutor::class,
         \app\Modules\Official\Task\Contracts\TaskJobRuntime::class => \app\Modules\Official\Task\Infrastructure\Runtime\ThinkPhpTaskJobRuntime::class,
         \app\common\service\http\OutboundHttpTransport::class => \app\common\service\http\GuzzleOutboundHttpTransport::class,
-        \app\common\service\external\ExternalTenantAudit::class => \app\common\service\external\ThinkPhpExternalTenantAudit::class,
+        \PeanutAdmin\IntegrationSecurity\External\ExternalTenantAudit::class => \app\common\service\external\ThinkPhpExternalTenantAudit::class,
         \app\common\service\payment\contract\PaymentTransportInterface::class => \app\common\service\payment\transport\CurlPaymentTransport::class,
     ];
     $reflection = new ReflectionClass($concrete);
@@ -224,7 +224,7 @@ $officialAutowireTargets = [
     \app\common\services\notice\NoticeChannelService::class => \app\common\services\notice\NoticeChannelService::class,
     \app\Modules\Official\Notification\Contracts\NotificationCommands::class => \app\Modules\Official\Notification\Application\NotificationApplicationService::class,
     \app\common\service\external\ThinkPhpExternalTenantBindingRepository::class => \app\common\service\external\ThinkPhpExternalTenantBindingRepository::class,
-    \app\common\service\external\ExternalTenantResolver::class => \app\common\service\external\ExternalTenantResolver::class,
+    \PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver::class => \PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver::class,
     \app\common\service\external\ExternalChannelBindingService::class => \app\common\service\external\ExternalChannelBindingService::class,
     \app\common\service\payment\PaymentServiceFactory::class => \app\common\service\payment\PaymentServiceFactory::class,
     \app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands::class => \app\Modules\Official\Payment\Infrastructure\ThinkPhpPaymentChannelGrantCommands::class,

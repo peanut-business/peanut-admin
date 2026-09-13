@@ -17,8 +17,9 @@ use app\common\service\config\TenantApplicationSettingService;
 use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
 use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\service\external\ExternalTenantBinding;
-use app\common\service\external\ExternalTenantResolver;
+use app\common\service\external\ExternalTenantContext;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBinding;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -127,7 +128,7 @@ final class OAuthCommandService implements OAuthCommands
                 throw BusinessException::forbidden('MEMBER_UNAVAILABLE', '用户不存在或已禁用');
             }
             $binding = $this->externalTenants->bindingForTenant(
-                $context,
+                ExternalTenantContext::tenantId($context),
                 ExternalTenantResolver::oauthProvider($scene),
             );
             $profile = $this->transport->exchange($scene, $binding->config, $code);

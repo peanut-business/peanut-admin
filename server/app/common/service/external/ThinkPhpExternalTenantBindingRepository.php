@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\external;
 
 use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBinding;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBindingRepository;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 use think\facade\Db;
 

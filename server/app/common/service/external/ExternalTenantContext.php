@@ -7,6 +7,7 @@ use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 
 final class ExternalTenantContext
 {

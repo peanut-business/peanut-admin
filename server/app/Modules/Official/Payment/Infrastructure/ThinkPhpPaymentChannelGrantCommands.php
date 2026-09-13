@@ -5,10 +5,10 @@ namespace app\Modules\Official\Payment\Infrastructure;
 
 use app\Modules\Official\Payment\Model\PaymentScene;
 use app\Modules\Official\Payment\Model\PaymentTenantChannelGrant;
-use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantContext;
-use app\common\service\external\ExternalTenantBindingRepository;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBinding;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantBindingRepository;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use app\common\tenancy\PlatformTenantDataGateway;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
 use think\facade\Db;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Oauth\Application;
 
 use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantResolver;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\IntegrationSecurity\Wechat\OfficialAccountService;
 
