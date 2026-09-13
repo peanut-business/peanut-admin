@@ -28,6 +28,8 @@ Core 拥有产品无关机制及明示技术状态，但正式 PHP 运行时只�
 
 Core 开发提交 `cab7415` 已完成 ReferenceCodes 源码切片：删除 `PdoReferenceCodeRepository`，由注入的 ThinkPHP `PDOConnection` 承载 definition sync、读取、写入、revision/ETag，并让 Host 原子操作使用同连接的 `ThinkPhpTransactionManager`；安装和升级组合根也不再为该领域构造 PDO。Application 字典仍由本仓原生 Model/Scope 独立拥有，不 deep import Core ReferenceCodes。该切片的静态、Unit、Host 安全与 HTTP 合同已通过；因资源登记没有 ReferenceCodes 专用数据库，MySQL Tenant 隔离、并发及双 Edition 资格仍是明确停止点，不能借用其他领域数据库或旧候选证据。
 
+Core 开发提交 `e1ca91c` 已完成 DataPermission 源码切片：策略、资源操作目录、部门层级和目标集合的数据访问改由调用方注入的 ThinkPHP `PDOConnection` 承载，策略替换与有效权限预览通过 `ThinkPhpTransactionManager` 保持原子边界，Module Provider 注册合同不再传递裸 PDO。Kernel 身份、功能 RBAC 和审计仓储仍按 C12 顺序后续退出，因此 Core Host 只在该明确边界内临时从同一 ThinkPHP 连接取得底层 PDO。Application 全仓真实调用核对没有发现 DataPermission 引擎的生产消费者，不为形式统一强行接入；应用继续以原生 RBAC、`TenantOwnedModel` 和 `TenantScope` 承担现有授权边界。该切片的静态检查和无数据库单测已通过；DataPermission 动态 Tenant 隔离与双 Edition 资格因缺少登记资源仍未通过。
+
 ## 3. 存储驱动候选合同与仓库事实
 
 Core 在 `FileMedia\Storage` 提供低层 `StorageDriver`，只保留以下四个操作：

@@ -779,6 +779,61 @@
       }
     },
     {
+      "stable_service_id": "PA-SVC-DATA-PERMISSION",
+      "name": "对象数据权限服务",
+      "group_id": "shared-foundation",
+      "availability": "always_on",
+      "maturity": "partial",
+      "owner": "peanut-admin-core data-permission / ThinkPHP host",
+      "responsibility": "在可信 Tenant 上下文内组合资源目录、策略、目标解析与查询约束，并对对象级读写授权保持 fail-closed",
+      "explicit_exclusions": [
+        "管理身份、登录和功能 RBAC",
+        "PlatformOperator 授权",
+        "替代应用原生 Model Scope 或强制没有真实调用者的应用接入"
+      ],
+      "current_implementation": [
+        "peanut-admin-core/packages/php/data-permission/src",
+        "peanut-admin-core/backend/app/authorization/DataPermissionRuntimeFactory.php",
+        "peanut-admin-core/backend/app/controller/api/v1/DataAuthorizationController.php"
+      ],
+      "actual_callers": [
+        "Core DataAuthorizationController",
+        "Core example resource policy providers",
+        "Core authorization acceptance fixture"
+      ],
+      "data_ownership": {
+        "owned_tables": [
+          "pa_data_permission_policy",
+          "pa_data_permission_group",
+          "pa_data_permission_target_set",
+          "pa_data_permission_condition",
+          "pa_data_permission_target"
+        ],
+        "shared_or_read_only_tables": [
+          "pa_tenant",
+          "pa_tenant_member",
+          "pa_role",
+          "pa_permission",
+          "pa_protected_resource",
+          "pa_resource_operation",
+          "pa_department",
+          "pa_module_installation",
+          "pa_tenant_module"
+        ],
+        "policy": "数据策略表由 Core DataPermission 唯一写入；功能 RBAC、Module 清单与部门只按其 owner 合同读取"
+      },
+      "dependencies": ["TenantContext", "PA-SVC-ADMIN-AUTHORIZATION", "PA-SVC-MODULE-GOVERNANCE", "PA-SVC-AUDIT"],
+      "current_issue": "S5-C11 已在 Core 开发提交 e1ca91c 上把策略、目录、部门层级、目标集合及事务装配迁至 ThinkPHP；Application 全仓核对未发现该引擎的生产调用者，继续使用原生 RBAC、TenantOwnedModel 与 TenantScope。动态 Tenant 隔离和双 Edition 资格仍待登记资源与固定候选。",
+      "recommended_boundary": "ResourceOperationCatalog、PolicyRepository、TargetResolverRegistry 与 QueryConstraintCompiler；应用只有出现真实对象级策略调用时才显式消费，不建立镜像仓储或兼容桥",
+      "delivery": {
+        "readiness": "in_progress",
+        "can_start_dedicated_thread_now": false,
+        "prerequisites": ["登记 DataPermission 隔离数据库或预置 Schema 合同", "固定统一 3.1.1 候选"],
+        "blockers": ["当前登记资源不允许为本组创建或删除隔离数据库"],
+        "recommended_next_action": "先完成 C12 Kernel 身份、Tenant 与 RBAC 的原生化，再在固定候选上执行 DataPermission 动态隔离与双 Edition 验收"
+      }
+    },
+    {
       "stable_service_id": "PA-SVC-DICTIONARY",
       "name": "字典与参考码服务",
       "group_id": "shared-foundation",
