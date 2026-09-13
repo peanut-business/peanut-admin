@@ -32,7 +32,7 @@ php scripts/check-product-capability-ledger
 ## 当前状态
 
 <!-- CAPABILITY_STATUS_GENERATED_START -->
-> 总体状态：**进行中**。当前正式 Application 仍为已完成 P0-E、双 Edition 安装/同 Edition 升级包与多租户 Demo 回执的 v3.0.14。Core PHP/Web 3.1.0 已完成固定候选资格并公开发布；Application 3.1.0 的首次`main@240eab8f`候选在P0-E六组通过后因Web生产chunk循环于Standalone浏览器失败，未取得资格。CR03-03已在Development移除该手工chunk边界，刷新同源双Edition生成身份，并通过真实生成、双Edition fresh前置、production Compose及两种浏览器聚焦验证；仍须经修复PR冻结新main候选并重新执行完整P0-E、正式旧实例升级和其余CR03矩阵。尚无 Application Release、正式升级或部署。发布后依赖补丁已使 Platform、PC、Web 的 high advisory 归零；3.1.0 候选已重新审计 UniApp，DCloud 固定 Vite 5.2.8 high 仍以受控构建、无公网开发服务器和 2026-10-09 到期复核作窄例外，产品不宣称漏洞清零。真实 Provider 资格、Marketplace、T16、跨实例运营平台与完整 SaaS 仍按各自范围后置。
+> 总体状态：**进行中**。当前正式 Application 仍为 v3.0.14，其固定源码 P0-E、双 Edition 安装/同 Edition 升级包与多租户 Demo 回执属于对应历史身份。2026-09-13 对远端 dev 的有界核对确认：Core PHP/Web 3.1.0 已完成 Q01/D05 并公开发布；Application 已采用真实 Composer/pnpm 3.1.0 locks、V2 产品/Instance 身份和同源双 Edition 生成输入。首次 main@240eab8f 候选在六组 P0-E 通过后因浏览器失败失效；浏览器修正和已安装 Plugin 保护已进入 main@ffe90c7e，但后续升级与资格准备仍未完成，不能据此赋予新候选资格。CR03 最终完整 P0-E、正式旧实例升级/数据读回/失败恢复及四端业务验收仍待完成；没有 Application 3.1.0 Release、正式升级或部署结论。当前执行停止点与恢复条件只从唯一私有状态读取。历史依赖审计中 Platform、PC、Web 无 high advisory；UniApp 固定 Vite 5.2.8 high 保留受控构建、无公网开发服务器及 2026-10-09 到期复核的窄例外，本次未重新运行依赖审计。C02—C12 仅非消费阻塞部分后置；真实 Provider 资格按各自资源和授权分别记录，Marketplace、T16、跨实例运营平台与完整 SaaS 按各自范围后置。
 >
 > 事实基线：`main@48c1a86b5e964ca0721757897d56a810455f1e54`，复核日期：`2026-09-09`。
 

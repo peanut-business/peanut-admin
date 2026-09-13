@@ -2,13 +2,19 @@
 
 Document ID: `pa-docs-maintenance-runtime-convergence-audit-2026-09-09`
 
-Status: `current`（T01、CQ、C01、CR01及CR02开发交付已验收；CR03-01/02完成，首次main候选P0-E浏览器失败；CR03-03定点修复及双Edition聚焦验证已通过，待新PR冻结；尚无App资格或发布结论）
+Status: `current`（有范围的历史审计及开发证据；当前消费完成度由问题主登记与能力账本拥有，本文不保存当前执行队列）
 
 Owner: `product-architecture`
 
 Reviewed at: 2026-09-11（CQ-AUDIT-01静态核查及C01聚焦实现；未运行完整产品资格）
 
-## 当前消费优先安排（2026-09-11）
+## 当前事实的适用范围
+
+2026-09-13 核对：Core 3.1.0 发布和 Application 真实依赖锁、V2 身份及生成输入已经完成；浏览器修正与已安装 Plugin 保护已进入 `main@ffe90c7e1aa61e175dda320c4af4bc7f0edc79af`。升级与资格准备仍未完成，没有 Application 3.1.0 的最终完整 P0-E、真实旧实例升级/数据恢复或正式 Release 结论。详细处置见[问题主登记](runtime-convergence-issue-register-2026-09-09.json)的 `consumer_delivery`，能力与发布状态见[能力账本](../product-status/capability-ledger.json)。
+
+以下各节保留原日期、提交与检查范围；旧“当前”“下一步”、方案 §12.x、模型/owner、资源占用和恢复文字均只描述原批次。它们不覆盖[现行收敛计划](../plans/history-rules-product-convergence-plan-2026-09-10.md)，也不产生执行权限；实际资源只读现行登记，授权、预算和恢复点只读唯一私有状态。
+
+## 2026-09-11 消费准备与历史收据
 
 用户已批准由根安排沿[方案§12.6](../plans/history-rules-product-convergence-plan-2026-09-10.md)推进：CR01消费边界/生成物修正→CR02协调发行→CR03独立安装与升级验收→CR04交付。C02–C12非消费阻塞部分后置，并非已完成或放弃；以下CQ/C01结论保留为已验收输入，不重复派发。具体状态统一在主登记`consumer_delivery`，不另建审计账本。
 
@@ -49,7 +55,7 @@ CR03的可执行输入与缺口统一记录在主登记`consumer_delivery.cr02.h
 绑定真实v3.0.14旧基线。CR03仍须绑定其最终候选、正式签名凭据/制品和独立资源。现有P0-E八组覆盖生成、fresh、Module、compose及两Edition
 浏览器组，不覆盖真实旧实例升级、全部真实Provider操作或Web/Platform/PC/UniApp完整业务矩阵，不能由CR02结果推定。
 
-CR03任务书现已在[方案§12.8](../plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书)落地：
+当时 CR03 任务书在旧方案 §12.8 落地（原文按 Git 历史追溯；当前范围见[现行收敛计划](../plans/history-rules-product-convergence-plan-2026-09-10.md)）：
 先补实际旧实例/数据恢复与四端场景、隔离资源合同，再经dev→main PR固定候选，分别执行八组P0-E与增补资格。
 CR03-01已完成并获根技术验收：canonical common-dir lease proof、真实candidate/tree、固定实例guard、签名包内升级入口、
 恢复stdin、独立资源与HTTP20190唯一登记均已收敛；`CreateApplicationTest`真实生成负控及`seal --check-remote`

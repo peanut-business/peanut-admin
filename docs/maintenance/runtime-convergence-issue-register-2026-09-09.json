@@ -2,7 +2,7 @@
   "schema_version": 2,
   "register_id": "pa-runtime-convergence-2026-09-09",
   "reviewed_at": "2026-09-10",
-  "authority": "问题、有效决定与历史经验的唯一审计登记；阶段2裁定不是当前代码事实、修复授权、正式规则生效或产品资格。",
+  "authority": "问题处置与有范围完成证据的审计登记，不拥有当前执行授权、writer、预算、资源租约或恢复动作。stage1至stage5记录、旧taskbook章节、start_token、next_action及历史资源绑定只解释原批次，不能重新派发；当前规范与唯一私有状态按AGENT_EXECUTION_RULES.md第0节解析。阶段2裁定不是当前代码事实、正式规则生效或产品资格。",
   "source_baseline": {
     "application": "ab96727c8b07da64489fe152b36e483f055dcf0c",
     "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4",
@@ -2627,12 +2627,12 @@
   },
   "consumer_delivery": {
     "authorization_id": "PA-CONSUMER-FIRST-20260911",
-    "status": "cr02-development-accepted-integrated-cr03-taskbook-ready-no-application-qualification-yet",
+    "status": "cr02-development-integrated-cr03-upgrade-readiness-incomplete-no-application-qualification",
     "scope": "消费前阻塞修复、协调发行、同源双Edition独立安装升级资格与对应交付；不要求内部C02-C12全部完成后才消费",
-    "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#126-当前消费优先路线与cr01实施任务书",
+    "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
     "baseline": {"application": "464dee420e7203deca9281da8584d07f0f8401b1", "core": "2ed77f38ca26472d685cfeb81674a66ba23eadb4"},
     "cr01": {
-      "status": "部分完成：开发修复已验收；整应用生成依赖CR02，真实消费资格归CR03",
+      "status": "开发修复已验收；原整应用生成前置已由CR02完成，最终真实消费资格仍归CR03",
       "owner_role": "Terra/medium implementation; root acceptance; private execution locations remain in the local checkpoint",
       "implementation_commit": "2278d9e13bd5ad7fc7a45f722b7f1d7ed656a73d",
       "fixture_correction_commit": "68812f17620a0d730f5c1be427f249e09a652cd5",
@@ -2652,12 +2652,12 @@
       "acceptance": "受影响既有生成/升级/architecture合同及有效负控、docs检查、根复核、精确dev集成；不以报告代替实现"
     },
     "cr02": {
-      "status": "协调版本、公开Core、App锁/V2及7adc3113交接已由根验收；CR02-U实现21798b2c及聚焦验证已复核接受，交付已集成dev@c5fea410；CR03-01已由根验收，CR03-02正在同一独立任务集成dev并准备正式PR，尚未冻结或运行资格",
+      "status": "开发交付已验收并集成：Core 3.1.0公开发布、App真实锁/V2/生成输入及CR02-U实现21798b2c与聚焦验证已接受；c5fea410进入dev。后续候选及未完成的Application资格由cr03记录，不由本项推定",
       "depends_on": [
         "CR01开发修复已集成",
         "CR03-02实际PR经根技术验收并合入main后，才绑定固定候选、资源、真实旧实例与采用/签名输入"
       ],
-      "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#127-cr02协调发行准备执行任务书",
+      "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
       "issue_refs": ["RELEASE-001", "VERSION-001", "VERIFY-002", "VERIFY-005"],
       "compatibility": "Application Server/Web/Platform/PC/UniApp manifests and locks resolve public peanut-admin/core and @peanut-admin/admin 3.1.0. Composer source/dist reference is 047f8e035c4ae14ab5a75581fdbb2a51be126787 and npm integrity is sha512-VgzBHMbxK3NE8XFvT4idh8G+6xi/soBkoh6tnFGb+q/Gi2br1vWZzenA1oYtes044CklhLXw3Bh2xrzSesGExA==. Core PHP public roots and Web export map are unchanged from Alpha.13, so no compatibility bridge or direct consumer patch was added.",
       "cr02_u": {
@@ -2801,8 +2801,8 @@
       "deliverable": "Core public 3.1.0 and the Application lock/V2/inventory/Plugin inputs remain accepted; CR02-U candidate 21798b2c adds the exact signed-package ownership adoption path and focused authentic two-Edition upgrade evidence. Independent Sol/medium static review, execution receipts and remote identity were verified on 2026-09-11; development delivery c5fea410 is accepted and integrated. CR03 full qualification remains outstanding."
     },
     "cr03": {
-      "status": "CR03-01/02已完成；首次main候选P0-E六组通过后浏览器失败失效；CR03-03定点修复与双Edition聚焦验证已通过，待修复PR冻结新候选；App资格未完成",
-      "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md#128-cr03独立消费资格实际派发任务书",
+      "status": "CR03-01/02已完成；首次main@240eab8f候选浏览器失败失效。浏览器修正及已安装Plugin保护e2688ed44932b02203eac4d3499ba26341f3a052已进入main@ffe90c7e1aa61e175dda320c4af4bc7f0edc79af；后续升级与资格准备尚未完成，App最终P0-E、真实旧实例升级/恢复及四端资格仍无完成结论。当前执行状态、预算与恢复动作只从唯一私有状态读取",
+      "taskbook": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
       "authorization_id": "PA-CONSUMER-FIRST-20260911",
       "depends_on": ["CR01及CR02开发交付已验收", "CR03-01独立资源/资格场景就绪后才允许冻结"],
       "issue_refs": ["TENANT-001", "PROVIDER-001", "UX-VERIFY-001", "DCS-CONSUMPTION-001", "VERIFY-004"],
@@ -2811,16 +2811,16 @@
       "candidate_rule": "就绪后经dev到main PR及根技术验收，以实际origin/main完整commit/tree冻结；不得预填未来SHA或把prepare ready当qualified",
       "model": "gpt-5.6-terra",
       "reasoning": "medium",
-      "current_execution_model": "gpt-5.6-sol / medium；仅用于CR03-03同一边界补丁/报告不一致后的可靠收口，修复PR后降回Terra；根保留新main冻结裁定",
+      "model_selection_boundary": "上述模型仅为该历史任务的建议；实际任务开始前按复杂度重新选择模型与推理，不由本登记固定当前执行配置",
       "queue": [
         {"id": "CR03-01", "status": "已完成并获根技术验收", "scope": "就绪、旧实例增补/四端场景和隔离资源合同；不跑完整资格"},
         {"id": "CR03-02", "status": "已完成：PR #450合入main@240eab8f", "depends_on": ["CR03-01", "根冻结技术验收"], "scope": "dev-main PR与真实main候选冻结"},
-        {"id": "CR03-03", "status": "进行中：首次候选浏览器失败；定点修复/聚焦双Edition浏览器已通过，待修复PR与新候选完整P0-E", "depends_on": ["CR03-02"], "scope": "同候选P0-E八组及零残留"},
-        {"id": "CR03-04", "status": "待领取", "depends_on": ["CR03-02"], "scope": "正式key签名同Edition旧实例升级/依赖/数据/失败恢复；独立租约"},
-        {"id": "CR03-05", "status": "待领取", "depends_on": ["对应实例/资源就绪"], "scope": "四端业务与逐厂商实际资格；缺外部账号只阻塞对应部分"},
-        {"id": "CR03-06", "status": "待领取", "depends_on": ["前项实际结果"], "scope": "准确收口、证据及资源清理，根验收后才CR04"}
+        {"id": "CR03-03", "status": "未完成：首次候选失效；浏览器修正及Plugin保护已集成，升级与资格准备仍未完成，后续须以最终固定身份完成完整P0-E", "depends_on": ["CR03-02"], "scope": "同候选P0-E八组及零残留"},
+        {"id": "CR03-04", "status": "最终资格未完成；开发期包/文件演练不能代替真实数据与恢复证据", "depends_on": ["CR03-02"], "scope": "正式key签名同Edition旧实例升级/依赖/数据/失败恢复；独立租约"},
+        {"id": "CR03-05", "status": "最终矩阵未完成；外部资源缺口按对应厂商分别记录", "depends_on": ["对应实例/资源就绪"], "scope": "四端业务与逐厂商实际资格；缺外部账号只阻塞对应部分"},
+        {"id": "CR03-06", "status": "未完成，依赖前项实际结果", "depends_on": ["前项实际结果"], "scope": "准确收口、证据及资源清理，根验收后才CR04"}
       ],
-      "resource_binding": {
+      "historical_resource_binding": {
         "p0e": "peanut-admin-p0e-mysql84-gate; development; 192.168.192.2:20183; container host.docker.internal:20189; HTTP20190/Docs20186; run cr03a0911; lease p0e-runtime-cr03a0911",
         "signing": "peanut-admin-edition-upgrade-release-signing-key; key ID peanut-admin-release-2026-01; credentials only from registry; no ephemeral key",
         "supplement": "CR03-01先登记peanut-admin-consumer-upgrade-mysql84-gate与环境/租约合同；同一mac-14物理分配、独立peanut_admin_development_cr03_<run_id>_<standalone_upgrade|multi_tenant_upgrade>；cr03u0911仅保留给未来最终候选，Development补正不得使用；未登记/claim不得连接",
