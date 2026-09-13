@@ -3039,5 +3039,34 @@
     ],
     "resource_execution": "The task claimed s5-c08-task-job-c08a1 for the fixed Core commit and exact database, verified the registered MySQL container healthy, captured one read-only grant diagnostic, confirmed the database was absent and released the lease. No database was created or dropped.",
     "resource_stop": "Do not rerun the TaskJob MySQL group, change grants, guess privileged credentials or reuse another database until the resource fact source is corrected and a new failure-group budget is authorized."
+  },
+  "stage5_c09_execution": {
+    "status": "development-source-implemented-dynamic-gates-pending",
+    "issue_id": "S5-C09",
+    "core_commit": "f15d9448de9e5ec894f58fe6af255cd4e0735b96",
+    "application_commit": "bb2bd92cc25223b7069a05598da21d9aca42ee0f",
+    "completed": [
+      "Core PdoImportExportRepository replaced by injected ThinkPHP ImportExportStore",
+      "ImportExportService and CsvOperationRunner receive TransactionManager by constructor injection; multi-statement create, cancellation, attempt, checkpoint, row-error and finish transitions retain explicit transaction ownership",
+      "provider row processing and FileMedia I/O remain outside persistence transactions",
+      "result-file ownership and retention authorization moved from AppFileMediaGateway SQL into the ImportExport query contract; the gateway now only consumes the Storage service",
+      "OperationLogExportProvider and XlsxExportService moved to their approved infrastructure and services directories without compatibility aliases"
+    ],
+    "verified": [
+      "all affected Core and Application PHP files linted and both repository diffs passed whitespace checks",
+      "Core ServiceOverrideHostWiringTest passed 3 tests and 7 assertions",
+      "Application PluginModuleContractTest, OfficialCapabilityTenantQualificationTest and ThinkPhpArchitectureBehaviorMatrixTest passed",
+      "focused Core PHPStan first run exposed three iterable/dead-condition findings; one focused correction and the allowed rerun passed with no errors",
+      "Application documentation governance and project resource registry validation passed",
+      "old PdoImportExportRepository production source/call sites and the File gateway operation-table SQL are absent"
+    ],
+    "pending": [
+      "correct the registered Core P1-ED01 credential or pre-provisioning contract before running the ImportExport MySQL harness",
+      "run Application Task/ImportExport Tenant isolation on its exact registered P0-E allocation",
+      "qualify row errors, cancellation races, retry, retention and private file ownership dynamically without skips",
+      "Standalone and Multi-tenant qualification from one fixed candidate"
+    ],
+    "resource_execution": "No C09 database connection was attempted. The same registered Core P1-ED01 resource credential was already proven during S5-C08 to have no CREATE/DROP privilege, so the independent source work continued and the stale two-database/creation-policy facts were corrected in resources/project-resources.json.",
+    "resource_stop": "Do not run the ImportExport MySQL harness, change grants, guess privileged credentials or reuse another database until the corrected resource contract provides an approved scoped credential or pre-provisioned database and a fresh lease is held."
   }
 }
