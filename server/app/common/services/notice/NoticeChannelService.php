@@ -5,7 +5,6 @@ namespace app\common\services\notice;
 
 use app\common\context\notice\NoticeTenantContext;
 use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\infrastructure\notice\sms\AliyunSms;
 use app\common\contract\notice\sms\SmsDriver;
@@ -15,6 +14,7 @@ use app\common\service\http\OutboundHttpTransport;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 
 /** Tenant 短信凭据、默认 Provider、驱动选择与回执脱敏的唯一 Host。 */
 final class NoticeChannelService

@@ -6004,7 +6004,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ff6aaa426d699ce3c7ae96505eaec2a975b3eb429f049bbae5fe43e46cc3b5e3"
+            "source_sha256": "b312374c308b18db749a06a5c24035612c465f8a2ee4ba82ee08932b65905ac9"
         },
         {
             "path": "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
@@ -9798,7 +9798,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e3b22cec69d1af34bb01733c9be8e5480ad64a6f00c3796ea502587acfe36dc2"
+            "source_sha256": "20fad1a756f3eaf20eeccae263cf3c8a9c93a8716bfdf759f74c51f9788e0d3e"
         },
         {
             "path": "server/app/api/controller/PaymentNotifyController.php",
@@ -12421,7 +12421,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d8291c814545b540002dafd356fa4d26f521d4fda56fb488f96cdda88df10456"
+            "source_sha256": "f27503f0d7b2097bbad5758d796f70a5b1a9ab8cbf9cf2873a3c76c5c30a6c68"
         },
         {
             "path": "server/app/common/service/external/ExternalChannelBindingStore.php",
@@ -12512,21 +12512,6 @@
             "adapter_kind": "deprecated-bridge"
         },
         {
-            "path": "server/app/common/service/external/ExternalTenantResolutionException.php",
-            "target": "server/app/common/service/external/ExternalTenantResolutionException.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "d5057dcec5f2803bc5fe8997bb8673a61ecd3035cac0317dcc6f0cf41dfa4c2b",
-            "adapter_kind": "deprecated-bridge"
-        },
-        {
             "path": "server/app/common/service/external/ExternalTenantResolver.php",
             "target": "server/app/common/service/external/ExternalTenantResolver.php",
             "classification": "app-owned",
@@ -12538,7 +12523,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5516f1bef2a6244df08bec7c9e382732a2d720dc8328a73bda13a53351495f6f",
+            "source_sha256": "7de23d2e5ca26b836f701a490c802b89bf26c53280efca0b6b587dbc50037d84",
             "adapter_kind": "deprecated-bridge"
         },
         {
@@ -12567,7 +12552,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "9d91b8eeed76dd2424f40614a219c40c523a994d07f482400b4ba045dd3c4dfe"
+            "source_sha256": "5701faece029d5e66768797d0dc5fe6242bce1926a4db3bb9a8c23e3d5e86bd7"
         },
         {
             "path": "server/app/common/service/hot_search/HotSearchTenantRepository.php",
@@ -13571,7 +13556,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1dd878c3559b2aa586f81909e8feea7ae0543705677b3e612edc383241d84ce9"
+            "source_sha256": "6f8f9bf40da52b05004871881f5109b6efe352459744fd9c8ca9e58d265ffb1d"
         },
         {
             "path": "server/app/common/services/storage/StorageConfigurationService.php",

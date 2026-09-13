@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
-use app\common\service\external\ExternalTenantResolutionException;
 use PDO;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 

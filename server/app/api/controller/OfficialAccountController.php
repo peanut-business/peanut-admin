@@ -9,11 +9,11 @@ use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
 use app\common\application\BusinessException;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\external\ExternalTenantResolutionException;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
 use app\common\service\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Module\ModuleException;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 
 class OfficialAccountController extends BaseApiController
 {

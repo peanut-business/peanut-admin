@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\external;
 
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 
 final class ExternalChannelBindingService
 {

@@ -6,9 +6,9 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 use app\common\service\external\ExternalTenantAudit;
 use app\common\service\external\ExternalTenantBinding;
 use app\common\service\external\ExternalTenantBindingRepository;
-use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
 use app\common\service\external\ThinkPhpExternalTenantBindingRepository;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 
 function externalExpect(bool $condition, string $message): void
 {

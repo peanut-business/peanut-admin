@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\external;
 
 use app\Modules\Official\Oauth\Contracts\OAuthCallbackLocator;
+use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 use think\facade\Db;
 
 final class ThinkPhpExternalTenantBindingRepository implements ExternalTenantBindingRepository, ExternalChannelBindingStore

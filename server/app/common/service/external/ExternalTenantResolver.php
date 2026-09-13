@@ -57,30 +57,18 @@ final class ExternalTenantResolver
 
     public static function oauthProvider(string $scene): string
     {
-        try {
-            return \PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver::oauthProvider($scene);
-        } catch (\PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException) {
-            throw new ExternalTenantResolutionException();
-        }
+        return \PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver::oauthProvider($scene);
     }
 
     private function resolution(callable $resolve): ExternalTenantResolution
     {
-        try {
-            $resolution = $resolve();
-            return new ExternalTenantResolution($resolution->context, $this->adaptBinding($resolution->binding), $resolution->verifiedValue);
-        } catch (\PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException) {
-            throw new ExternalTenantResolutionException();
-        }
+        $resolution = $resolve();
+        return new ExternalTenantResolution($resolution->context, $this->adaptBinding($resolution->binding), $resolution->verifiedValue);
     }
 
     private function binding(callable $resolve): ExternalTenantBinding
     {
-        try {
-            return $this->adaptBinding($resolve());
-        } catch (\PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException) {
-            throw new ExternalTenantResolutionException();
-        }
+        return $this->adaptBinding($resolve());
     }
 
     private function adaptBinding(\PeanutAdmin\IntegrationSecurity\External\ExternalTenantBinding $binding): ExternalTenantBinding
