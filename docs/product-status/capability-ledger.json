@@ -477,7 +477,6 @@
       "paths": [
         "server/app/platform/service/provider/PlatformProviderQualificationService.php",
         "server/app/platform/service/provider/ProviderQualificationContributor.php",
-        "server/app/platform/service/provider/ProviderQualificationRecorder.php",
         "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
         "server/app/platform/service/provider/NotificationQualificationContributor.php",
         "server/app/platform/service/provider/PaymentQualificationContributor.php",

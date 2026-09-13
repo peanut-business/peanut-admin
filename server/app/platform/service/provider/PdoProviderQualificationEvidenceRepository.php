@@ -11,19 +11,6 @@ final readonly class PdoProviderQualificationEvidenceRepository implements Provi
     {
     }
 
-    public function append(array $evidence): void
-    {
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_provider_qualification_evidence
-  (evidence_key,provider_key,scope_type,tenant_id,scope_reference,evidence_type,outcome,
-   config_digest,status_code,request_id,observed_at,expires_at,recorded_at)
-VALUES
-  (:evidence_key,:provider_key,:scope_type,:tenant_id,:scope_reference,:evidence_type,:outcome,
-   :config_digest,:status_code,:request_id,:observed_at,:expires_at,:recorded_at)
-SQL);
-        $statement->execute($evidence);
-    }
-
     public function evidenceFor(array $subjects): array
     {
         if ($subjects === []) {

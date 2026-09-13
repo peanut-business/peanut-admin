@@ -80,11 +80,11 @@ pointer 等原有门禁。
 `platform.ops.read`。Payment、Notification、OAuth 与 Storage contributor 只读取各自权威
 配置；GET 和 Platform 页面刷新不得运行外部 probe、发送消息或发生资金动作。
 
-受信业务成功、回调验签或受控资格适配器通过 Application 内部
-`ProviderQualificationRecorder` 追加 evidence。证据必须绑定当前配置 HMAC digest 和 TTL；配置
-变化或过期后旧证据不参与资格。公开 DTO 只能暴露 opaque scope key、布尔状态、时间、稳定原因
-码、最近安全失败和 evidence digest，不得暴露 Tenant ID、内部 config digest、秘密、PII、交易
-号或原始错误。完整边界见
+当前只读投影会读取已有 evidence；3.1.1 不提供通用写入口。后续受信业务成功、回调验签或受控
+资格步骤必须在对应 Provider 的真实链路中拥有窄写入边界，并绑定当前配置 HMAC digest 和 TTL；
+配置变化或过期后旧证据不参与资格。公开 DTO 只能暴露 opaque scope key、布尔状态、时间、稳定
+原因码、最近安全失败和 evidence digest，不得暴露 Tenant ID、内部 config digest、秘密、PII、
+交易号或原始错误。完整边界见
 [`外部 Provider 生产资格合同`](architecture/product-closure-provider-qualification.md)。
 
 ### 应用升级就绪合同

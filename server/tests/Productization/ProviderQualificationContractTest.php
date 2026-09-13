@@ -6,7 +6,6 @@ require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 use app\platform\service\provider\PlatformProviderQualificationService;
 use app\platform\service\provider\ProviderQualificationContributor;
 use app\platform\service\provider\ProviderQualificationEvidenceRepository;
-use app\platform\service\provider\ProviderQualificationRecorder;
 use app\platform\service\provider\ProviderQualificationSubject;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
@@ -18,7 +17,6 @@ foreach ([
     'ProviderQualificationContributor.php',
     'ProviderQualificationSubject.php',
     'ProviderQualificationEvidenceRepository.php',
-    'ProviderQualificationRecorder.php',
     'PlatformProviderQualificationService.php',
 ] as $source) {
     require_once $providerSource . $source;
@@ -35,11 +33,6 @@ final class FakeProviderQualificationRepository implements ProviderQualification
 {
     /** @var list<array<string,mixed>> */
     public array $rows = [];
-
-    public function append(array $evidence): void
-    {
-        $this->rows[] = $evidence;
-    }
 
     public function evidenceFor(array $subjects): array
     {
@@ -167,17 +160,6 @@ try {
 } catch (OpsConsoleException) {
     expectProviderQualification($deniedContributor->calls === 0, 'contributors ran before Platform permission check');
 }
-
-$recorderRepository = new FakeProviderQualificationRepository();
-$recorder = new ProviderQualificationRecorder($recorderRepository);
-$recorder->record(
-    $tenantA, 'connectivity', 'failed', 'PROVIDER_CONNECTION_REFUSED', 'request-contract-1',
-    $now, $now->modify('+1 day'),
-);
-expectProviderQualification(array_keys($recorderRepository->rows[0]) === [
-    'evidence_key', 'provider_key', 'scope_type', 'tenant_id', 'scope_reference', 'evidence_type',
-    'outcome', 'config_digest', 'status_code', 'request_id', 'observed_at', 'expires_at', 'recorded_at',
-], 'recorder accepted an unsafe evidence payload shape');
 
 $routes = peanut_route_registry_source(dirname(__DIR__, 2));
 expectProviderQualification(

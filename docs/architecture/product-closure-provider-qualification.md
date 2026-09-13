@@ -28,10 +28,10 @@ contributor 只读取各自权威配置；真实 Provider probe 及其成功业�
 Tenant ID、配置 HMAC digest、证据类型、通过/失败、稳定原因码、Request ID、观察和失效时间；
 它不接受秘密、收件人、订单/交易号或原始错误。
 
-Application 内部 `ProviderQualificationRecorder` 是唯一通用写边界。各业务适配器只在真实成功
-操作、已验证回调或显式受控资格步骤之后写入 evidence；浏览器没有对应 POST。配置发生变化时
-当前 contributor 的 digest 必然变化，旧 evidence 即刻失效；超过 `expires_at` 同样失效，不能
-以历史成功冒充当前生产资格。
+当前 Application 没有生产 evidence 写入者；旧通用 `ProviderQualificationRecorder` 只有自有测试
+调用，已在 3.1.1 收敛中删除。现有账本和只读投影继续保留，保护历史数据并让旧 evidence 按
+配置 digest 与 `expires_at` 正常失效。未来只有具体业务 Provider 的真实成功操作、已验证回调或
+显式受控资格步骤可以直接拥有窄写入边界；浏览器不得增加通用 POST，也不得用测试写入冒充资格。
 
 ## 3. 公开投影
 
@@ -61,11 +61,13 @@ Platform 页面只呈现这份投影，并明确刷新不会执行 probe。真�
 
 最低合同验证使用纯 fake contributor、permission checker 和 evidence repository，证明：
 
-- 配置 digest 变化和 TTL 过期会撤销资格；
+- 配置 digest 变化和 TTL 过期会撤销既有资格；
 - Tenant A evidence 不会提升 Tenant B；
 - 无 `platform.ops.read` 时先拒绝，contributor 不执行；
 - 公开 DTO 不含内部 digest、Tenant ID 或敏感业务字段；
 - 路由只有 GET，四类 contributor 只读且不含外呼/资金调用。
+
+当前验证不声称能生成新的 production evidence；该能力必须随具体 Provider 的真实消费链补齐。
 
 真实数据库 migration、Platform 浏览器和 released-scaffold 组合资格归后续正式产品 Gate；它们
 不改变本合同的权限和无副作用边界。
