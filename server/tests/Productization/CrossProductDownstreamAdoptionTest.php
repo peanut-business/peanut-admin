@@ -23,7 +23,7 @@ use PeanutAdmin\EntitlementQuota\Contract\EntitlementMeter;
 use PeanutAdmin\EntitlementQuota\Contract\EntitlementMeterRegistry;
 use PeanutAdmin\EntitlementQuota\Contract\EntitlementPolicyProvider;
 use PeanutAdmin\EntitlementQuota\Database\Schema as EntitlementSchema;
-use PeanutAdmin\EntitlementQuota\Persistence\PdoEntitlementQuotaRepository;
+use PeanutAdmin\EntitlementQuota\Persistence\EntitlementQuotaStore;
 use PeanutAdmin\Kernel\Api\ApiException;
 use PeanutAdmin\Kernel\Auth\Clock;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -45,6 +45,7 @@ use PeanutAdmin\Workflow\Adapter\WorkflowTransitionEffects;
 use PeanutAdmin\Workflow\Application\WorkflowRuntime;
 use PeanutAdmin\Workflow\Database\Schema as WorkflowSchema;
 use PeanutAdmin\Workflow\Package as WorkflowPackage;
+use PeanutAdmin\Workflow\Persistence\WorkflowStore;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -102,7 +103,6 @@ final readonly class Cap06Clock implements Clock
 final readonly class Cap06Assignments implements WorkflowAssignmentResolver
 {
     public function __construct(private PDO $pdo) {}
-    public function connection(): PDO { return $this->pdo; }
     public function resolve(AuthorizedOperationContext $context, array $rules, int $initiatorMemberId, ?int $previousActorMemberId): array
     {
         return [['source_kind' => 'role', 'source_key' => 'reviewer', 'member_id' => $initiatorMemberId]];
@@ -112,7 +112,6 @@ final readonly class Cap06Assignments implements WorkflowAssignmentResolver
 final readonly class Cap06WorkflowAuthorization implements WorkflowAuthorizationResolver
 {
     public function __construct(private PDO $pdo) {}
-    public function connection(): PDO { return $this->pdo; }
     public function authorize(AuthorizedOperationContext $trustedBasis, string $resourceKey, string $operation, array $permissionKeys, string $subjectKey): AuthorizedOperationContext
     {
         return AuthorizedOperationContext::fromDecision(AuthorizationDecision::allow($trustedBasis->tenantContext, $resourceKey, $operation, $trustedBasis->targets, hash('sha256', implode('|', $permissionKeys))));
@@ -122,7 +121,6 @@ final readonly class Cap06WorkflowAuthorization implements WorkflowAuthorization
 final readonly class Cap06Subject implements WorkflowSubjectRevisionResolver
 {
     public function __construct(private PDO $pdo) {}
-    public function connection(): PDO { return $this->pdo; }
     public function resolve(AuthorizedOperationContext $context, string $subjectType, string $subjectKey, string $expectedRevisionKey): array
     {
         return ['revision_key' => $expectedRevisionKey, 'sha256' => hash('sha256', $expectedRevisionKey)];
@@ -132,7 +130,6 @@ final readonly class Cap06Subject implements WorkflowSubjectRevisionResolver
 final readonly class Cap06Attachments implements WorkflowAttachmentResolver
 {
     public function __construct(private PDO $pdo) {}
-    public function connection(): PDO { return $this->pdo; }
     public function snapshot(AuthorizedOperationContext $context, string $fileKey): WorkflowAttachment
     {
         throw new RuntimeException('CAP06 declares no attachments.');
@@ -142,8 +139,7 @@ final readonly class Cap06Attachments implements WorkflowAttachmentResolver
 final readonly class Cap06SideEffects implements WorkflowSideEffectPublisher
 {
     public function __construct(private PDO $pdo) {}
-    public function connection(): PDO { return $this->pdo; }
-    public function publish(PDO $pdo, AuthorizedOperationContext $context, WorkflowTransitionEffects $effects, string $parentIdempotencyKey): void {}
+    public function publish(AuthorizedOperationContext $context, WorkflowTransitionEffects $effects, string $parentIdempotencyKey): void {}
 }
 
 function cap06Tenant(int $tenantId, int $accountId, int $memberId, string $requestId): TenantContext
@@ -205,8 +201,26 @@ try {
         new PdoAuditRepository($pdo),
     );
     $collaboration = new CollaborationService(new PdoCollaborationRepository($pdo), new Cap06CollaborationPolicy($pdo), new Cap06Submission($pdo), new ArtifactRevisionCollaborationPublisher($revisionStore), static fn(): DateTimeImmutable => new DateTimeImmutable('2030-02-15T12:00:00Z'));
-    $quota = new EntitlementQuotaService(new PdoEntitlementQuotaRepository($pdo), new Cap06MeterRegistry(), new Cap06PolicyProvider(), new Cap06Clock());
-    $workflow = new WorkflowRuntime($pdo, new Cap06Assignments($pdo), new Cap06WorkflowAuthorization($pdo), new Cap06Subject($pdo), new Cap06Attachments($pdo), new Cap06SideEffects($pdo));
+    $quota = new EntitlementQuotaService(
+        new EntitlementQuotaStore($connection),
+        new Cap06MeterRegistry(),
+        new Cap06PolicyProvider(),
+        new ThinkPhpTransactionManager($connection),
+        new PdoIdempotencyRepository($pdo),
+        new PdoAuditRepository($pdo),
+        new Cap06Clock(),
+    );
+    $workflow = new WorkflowRuntime(
+        new WorkflowStore($connection),
+        new ThinkPhpTransactionManager($connection),
+        new PdoIdempotencyRepository($pdo),
+        new PdoAuditRepository($pdo),
+        new Cap06Assignments($pdo),
+        new Cap06WorkflowAuthorization($pdo),
+        new Cap06Subject($pdo),
+        new Cap06Attachments($pdo),
+        new Cap06SideEffects($pdo),
+    );
     $tenant = cap06Tenant(1, 101, 11, 'cap06-positive');
     $draft = $workflow->saveDraft(cap06WorkflowContext($tenant, 'write'), 'peanut.article', 'article.approval', cap06Graph(), null, 'cap06-definition-draft');
     $workflow->publishDefinition(cap06WorkflowContext($tenant, 'publish'), 'peanut.article', 'article.approval', 1, 'cap06-definition-publish');

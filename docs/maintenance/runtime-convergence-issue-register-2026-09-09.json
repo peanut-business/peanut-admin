@@ -2951,5 +2951,30 @@
       "Standalone and Multi-tenant qualification from one fixed candidate"
     ],
     "resource_stop": "Do not run the dynamic ArtifactRevision or CrossProduct adoption groups until their fixed database names/CREATE-DROP permissions and exclusive lease are registered."
+  },
+  "stage5_c06_execution": {
+    "status": "development-source-implemented-dynamic-gate-pending",
+    "issue_id": "S5-C06",
+    "completed": [
+      "Core PdoEntitlementQuotaRepository and PdoWorkflowRepository replaced by injected ThinkPHP stores",
+      "EntitlementQuotaService, WorkflowRuntime and WorkflowQueryService receive persistence and atomic collaborators by constructor injection",
+      "Workflow assignment, authorization, subject, attachment and side-effect contracts no longer expose PDO",
+      "Workflow side-effect publication retains notification/task business intents without a PDO method parameter",
+      "Application CrossProduct adoption test consumes the shared ThinkPHP connection for ArtifactRevision, EntitlementQuota and Workflow"
+    ],
+    "verified": [
+      "all changed Core and Application PHP files linted",
+      "non-database contract scope passed after focused SQLite connection repair: 33 tests, 89 assertions, 13 expected database skips",
+      "focused SQLite Workflow query failure mapping passed separately: 1 test, 2 assertions",
+      "focused PHPStan rerun reduced Store findings to redundant list normalization; that mechanical normalization was corrected without a third run, while remaining domain findings pre-existed",
+      "old PdoEntitlementQuotaRepository and PdoWorkflowRepository source/call sites are absent"
+    ],
+    "pending": [
+      "registered exclusive database lease permitting fixed EntitlementQuota/Workflow schemas and CrossProduct random schema naming",
+      "reserve-commit-release compensation, workflow start-transition, rollback, idempotency and concurrency suites without skips",
+      "cross-domain notification/task transaction qualification",
+      "Standalone and Multi-tenant qualification from one fixed candidate"
+    ],
+    "resource_stop": "Do not run the dynamic S5-C06 or CrossProduct groups until their database names, CREATE/DROP permissions and exclusive lease are registered."
   }
 }
