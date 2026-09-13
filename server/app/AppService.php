@@ -467,9 +467,6 @@ class AppService extends Service
                 $this->app->make(DataScopePolicy::class),
             ),
         ));
-        $this->app->bind(\app\common\service\ConfigService::class, fn(): \app\common\service\ConfigService => new \app\common\service\ConfigService(
-            new \app\common\service\config\ThinkPhpInstanceConfigStore(),
-        ));
         $this->app->bind(CrontabCommandService::class, fn(): CrontabCommandService => new CrontabCommandService(
             (array)Config::get('console.commands', []),
             (array)Config::get('console.module_commands', []),

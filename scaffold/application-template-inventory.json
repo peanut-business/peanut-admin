@@ -4816,7 +4816,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ca3265c30463a70327e8c67f4e12a5b234091df632f195dfc481288528f26b7c"
+            "source_sha256": "2d3b66d79a5162d73d49c507559c61d790b69e291fe3307999367f1ff3e3b2a1"
         },
         {
             "path": "server/app/BaseController.php",
@@ -11635,20 +11635,6 @@
             "source_sha256": "d554e1b3952a94be8b55b95de1df64d61a268d15c378a6895e69718251ea5267"
         },
         {
-            "path": "server/app/common/model/config/Config.php",
-            "target": "server/app/common/model/config/Config.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "07257c798c7b409449c108ab1d18dec16ebccb43ee33c8e54219fda729c87ea2"
-        },
-        {
             "path": "server/app/common/model/decoration/DecoratePage.php",
             "target": "server/app/common/model/decoration/DecoratePage.php",
             "classification": "app-owned",
@@ -11901,20 +11887,6 @@
             "source_sha256": "178ab1912e815dc409c7a548667e49b4aac4621b9a54a71106867463baffc073"
         },
         {
-            "path": "server/app/common/service/ConfigService.php",
-            "target": "server/app/common/service/ConfigService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "2f74c8c9cbf4d6c86815c32d2c7068e51fc66042863fd5dba6c07e5a49d53e01"
-        },
-        {
             "path": "server/app/common/service/CoreServiceOverrides.php",
             "target": "server/app/common/service/CoreServiceOverrides.php",
             "classification": "app-owned",
@@ -12154,20 +12126,6 @@
             "adapter_kind": "application-provider"
         },
         {
-            "path": "server/app/common/service/config/InstanceConfigStore.php",
-            "target": "server/app/common/service/config/InstanceConfigStore.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "612827842e65f27090c0e77f33dfd1cb6d3a0c7763b61cdac352e3ee9155d2c9"
-        },
-        {
             "path": "server/app/common/service/config/TenantApplicationSettingService.php",
             "target": "server/app/common/service/config/TenantApplicationSettingService.php",
             "classification": "app-owned",
@@ -12195,20 +12153,6 @@
             ],
             "source_sha256": "73cb6020222ab9737e36901fbf857b28ef5396b2f1f5ac7d158e53b1adc59925",
             "adapter_kind": "framework-adapter"
-        },
-        {
-            "path": "server/app/common/service/config/ThinkPhpInstanceConfigStore.php",
-            "target": "server/app/common/service/config/ThinkPhpInstanceConfigStore.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "cab13406edb25a92a89e66840dcb38e207289376853edd2b4cda91475dfb9ab0"
         },
         {
             "path": "server/app/common/service/config/WebsiteConfigService.php",

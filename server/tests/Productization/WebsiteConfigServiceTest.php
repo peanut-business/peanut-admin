@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
+use app\common\service\config\BrandDefaults;
+use PeanutAdmin\Settings\Application\WebsiteConfigService;
 use PeanutAdmin\Settings\Contract\WebsiteConfigStore;
-use app\common\service\config\WebsiteConfigService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
@@ -56,6 +57,7 @@ $service = new WebsiteConfigService(
     $store,
     static fn(string $value): string => $value === '' ? '' : 'read:' . $value,
     static fn(string $value): string => $value === '' ? '' : 'stored:' . $value,
+    BrandDefaults::website(),
 );
 
 $result = $service->get();
