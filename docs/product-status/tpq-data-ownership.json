@@ -46,7 +46,6 @@
     {"model": "app\\common\\model\\setting\\TransactionSetting", "table": "pa_transaction_setting", "owner": "tenant-orm"},
     {"model": "app\\Modules\\Official\\Payment\\Model\\PaymentScene", "table": "pa_payment_scene", "owner": "shared"},
     {"model": "app\\common\\model\\auth\\SystemMenu", "table": "pa_system_menu", "owner": "shared"},
-    {"model": "app\\common\\model\\config\\Config", "table": "pa_config", "owner": "instance"},
     {"model": "app\\common\\model\\generator\\GeneratorColumn", "table": "pa_generator_column", "owner": "instance"},
     {"model": "app\\common\\model\\generator\\GeneratorDownload", "table": "pa_generator_download", "owner": "instance"},
     {"model": "app\\common\\model\\generator\\GeneratorTable", "table": "pa_generator_table", "owner": "instance"}
@@ -102,9 +101,9 @@
     {"table": "pa_fixture_delivery_record", "owner": "tenant-gateway", "access_entry": "app\\Modules\\Fixture\\DeliveryRecord\\Infrastructure\\Persistence\\PdoDeliveryRecordRepository"}
   ],
   "counts": {
-    "concrete_models": 37,
+    "concrete_models": 36,
     "tenant_models": 31,
-    "non_tenant_models": 6,
+    "non_tenant_models": 5,
     "tenant_tables": 48,
     "tenant_tables_without_model": 17
   }

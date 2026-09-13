@@ -2802,7 +2802,9 @@
         "server/app/Modules/Official/Payment/module.json",
         "server/app/Modules/Official/Notification/module.json",
         "server/app/Modules/Official/Oauth/module.json",
-        "server/app/common/service/storage/"
+        "server/app/common/composition/storage/",
+        "server/app/common/infrastructure/storage/",
+        "server/app/common/services/storage/"
       ],
       "owner": "product-operations",
       "status": "current",

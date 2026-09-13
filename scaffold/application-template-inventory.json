@@ -4127,7 +4127,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "fe3a4e5530d2ee0496dc86ae5ef2f74f672377f752aa3bc2c85baa82ff2fe0a8"
+            "source_sha256": "6fbf01165d27bb6e95231cdd742a323ffa6302d904c4662917c9547a76e375ef"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -13301,21 +13301,6 @@
             "source_sha256": "717a9713830ae081696aae6f2fcbd9ba08c0f726f6107c8014b2bfbab712320e"
         },
         {
-            "path": "server/app/common/service/tenant/ThinkPhpTenantCacheStore.php",
-            "target": "server/app/common/service/tenant/ThinkPhpTenantCacheStore.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "1b697e39507c9795b662de1b10d08a598ed3f97da6df736f27bbd83f15a84f85",
-            "adapter_kind": "framework-adapter"
-        },
-        {
             "path": "server/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php",
             "target": "server/app/common/service/tenant/ThinkPhpTenantSettingsProvider.php",
             "classification": "app-owned",
@@ -13804,18 +13789,6 @@
                 "full"
             ],
             "source_sha256": "8f719bab9d4d1a6f4647cf585a3be919343c27721f9fc67f8fbb5995ae662e74"
-        },
-        {
-            "path": "server/app/platform/audit/PlatformAuditPort.php",
-            "target": "server/app/platform/audit/PlatformAuditPort.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "2f25416f81a3bfc1fcb06105825d2d25ac89c909b8cbd9b937aad9528f47558b"
         },
         {
             "path": "server/app/platform/context/PlatformOperatorContext.php",
@@ -17207,19 +17180,6 @@
         {
             "path": "server/tests/Multitenancy/TenantXlsxExportIsolationTest.php",
             "target": "server/tests/Multitenancy/TenantXlsxExportIsolationTest.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "server/tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php",
-            "target": "server/tests/Multitenancy/ThinkPhpTenantCacheAdapterTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",

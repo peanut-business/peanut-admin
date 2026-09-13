@@ -98,7 +98,6 @@ TRUSTED_TENANT_KEY_PATHS = (
 DIRECT_RUNTIME_ADAPTERS = {
     "server/app/common/service/runtime/ApplicationCache.php",
     "server/app/common/service/runtime/OperationalLog.php",
-    "server/app/common/service/tenant/ThinkPhpTenantCacheStore.php",
 }
 
 OUTBOUND_TRANSPORT_ADAPTERS = {
