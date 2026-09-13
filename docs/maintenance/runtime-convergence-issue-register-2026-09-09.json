@@ -3068,5 +3068,36 @@
     ],
     "resource_execution": "No C09 database connection was attempted. The same registered Core P1-ED01 resource credential was already proven during S5-C08 to have no CREATE/DROP privilege, so the independent source work continued and the stale two-database/creation-policy facts were corrected in resources/project-resources.json.",
     "resource_stop": "Do not run the ImportExport MySQL harness, change grants, guess privileged credentials or reuse another database until the corrected resource contract provides an approved scoped credential or pre-provisioned database and a fresh lease is held."
+  },
+  "stage5_c10_execution": {
+    "status": "development-source-implemented-dynamic-gate-blocked",
+    "issue_id": "S5-C10",
+    "core_commit": "e05954e9b3b812d455a728dc743fe194688c0212",
+    "application_commit": "57acf9a9fe42a001f20810e55649a6a4dcb5c3f4",
+    "completed": [
+      "Core PdoFileRepository replaced by FileStore on the caller-supplied ThinkPHP connection, with FileService receiving TransactionManager for create, download locking and archive transitions",
+      "Core FileRuntimeFactory, FileDeliveryStore, delivery replay guard and ImportExport FileMedia gateway now share ThinkPHP connection and transaction ownership; the legacy PdoFileMediaGateway and file-specific PDO repositories exited",
+      "Application retained its Edition-aware Account, Space, purpose, object-ledger and compensation semantics while moving storage persistence and configuration mutations to ThinkPHP connection and transaction APIs",
+      "the approved nineteen Application FileMedia and Storage types moved to services, infrastructure, composition, contract, value and exception directories without aliases or compatibility paths",
+      "the Core StorageDriver contract, four Application provider assemblies, tenant execution context and vendor SDK boundaries were retained; quarantined e915bea7 media-spike code was not adopted"
+    ],
+    "verified": [
+      "all affected Core and Application PHP files linted and both repository diffs passed whitespace checks",
+      "Core FileMedia unit, HTTP contract and security group passed 56 tests and 209 assertions",
+      "Application FileMediaHostTest, TenantEntryBindingResolverTest and ThinkPhpArchitectureBehaviorMatrixTest passed",
+      "the focused Core PHPStan rerun over only changed FileMedia and gateway files passed with no errors",
+      "Application documentation governance passed, and old PdoFileRepository, PdoDeliveryReplayGuard, PdoFileMediaGateway and file-specific direct-PDO call sites are absent"
+    ],
+    "failed": [
+      "the first Core PHPStan command included unchanged provider SDK and delivery sources and reported 25 pre-existing symbol and type findings; the focused diagnostic established that none came from the changed files, and the single narrowed rerun passed"
+    ],
+    "pending": [
+      "register an isolated current-candidate FileMedia database target, credential or pre-provisioning contract and exact lease scope before the Core MySQL lifecycle group",
+      "qualify reserve, put, ready, compensation, delivery, archive, delete and replay behavior dynamically without skips",
+      "qualify Standalone and Multi-tenant storage ownership and data preservation from one fixed candidate",
+      "perform real Aliyun, Qcloud and Qiniu transfer, compensation and credential-rotation qualification only after the retained provider and security Gate"
+    ],
+    "resource_execution": "No C10 database connection, lease claim, schema creation or provider operation was attempted. The current resource registry has no FileMedia scenario for this candidate; the only P1-ED01 dynamic resource permits TaskJob and ImportExport databases and its registered credential is already proven to lack CREATE/DROP privilege.",
+    "resource_stop": "Do not reuse the historical Alpha.11 qualification allocation, widen the TaskJob/ImportExport resource, guess privileged credentials or perform live provider operations without the retained resource and provider Gates."
   }
 }
