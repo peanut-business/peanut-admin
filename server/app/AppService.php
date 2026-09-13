@@ -95,7 +95,7 @@ use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
@@ -125,8 +125,8 @@ class AppService extends Service
         $configuredOverrides = Config::get('peanut.overrides', []);
         CoreServiceOverrides::configure(is_array($configuredOverrides) ? $configuredOverrides : []);
         $this->app->bind(PDO::class, fn(): PDO => $this->database());
-        $this->app->bind(TransactionManager::class, fn(): TransactionManager => new PdoTransactionManager(
-            $this->app->make(PDO::class),
+        $this->app->bind(TransactionManager::class, fn(): TransactionManager => new ThinkPhpTransactionManager(
+            Db::connect(),
         ));
         $this->app->bind(IdempotentCommandExecutor::class, fn(): IdempotentCommandExecutor => IdempotencyRuntimeFactory::forPdo(
             $this->app->make(PDO::class),
