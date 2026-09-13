@@ -36,7 +36,7 @@
         "BOOTSTRAP-001"
       ],
       "next_current_source_check": "Migrate and validate the next selected domain, then remove its direct PdoTransactionManager/PDO wiring without retaining a bridge.",
-      "source_limit": "2026-09-13 已核对当前 Application 组合根与直接事务调用者；Application 开发提交 14ce7b1b 只替换全局 TransactionManager 绑定，PDO::class 与领域直接调用仍在，不能据此关闭本问题。",
+      "source_limit": "2026-09-13 已核对当前 Application 组合根与直接事务调用者；Application 开发提交 14ce7b1b 只替换全局 TransactionManager 绑定。通过 scripts/local-core-composer 指向 Core 558ebd2 后，正式 Application 初始化、容器解析以及同一 ThinkPHP/PDO 连接的外层、嵌套和失败回滚已由 PB04-OPS-HOST-001 验证；PDO::class 与领域直接调用仍在，不能据此关闭本问题。",
       "decision_refs": [
         "DEC-01",
         "DEC-02"

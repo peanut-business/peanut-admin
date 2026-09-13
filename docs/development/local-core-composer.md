@@ -22,9 +22,9 @@ PEANUT_ADMIN_CORE_DIR=/absolute/path/to/peanut-admin-core \
   scripts/local-core-composer install
 ```
 
-脚本会验证应用要求版本与核心 package manifest 版本一致；当前两者都应为
-`0.1.0-alpha.5`。安装成功后，`server/vendor/peanut-admin/core` 必须是指向本地
-`packages/php` 的软链接，核心源码修改会即时被应用读取。
+脚本会动态验证应用要求版本与所选 Core 工作树的 package manifest 版本完全一致；
+开发指南不固定某个历史版本号。安装成功后，`server/vendor/peanut-admin/core` 必须是
+指向该工作树 `packages/php` 的软链接，核心源码修改会即时被应用读取。
 
 ## 日常使用
 

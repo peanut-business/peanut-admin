@@ -117,7 +117,7 @@ function pluginModuleContractControlledObject(string $class): object
 function pluginModuleContractMakeOfficial(App $app, string $abstract, string $concrete): object
 {
     $controlledImplementations = [
-        \PeanutAdmin\Kernel\Persistence\TransactionManager::class => \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager::class,
+        \PeanutAdmin\Kernel\Persistence\TransactionManager::class => \PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager::class,
         \app\common\contract\idempotency\IdempotentCommandExecutor::class => \app\common\service\idempotency\PdoIdempotentCommandExecutor::class,
         \app\Modules\Official\Task\Contracts\TaskJobRuntime::class => \app\Modules\Official\Task\Infrastructure\Runtime\PdoTaskJobRuntime::class,
         \app\common\service\http\OutboundHttpTransport::class => \app\common\service\http\GuzzleOutboundHttpTransport::class,

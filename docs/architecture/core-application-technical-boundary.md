@@ -24,6 +24,8 @@ Core 拥有产品无关机制及明示技术状态，但正式 PHP 运行时只�
 
 本轮开发分支已经完成事务边界的第一步：Core `61287a9` 提供原生 `ThinkPhpTransactionManager`，Application `14ce7b1b` 在主组合根改为使用该实现。现存领域 PDO Repository 和直接 `PdoTransactionManager` 调用仍须按领域退出，因此这只是后续迁移的事务基础，不表示 Runtime 收敛、消费资格或 3.1.1 候选已经完成。
 
+跨仓开发验证使用 [`scripts/local-core-composer`](../development/local-core-composer.md) 将 Application 的忽略目录与 `vendor/peanut-admin/core` 指向所选 Core 工作树，并记录其精确 commit/tree；这不会修改正式 Composer manifest/lock，也不构成已发布 Core 身份。本轮该入口已验证完整 Application 初始化、容器解析以及同一 ThinkPHP/PDO 连接的外层、嵌套和异常回滚；正式采用、候选资格和发布仍必须回到固定包版本及 lock。
+
 ## 3. 存储驱动候选合同与仓库事实
 
 Core 在 `FileMedia\Storage` 提供低层 `StorageDriver`，只保留以下四个操作：

@@ -4,6 +4,8 @@ declare(strict_types=1);
 use app\adminapi\application\system\SystemApplicationService;
 use app\adminapi\service\OperationLogService;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
+use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -19,6 +21,39 @@ $serverRoot = dirname(__DIR__, 2);
 $repositoryRoot = dirname($serverRoot);
 $app = new think\App();
 $app->initialize();
+
+$transactions = app(TransactionManager::class);
+expectOpsHost(
+    $transactions instanceof ThinkPhpTransactionManager,
+    'application transaction boundary must use the native ThinkPHP manager',
+);
+$transactionPdo = app(PDO::class);
+$outerTransactionObserved = false;
+$nestedTransactionObserved = false;
+try {
+    $transactions->run(function () use (
+        $transactions,
+        $transactionPdo,
+        &$outerTransactionObserved,
+        &$nestedTransactionObserved,
+    ): void {
+        $outerTransactionObserved = $transactionPdo->inTransaction();
+        $transactions->run(function () use ($transactionPdo, &$nestedTransactionObserved): void {
+            $nestedTransactionObserved = $transactionPdo->inTransaction();
+        });
+        throw new RuntimeException('PB04_NATIVE_TRANSACTION_ROLLBACK');
+    });
+    throw new RuntimeException('native transaction rollback probe unexpectedly committed');
+} catch (RuntimeException $exception) {
+    expectOpsHost(
+        $exception->getMessage() === 'PB04_NATIVE_TRANSACTION_ROLLBACK',
+        'native transaction rollback probe failed unexpectedly',
+    );
+}
+expectOpsHost(
+    $outerTransactionObserved && $nestedTransactionObserved && !$transactionPdo->inTransaction(),
+    'ThinkPHP transaction boundary did not share the application PDO connection or roll back cleanly',
+);
 
 $permissions = ['log/lists', 'log/clear', 'system/info', 'system/clearcache'];
 $policy = new RegisteredAdminPermissionPolicy();
