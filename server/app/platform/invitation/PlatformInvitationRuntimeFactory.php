@@ -5,10 +5,10 @@ namespace app\platform\invitation;
 
 use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
 use app\Modules\Official\Task\Contracts\TaskBootstrapCommands;
-use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\audit\AuditContractHost;
+use app\common\service\tenant\TenantSettingService;
 use app\platform\query\PlatformControlPlaneQueryService;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\PlatformRuntimeFactory;
@@ -33,7 +33,7 @@ final class PlatformInvitationRuntimeFactory
         private readonly NotificationBootstrapCommands $notifications,
         private readonly TaskBootstrapCommands $tasks,
         private readonly ExecutionContextStore $executionContexts,
-        private readonly TenantSettingsBootstrapCommands $tenantSettings,
+        private readonly TenantSettingService $tenantSettings,
         private readonly TenantApplicationBootstrapPersistence $bootstrapPersistence,
         private readonly PdoModuleGovernanceProvider $moduleGovernance,
         private readonly AuditContractHost $audit,

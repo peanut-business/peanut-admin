@@ -11,7 +11,9 @@ use app\Modules\Official\Notification\Application\NotificationBootstrapService;
 use app\Modules\Official\Task\Application\TaskBootstrapService;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
+use app\common\service\tenant\TenantSettingService;
+use app\common\service\tenant\ThinkPhpTenantSettingsProvider;
+use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
@@ -146,7 +148,9 @@ SQL);
                 new NotificationBootstrapService(),
                 new TaskBootstrapService(),
                 $applicationContexts,
-                TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+                new TenantSettingService(new ThinkPhpTenantSettingsProvider(
+                    new MultiTenantDataScopePolicy(new CurrentExecutionContext($applicationContexts)),
+                )),
                 new ThinkPhpTenantApplicationBootstrapPersistence(),
             ),
         )
@@ -235,7 +239,9 @@ SQL);
                     new NotificationBootstrapService(),
                     new TaskBootstrapService(),
                     $contexts,
-                    TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
+                    new TenantSettingService(new ThinkPhpTenantSettingsProvider(
+                        new MultiTenantDataScopePolicy(new CurrentExecutionContext($contexts)),
+                    )),
                     new ThinkPhpTenantApplicationBootstrapPersistence(),
                 ),
             );

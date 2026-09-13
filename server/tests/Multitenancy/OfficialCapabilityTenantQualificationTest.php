@@ -55,7 +55,6 @@ foreach ([
     'recharge_settings' => 'app/Modules/Official/Payment/Application/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
     'tenant_settings_provider' => 'app/common/service/tenant/ThinkPhpTenantSettingsProvider.php',
-    'tenant_settings_bootstrap_runtime' => 'app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php',
     'application_tenant_bootstrap' => 'app/platform/service/ApplicationTenantBootstrapService.php',
     'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',
     'notice_channel' => 'app/common/services/notice/NoticeChannelService.php',
@@ -276,11 +275,10 @@ qualificationExpect(
         && str_contains($sources['recharge_settings'], 'private readonly TenantSettingService $settings')
         && str_contains($sources['recharge_settings'], '$this->settings->get(')
         && str_contains($sources['recharge_settings'], 'private readonly PaymentChannelGrantCommands $channelGrants')
-        && str_contains($sources['tenant_settings_bootstrap_runtime'], 'new PdoTenantSettingsBootstrapProvider($pdo)')
-        && str_contains($sources['app_service'], 'TenantSettingsBootstrapCommands::class')
-        && str_contains($sources['app_service'], 'TenantSettingsBootstrapRuntimeFactory::forProvisioning(')
-        && str_contains($sources['application_tenant_bootstrap'], 'private TenantSettingsBootstrapCommands $tenantSettings')
-        && str_contains($sources['application_tenant_bootstrap'], '$this->tenantSettings->seedDefaults(')
+        && str_contains($sources['app_service'], 'TenantSettingService::class')
+        && str_contains($sources['application_tenant_bootstrap'], 'private TenantSettingService $tenantSettings')
+        && str_contains($sources['application_tenant_bootstrap'], '$this->tenantSettings->get($context, $namespace)')
+        && str_contains($sources['application_tenant_bootstrap'], '$this->tenantSettings->replace($context, $namespace, $document)')
         && !str_contains($sources['application_tenant_bootstrap'], 'TenantSettingsBootstrapRuntimeFactory')
         && !str_contains($sources['application_tenant_bootstrap'], 'PdoTenantSettingsBootstrapProvider')
         && str_contains($sources['recharge_settings'], '$this->channelGrants->channelConfigured('),

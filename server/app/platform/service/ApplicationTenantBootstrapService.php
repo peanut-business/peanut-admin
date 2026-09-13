@@ -6,10 +6,10 @@ namespace app\platform\service;
 use PDO;
 use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
 use app\Modules\Official\Task\Contracts\TaskBootstrapCommands;
-use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\common\service\config\BrandDefaults;
+use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
@@ -34,7 +34,7 @@ final readonly class ApplicationTenantBootstrapService
         private NotificationBootstrapCommands $notifications,
         private TaskBootstrapCommands $tasks,
         private ExecutionContextStore $executionContexts,
-        private TenantSettingsBootstrapCommands $tenantSettings,
+        private TenantSettingService $tenantSettings,
         private TenantApplicationBootstrapPersistence $persistence,
     ) {
     }
@@ -67,7 +67,7 @@ final readonly class ApplicationTenantBootstrapService
             $this->seedCrontab();
             $this->seedNoticeScenes($execution);
             $this->seedDecoration();
-            $this->seedSettings($tenantId);
+            $this->seedSettings($execution->system);
             $this->seedExternalBindings($tenantId, $tenantCode);
         });
     }
@@ -170,7 +170,7 @@ SQL);
         $this->persistence->seedDecoration($pages, $tabbars);
     }
 
-    private function seedSettings(int $tenantId): void
+    private function seedSettings(TenantSystemContext $context): void
     {
         $documents = [
             'website' => BrandDefaults::website(),
@@ -193,10 +193,14 @@ SQL);
             'web-page' => ['status' => 1, 'page_status' => 0, 'page_url' => ''],
             'hot-search' => ['status' => 0],
         ];
-        $this->tenantSettings->seedDefaults($tenantId, $documents);
+        foreach ($documents as $namespace => $document) {
+            if ($this->tenantSettings->get($context, $namespace)->revision === 0) {
+                $this->tenantSettings->replace($context, $namespace, $document);
+            }
+        }
         $this->insertIgnore(
             'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
-            [$tenantId]
+            [$context->tenantId]
         );
         $this->persistence->ensureSettings(
             [

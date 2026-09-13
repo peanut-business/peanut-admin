@@ -20,7 +20,6 @@ use app\common\contract\AdminPermissionPolicy;
 use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
-use app\common\contract\tenant\TenantSettingsBootstrapCommands;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\external\ExternalTenantAudit;
 use app\common\service\external\ThinkPhpExternalTenantAudit;
@@ -58,7 +57,6 @@ use app\common\services\storage\StorageConfigurationService;
 use app\common\composition\storage\StorageDriverFactory;
 use app\common\infrastructure\storage\StorageRepository;
 use app\common\services\storage\StorageService;
-use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\common\tenancy\StandaloneDataScopePolicy;
@@ -298,8 +296,6 @@ class AppService extends Service
 
     private function registerPlatform(): void
     {
-        $this->app->bind(TenantSettingsBootstrapCommands::class, fn(): TenantSettingsBootstrapCommands =>
-            TenantSettingsBootstrapRuntimeFactory::forProvisioning($this->app->make(PDO::class)));
         $this->app->bind(
             TenantApplicationBootstrapPersistence::class,
             ThinkPhpTenantApplicationBootstrapPersistence::class,
@@ -361,7 +357,7 @@ class AppService extends Service
                 $this->app->make(\app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands::class),
                 $this->app->make(\app\Modules\Official\Task\Contracts\TaskBootstrapCommands::class),
                 $this->app->make(ExecutionContextStore::class),
-                $this->app->make(TenantSettingsBootstrapCommands::class),
+                $this->app->make(\app\common\service\tenant\TenantSettingService::class),
                 $this->app->make(TenantApplicationBootstrapPersistence::class),
                 (string)Config::get('platform_auth.identifier_hmac_key', ''),
                 $moduleConfig,

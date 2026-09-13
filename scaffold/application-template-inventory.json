@@ -10809,34 +10809,6 @@
             "source_sha256": "b6f392667d22f448862dd6695505749a5a3cb6dc9bb0e44625e5de8c2fad956d"
         },
         {
-            "path": "server/app/common/contract/tenant/TenantSettingsBootstrapCommands.php",
-            "target": "server/app/common/contract/tenant/TenantSettingsBootstrapCommands.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "0fdde33a7b7e9ad1b41b12e061a6b55290d911de310522e9d70ddaac558b16c7"
-        },
-        {
-            "path": "server/app/common/contract/tenant/TenantSettingsBootstrapProvider.php",
-            "target": "server/app/common/contract/tenant/TenantSettingsBootstrapProvider.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "191b8f283707d4569372d90d9497f33c71758ac983f8fcec37367a5d08d8bdd4"
-        },
-        {
             "path": "server/app/common/contract/tenant/TenantSettingsCommands.php",
             "target": "server/app/common/contract/tenant/TenantSettingsCommands.php",
             "classification": "app-owned",
@@ -13639,20 +13611,6 @@
             "source_sha256": "2f204559cda28cb6c1bd90b1a758cd0f212997195222a8aa4658fd3b5626a2c7"
         },
         {
-            "path": "server/app/common/service/tenant/PdoTenantSettingsBootstrapProvider.php",
-            "target": "server/app/common/service/tenant/PdoTenantSettingsBootstrapProvider.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "8cbab0a420b618c0431cb2b929a43af92580a35baed89f345227ae0f87b3419f"
-        },
-        {
             "path": "server/app/common/service/tenant/TenantIdentityQuery.php",
             "target": "server/app/common/service/tenant/TenantIdentityQuery.php",
             "classification": "app-owned",
@@ -13679,34 +13637,6 @@
                 "full"
             ],
             "source_sha256": "ec3a8fd685e15f27e93b7831b55c7f4a3c39ddb9d7b287e4380b0c6d28ad00dc"
-        },
-        {
-            "path": "server/app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php",
-            "target": "server/app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "b954ef5629fd5fb4e4066df4ca68746c761dad66fa8c0e631d8c024cc35c7d44"
-        },
-        {
-            "path": "server/app/common/service/tenant/TenantSettingsBootstrapService.php",
-            "target": "server/app/common/service/tenant/TenantSettingsBootstrapService.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "f74fcd6b7d396c61873ecbddfb9706335829273009f62ed7cec44e69705f2bd5"
         },
         {
             "path": "server/app/common/service/tenant/TenantSettingsNamespace.php",
