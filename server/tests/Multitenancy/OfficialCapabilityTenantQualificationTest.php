@@ -59,7 +59,7 @@ foreach ([
     'tenant_settings_bootstrap_runtime' => 'app/common/service/tenant/TenantSettingsBootstrapRuntimeFactory.php',
     'application_tenant_bootstrap' => 'app/platform/service/ApplicationTenantBootstrapService.php',
     'tenant_application_settings' => 'app/common/service/config/TenantApplicationSettingService.php',
-    'notice_channel' => 'app/common/service/notice/NoticeChannelService.php',
+    'notice_channel' => 'app/common/services/notice/NoticeChannelService.php',
     'platform_storage' => 'vendor/peanut-admin/core/kernel/src/Platform/InstanceControlPlanePolicy.php',
     'platform_storage_controller' => 'app/platform/controller/PlatformStorageController.php',
     'admin_permissions' => 'app/common/service/authorization/AdminAuthorizationService.php',

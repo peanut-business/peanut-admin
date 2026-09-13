@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\notice\driver\sms;
+namespace app\common\value\notice\sms;
 
 final readonly class SmsDriverResult
 {

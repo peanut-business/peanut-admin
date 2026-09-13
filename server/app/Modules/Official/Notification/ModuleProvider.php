@@ -5,8 +5,8 @@ namespace app\Modules\Official\Notification;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\http\OutboundHttpTransport;
-use app\common\service\notice\ApplicationNoticeSmsSender;
-use app\common\service\notice\NoticeChannelService;
+use app\common\infrastructure\notice\ApplicationNoticeSmsSender;
+use app\common\services\notice\NoticeChannelService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use app\Modules\Official\Notification\Application\VerificationCodeService;

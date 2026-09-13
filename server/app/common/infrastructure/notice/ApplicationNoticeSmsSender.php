@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\notice;
+namespace app\common\infrastructure\notice;
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\notice\driver\sms\SmsDriverResult;
+use app\common\services\notice\NoticeChannelService;
+use app\common\value\notice\sms\SmsDriverResult;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;

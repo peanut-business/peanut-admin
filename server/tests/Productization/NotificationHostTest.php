@@ -25,7 +25,7 @@ expectNotificationHost(VerificationCodeSecret::matches('4827', $codeHash), 'veri
 expectNotificationHost(!VerificationCodeSecret::matches('4828', $codeHash), 'wrong verification code is accepted');
 
 $channelService = (string)file_get_contents(
-    $serverRoot . '/app/common/service/notice/NoticeChannelService.php'
+    $serverRoot . '/app/common/services/notice/NoticeChannelService.php'
 );
 foreach ([
     'new AliyunSms', 'new TencentSms', '$this->bindings->mutate(', 'safeReceipt', 'sanitizeError',
@@ -102,7 +102,7 @@ foreach ([
     expectNotificationHost(str_contains($verificationService, $marker), 'verification boundary missing: ' . $marker);
 }
 $applicationSender = (string)file_get_contents(
-    $serverRoot . '/app/common/service/notice/ApplicationNoticeSmsSender.php'
+    $serverRoot . '/app/common/infrastructure/notice/ApplicationNoticeSmsSender.php'
 );
 $notificationProvider = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Notification/ModuleProvider.php'

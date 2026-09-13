@@ -2976,5 +2976,35 @@
       "Standalone and Multi-tenant qualification from one fixed candidate"
     ],
     "resource_stop": "Do not run the dynamic S5-C06 or CrossProduct groups until their database names, CREATE/DROP permissions and exclusive lease are registered."
+  },
+  "stage5_c07_execution": {
+    "status": "development-source-implemented-dynamic-and-one-static-gate-pending",
+    "issue_id": "S5-C07",
+    "completed": [
+      "Core PdoNotificationRepository replaced by injected ThinkPHP NotificationStore",
+      "NotificationRepository no longer owns a transaction API; NotificationService, NotificationOutboxDispatcher and task handlers receive TransactionManager by constructor injection",
+        "Core Notification HTTP Host, service and outbox dispatcher share one injected ThinkPHP connection and its native nested transaction ownership; the task worker uses the same connection model",
+      "Application Notification service, Tenant context, Provider adapters, driver contract and result value moved to their approved services/context/infrastructure/contract/value directories",
+      "existing native Model scope, trusted Tenant context, provider credential ownership, receipt redaction and development-only delivery semantics were retained"
+    ],
+    "verified": [
+        "Core Notification non-MySQL feature harness and ServiceOverrideHostWiringTest passed",
+      "Application OfficialCapabilityTenantQualificationTest, NotificationHostTest and PluginModuleContractTest passed",
+      "all affected Application Notification PHP files linted and both repository diffs passed whitespace checks",
+      "old PdoNotificationRepository source and call sites are absent",
+      "focused PHPStan rerun reduced the selected Core convergence paths to three type findings; the two missing template-shape annotations were corrected afterward without a third run"
+    ],
+    "failed": [
+      "ChannelBindingTenantContractTest first run exposed a stale sender property-name assertion",
+      "the single focused rerun exposed a second stale fixed-indentation assertion; it was changed to an equivalent whitespace-insensitive semantic assertion without another run",
+      "focused PHPStan budget ended with the retained defensive AttachmentReference runtime check reported as already narrowed by PHPDoc"
+    ],
+    "pending": [
+      "a new explicit failure-group budget for ChannelBindingTenantContractTest requalification",
+      "registered Notification MySQL resource credentials and exclusive lease for outbox, retry, rate, idempotency and Tenant dynamic qualification",
+      "real SMS Provider delivery, callback/receipt and security qualification in S6-03",
+      "Standalone and Multi-tenant qualification from one fixed candidate"
+    ],
+    "resource_stop": "Do not run the B03 Notification MySQL harness until its three credential inputs resolve from an approved registered test resource and the exclusive lease is held."
   }
 }

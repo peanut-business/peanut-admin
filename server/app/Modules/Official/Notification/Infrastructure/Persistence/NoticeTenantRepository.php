@@ -7,7 +7,7 @@ use app\Modules\Official\Notification\Model\NoticeLog;
 use app\Modules\Official\Notification\Model\NoticeScene;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\notice\NoticeTenantContext;
+use app\common\context\notice\NoticeTenantContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\persistence\ConvertsModelPage;

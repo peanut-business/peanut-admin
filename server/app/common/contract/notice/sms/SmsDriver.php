@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\notice\driver\sms;
+namespace app\common\contract\notice\sms;
+
+use app\common\value\notice\sms\SmsDriverResult;
 
 interface SmsDriver
 {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\notice;
+namespace app\common\context\notice;
 
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;

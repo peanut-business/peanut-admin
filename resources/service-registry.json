@@ -1050,7 +1050,13 @@
       ],
       "current_implementation": [
         "server/app/Modules/Official/Notification/module.json",
-        "server/app/common/service/notice/NoticeChannelService.php",
+        "server/app/common/services/notice/NoticeChannelService.php",
+        "server/app/common/infrastructure/notice/ApplicationNoticeSmsSender.php",
+        "server/app/common/infrastructure/notice/sms/AliyunSms.php",
+        "server/app/common/infrastructure/notice/sms/TencentSms.php",
+        "server/app/common/contract/notice/sms/SmsDriver.php",
+        "server/app/common/value/notice/sms/SmsDriverResult.php",
+        "server/app/common/context/notice/NoticeTenantContext.php",
         "server/app/Modules/Official/Notification/Application/NotificationApplicationService.php",
         "server/app/Modules/Official/Notification/Application/VerificationCodeService.php",
         "server/app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php",
@@ -1071,7 +1077,7 @@
         "policy": "通知只拥有通知事实；Provider 绑定通过 PA-SVC-EXTERNAL-CHANNEL"
       },
       "dependencies": ["PA-SVC-EXTERNAL-CHANNEL", "PA-SVC-MODULE-GOVERNANCE"],
-      "current_issue": "Notification/Verification contracts 和主要调用方已合入 dev；development 固定验证码仅是本地验收策略，真实 Provider 属于后置业务 Gate。",
+      "current_issue": "Notification/Verification contracts 和主要调用方已合入 dev；S5-C07 已把服务、上下文、Provider adapter、driver 合同和值对象归位，并保留原生 Model/租户边界。development 固定验证码仅是本地验收策略，真实 Provider 属于后置业务 Gate。",
       "recommended_boundary": "NotificationCommands、VerificationCodeCommands 和 DeliveryResult；验证码作为通知子能力，不单独拆服务",
       "delivery": {
         "readiness": "complete",

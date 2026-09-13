@@ -1,15 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\notice;
+namespace app\common\services\notice;
 
+use app\common\context\notice\NoticeTenantContext;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolutionException;
 use app\common\service\external\ExternalTenantResolver;
-use app\common\service\notice\driver\sms\AliyunSms;
-use app\common\service\notice\driver\sms\SmsDriver;
-use app\common\service\notice\driver\sms\SmsDriverResult;
-use app\common\service\notice\driver\sms\TencentSms;
+use app\common\infrastructure\notice\sms\AliyunSms;
+use app\common\contract\notice\sms\SmsDriver;
+use app\common\value\notice\sms\SmsDriverResult;
+use app\common\infrastructure\notice\sms\TencentSms;
 use app\common\service\http\OutboundHttpTransport;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

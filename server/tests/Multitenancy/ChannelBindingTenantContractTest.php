@@ -15,8 +15,8 @@ $read = static fn(string $path): string => (string)file_get_contents($serverRoot
 
 $noticeController = $read('app/Modules/Official/Notification/Http/Controller/NoticeChannelController.php');
 $notificationApplication = $read('app/Modules/Official/Notification/Application/NotificationApplicationService.php');
-$noticeService = $read('app/common/service/notice/NoticeChannelService.php');
-$sender = $read('app/common/service/notice/ApplicationNoticeSmsSender.php');
+$noticeService = $read('app/common/services/notice/NoticeChannelService.php');
+$sender = $read('app/common/infrastructure/notice/ApplicationNoticeSmsSender.php');
 $verification = $read('app/Modules/Official/Notification/Application/VerificationCodeService.php');
 $menuController = $read('app/Modules/Official/Oauth/Http/Controller/OfficialAccountMenuController.php');
 $menuLogic = $read('app/Modules/Official/Oauth/Application/OfficialAccountMenuApplicationService.php');
@@ -53,11 +53,11 @@ expectChannelBindingTenant(
 );
 expectChannelBindingTenant(
     str_contains($sender, '$this->channels->sendSms(')
-        && str_contains($sender, '$this->contexts,'),
+        && str_contains($sender, '$this->executionContext,'),
     'application sender drops the trusted Tenant context'
 );
 expectChannelBindingTenant(
-    str_contains($verification, "\$this->sender->send(\n            \$context,"),
+    preg_match('/\$this->sender->send\(\s*\$context,/', $verification) === 1,
     'verification sender call does not preserve the trusted Tenant context'
 );
 

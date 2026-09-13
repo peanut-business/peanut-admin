@@ -11,7 +11,7 @@ use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
 use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
-use app\common\service\notice\NoticeChannelService;
+use app\common\services\notice\NoticeChannelService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
