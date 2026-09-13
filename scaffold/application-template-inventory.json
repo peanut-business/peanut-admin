@@ -12097,20 +12097,6 @@
             "source_sha256": "aca03c80837af25d287821bac5807bd3d680eb72655fab205ec0627aee98c4f8"
         },
         {
-            "path": "server/app/common/service/capability/CrossProductAdoptionHost.php",
-            "target": "server/app/common/service/capability/CrossProductAdoptionHost.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "e860b359c088d6053fd245588e383c39857d2c796140d55ec57345c8aa910bca"
-        },
-        {
             "path": "server/app/common/service/config/BrandDefaults.php",
             "target": "server/app/common/service/config/BrandDefaults.php",
             "classification": "app-owned",
@@ -17284,19 +17270,6 @@
         {
             "path": "server/tests/Productization/CreateApplicationTest.php",
             "target": "server/tests/Productization/CreateApplicationTest.php",
-            "classification": "excluded",
-            "owner": "template-source-only",
-            "transform": "copy",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ]
-        },
-        {
-            "path": "server/tests/Productization/CrossProductDownstreamAdoptionTest.php",
-            "target": "server/tests/Productization/CrossProductDownstreamAdoptionTest.php",
             "classification": "excluded",
             "owner": "template-source-only",
             "transform": "copy",

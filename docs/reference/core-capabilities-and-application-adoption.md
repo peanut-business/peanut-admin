@@ -138,8 +138,8 @@ Core `backend/` 和 `frontend/` 把上述能力装配成 ThinkPHP route/controll
 | NotificationSms | Official Notification 的验证码 secret/sender bridge 调 Core 窄合同 | 当前接入只证明 `VerificationCodeSecret`/`NoticeSmsSender`；`official.notification` manifest 拥有 `pa_notice_*` 表、厂商、模板、接收人和用途。未发现应用采用 Core notification/outbox repository 的证据 | **部分复用，需要适配** | 真实 provider 另做资格；验收发送、频控、过期、Tenant 与失败状态 |
 | FileMedia | [`FileObjectNamespace`](../../server/app/common/value/file/FileObjectNamespace.php#L11) 使用 Core `TenantObjectNamespace`；[`StorageService`](../../server/app/common/services/storage/StorageService.php) 通过宿主工厂消费 Core 四厂商 Driver，并以 ThinkPHP 连接维护应用账本 | 应用拥有凭据、账户/space 路由、用途、授权、Edition owner、对象账本、补偿与生命周期；Core 保留独立通用 FileMedia 状态流 | **3.1.1 收敛已实现，待固定候选资格** | 验收 reserve/put/ready/补偿/交付/归档/删除及两 Edition 隔离；真实厂商传输、轮换和容量仍按独立人工 Gate |
 | DataPermission | [`ModuleDefinitionRegistryFactory`](../../server/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php#L94) 引入 Core Schema 表名；[`ReflectionContractInspector`](../../server/app/platform/service/module/ReflectionContractInspector.php#L12) 反射四个 provider 合同 | 当前只证明 Schema allowlist 与合同治理；未找到应用实际 DataPermission repository、policy provider 或 query constraint 数据流 | **治理合同部分复用，生产 engine 接入未找到** | 若启用，先选一个真实资源完成 provider→query constraint 链并跑 Tenant/权限 Gate。应用现有 RBAC 与 `TenantOwnedModel`/TenantScope 继续保护访问；未采用 Core data-policy engine 不等于没有权限或 Tenant 隔离 |
-| ArtifactRevision / EntitlementQuota / Workflow | [`CrossProductAdoptionHost`](../../server/app/common/service/capability/CrossProductAdoptionHost.php#L15) 含真实类型签名和方法调用，但全仓只找到测试实例化；没有生产 route/binding/caller | 尚无可证明的产品数据 owner/生产入口 | **有桥接源码，未发现生产入口** | 先由具体业务用例确定 owner 和入口，再验收真实调用、权限、事务/补偿；静态未找到不宣称绝对未使用 |
-| Collaboration | 同一 bridge 直接声明并调用 `CollaborationService`，不是字符串占位；但锁定 alpha.12 vendor 与 Core dev 均没有该 namespace/class，只有测试 caller | 当前无 Core 运行数据 owner | **计划兼容源码引用，Core 能力缺失** | 先决定删除过时桥或重新建立公共能力；在此之前不能计入采用，也不执行 runtime 修复 |
+| ArtifactRevision / EntitlementQuota / Workflow | 旧 `CrossProductAdoptionHost` 只有自有测试实例化，没有生产 route、binding、Module 或 caller，已在 3.1.1 收敛中连同自证测试删除；Core 公共能力未因此删除 | 尚无可证明的应用产品数据 owner/生产入口 | **应用尚未消费** | 由具体业务用例先确定 owner 和生产入口，再一次性接入并验收权限、事务/补偿；不得重建展示性 bridge |
+| Collaboration | 旧 bridge 曾引用 `CollaborationService`，但当前 Core manifest/源码均没有该 namespace/class；失效 bridge 与自证测试已删除 | 当前无 Core 运行数据 owner | **当前无此 Core 能力，应用未消费** | 只有经产品用例和公共合同批准后才可重新建立；不得增加兼容 autoload、复制旧实现或用测试 Host 冒充消费 |
 | ReferenceCodes | 生产目录未找到专用 namespace 调用；应用采用 Kernel Dictionary 合同和自有字典数据 | 应用字典业务与数据 | **替代实现/路径已存在** | 只有出现版本化 code-set 用例时再做语义差距审计；验收不能只看同名 CRUD |
 
 ### 四个前端的采用
@@ -157,7 +157,7 @@ Core `backend/` 和 `frontend/` 把上述能力装配成 ThinkPHP route/controll
 
 当前两个 aggregate 是已发生的分发边界，不是永久最优结论。13 个 PHP 域不应因为内部目录存在就自动拆成 13 个包；同样，PHP 与 Web 统一 alpha 版本、应用 Composer/npm lock 和现有联动发布流程，会让一个窄域修改也需要新的聚合包身份、兼容核对和下游锁更新。移动源码本身不会消除升级冲突。
 
-后续可以单独评估“继续两个 aggregate”与“少数独立发布单元”的维护成本，至少产出候选依赖图、PHP/Web 兼容矩阵、版本/发布失败原子性和下游升级步骤，再决定是否改 workflow、版本或 package manifest。本轮不改这些发布事实。Collaboration 失效桥应作为独立清理/重建决策项核对，不能随其他域的发布被误认为现有功能。
+后续可以单独评估“继续两个 aggregate”与“少数独立发布单元”的维护成本，至少产出候选依赖图、PHP/Web 兼容矩阵、版本/发布失败原子性和下游升级步骤，再决定是否改 workflow、版本或 package manifest。本轮不改这些发布事实。Collaboration 失效桥已经删除；任何重建都必须从真实产品用例和当前公共合同开始，不能随其他域发布被误认为现有功能。
 
 ## Storage Driver 当前事实
 

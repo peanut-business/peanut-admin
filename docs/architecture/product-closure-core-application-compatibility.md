@@ -75,16 +75,17 @@ Alpha.5 的 npm package 有 15 个 export，Alpha.7/Alpha.9 有 14 个；后者�
 
 ## 5. 已发现的不兼容例外
 
-`server/app/common/service/capability/CrossProductAdoptionHost.php` 与其历史测试仍 import
-`PeanutAdmin\Collaboration\...`。当前 Alpha.9 Composer manifest/lock 已不再声明该 namespace；
-仓内调用检索只找到该历史测试，没有 HTTP route、Module 或日常 Runtime 入口。
+3.1.1 收敛前，`server/app/common/service/capability/CrossProductAdoptionHost.php` 与其自有测试
+import 了 `PeanutAdmin\Collaboration\...`。当前 Composer manifest/lock 和 Core 源码均不再声明该
+namespace；仓内调用检索也没有 HTTP route、Module 或日常 Runtime 入口。这组 Host/test 已删除，
+不以兼容层或替代实现恢复。
 
 处理决定：
 
-- 它不能作为当前 Alpha.9 下游采用成功的证据，也不能被 PC20/PC30 复用；
+- 历史 Host/test 不能作为当前下游采用成功的证据，也不能被 PC20/PC30 复用；
 - 它不阻塞只依赖 `PeanutAdmin\OpsConsole\` 的产品闭环主线；
-- 在任何真实调用重新采用前，必须由独立最小任务删除这条历史 Host/test，或用重新获准且
-  当前包真实导出的合同一次性替换；不得增加兼容 autoload、复制 Collaboration 或回退 Alpha.5；
+- 任何真实调用重新采用前，必须先有获准的产品用例和当前包真实导出的合同；不得增加兼容
+  autoload、复制 Collaboration、回退旧包或重建展示性 Host；
 - PC02 不修改 Runtime，也不把未执行的历史测试写成通过。
 
 ## 6. 验证 owner

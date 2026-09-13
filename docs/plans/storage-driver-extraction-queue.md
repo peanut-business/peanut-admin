@@ -89,5 +89,5 @@ Core 当前只有 `peanut-admin/core` 与 `@peanut-admin/admin` 两个 aggregate
 ## 不属于本轮完成状态
 
 本页不把尚未执行的真实云 Provider、新版本资格或生产部署标记为完成；已执行的 v3.0.14 资格与 Release 保留其历史身份。高容量媒体
-Spike 继续是隔离设计输入；`CrossProductAdoptionHost` 的 Collaboration 失效引用仍由独立删除或能力
-重建决定处理，不借 Storage 采用扩大范围。
+Spike 继续是隔离设计输入；`CrossProductAdoptionHost` 的 Collaboration 失效引用已由 3.1.1 收敛
+删除，不借 Storage 采用重建该能力或扩大范围。
