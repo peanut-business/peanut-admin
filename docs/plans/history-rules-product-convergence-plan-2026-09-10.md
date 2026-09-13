@@ -42,6 +42,8 @@ Application/Core采用ThinkPHP 8目标，应用使用原生Model/Scope构造注�
 
 本轮顺序为：先以真实调用填实一个 ThinkPHP 收敛领域并在两仓完成其闭包；再处理下一个已验证领域，直至本轮收敛范围闭合；之后修复消费与升级链路（含客户代码、配置、秘密、已安装 Module 和业务数据保护）、处理当前依赖安全告警，并运行对应的迁移读回和失败恢复；最后才为同一 3.1.1 产品身份冻结候选、执行双 Edition 安装/升级/隔离及四端/厂商资格，并提交人工 Gate 所需材料。C2 的 `ScaffoldManifest` 导入修复仅按私有控制状态中记录的单次失败组恢复额度执行，不改变本顺序或其他资格预算。
 
+当前里程碑：事务基础已由 Core `61287a9`/`e0102fc` 与 Application `14ce7b1b`/`e67acd72` 完成开发验证；Core `cab7415` 已完成 ReferenceCodes 源码及真实 Host/安装/升级调用的 ThinkPHP 收敛，并删除该领域旧 PDO Repository。静态、Unit、Host 安全和 HTTP 合同已通过，但登记中没有 ReferenceCodes 专用 MySQL 数据库，因此其动态隔离/并发与双 Edition 资格保持 pending；不借用 P1ED01 等限定资源，也不把该源码里程碑写成候选通过。Application 自有字典继续保持独立 Model/Scope owner，不强制消费 Core ReferenceCodes。
+
 正式旧源的版本、commit和四资产摘要从`consumer_delivery.cr02.handoff.formal_v3014_edition_assets`及不可变Release取得；不能用当前create-app或另一升级区间冒充。
 目标包从同一最终Application候选生成，使用登记的`peanut-admin-edition-upgrade-release-signing-key`；不复制临时key、不公开秘密、不替换已验证字节。
 旧实例/四端使用`peanut-admin-consumer-upgrade-mysql84-gate`独立资源；P0-E只使用`peanut-admin-p0e-mysql84-gate`及专项绑定。

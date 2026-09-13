@@ -26,6 +26,8 @@ Core 拥有产品无关机制及明示技术状态，但正式 PHP 运行时只�
 
 跨仓开发验证使用 [`scripts/local-core-composer`](../development/local-core-composer.md) 将 Application 的忽略目录与 `vendor/peanut-admin/core` 指向所选 Core 工作树，并记录其精确 commit/tree；这不会修改正式 Composer manifest/lock，也不构成已发布 Core 身份。本轮该入口已验证完整 Application 初始化、容器解析以及同一 ThinkPHP/PDO 连接的外层、嵌套和异常回滚；正式采用、候选资格和发布仍必须回到固定包版本及 lock。
 
+Core 开发提交 `cab7415` 已完成 ReferenceCodes 源码切片：删除 `PdoReferenceCodeRepository`，由注入的 ThinkPHP `PDOConnection` 承载 definition sync、读取、写入、revision/ETag，并让 Host 原子操作使用同连接的 `ThinkPhpTransactionManager`；安装和升级组合根也不再为该领域构造 PDO。Application 字典仍由本仓原生 Model/Scope 独立拥有，不 deep import Core ReferenceCodes。该切片的静态、Unit、Host 安全与 HTTP 合同已通过；因资源登记没有 ReferenceCodes 专用数据库，MySQL Tenant 隔离、并发及双 Edition 资格仍是明确停止点，不能借用其他领域数据库或旧候选证据。
+
 ## 3. 存储驱动候选合同与仓库事实
 
 Core 在 `FileMedia\Storage` 提供低层 `StorageDriver`，只保留以下四个操作：
