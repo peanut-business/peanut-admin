@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\XlsxExportService;
+use app\common\services\XlsxExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 

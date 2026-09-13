@@ -6,7 +6,7 @@ namespace app\Modules\Official\ImportExport;
 use app\common\persistence\CoreTenantRepositoryFactory;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\authorization\AdminAuthorizationService;
-use app\common\service\export\OperationLogExportProvider;
+use app\common\infrastructure\export\OperationLogExportProvider;
 use app\Modules\Official\ImportExport\Application\ConfigurationTransferApplicationService;
 use app\Modules\Official\ImportExport\Application\ImportExportApplicationService;
 use app\Modules\Official\ImportExport\Application\ImportExportTaskWorkerDefinition;
@@ -31,12 +31,14 @@ use PeanutAdmin\ImportExport\Execution\CsvOperationRunner;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskSubmissionProvider;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
+use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\Settings\Secret\SecretProtector;
 use PeanutAdmin\Settings\Secret\SodiumSecretProtector;
 use PeanutAdmin\Settings\Persistence\SettingStore;
 use PDO;
 use think\App;
+use think\db\PDOConnection;
 use Throwable;
 
 final class ModuleProvider implements ModuleProviderContract
@@ -50,10 +52,13 @@ final class ModuleProvider implements ModuleProviderContract
     {
         return [
             ImportExportApplicationService::class => function (App $app): ImportExportApplicationService {
-                $pdo = $app->make(PDO::class);
+                $connection = $app->make(PDOConnection::class);
+                $pdo = $connection->connect();
+                $transactions = new ThinkPhpTransactionManager($connection);
                 $tasks = $app->make(TaskJobRuntime::class);
                 return new ImportExportApplicationService(new ImportExportService(
-                    (new CoreTenantRepositoryFactory($pdo))->importExport(),
+                    (new CoreTenantRepositoryFactory($pdo))->importExport($connection),
+                    $transactions,
                     new DataProviderRegistry([new OperationLogExportProvider()]),
                     $tasks->publisher(new ImportExportTaskSubmissionProvider()),
                     $tasks->jobs(),
@@ -83,10 +88,13 @@ final class ModuleProvider implements ModuleProviderContract
             ConfigurationTransferCommands::class => ConfigurationTransferApplicationService::class,
             ConfigurationTransferQueries::class => ConfigurationTransferApplicationService::class,
             ImportExportTaskWorkerDefinition::class => function (App $app): ImportExportTaskWorkerDefinition {
-                $pdo = $app->make(PDO::class);
+                $connection = $app->make(PDOConnection::class);
+                $pdo = $connection->connect();
+                $transactions = new ThinkPhpTransactionManager($connection);
                 return new ImportExportTaskWorkerDefinition(
                     new ImportExportTaskHandler(new CsvOperationRunner(
-                        (new CoreTenantRepositoryFactory($pdo))->importExport(),
+                        (new CoreTenantRepositoryFactory($pdo))->importExport($connection),
+                        $transactions,
                         new DataProviderRegistry([new OperationLogExportProvider()]),
                         $app->make(AppFileMediaGateway::class),
                         $app->make(AuditContractHost::class),

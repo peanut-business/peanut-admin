@@ -6,7 +6,7 @@ namespace app\adminapi\application\log;
 use app\common\http\PageResult;
 use app\adminapi\service\OperationLogService;
 use app\common\service\FileService;
-use app\common\service\XlsxExportService;
+use app\common\services\XlsxExportService;
 use app\common\service\audit\OperationLogTenantRepository;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;

@@ -7,11 +7,11 @@ use app\command\Crontab as CrontabCommand;
 use app\common\enum\CrontabEnum;
 use app\common\execution\ExecutionContextStore;
 use app\Modules\Official\Task\Model\Crontab;
-use app\common\service\XlsxExportService;
+use app\common\services\XlsxExportService;
 use app\common\service\storage\StorageService;
 use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
 use app\Modules\Official\ImportExport\Infrastructure\File\AppFileMediaGateway;
-use app\common\service\export\OperationLogExportProvider;
+use app\common\infrastructure\export\OperationLogExportProvider;
 use app\command\TenantTaskWorker;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -105,8 +105,14 @@ $gatewaySource = (string)file_get_contents($serverRoot . '/app/Modules/Official/
 expectTaskHost(!str_contains($gatewaySource, "'/public/"), 'private gateway writes below public/');
 expectTaskHost(
     str_contains($gatewaySource, 'private StorageService $storage')
-        && !str_contains($gatewaySource, 'new StorageService('),
+        && !str_contains($gatewaySource, 'new StorageService(')
+        && !str_contains($gatewaySource, 'PDO')
+        && !str_contains($gatewaySource, 'pa_import_export_operation'),
     'private gateway does not use the injected Storage Runtime',
+);
+expectTaskHost(
+    str_contains($runtimeSource, 'queries()->resultFile('),
+    'result-file authorization does not pass through the ImportExport query contract',
 );
 
 $suffix = strtolower(substr(bin2hex(random_bytes(8)), 0, 16));

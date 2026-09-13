@@ -10,4 +10,7 @@ interface ImportExportQueries
 {
     /** Returns Tenant-authorized asynchronous CSV operation status only. */
     public function operation(AuthorizedOperationContext $context, string $operationKey): AsyncExportOperation;
+
+    /** Returns the active Tenant-owned operation for a private result file. */
+    public function resultFile(AuthorizedOperationContext $context, string $fileKey): AsyncExportOperation;
 }

@@ -21,7 +21,7 @@ use app\Modules\Official\Member\Contracts\MemberTagCommands;
 use app\common\service\FileService;
 use app\common\service\Money;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
-use app\common\service\XlsxExportService;
+use app\common\services\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Persistence\TransactionManager;

@@ -968,12 +968,12 @@
         "health_check": {
           "allocation": "ssh -o BatchMode=yes mac-14 \"/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'\"",
           "selection": "scripts/project-resource-registry database-env --deployment-target local-development --consumer host --resource-id peanut-admin-core-p1ed01-mysql84-gate --database-name <exact_lease_database>",
-          "database": "after a successful claim, perform a credential-backed MySQL ping and confirm the three exact scenario databases are absent before running the focused group"
+          "database": "after a successful claim, perform a credential-backed MySQL ping and confirm the two exact scenario databases are absent before running the focused group"
         },
         "fallback": "none",
         "lifecycle": "ephemeral",
-        "claim_precondition": "before connection, creation, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed Core candidate, this resource ID and all three exact database names",
-        "creation_policy": "the active lease owner may create and drop only peanut_admin_core_<run_id>_task_job and peanut_admin_core_<run_id>_import_export",
+        "claim_precondition": "before connection, creation, test or cleanup, scripts/project-resource-lease must hold an active claim for the fixed Core candidate, this resource ID and both exact database names",
+        "creation_policy": "the active lease owner may create and drop only peanut_admin_core_<run_id>_task_job and peanut_admin_core_<run_id>_import_export; the credential referenced on 2026-09-13 has no CREATE/DROP privilege, so these harnesses remain blocked until a scoped credential or pre-provisioning contract is approved and registered",
         "cleanup_responsibility": "the active lease owner drops only its two exact run_id databases after the focused group; unmatched, expired or ownerless databases require an explicit project-owner gate",
         "backup_responsibility": "not applicable; all scenarios contain only synthetic test data",
         "failure_retention_policy": "on failure, preserve the exact failed database and lease until the single diagnostic is captured; drop it only during the authorized cleanup for this owner"

@@ -6,7 +6,7 @@ namespace app\adminapi\application\dept;
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
 use app\common\persistence\TransactionalExecution;
-use app\common\service\XlsxExportService;
+use app\common\services\XlsxExportService;
 use PeanutAdmin\Kernel\Context\TenantContextRequirement;
 use app\common\service\org\OrgTenantRepository;
 use app\common\support\ExportPageInfo;

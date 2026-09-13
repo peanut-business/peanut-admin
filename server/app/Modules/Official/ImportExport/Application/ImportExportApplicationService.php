@@ -32,6 +32,11 @@ final readonly class ImportExportApplicationService implements ImportExportComma
         return $this->toOperation($this->service->detail($context, $operationKey));
     }
 
+    public function resultFile(AuthorizedOperationContext $context, string $fileKey): AsyncExportOperation
+    {
+        return $this->toOperation($this->service->resultFile($context, $fileKey));
+    }
+
     private function toOperation(object $operation): AsyncExportOperation
     {
         /** @var array<string,mixed> $payload */

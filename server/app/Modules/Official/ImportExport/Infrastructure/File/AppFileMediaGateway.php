@@ -3,14 +3,13 @@ declare(strict_types=1);
 namespace app\Modules\Official\ImportExport\Infrastructure\File;
 
 use app\common\service\storage\StorageService;
-use PDO;
 use PeanutAdmin\ImportExport\Application\ImportExportException;
 use PeanutAdmin\ImportExport\File\FileMediaGateway;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 
 final readonly class AppFileMediaGateway implements FileMediaGateway
 {
-    public function __construct(private PDO $pdo, private StorageService $storage) {}
+    public function __construct(private StorageService $storage) {}
     public function openCsvInput(AuthorizedOperationContext $context,string $fileKey){throw ImportExportException::denied();}
     public function storePrivateCsv(AuthorizedOperationContext $context,string $operationKey,string $purpose,string $filename,$stream):string
     {
@@ -21,11 +20,9 @@ final readonly class AppFileMediaGateway implements FileMediaGateway
             $stored=$this->storage->storePath($context->tenantContext->tenantId,$context->tenantContext->memberId,'export.csv',$temporary,$filename,'text/csv');return $stored['file_key'];
         }finally{if(is_resource($output))fclose($output);@unlink($temporary);}
     }
-    public function authorizedDownload(AuthorizedOperationContext $context,string $fileKey):array
+    public function download(AuthorizedOperationContext $context,string $fileKey):array
     {
         if(preg_match('/^file_[0-9a-f]{32}$/D',$fileKey)!==1)throw ImportExportException::fileUnavailable();
-        $s=$this->pdo->prepare("SELECT 1 FROM pa_import_export_operation o WHERE o.tenant_id=:tenant_id AND o.result_file_key=:file_key AND o.status='succeeded' AND o.retention_until>UTC_TIMESTAMP(3) LIMIT 1");
-        $s->execute(['tenant_id'=>$context->tenantContext->tenantId,'file_key'=>$fileKey]);if($s->fetchColumn()===false)throw ImportExportException::fileUnavailable();
         return ['url'=>$this->storage->accessUrlForTenant($context->tenantContext->tenantId,$fileKey),'filename'=>'operation-logs.csv'];
     }
 }

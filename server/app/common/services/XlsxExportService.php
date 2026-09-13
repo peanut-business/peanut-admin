@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service;
+namespace app\common\services;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\storage\StorageService;

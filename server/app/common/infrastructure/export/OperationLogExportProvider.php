@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\export;
+namespace app\common\infrastructure\export;
 
 use app\common\model\log\OperationLog;
 use PeanutAdmin\ImportExport\Application\ImportExportException;

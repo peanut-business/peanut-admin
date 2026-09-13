@@ -43,7 +43,9 @@ final readonly class TaskImportExportRuntime implements ImportExportWorkerRuntim
     /** @return array{url:string,filename:string} */
     public function download(AuthorizedOperationContext $context, string $fileKey): array
     {
-        return $this->files->authorizedDownload($this->asOperation($context, 'read'), $fileKey);
+        $read = $this->asOperation($context, 'read');
+        $this->queries()->resultFile($read, $fileKey);
+        return $this->files->download($read, $fileKey);
     }
 
     public function runTenant(int $tenantId, string $workerId): int

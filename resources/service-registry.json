@@ -1340,12 +1340,11 @@
       "current_implementation": [
         "server/app/Modules/Official/ImportExport/module.json",
         "server/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php",
-        "server/app/common/service/async/TaskImportExportRuntimeFactory.php",
         "server/app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php",
         "server/app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php",
         "server/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php",
-        "server/app/common/service/export/OperationLogExportProvider.php",
-        "server/app/common/service/XlsxExportService.php"
+        "server/app/common/infrastructure/export/OperationLogExportProvider.php",
+        "server/app/common/services/XlsxExportService.php"
       ],
       "actual_callers": [
         "操作日志异步导出",
@@ -1359,14 +1358,14 @@
         "policy": "operation 归 ImportExport；任务、文件和业务数据通过各自合同"
       },
         "dependencies": ["PA-SVC-STORAGE"],
-      "current_issue": "CSV 异步 Commands/Queries 与既有同步 XLSX 已按场景并存并合入 dev；存储合入后的对象交付回归已确认 ready、私有 URL 和跨 Tenant 拒绝。",
+      "current_issue": "ImportExport 正在 3.1.1 收敛切片中改用 ThinkPHP Store/TransactionManager；结果文件授权回到 ImportExport 查询合同，Storage gateway 不再反向查询 operation 表，动态资格尚待固定提交与登记资源验收。",
       "recommended_boundary": "ImportExportCommands、OperationQuery、DataProviderRegistry 和 AuthorizedFileDelivery；业务 Provider 留在所属 Module",
       "delivery": {
-        "readiness": "complete",
+        "readiness": "in_progress",
         "can_start_dedicated_thread_now": false,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "已合入 dev；业务按场景选择 CSV 异步或 XLSX，结果对象交付继续消费统一存储合同"
+        "recommended_next_action": "完成固定提交上的 ImportExport 动态资格；业务继续按场景选择 CSV 异步或 XLSX，并通过统一存储合同交付结果对象"
       }
     }
   ],

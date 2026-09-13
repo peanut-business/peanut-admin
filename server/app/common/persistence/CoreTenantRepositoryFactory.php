@@ -5,7 +5,7 @@ namespace app\common\persistence;
 
 use app\common\service\instance\DeploymentMode;
 use PDO;
-use PeanutAdmin\ImportExport\Persistence\PdoImportExportRepository;
+use PeanutAdmin\ImportExport\Persistence\ImportExportStore;
 use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
 use PeanutAdmin\Kernel\Persistence\Tenancy\TenantPersistenceMode;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
@@ -51,9 +51,13 @@ final readonly class CoreTenantRepositoryFactory
         return new TaskJobStore($connection, $this->mode, $this->instanceTenantId);
     }
 
-    public function importExport(): PdoImportExportRepository
+    public function importExport(PDOConnection $connection): ImportExportStore
     {
-        return new PdoImportExportRepository($this->pdo, $this->mode, $this->instanceTenantId);
+        if ($connection->connect() !== $this->pdo) {
+            throw new \RuntimeException('CORE_IMPORT_EXPORT_TRANSACTION_CONNECTION_MISMATCH');
+        }
+
+        return new ImportExportStore($connection, $this->mode, $this->instanceTenantId);
     }
 
     public function idempotency(): PdoIdempotencyRepository
