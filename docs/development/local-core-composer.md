@@ -9,6 +9,13 @@
 
 ## 首次启用
 
+每个工作树先准备仓库锁定的 Composer；脚本将 PHAR 保存在忽略提交的相对路径
+`.local/toolchain/`，并在每次执行时校验版本与 SHA-256，不读取全局 Composer：
+
+```bash
+scripts/project-composer prepare
+```
+
 默认查找应用仓库同级目录的 `peanut-admin-core`：
 
 ```bash
@@ -37,10 +44,10 @@ scripts/local-core-composer update
 
 ## 发布边界
 
-发布或线上安装继续使用普通命令：
+发布或线上安装继续使用仓库入口：
 
 ```bash
-composer install --working-dir=server --no-dev --prefer-dist
+scripts/project-composer install --working-dir=server --no-dev --prefer-dist
 ```
 
 发布流程不读取 `.local/composer-core/`，不接受本地 path repository，也不把软链接带入

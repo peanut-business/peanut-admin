@@ -7,6 +7,7 @@ ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 WEB_DIR="${WEB_DIR:-$ROOT_DIR/web}"
 SERVER_DIR="${SERVER_DIR:-$ROOT_DIR/server}"
 CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
+COMPOSER_BIN="$ROOT_DIR/scripts/project-composer"
 SKIP_WEB_BUILD="${SKIP_WEB_BUILD:-0}"
 OUTPUT_DIR="${1:-$ROOT_DIR/release/peanut-admin}"
 WEB_CORE_LINK="$WEB_DIR/node_modules/@peanut-admin/admin"
@@ -57,8 +58,8 @@ fi
 
 [[ -f "$WEB_DIR/dist/index.html" ]] || die "frontend build output is missing: $WEB_DIR/dist/index.html"
 require_command rsync
-require_command composer
 require_command tar
+[[ -x "$COMPOSER_BIN" ]] || die "project Composer entry point is unavailable: $COMPOSER_BIN"
 
 output_parent="$(dirname -- "$OUTPUT_DIR")"
 mkdir -p "$output_parent"
@@ -108,7 +109,7 @@ printf '%s\n' \
   'DB_USER=build_only' \
   'DB_PASS=build-only' \
   'DB_PREFIX=pa_' > "$build_env"
-PEANUT_SERVER_ENV_FILE="$build_env" composer install \
+PEANUT_SERVER_ENV_FILE="$build_env" "$COMPOSER_BIN" install \
   --working-dir="$stage_dir/server" \
   --no-dev \
   --prefer-dist \

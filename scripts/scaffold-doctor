@@ -36,10 +36,12 @@ fi
 REGISTRY="$APP_DIR/resources/project-resources.json"
 [[ -f "$REGISTRY" ]] || die "resource registry missing: $REGISTRY"
 jq -e --arg id "$RESOURCE_ID" '.. | objects | select(.stable_resource_id == $id)' "$REGISTRY" >/dev/null || die "resource is not registered: $RESOURCE_ID"
+COMPOSER_BIN="$APP_DIR/scripts/project-composer"
 
-for tool in php composer node; do command -v "$tool" >/dev/null || die "$tool is unavailable"; done
+for tool in php node; do command -v "$tool" >/dev/null || die "$tool is unavailable"; done
+[[ -x "$COMPOSER_BIN" ]] || die "project Composer entry point is unavailable: $COMPOSER_BIN"
 if command -v pnpm >/dev/null; then PM=pnPM; elif command -v npm >/dev/null; then PM=npm; else die 'pnpm or npm is unavailable'; fi
-printf 'tooling=php:%s composer:%s node:%s package-manager:%s\n' "$(php -r 'echo PHP_VERSION;')" "$(composer --version | head -1)" "$(node --version)" "$PM"
+printf 'tooling=php:%s composer:%s node:%s package-manager:%s\n' "$(php -r 'echo PHP_VERSION;')" "$("$COMPOSER_BIN" --version --no-ansi | head -1)" "$(node --version)" "$PM"
 
 for file in server/composer.json server/composer.lock web/package.json web/pnpm-lock.yaml plugins.lock RELEASE_METADATA.json release-versions.json; do
   [[ -f "$APP_DIR/$file" ]] || die "missing required dependency/manifest file: $file"

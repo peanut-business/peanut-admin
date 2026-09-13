@@ -6,6 +6,7 @@ ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
 PHP_LINK="$ROOT_DIR/server/vendor/peanut-admin/core"
 WEB_LINK="$ROOT_DIR/web/node_modules/@peanut-admin/admin"
+COMPOSER_BIN="$ROOT_DIR/scripts/project-composer"
 
 die() { printf 'core-dev: %s\n' "$*" >&2; exit 1; }
 action="${1:-status}"
@@ -48,7 +49,7 @@ case "$action" in
       [[ "$(realpath "$WEB_LINK")" == "$WEB_CORE" ]] || die 'refusing to unlink an unrelated Web Core path'
       rm "$WEB_LINK"
     fi
-    /usr/local/bin/composer install --working-dir="$ROOT_DIR/server" --no-interaction --no-progress --prefer-dist
+    "$COMPOSER_BIN" install --working-dir="$ROOT_DIR/server" --no-interaction --no-progress --prefer-dist
     if command -v pnpm >/dev/null 2>&1; then
       pnpm --dir "$ROOT_DIR/web" install --frozen-lockfile --ignore-scripts
     else
@@ -62,7 +63,7 @@ case "$action" in
     if [[ -L "$WEB_LINK" && "$(realpath "$WEB_LINK")" == "$WEB_CORE" ]]; then
       die 'Web Core local symlink is active; release verification requires fixed dependency'
     fi
-    composer validate --no-check-publish --working-dir="$ROOT_DIR/server" >/dev/null
+    "$COMPOSER_BIN" validate --no-check-publish --working-dir="$ROOT_DIR/server" >/dev/null
     php "$ROOT_DIR/scripts/build-application-template-inventory" --check >/dev/null
     ;;
   *) die 'usage: scripts/core-dev {link|status|unlink|verify}' ;;

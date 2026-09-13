@@ -45,7 +45,7 @@ H5/小程序、Tenant 隔离和实例内平台管理。开发锁或准备检查�
 
 ### 1. 准备环境
 
-- PHP 8.3、Composer 2.8
+- PHP 8.3、Composer 2.10.2（先运行 `scripts/project-composer prepare`）
 - MySQL 8.0.36+ 或 8.4
 - Node.js 20/22、pnpm 9
 

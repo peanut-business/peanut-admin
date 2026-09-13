@@ -9,9 +9,9 @@ backend_env=${PEANUT_SERVER_ENV_FILE:-"$repo_dir/server/.env"}
 pid_file=${PEANUT_PHP_PID_FILE:-"$state_dir/php-runtime.pid"}
 log_file=${PEANUT_PHP_LOG_FILE:-"$state_dir/php-runtime.log"}
 php_bin=/opt/homebrew/bin/php
-composer_bin=/usr/local/bin/composer
+composer_bin="$repo_dir/scripts/project-composer"
 expected_php_version=8.3.24
-expected_composer_version=2.8.10
+expected_composer_version=2.10.2
 resource_registry="$repo_dir/scripts/project-resource-registry"
 
 die() {

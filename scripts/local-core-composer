@@ -9,7 +9,7 @@ LOCAL_COMPOSER_DIR="$ROOT_DIR/.local/composer-core"
 LOCAL_COMPOSER="$LOCAL_COMPOSER_DIR/composer.json"
 LOCAL_LOCK="$LOCAL_COMPOSER_DIR/composer.lock"
 CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
-COMPOSER_BIN="${PEANUT_COMPOSER:-composer}"
+COMPOSER_BIN="${PEANUT_COMPOSER:-$ROOT_DIR/scripts/project-composer}"
 ACTION="${1:-install}"
 
 die() {

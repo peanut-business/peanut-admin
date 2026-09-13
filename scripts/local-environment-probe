@@ -196,7 +196,8 @@ class Probe:
         local_stack_ok = "project-resource-registry" in local_stack
         runtime_ok = (
             "/opt/homebrew/bin/php" in host_runtime
-            and "/usr/local/bin/composer" in host_runtime
+            and "scripts/project-composer" in host_runtime
+            and "expected_composer_version=2.10.2" in host_runtime
             and "php-runtime.pid" in host_runtime
             and "php-runtime.log" in host_runtime
         )

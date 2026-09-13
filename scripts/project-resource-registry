@@ -162,7 +162,7 @@ def main() -> int:
         }
         expected_tooling = {
             "peanut-admin-host-php-development": ("/opt/homebrew/bin/php", "8.3.24", 20180),
-            "peanut-admin-host-composer-development": ("/usr/local/bin/composer", "2.8.10"),
+            "peanut-admin-host-composer-development": ("scripts/project-composer", "2.10.2"),
         }
         for resource_id, expected in expected_tooling.items():
             command, version, *port = expected

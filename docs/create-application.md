@@ -77,6 +77,26 @@ scaffold 命名空间，不是用户自己的应用版本。生成物使用原�
 签名 scaffold 包做三方比较，并单独更新 Core/Module 依赖；禁止重新生成到现有目录来覆盖业务
 代码、app-owned Schema 或秘密。
 
+## 二次开发采用模式
+
+部署官方产品的用户直接消费同一产品版本、对应 Edition 的签名安装包；需要二次开发的用户则从
+固定上游 Release 生成一个独立应用仓，并以自己的 `instance_version`、资源登记、依赖 lock、
+迁移和 Release 为事实源。Peanut Admin 源码仓不是客户业务仓，Standalone 与 Multi-tenant 也
+不是需要长期合并的两个分支或两个派生产品；它们只决定同一上游版本在生成时采用的能力、Schema
+和升级身份。生产实例只部署派生应用自己的完整 Release，不在运行目录合并 scaffold。
+
+当前合同把生成文件分为三层：上游受管的 Host/交付基础设施、客户拥有的业务与显式 override、
+以及实例独有的环境、秘密和数据。现有 `app-owned` 不覆盖红线继续保持；客户业务优先放入 Module、
+extension 或登记的 override，而不是修改受管文件。升级按以下顺序在派生仓的开发分支完成：采用
+同 Edition 签名 scaffold 包，审阅三方比较和冲突，更新并锁定 PHP/Web Core 与 Module，执行应用
+自己的迁移、构建和验收，最后形成新的不可变应用 Release。任何一步失败都不会转入生产。
+
+当前模板 1710 个文件中有 906 个在生成后立即归客户、442 个归 scaffold、362 个仅属于源仓；
+这使现有机制偏向保守保护，但也让上游安全修复和框架收敛难以持续进入派生应用。后续收敛目标是
+逐批扩大稳定 Host 的 `managed` 面、把业务定制收回 Module/extension/显式 override，并为已有
+派生应用提供逐文件 hash 绑定的一次性 ownership adoption。该采用必须输出冲突计划并保持零静默
+覆盖；在真实派生应用完成代码、依赖、迁移、数据读回和恢复验证之前，不改变既有默认 ownership。
+
 生产管理端 builder 在执行 Vite 前，把应用根目录的 `plugins.lock` 精确复制为
 `/build/plugins.lock`；Plugin contribution resolver 直接读取这份 lock，缺失或无效内容继续
 fail-closed。安装包/生成器已在构建前固定 Edition，不再在一个正式构建物中同时携带两套管理端

@@ -95,7 +95,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "bcda34b053a47c5db6cff243053fc41ba3f93ea0573b4a3e4271bd364a44ad19"
+            "source_sha256": "cb208f1a7d0d600891dbd93a31309c88b8abd872b67529d39050677819cb4963"
         },
         {
             "path": ".github/workflows/docs-site.yml",
@@ -4207,7 +4207,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "711fdea8a3bd7f71cb8628de6dfd2d0a757ed5ba2fb7fc96387d01f212863e9d"
+            "source_sha256": "8b40b6ed4f8345f3e3dda0dd4a1623a1643faaca06aea65320c19c63611dcfec"
         },
         {
             "path": "scripts/core-qualification-runner",
@@ -4328,7 +4328,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7b3aee2b23de2faf3143c5f21ffd3593cea184bac180321cf68af17b22640d38"
+            "source_sha256": "d98eae3f3b0965b0d4c47c27cfef4e53e8a27e439098c1f7fedbd83e3734c7e7"
         },
         {
             "path": "scripts/local-core-web",
@@ -4504,7 +4504,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "79edaf16692657c0e72740bea7bfbd57893560e51df1ca4821c52dffbf7f1018"
+            "source_sha256": "3e5a33641bca7c66f5015109a7a895e28b7325ae82eefe6cc886320a1557f928"
         },
         {
             "path": "scripts/project-codegraph",
@@ -4519,6 +4519,20 @@
                 "full"
             ],
             "source_sha256": "83e6b6a683ae5343aada161b3c0323ee9f408b11e67aadf79ea261bb6d307809"
+        },
+        {
+            "path": "scripts/project-composer",
+            "target": "scripts/project-composer",
+            "classification": "managed",
+            "owner": "scaffold",
+            "transform": "text",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "62a838e7242f1d50ffe7748b45af31891118250684e1afc047687a3520cd94fa"
         },
         {
             "path": "scripts/project-development-database.sh",
@@ -4559,7 +4573,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a561bd92ac009e0d57325826b286bbca5bcf5e0eb5960e25a67722c1ffc1d82d"
+            "source_sha256": "afbe870f3c11c2ec91ccae84efbeba199e412fe09e92b8a882a03c3a637a22c4"
         },
         {
             "path": "scripts/publish-github-release",
@@ -4586,7 +4600,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ea45828975dc260493e8a09008a9c00bd37d27b4b8cf2293819ca401f9f18647"
+            "source_sha256": "3c9b8a763af071589fdd938a4802762650fa5581a0ec73c08d24372808608b57"
         },
         {
             "path": "scripts/scaffold-runtime/EditionUpgradePackage.php",
