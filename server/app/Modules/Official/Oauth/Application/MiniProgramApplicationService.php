@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\Modules\Official\Oauth\Application;
 
 use app\common\application\BusinessException;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\common\service\external\ExternalChannelBindingService;
 use app\common\service\external\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;

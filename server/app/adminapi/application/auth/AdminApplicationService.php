@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\application\auth;
 
 use app\common\application\BusinessException;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\common\services\XlsxExportService;
 use app\common\service\org\AdminDirectoryQuery;
 use PeanutAdmin\Kernel\Context\TenantContextRequirement;

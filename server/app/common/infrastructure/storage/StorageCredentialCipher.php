@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\storage;
+namespace app\common\infrastructure\storage;
 
 final class StorageCredentialCipher
 {

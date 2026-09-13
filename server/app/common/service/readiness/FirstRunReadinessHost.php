@@ -9,7 +9,7 @@ use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\config\BrandDefaults;
 use app\common\service\config\WebsiteConfigService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\service\storage\StorageConfigurationService;
+use app\common\services\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PDO;
 

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service;
+namespace app\common\services;
 
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\service\storage\StorageService;
+use app\common\services\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\storage;
+namespace app\common\infrastructure\storage;
 
 use app\common\service\http\OutboundHttpRequest;
 use app\common\service\http\OutboundHttpTransport;

@@ -1,8 +1,13 @@
 <?php
 declare(strict_types=1);
-namespace app\common\service\storage;
+namespace app\common\composition\storage;
 
+use app\common\contract\storage\StorageCredentialResolver;
+use app\common\exception\storage\StorageProviderException;
 use app\common\execution\CurrentExecutionContext;
+use app\common\infrastructure\storage\ObservedStorageDriver;
+use app\common\infrastructure\storage\QiniuStorageHttpTransport;
+use app\common\infrastructure\storage\StorageAccess;
 use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\FileMedia\Storage\Driver\AliyunStorageDriver;
 use PeanutAdmin\FileMedia\Storage\Driver\LocalStorageDriver;

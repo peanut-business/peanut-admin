@@ -14,7 +14,7 @@ use app\common\contract\idempotency\IdempotencyResult;
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
 use app\common\persistence\AdvisoryLockUnavailable;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\common\service\Money;
 use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\service\payment\PaymentRetryLock;

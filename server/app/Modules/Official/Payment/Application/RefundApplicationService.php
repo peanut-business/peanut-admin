@@ -5,7 +5,7 @@ namespace app\Modules\Official\Payment\Application;
 
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;

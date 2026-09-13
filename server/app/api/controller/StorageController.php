@@ -5,7 +5,7 @@ namespace app\api\controller;
 
 use app\common\application\BusinessException;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\storage\StorageService;
+use app\common\services\storage\StorageService;
 use think\App;
 
 final class StorageController extends BaseApiController

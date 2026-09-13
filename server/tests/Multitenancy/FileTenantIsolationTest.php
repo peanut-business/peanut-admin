@@ -5,7 +5,7 @@ use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\file\FileObjectNamespace;
+use app\common\value\file\FileObjectNamespace;
 use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;

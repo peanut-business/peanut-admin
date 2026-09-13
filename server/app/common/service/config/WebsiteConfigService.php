@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\service\config;
 
-use app\common\service\FileService;
+use app\common\services\FileService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Auth\TenantContext;

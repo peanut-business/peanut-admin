@@ -26,7 +26,7 @@ namespace {
     $repositoryRoot = dirname($serverRoot);
 
     require_once $serverRoot . '/vendor/autoload.php';
-    require $serverRoot . '/app/common/service/FileService.php';
+    require $serverRoot . '/app/common/services/FileService.php';
 
     $apiEvidence = json_decode((string)file_get_contents(
         $repositoryRoot . '/output/playwright/m02/api-db-summary.json'
@@ -63,14 +63,14 @@ namespace {
     );
     expectFileMedia(($storageEvidence['configuration_restored'] ?? false) === true, 'S01 configuration must be restored');
 
-    $fileService = (new ReflectionClass(\app\common\service\FileService::class))->newInstanceWithoutConstructor();
+    $fileService = (new ReflectionClass(\app\common\services\FileService::class))->newInstanceWithoutConstructor();
     expectFileMedia(
         $fileService->getFileUrl('https://cdn.example.test/a.png') === 'https://cdn.example.test/a.png',
         'absolute URL must remain unchanged'
     );
 
     $ownedFiles = [
-        'app/common/service/FileService.php',
+        'app/common/services/FileService.php',
         'app/Modules/Official/File/Application/FileUploadService.php',
         'app/Modules/Official/File/Contracts/FileUploads.php',
         'app/Modules/Official/File/Contracts/Dto/UploadFile.php',
@@ -80,13 +80,13 @@ namespace {
         'app/Modules/Official/File/Model/File.php',
         'app/Modules/Official/File/Application/FileAdministrationService.php',
         'app/Modules/Official/File/Contracts/FileAdministration.php',
-        'app/common/service/storage/StorageService.php',
-        'app/common/service/storage/StorageRepository.php',
-        'app/common/service/storage/StoragePurpose.php',
-        'app/common/service/storage/StorageDriverFactory.php',
-        'app/common/service/storage/ObservedStorageDriver.php',
-        'app/common/service/storage/StoragePath.php',
-        'app/common/service/storage/QiniuStorageHttpTransport.php',
+        'app/common/services/storage/StorageService.php',
+        'app/common/infrastructure/storage/StorageRepository.php',
+        'app/common/value/storage/StoragePurpose.php',
+        'app/common/composition/storage/StorageDriverFactory.php',
+        'app/common/infrastructure/storage/ObservedStorageDriver.php',
+        'app/common/value/storage/StoragePath.php',
+        'app/common/infrastructure/storage/QiniuStorageHttpTransport.php',
     ];
     $sources = [];
     foreach ($ownedFiles as $relativePath) {
@@ -133,17 +133,17 @@ namespace {
         'delete must use the unified storage service'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/storage/StorageService.php'], 'repository->route')
-        && str_contains($sources['app/common/service/storage/StorageService.php'], 'objectForTenant')
-        && str_contains($sources['app/common/service/storage/StorageRepository.php'], "\$prefix . 'tenant_id=:tenant_id'")
-        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'object_key LIKE :tenant_object_prefix')
-        && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'DefaultTenantContextResolver'),
+        str_contains($sources['app/common/services/storage/StorageService.php'], 'repository->route')
+        && str_contains($sources['app/common/services/storage/StorageService.php'], 'objectForTenant')
+        && str_contains($sources['app/common/infrastructure/storage/StorageRepository.php'], "\$prefix . 'tenant_id=:tenant_id'")
+        && str_contains($sources['app/common/infrastructure/storage/StorageRepository.php'], 'object_key LIKE :tenant_object_prefix')
+        && str_contains($sources['app/common/infrastructure/storage/StorageRepository.php'], 'DefaultTenantContextResolver'),
         'sealed File Media evidence requires explicit Multi-tenant and Standalone object ownership predicates'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'material.image' => StorageAccess::PUBLIC")
-        && str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'export.xlsx' => StorageAccess::PRIVATE")
-        && str_contains($sources['app/common/service/storage/StoragePurpose.php'], "'export.csv' => StorageAccess::PRIVATE"),
+        str_contains($sources['app/common/value/storage/StoragePurpose.php'], "'material.image' => StorageAccess::PUBLIC")
+        && str_contains($sources['app/common/value/storage/StoragePurpose.php'], "'export.xlsx' => StorageAccess::PRIVATE")
+        && str_contains($sources['app/common/value/storage/StoragePurpose.php'], "'export.csv' => StorageAccess::PRIVATE"),
         'public/private purpose routing changed'
     );
     expectFileMedia(
@@ -155,13 +155,13 @@ namespace {
         'application must consume the single Core storage Driver implementation'
     );
     expectFileMedia(
-        str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new LocalStorageDriver(')
-            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new AliyunStorageDriver(')
-            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new QcloudStorageDriver(')
-            && str_contains($sources['app/common/service/storage/StorageDriverFactory.php'], 'new QiniuStorageDriver(')
-            && str_contains($sources['app/common/service/storage/StoragePath.php'], 'StorageObjectKey::assert(')
-            && str_contains($sources['app/common/service/storage/StorageRepository.php'], 'StorageObjectKey::assert(')
-            && str_contains($sources['app/common/service/storage/QiniuStorageHttpTransport.php'], 'implements StorageHttpTransport'),
+        str_contains($sources['app/common/composition/storage/StorageDriverFactory.php'], 'new LocalStorageDriver(')
+            && str_contains($sources['app/common/composition/storage/StorageDriverFactory.php'], 'new AliyunStorageDriver(')
+            && str_contains($sources['app/common/composition/storage/StorageDriverFactory.php'], 'new QcloudStorageDriver(')
+            && str_contains($sources['app/common/composition/storage/StorageDriverFactory.php'], 'new QiniuStorageDriver(')
+            && str_contains($sources['app/common/value/storage/StoragePath.php'], 'StorageObjectKey::assert(')
+            && str_contains($sources['app/common/infrastructure/storage/StorageRepository.php'], 'StorageObjectKey::assert(')
+            && str_contains($sources['app/common/infrastructure/storage/QiniuStorageHttpTransport.php'], 'implements StorageHttpTransport'),
         'application storage assembly must use only the frozen Core technical boundary'
     );
     $allowedCoreStorageImports = [
@@ -186,7 +186,7 @@ namespace {
     // Verify the application can actually assemble every retained provider from
     // the installed Core package. The sealed historical evidence above does not
     // prove that current Composer autoloading or constructor contracts still work.
-    $credentialResolver = new class implements \app\common\service\storage\StorageCredentialResolver {
+    $credentialResolver = new class implements \app\common\contract\storage\StorageCredentialResolver {
         /** @var list<string> */
         public array $resolvedDrivers = [];
 
@@ -202,19 +202,19 @@ namespace {
             throw new RuntimeException('provider assembly must not perform network I/O');
         }
     };
-    $factory = new \app\common\service\storage\StorageDriverFactory(
+    $factory = new \app\common\composition\storage\StorageDriverFactory(
         $credentialResolver,
-        new \app\common\service\storage\QiniuStorageHttpTransport($outboundTransport),
-        new \app\common\service\storage\AliyunStorageClientFactory(),
-        new \app\common\service\storage\QcloudStorageClientFactory(),
+        new \app\common\infrastructure\storage\QiniuStorageHttpTransport($outboundTransport),
+        new \app\common\composition\storage\AliyunStorageClientFactory(),
+        new \app\common\composition\storage\QcloudStorageClientFactory(),
         new \app\common\execution\CurrentExecutionContext(new \app\common\execution\ExecutionContextStore()),
         new \think\App($serverRoot . DIRECTORY_SEPARATOR),
     );
-    $delegateProperty = new ReflectionProperty(\app\common\service\storage\ObservedStorageDriver::class, 'delegate');
+    $delegateProperty = new ReflectionProperty(\app\common\infrastructure\storage\ObservedStorageDriver::class, 'delegate');
     foreach ([
         'local' => [
             ['driver' => 'local'],
-            ['local_path' => 'private/storage', 'access_type' => \app\common\service\storage\StorageAccess::PRIVATE],
+            ['local_path' => 'private/storage', 'access_type' => \app\common\infrastructure\storage\StorageAccess::PRIVATE],
             \PeanutAdmin\FileMedia\Storage\Driver\LocalStorageDriver::class,
         ],
         'qiniu' => [

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\platform\controller;
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\storage\StorageConfigurationService;
+use app\common\services\storage\StorageConfigurationService;
 use app\platform\context\PlatformOperatorContext;
 use think\App;
 

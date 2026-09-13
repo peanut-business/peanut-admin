@@ -1,13 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\storage;
+namespace app\common\services\storage;
 
 use app\common\application\BusinessException;
+use app\common\infrastructure\storage\StorageAccess;
+use app\common\infrastructure\storage\StorageCredentialCipher;
+use app\common\infrastructure\storage\StorageRepository;
 use app\common\service\audit\AuditContractHost;
+use app\common\value\storage\StoragePurpose;
 use app\platform\context\PlatformOperatorContext;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
+use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use Throwable;
 
 final readonly class StorageConfigurationService
@@ -16,6 +20,7 @@ final readonly class StorageConfigurationService
 
     public function __construct(
         private StorageRepository $repo,
+        private TransactionManager $transactions,
         private AuditContractHost $audit,
     ) {}
 
@@ -36,14 +41,13 @@ final readonly class StorageConfigurationService
         ], function () use ($value): int {
             $this->assertKeys($value, ['account_key', 'driver', 'name', 'credentials', 'credential_ref']);
             $account = $this->account($value, true);
-            $statement = $this->repo->pdo()->prepare("INSERT INTO pa_storage_account(account_key,driver,name,credential_ciphertext,credential_key_version,credential_rotated_at,status,created_at,updated_at) VALUES(:account_key,:driver,:name,:ciphertext,:key_version,:rotated_at,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
-            $statement->execute([
+            $this->repo->connection()->execute("INSERT INTO pa_storage_account(account_key,driver,name,credential_ciphertext,credential_key_version,credential_rotated_at,status,created_at,updated_at) VALUES(:account_key,:driver,:name,:ciphertext,:key_version,:rotated_at,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [
                 'account_key' => $account['account_key'], 'driver' => $account['driver'],
                 'name' => $account['name'], 'ciphertext' => $account['credential']['ciphertext'],
                 'key_version' => $account['credential']['key_version'],
                 'rotated_at' => $account['credential']['rotated_at'],
             ]);
-            return (int)$this->repo->pdo()->lastInsertId();
+            return $this->lastInsertId();
         });
     }
 
@@ -54,10 +58,8 @@ final readonly class StorageConfigurationService
         ], function () use ($value): void {
             $this->assertKeys($value, ['id', 'name', 'status', 'credentials', 'credential_ref']);
             $id = $this->id($value['id'] ?? 0);
-            $statement = $this->repo->pdo()->prepare('SELECT account_key,driver FROM pa_storage_account WHERE id=:id');
-            $statement->execute(['id' => $id]);
-            $existing = $statement->fetch(PDO::FETCH_ASSOC);
-            if (!is_array($existing)) throw new \InvalidArgumentException('存储账号不存在');
+            $existing = $this->one('SELECT account_key,driver FROM pa_storage_account WHERE id=:id', ['id' => $id]);
+            if ($existing === null) throw new \InvalidArgumentException('存储账号不存在');
             $account = $this->account([
                 'account_key' => $existing['account_key'], 'driver' => $existing['driver'],
                 'name' => $value['name'] ?? '', 'credentials' => $value['credentials'] ?? null,
@@ -76,8 +78,7 @@ final readonly class StorageConfigurationService
                     'rotated_at' => $account['credential']['rotated_at'],
                 ];
             }
-            $statement = $this->repo->pdo()->prepare($sql);
-            $statement->execute($params);
+            $this->repo->connection()->execute($sql, $params);
         });
     }
 
@@ -89,15 +90,14 @@ final readonly class StorageConfigurationService
                 'region', 'endpoint', 'access_domain', 'local_path',
             ]);
             $space = $this->space($value + ['status' => 'active']);
-            $statement = $this->repo->pdo()->prepare("INSERT INTO pa_storage_space(space_key,account_id,name,access_type,bucket,region,endpoint,access_domain,local_path,status,created_at,updated_at) VALUES(:space_key,:account_id,:name,:access_type,:bucket,:region,:endpoint,:access_domain,:local_path,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
-            $statement->execute([
+            $this->repo->connection()->execute("INSERT INTO pa_storage_space(space_key,account_id,name,access_type,bucket,region,endpoint,access_domain,local_path,status,created_at,updated_at) VALUES(:space_key,:account_id,:name,:access_type,:bucket,:region,:endpoint,:access_domain,:local_path,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [
                 'space_key' => $space['space_key'], 'account_id' => $space['account_id'],
                 'name' => $space['name'], 'access_type' => $space['access_type'],
                 'bucket' => $space['bucket'], 'region' => $space['region'],
                 'endpoint' => $space['endpoint'], 'access_domain' => $space['access_domain'],
                 'local_path' => $space['local_path'],
             ]);
-            return (int)$this->repo->pdo()->lastInsertId();
+            return $this->lastInsertId();
         });
     }
 
@@ -106,18 +106,15 @@ final readonly class StorageConfigurationService
         $this->mutate($context, 'storage.space.updated', 'STORAGE_SPACE_UPDATE', [], function () use ($value): void {
             $this->assertKeys($value, ['id', 'name', 'access_domain', 'status']);
             $id = $this->id($value['id'] ?? 0);
-            $statement = $this->repo->pdo()->prepare('SELECT account_id,space_key,access_type,bucket,region,endpoint,local_path FROM pa_storage_space WHERE id=:id');
-            $statement->execute(['id' => $id]);
-            $existing = $statement->fetch(PDO::FETCH_ASSOC);
-            if (!is_array($existing)) throw new \InvalidArgumentException('Space 不存在');
+            $existing = $this->one('SELECT account_id,space_key,access_type,bucket,region,endpoint,local_path FROM pa_storage_space WHERE id=:id', ['id' => $id]);
+            if ($existing === null) throw new \InvalidArgumentException('Space 不存在');
             $space = $this->space([
                 ...$existing,
                 'name' => $value['name'] ?? '',
                 'access_domain' => $value['access_domain'] ?? '',
                 'status' => $value['status'] ?? 'active',
             ]);
-            $statement = $this->repo->pdo()->prepare('UPDATE pa_storage_space SET name=:name,access_domain=:domain,status=:status,updated_at=UTC_TIMESTAMP(3) WHERE id=:id');
-            $statement->execute([
+            $this->repo->connection()->execute('UPDATE pa_storage_space SET name=:name,access_domain=:domain,status=:status,updated_at=UTC_TIMESTAMP(3) WHERE id=:id', [
                 'id' => $id, 'name' => $space['name'],
                 'domain' => $space['access_domain'], 'status' => $space['status'],
             ]);
@@ -136,11 +133,8 @@ final readonly class StorageConfigurationService
                 throw new \InvalidArgumentException('用途路由属性不匹配');
             }
             $space = $this->id($value['space_id'] ?? 0);
-            $statement = $this->repo->pdo()->prepare("SELECT 1 FROM pa_storage_space WHERE id=:id AND access_type=:access AND status='active'");
-            $statement->execute(['id' => $space, 'access' => $access]);
-            if (!$statement->fetchColumn()) throw new \InvalidArgumentException('路由目标 Space 不可用');
-            $statement = $this->repo->pdo()->prepare('INSERT INTO pa_storage_route(route_key,access_type,space_id,updated_at) VALUES(:route_key,:access,:space,UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE access_type=VALUES(access_type),space_id=VALUES(space_id),updated_at=VALUES(updated_at)');
-            $statement->execute(['route_key' => $key, 'access' => $access, 'space' => $space]);
+            if ($this->one("SELECT 1 available FROM pa_storage_space WHERE id=:id AND access_type=:access AND status='active'", ['id' => $space, 'access' => $access]) === null) throw new \InvalidArgumentException('路由目标 Space 不可用');
+            $this->repo->connection()->execute('INSERT INTO pa_storage_route(route_key,access_type,space_id,updated_at) VALUES(:route_key,:access,:space,UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE access_type=VALUES(access_type),space_id=VALUES(space_id),updated_at=VALUES(updated_at)', ['route_key' => $key, 'access' => $access, 'space' => $space]);
         });
     }
 
@@ -159,9 +153,7 @@ final readonly class StorageConfigurationService
     private function space(array $value): array
     {
         $accountId = $this->id($value['account_id'] ?? 0);
-        $statement = $this->repo->pdo()->prepare('SELECT driver FROM pa_storage_account WHERE id=:id');
-        $statement->execute(['id' => $accountId]);
-        $driver = $statement->fetchColumn();
+        $driver = $this->one('SELECT driver FROM pa_storage_account WHERE id=:id', ['id' => $accountId])['driver'] ?? null;
         if (!is_string($driver)) throw new \InvalidArgumentException('存储账号不存在');
         $driver = $this->driver($driver);
         $access = StorageAccess::assertType((string)($value['access_type'] ?? ''));
@@ -196,7 +188,11 @@ final readonly class StorageConfigurationService
         callable $operation,
     ): mixed {
         try {
-            $result = $operation();
+            return $this->transactions->run(function () use ($context, $eventType, $metadata, $operation): mixed {
+                $result = $operation();
+                $this->audit($context, $eventType, $metadata, AuditOutcome::Success, null);
+                return $result;
+            });
         } catch (\InvalidArgumentException $exception) {
             $failure = new BusinessException($reasonPrefix . '_INPUT_INVALID', 422, $exception->getMessage());
             $this->audit($context, $eventType, $metadata, AuditOutcome::Error, $failure->errorCode);
@@ -205,8 +201,22 @@ final readonly class StorageConfigurationService
             $this->audit($context, $eventType, $metadata, AuditOutcome::Error, $reasonPrefix . '_FAILED');
             throw $exception;
         }
-        $this->audit($context, $eventType, $metadata, AuditOutcome::Success, null);
-        return $result;
+    }
+
+    /** @param array<string, mixed> $parameters */
+    private function one(string $sql, array $parameters = []): ?array
+    {
+        $row = $this->repo->connection()->query($sql, $parameters)[0] ?? null;
+        return is_array($row) ? $row : null;
+    }
+
+    private function lastInsertId(): int
+    {
+        $id = $this->one('SELECT LAST_INSERT_ID() AS id')['id'] ?? null;
+        if ((!is_int($id) && !(is_string($id) && ctype_digit($id))) || (int) $id < 1) {
+            throw new \RuntimeException('存储配置身份生成失败');
+        }
+        return (int) $id;
     }
 
     private function audit(

@@ -1004,14 +1004,16 @@
       "owner": "existing dedicated storage-service task",
       "responsibility": "统一存储 Driver、Account、Space、public/private 可见性、上传交付和文件对象账本；最终边界以现有任务冻结结果为准",
       "explicit_exclusions": [
-        "本登记任务不修改或验收存储实现",
+        "Core FileMedia 的通用对象状态流不替代应用的 Account、Space、用途和 Edition owner 语义",
         "业务内容、会员、OAuth 和导出自己的领域规则"
       ],
       "current_implementation": [
         "server/app/Modules/Official/File/module.json",
-        "server/app/common/service/FileService.php",
-        "server/app/common/service/UploadService.php",
-        "server/app/common/service/storage/"
+        "server/app/Modules/Official/File/ModuleProvider.php",
+        "server/app/common/services/FileService.php",
+        "server/app/common/services/storage/StorageService.php",
+        "server/app/common/infrastructure/storage/StorageRepository.php",
+        "server/app/common/composition/storage/StorageDriverFactory.php"
       ],
       "actual_callers": [
         "official.article",
@@ -1026,14 +1028,14 @@
         "policy": "当前 manifest 事实；Account/Space 等最终 owner 等待现有任务冻结"
       },
       "dependencies": ["TenantContext", "Module governance"],
-      "current_issue": "PR #232 已合入 dev；统一 Driver/Account/Space、public/private、对象账本、密文凭据和迁移证据均已固定。真实生产对象存储凭据和容量策略属于后置发布验收",
-      "recommended_boundary": "保持现有存储任务唯一 owner；本登记只消费其固定合同和验收证据，不重复修改存储实现",
+      "current_issue": "应用已消费 Core 四厂商 Driver 合同，并在 3.1.1 收敛分支上把账本数据访问、事务和目录接线迁至 ThinkPHP；真实生产对象存储凭据和容量策略属于后置发布验收",
+      "recommended_boundary": "应用保留 Account/Space、用途、Edition owner、对象账本和补偿；Core 保留通用 Driver 与独立 FileMedia 状态流，不建立第二套应用账本",
       "delivery": {
         "readiness": "complete",
         "can_start_dedicated_thread_now": false,
         "prerequisites": [],
         "blockers": [],
-        "recommended_next_action": "继续由统一存储 owner 维护合同；下游通过 StorageService/StorageConfigurationService 消费，不新增直写路径"
+        "recommended_next_action": "下游通过 StorageService/StorageConfigurationService 消费；固定候选验收 reserve/put/ready/补偿/交付/归档，真实厂商操作按独立 Gate 执行"
       }
     },
     {

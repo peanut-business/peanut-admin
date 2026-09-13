@@ -8,7 +8,7 @@ use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use app\api\service\UserTokenService;
 use app\common\enum\notice\NoticeSceneEnum;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\application\BusinessException;
 use PeanutAdmin\Kernel\Auth\TenantContext;

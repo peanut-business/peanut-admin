@@ -9,7 +9,7 @@ use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\service\storage\StorageService;
+use app\common\services\storage\StorageService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 final class FileUploadService implements FileUploads

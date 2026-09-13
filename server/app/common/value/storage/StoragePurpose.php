@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\storage;
+namespace app\common\value\storage;
+
+use app\common\infrastructure\storage\StorageAccess;
 
 final class StoragePurpose
 {

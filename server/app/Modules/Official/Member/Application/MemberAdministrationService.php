@@ -18,7 +18,7 @@ use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
 use app\Modules\Official\Member\Contracts\MemberProfileCommands;
 use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\Modules\Official\Member\Contracts\MemberTagCommands;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\common\service\Money;
 use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\services\XlsxExportService;

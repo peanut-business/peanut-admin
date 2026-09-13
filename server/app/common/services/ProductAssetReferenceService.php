@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service;
+namespace app\common\services;
 
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;

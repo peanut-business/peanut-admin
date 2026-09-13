@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\ProductAssetReferenceService;
+use app\common\services\ProductAssetReferenceService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 

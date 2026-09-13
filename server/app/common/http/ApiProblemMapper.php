@@ -7,7 +7,7 @@ use app\common\application\BusinessException;
 use app\common\service\module\ModuleScaffoldException;
 use app\common\service\installation\InstallationExecutionException;
 use app\common\service\http\OutboundHttpException;
-use app\common\service\storage\StorageProviderException;
+use app\common\exception\storage\StorageProviderException;
 use app\platform\invitation\TenantOwnerInvitationException;
 use app\platform\service\PlatformRefreshCredentialException;
 use app\platform\service\plugin\PluginLifecycleException;

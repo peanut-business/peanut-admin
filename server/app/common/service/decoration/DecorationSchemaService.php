@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\service\decoration;
 
 use app\common\enum\decoration\DecorationEnum;
-use app\common\service\ProductAssetReferenceService;
+use app\common\services\ProductAssetReferenceService;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 
 /** 业务装修 Schema、链接语义与资源 URI 的单一边界。 */

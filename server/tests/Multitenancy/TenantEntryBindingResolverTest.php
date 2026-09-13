@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
-use app\common\service\storage\StorageRepository;
+use app\common\infrastructure\storage\StorageRepository;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\tenancy\MultiTenantDataScopePolicy;
@@ -13,6 +13,7 @@ use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require_once dirname(__DIR__) . '/Support/ThinkPhpTestConnection.php';
 
 function entryBindingExpect(bool $condition, string $message): void
 {
@@ -90,7 +91,7 @@ $resolver = new TenantEntryBindingResolver(
 $multiTenantScope = new MultiTenantDataScopePolicy(
     new CurrentExecutionContext(new ExecutionContextStore()),
 );
-$storage = new StorageRepository($pdo, $multiTenantScope, new DefaultTenantContextResolver($pdo));
+$storage = new StorageRepository(ThinkPhpTestConnection::fromPdo($pdo), $multiTenantScope, new DefaultTenantContextResolver($pdo));
 entryBindingExpect(
     $storage->deliverableObjectForTenant(101, 'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') !== null,
     'an active Tenant file was not deliverable',
@@ -293,7 +294,7 @@ $loginMiddleware = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/adminapi/http/middleware/LoginMiddleware.php'
 );
 $storageService = (string)file_get_contents(
-    dirname(__DIR__, 2) . '/app/common/service/storage/StorageService.php'
+    dirname(__DIR__, 2) . '/app/common/services/storage/StorageService.php'
 );
 $storageController = (string)file_get_contents(
     dirname(__DIR__, 2) . '/app/api/controller/StorageController.php'

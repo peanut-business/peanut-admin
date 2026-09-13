@@ -6,7 +6,7 @@ namespace app\api\controller;
 use app\Modules\Official\Oauth\Contracts\OAuthCommands;
 use app\Modules\Official\Oauth\Contracts\Dto\OAuthLoginResult;
 use app\api\service\UserTokenService;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\api\validate\OAuthValidate;
 use app\common\service\oauth\OAuthBrowserCallbackService;
 use app\common\service\external\ExternalTenantResolver;

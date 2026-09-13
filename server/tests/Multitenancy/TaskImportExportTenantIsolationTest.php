@@ -6,7 +6,7 @@ use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
 use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
 use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
-use app\common\service\storage\StorageService;
+use app\common\services\storage\StorageService;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Async\VerifiedJobEnvelope;
 use PeanutAdmin\Kernel\Context\RequestedTargetSet;

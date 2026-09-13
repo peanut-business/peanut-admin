@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\config;
 
-use app\common\service\FileService;
-use app\common\service\RichTextResourceService;
+use app\common\services\FileService;
+use app\common\services\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\WebsiteConfigService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;

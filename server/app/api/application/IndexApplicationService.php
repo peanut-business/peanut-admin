@@ -6,7 +6,7 @@ namespace app\api\application;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use app\common\service\RichTextResourceService;
+use app\common\services\RichTextResourceService;
 use app\common\service\config\TenantApplicationSettingService;
 use app\common\service\config\WebsiteConfigService;
 use app\common\enum\decoration\DecorationEnum;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\application\decoration;
 
 use app\common\application\BusinessException;
-use app\common\service\ProductAssetReferenceService;
+use app\common\services\ProductAssetReferenceService;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;

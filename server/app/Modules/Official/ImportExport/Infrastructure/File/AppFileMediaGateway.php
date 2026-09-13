@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace app\Modules\Official\ImportExport\Infrastructure\File;
 
-use app\common\service\storage\StorageService;
+use app\common\services\storage\StorageService;
 use PeanutAdmin\ImportExport\Application\ImportExportException;
 use PeanutAdmin\ImportExport\File\FileMediaGateway;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;

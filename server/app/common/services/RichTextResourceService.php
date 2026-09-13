@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service;
+namespace app\common\services;
 
+use app\common\service\HtmlSanitizerService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

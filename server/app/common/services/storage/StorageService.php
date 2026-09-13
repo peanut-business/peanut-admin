@@ -1,9 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\storage;
+namespace app\common\services\storage;
 
 use app\common\application\BusinessException;
+use app\common\composition\storage\StorageDriverFactory;
+use app\common\infrastructure\storage\StorageRepository;
+use app\common\value\storage\StoragePath;
+use app\common\value\storage\StoragePurpose;
 
 final readonly class StorageService
 {

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\file;
+namespace app\common\value\file;
 
 use app\common\enum\FileEnum;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;

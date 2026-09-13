@@ -5,8 +5,8 @@ namespace app\Modules\Official\Article\Application;
 
 use app\common\application\BusinessException;
 use app\common\http\PageResult;
-use app\common\service\ProductAssetReferenceService;
-use app\common\service\RichTextResourceService;
+use app\common\services\ProductAssetReferenceService;
+use app\common\services\RichTextResourceService;
 use app\common\support\PaginationInput;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
 use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;

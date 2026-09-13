@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\adminapi\application;
 
 use app\common\service\authorization\AdminAuthorizationService;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use app\common\service\config\WebsiteConfigService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 

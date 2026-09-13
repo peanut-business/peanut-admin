@@ -39,8 +39,8 @@ use app\common\service\ApplicationPasswordPolicy;
 use app\common\service\CoreServiceOverrides;
 use app\common\services\CrontabCommandService;
 use app\common\service\DemoAccountPolicy;
-use app\common\service\FileService;
-use app\common\service\ProductAssetReferenceService;
+use app\common\services\FileService;
+use app\common\services\ProductAssetReferenceService;
 use app\common\service\authorization\MenuPermissionUsageQuery;
 use app\common\service\authorization\NativeAdminPrincipalRepository;
 use app\common\service\authorization\RoleAdministrationRuntime;
@@ -49,15 +49,15 @@ use app\common\service\org\AdminDirectoryQuery;
 use app\common\service\org\DepartmentAdministrationRuntime;
 use app\common\service\org\TenantAdminRuntime;
 use app\common\service\tenant\TenantIdentityQuery;
-use app\common\service\storage\AliyunStorageClientFactory;
-use app\common\service\storage\FailClosedStorageCredentialResolver;
-use app\common\service\storage\QcloudStorageClientFactory;
-use app\common\service\storage\QiniuStorageHttpTransport;
-use app\common\service\storage\StorageCredentialResolver;
-use app\common\service\storage\StorageConfigurationService;
-use app\common\service\storage\StorageDriverFactory;
-use app\common\service\storage\StorageRepository;
-use app\common\service\storage\StorageService;
+use app\common\composition\storage\AliyunStorageClientFactory;
+use app\common\infrastructure\storage\FailClosedStorageCredentialResolver;
+use app\common\composition\storage\QcloudStorageClientFactory;
+use app\common\infrastructure\storage\QiniuStorageHttpTransport;
+use app\common\contract\storage\StorageCredentialResolver;
+use app\common\services\storage\StorageConfigurationService;
+use app\common\composition\storage\StorageDriverFactory;
+use app\common\infrastructure\storage\StorageRepository;
+use app\common\services\storage\StorageService;
 use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
@@ -263,7 +263,7 @@ class AppService extends Service
     {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
         $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
-            $this->app->make(PDO::class),
+            $this->app->make(PDOConnection::class),
             $this->app->make(DataScopePolicy::class),
             $this->app->make(DefaultTenantContextResolver::class),
         ));
@@ -291,6 +291,7 @@ class AppService extends Service
         ));
         $this->app->bind(StorageConfigurationService::class, fn(): StorageConfigurationService => new StorageConfigurationService(
             $this->app->make(StorageRepository::class),
+            $this->app->make(TransactionManager::class),
             $this->app->make(AuditContractHost::class),
         ));
     }
@@ -485,7 +486,7 @@ class AppService extends Service
         $this->app->bind(ConfigApplicationService::class, fn(): ConfigApplicationService => new ConfigApplicationService(
             $this->app->make(\app\common\service\config\TenantApplicationSettingService::class),
             $this->app->make(FileService::class),
-            $this->app->make(\app\common\service\RichTextResourceService::class),
+            $this->app->make(\app\common\services\RichTextResourceService::class),
             $this->app->make(\app\common\service\config\WebsiteConfigService::class),
             (string)Config::get('project.default_image.user_avatar', ''),
         ));
@@ -500,7 +501,7 @@ class AppService extends Service
             $this->app->make(TenantIdentityQuery::class),
             $this->app->make(\app\common\service\config\TenantApplicationSettingService::class),
             $this->app->make(PublicArticleQueries::class),
-            $this->app->make(\app\common\service\RichTextResourceService::class),
+            $this->app->make(\app\common\services\RichTextResourceService::class),
             $this->app->make(\app\common\service\decoration\DecorationReadService::class),
             $this->app->make(\app\common\service\config\WebsiteConfigService::class),
             (string)Config::get('project.version', ''),

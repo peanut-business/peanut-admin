@@ -11,7 +11,7 @@ use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\common\application\BusinessException;
 use app\common\enum\notice\NoticeSceneEnum;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\common\service\FileService;
+use app\common\services\FileService;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
 class UserApplicationService

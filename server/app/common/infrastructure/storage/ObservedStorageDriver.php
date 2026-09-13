@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\storage;
+namespace app\common\infrastructure\storage;
 
+use app\common\exception\storage\StorageProviderException;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\runtime\OperationalLog;
 use PeanutAdmin\FileMedia\Storage\StorageDriver;
