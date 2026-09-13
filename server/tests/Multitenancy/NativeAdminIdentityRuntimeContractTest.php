@@ -6,7 +6,7 @@ $runtimeFiles = [
     'app/adminapi',
     'app/common/service/authorization',
     'app/common/service/org/AdminDirectoryQuery.php',
-    'app/platform/service/PdoTenantOwnerAdminProvisioner.php',
+    'app/platform/service/CoreTenantOwnerAdminProvisioner.php',
     'app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php',
 ];
 $forbidden = [

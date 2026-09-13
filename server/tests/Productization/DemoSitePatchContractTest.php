@@ -53,11 +53,14 @@ $expect(
         && str_contains($notificationApplication, 'NoticeTenantRepository::provisionDefaultScenes'),
     'new Tenant notification defaults bypass the Notification owner command'
 );
-$provisioner = $read($root . '/server/app/platform/service/PdoTenantOwnerAdminProvisioner.php');
+$provisioner = $read($root . '/server/app/platform/service/CoreTenantOwnerAdminProvisioner.php');
 $expect(
     str_contains($provisioner, 'ApplicationTenantBootstrapService')
-        && str_contains($provisioner, '->provision('),
-    'Tenant owner provisioning does not initialize application-owned capabilities'
+        && str_contains($provisioner, 'IdentityRepository')
+        && str_contains($provisioner, 'MembershipRepository')
+        && str_contains($provisioner, '->provision(')
+        && !str_contains($provisioner, 'SELECT '),
+    'Tenant owner provisioning must reuse Core identity/membership capabilities before application bootstrap'
 );
 
 $seed = $read($root . '/server/database/seed-multi-tenant-demo.php');

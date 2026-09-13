@@ -17,7 +17,7 @@ use app\common\tenancy\MultiTenantDataScopePolicy;
 use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
 use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
-use app\platform\service\PdoTenantOwnerAdminProvisioner;
+use app\platform\service\CoreTenantOwnerAdminProvisioner;
 use app\platform\service\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
@@ -141,8 +141,9 @@ SQL);
         $transactions,
         $bootstrap,
         new PlatformTenantAdminService($pdo, $modules),
-        new PdoTenantOwnerAdminProvisioner(
-            $pdo,
+        new CoreTenantOwnerAdminProvisioner(
+            new PdoIdentityRepository($pdo),
+            new PdoMembershipRepository($pdo),
             new ApplicationTenantBootstrapService(
                 $pdo,
                 new NotificationBootstrapService(),
@@ -229,11 +230,12 @@ SQL);
     $tenantCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn();
     $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
     $failingOwnerAdmins = new class($pdo) implements TenantOwnerAdminProvisioner {
-        private PdoTenantOwnerAdminProvisioner $delegate;
+        private CoreTenantOwnerAdminProvisioner $delegate;
         public function __construct(PDO $pdo) {
             $contexts = new ExecutionContextStore();
-            $this->delegate = new PdoTenantOwnerAdminProvisioner(
-                $pdo,
+            $this->delegate = new CoreTenantOwnerAdminProvisioner(
+                new PdoIdentityRepository($pdo),
+                new PdoMembershipRepository($pdo),
                 new ApplicationTenantBootstrapService(
                     $pdo,
                     new NotificationBootstrapService(),

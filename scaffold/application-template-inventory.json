@@ -14432,8 +14432,8 @@
             "source_sha256": "292c95a363525abd8fee48befc00e011baefda3ca304261f6765d57bd3ab5c04"
         },
         {
-            "path": "server/app/platform/service/PdoTenantOwnerAdminProvisioner.php",
-            "target": "server/app/platform/service/PdoTenantOwnerAdminProvisioner.php",
+            "path": "server/app/platform/service/CoreTenantOwnerAdminProvisioner.php",
+            "target": "server/app/platform/service/CoreTenantOwnerAdminProvisioner.php",
             "classification": "app-owned",
             "owner": "application",
             "transform": "text",
@@ -14441,7 +14441,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "f2273c205841836f8e54ead00144510914e48b28b9f4ec9d594ac72d523c26cd"
+            "source_sha256": "c2bb44407971ad5c6d746ff427e3d43ca1fd847dc4df81cab11d21b41c20ceb9"
         },
         {
             "path": "server/app/platform/service/PlatformOperatorSessionService.php",
@@ -14477,7 +14477,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "10fd49f439ad3289cdf0652dadaece5cc536b77b5e885cbcc96f2d8d54687873"
+            "source_sha256": "dee25a8f1d6f8a97993a2b072d17e97eb46ba3553608e7aaf295f99a62031377"
         },
         {
             "path": "server/app/platform/service/PlatformTenantQueryService.php",
@@ -17047,7 +17047,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "afdbc612c6eff17f5a29b33dc360fb5ecf73333237e06f135c18b152e31ec0a5"
+            "source_sha256": "a095d41a336b9b1febbbe48f530b1613c07c672dff7735b3516204db983e7c33"
         },
         {
             "path": "server/tests/Multitenancy/NoticeTenantIsolationTest.php",

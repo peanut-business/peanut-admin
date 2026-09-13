@@ -239,10 +239,11 @@ final class PlatformRuntimeFactory
         );
     }
 
-    private function ownerAdminProvisioner(): PdoTenantOwnerAdminProvisioner
+    private function ownerAdminProvisioner(): CoreTenantOwnerAdminProvisioner
     {
-        return new PdoTenantOwnerAdminProvisioner(
-            $this->pdo,
+        return new CoreTenantOwnerAdminProvisioner(
+            new PdoIdentityRepository($this->pdo),
+            new PdoMembershipRepository($this->pdo),
             new ApplicationTenantBootstrapService(
                 $this->pdo,
                 $this->notifications,
