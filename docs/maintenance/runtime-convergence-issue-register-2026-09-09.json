@@ -2863,6 +2863,16 @@
         "focused_verification": "web frozen-lock production build通过且manifest 61 chunks/零依赖环；CREATE-APP-INVENTORY-001、SCAFFOLD-RELEASE-3.1.0及CREATE-APP-001通过；cr03b0911真实生成、双fresh、production Compose、Standalone/Multi-tenant browser通过并零残留释放",
         "boundary": "这是Development聚焦证明，不是完整P0-E；新候选不得继承旧六组，须经dev-main修复PR根核后重新完整资格"
       },
+      "pa311_convergence_security_review": {
+        "checked_at": "2026-09-13",
+        "application_commit": "792bbf51c7a6b46ec2bf509c349a62704a789c9c",
+        "core_commit": "0d6bb6c67fae1c7fd9ca3f4e986ad0f6902e764b",
+        "application": "Server Composer、Web、Platform、PC与Docs Site审计为零；Web ECharts 6.1.0、vue-echarts 8.3.0与decode-uri-component 0.5.0在冻结安装、类型检查及生产构建通过。UniApp除固定Vite 5.2.8外告警已清除，覆盖后的冻结安装、类型检查及H5构建通过。",
+        "uniapp_boundary": "DCloud 3.0.0-5010520260709002的vite-plugin-uni仍精确要求Vite 5.2.8；该单一high聚合继续受既有无公网开发服务器控制与2026-10-09到期复核约束，不是audit-zero证据。",
+        "core": "Composer、根pnpm与完整生成Starter pnpm审计为零；根工作区类型检查、参考前端/文档构建以及生成Starter冻结安装、12项测试、类型检查和构建通过。",
+        "stopped_check": "scripts/check-supply-chain首次要求刷新第三方许可证清单；按指令刷新后唯一允许的失败组重跑因当前工作树缺少vendor/bin/phpunit再次非零。保留失败，不第三次重跑，不把独立审计升级为供应链整组通过。",
+        "qualification_boundary": "以上均为Development锁与消费验证；未启动固定候选、数据库、Edition升级、Provider或发布资格。"
+      },
       "external_blockers": [
         "COS有acceptance桶但master-key和测试账户仍待绑定；OSS/七牛无完整测试资源",
         "支付/短信/OAuth无完整sandbox账户、回调目标及精确真实动作授权；不得使用生产或其他项目凭据"
