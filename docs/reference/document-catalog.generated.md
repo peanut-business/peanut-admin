@@ -214,3 +214,26 @@ This catalog is a view of `docs/document-registry.json`; edit the registry and r
 | `pa-site-index` | `docs-site/index.md` | `current` | `public-projection` | `developer-experience` |
 | `pa-site-source-map` | `docs-site/reference/source-map.generated.md` | `generated` | `generated` | `developer-experience` |
 | `pa-site-version-identity` | `docs-site/guide/version-identity.md` | `current` | `public-projection` | `product-architecture` |
+
+## Versioned rules
+
+Rule bodies remain in their declared sources; this table is routing metadata.
+
+| Stable ID | Revision | Subject | Status | Source | Owner |
+| --- | --- | --- | --- | --- | --- |
+| `pa.authorization-boundaries` | `1` | `authorization-and-risk-boundaries` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§2` | `application-maintainers` |
+| `pa.codegraph-policy` | `1` | `codegraph-routing` | `active` | `repo://peanut-admin/resources/codegraph-registry.json/policy` | `application-maintainers` |
+| `pa.consumer-ready-control` | `1` | `consumer-ready-preflight` | `active` | `repo://peanut-admin/docs/operations/consumer-ready-control.md#输入与权限边界` | `release-maintainers` |
+| `pa.current-control-state` | `1` | `private-control-state` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md#current-control-state` | `application-maintainers` |
+| `pa.development-migration-authorization` | `1` | `development-database-migration` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§2.1` | `application-maintainers` |
+| `pa.failure-budget` | `1` | `failure-budget-and-verification` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§4` | `application-maintainers` |
+| `pa.fixed-candidate-qualification` | `1` | `fixed-candidate-qualification-and-release` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§7.2` | `release-qualification` |
+| `pa.git-and-resource-lease` | `1` | `git-delivery-and-resource-lease` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§5.1` | `application-maintainers` |
+| `pa.local-execution-and-model-routing` | `1` | `local-execution-and-model-routing` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§0.3` | `application-maintainers` |
+| `pa.p0e-qualification` | `1` | `p0e-fixed-qualification` | `active` | `repo://peanut-admin/docs/p0e-runtime-qualification.md#固定资源` | `release-qualification` |
+| `pa.product-version-identity` | `1` | `product-version-identity` | `active` | `repo://peanut-admin/docs/architecture/product-version-identity-adr.md#决定` | `product-architecture` |
+| `pa.project-resource-registry` | `1` | `project-runtime-resources` | `active` | `repo://peanut-admin/resources/project-resources.json/authority` | `resource-owner` |
+| `pa.release-engineering` | `1` | `edition-packaging-signing-and-release` | `active` | `repo://peanut-admin/docs/release-engineering.md#双-edition-安装包与升级包` | `release-maintainers` |
+| `pa.rule-metadata-routing` | `1` | `bootstrap-and-rule-routing` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md#rule-metadata-routing` | `application-maintainers` |
+| `pa.rule-priority` | `1` | `rule-authority-and-product-identity` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md#rule-priority` | `application-maintainers` |
+| `pa.runtime-safety-boundaries` | `1` | `tenant-source-upgrade-and-external-boundaries` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§6.2` | `product-architecture` |

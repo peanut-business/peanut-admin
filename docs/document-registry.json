@@ -38,6 +38,222 @@
       "docs-site"
     ]
   },
+  "rule_metadata_schema": "docs/rule-metadata.schema.json",
+  "rules": [
+    {
+      "id": "pa.rule-priority",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "user-decision",
+        "issuer": "user",
+        "decision_ref": "evidence://011c732046907b7a5355c6dab2c9e520f0c1397c85c65398af9550f28aec073c"
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "rule-authority-and-product-identity",
+        "modes": ["review", "development", "qualification", "release", "instance"],
+        "actions": ["resolve-authority", "resolve-version-identity"],
+        "exclusions": ["runtime-resource-health", "qualification-result", "publication-approval"]
+      },
+      "status": "active",
+      "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"},
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "<a id=\"rule-priority\"></a>",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "#rule-priority",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [
+        {"kind": "document", "target": "pa-docs-product-version-identity-adr"}
+      ],
+      "observes": [
+        {"kind": "path", "target": "release-versions.json"},
+        {"kind": "path", "target": "RELEASE_METADATA.json"}
+      ],
+      "historical_sources": []
+    },
+    {
+      "id": "pa.current-control-state",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "user-decision",
+        "issuer": "user",
+        "decision_ref": "evidence://011c732046907b7a5355c6dab2c9e520f0c1397c85c65398af9550f28aec073c"
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "private-control-state",
+        "modes": ["development", "qualification", "release"],
+        "actions": ["dispatch", "resume", "write-control-state"],
+        "exclusions": ["ordinary-clone", "resource-lease-ownership", "candidate-lock-mutation"]
+      },
+      "status": "active",
+      "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"},
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "<a id=\"current-control-state\"></a>",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "#current-control-state",
+      "validation": "./scripts/docs-governance check --rules --control-state <absolute-path>",
+      "normative_sources": [],
+      "observes": [],
+      "historical_sources": [
+        {"kind": "external", "target": "sealed historical control evidence", "revision": "f1a7b0fadfc0577459100c5b9e766540c5e5e52b4e4947da63216872c9694ae7"}
+      ]
+    },
+    {
+      "id": "pa.rule-metadata-routing",
+      "revision": 1,
+      "kind": "project-policy",
+      "authority": {
+        "kind": "user-decision",
+        "issuer": "user",
+        "decision_ref": "evidence://011c732046907b7a5355c6dab2c9e520f0c1397c85c65398af9550f28aec073c"
+      },
+      "scope": {
+        "repository": "peanut-admin",
+        "subject": "bootstrap-and-rule-routing",
+        "modes": ["review", "development", "qualification", "release", "instance"],
+        "actions": ["load-rules", "validate-rules", "handoff-minimal-context"],
+        "exclusions": ["model-executed-hashing", "historical-work-dispatch"]
+      },
+      "status": "active",
+      "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"},
+      "supersedes": [],
+      "source": {
+        "kind": "repository-file",
+        "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
+        "locator": "<a id=\"rule-metadata-routing\"></a>",
+        "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9",
+        "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"
+      },
+      "owner": "application-maintainers",
+      "source_span": "#rule-metadata-routing",
+      "validation": "./scripts/docs-governance check --rules",
+      "normative_sources": [],
+      "observes": [
+        {"kind": "path", "target": "docs/control-state.schema.json"},
+        {"kind": "path", "target": "docs/rule-metadata.schema.json"}
+      ],
+      "historical_sources": []
+    },
+    {
+      "id": "pa.authorization-boundaries", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "authorization-and-risk-boundaries", "modes": ["review", "development", "qualification", "release", "instance"], "actions": ["authorize-scoped-work", "stop-unknown-side-effect"], "exclusions": ["new-business-scope", "destructive-production-data", "history-rewrite"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "## 2. 授权、风险和停止线", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "application-maintainers", "source_span": "§2", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+    },
+    {
+      "id": "pa.development-migration-authorization", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "user-default", "issuer": "user", "decision_ref": "AGENT_EXECUTION_RULES.md#development-migration-authorization"},
+      "scope": {"repository": "peanut-admin", "subject": "development-database-migration", "modes": ["development"], "actions": ["dry-run-registered-migration", "apply-registered-migration"], "exclusions": ["qualification", "release", "production", "destructive-migration"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 2.1 高速开发期 development 数据库迁移临时授权", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "application-maintainers", "source_span": "§2.1", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/project-resources.json"}], "historical_sources": []
+    },
+    {
+      "id": "pa.failure-budget", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "failure-budget-and-verification", "modes": ["development", "qualification", "release"], "actions": ["diagnose-failure", "rerun-failed-group"], "exclusions": ["budget-reset-by-agent", "weaken-assertion"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "## 4. 验证与状态更新", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "application-maintainers", "source_span": "§4", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+    },
+    {
+      "id": "pa.git-and-resource-lease", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "git-delivery-and-resource-lease", "modes": ["development", "qualification", "release"], "actions": ["integrate-dev", "claim-runtime-resource", "release-runtime-resource"], "exclusions": ["dev-to-main-without-pr", "unregistered-resource", "shared-history-rewrite"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 5.1 本地批处理、资源租约与远程推送门禁", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "application-maintainers", "source_span": "§5.1", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/project-resources.json"}], "historical_sources": []
+    },
+    {
+      "id": "pa.runtime-safety-boundaries", "revision": 1, "kind": "product-contract",
+      "authority": {"kind": "product-contract", "issuer": "product-architecture", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "tenant-source-upgrade-and-external-boundaries", "modes": ["development", "qualification", "release", "instance"], "actions": ["change-runtime", "change-upgrade-path"], "exclusions": ["manual-tenant-filter", "customer-code-overwrite", "external-system-runtime"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 6.2 租户隔离、单事实源与平滑升级长效红线", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "product-architecture", "source_span": "§6.2", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+    },
+    {
+      "id": "pa.fixed-candidate-qualification", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "project-policy", "issuer": "release-qualification", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "fixed-candidate-qualification-and-release", "modes": ["qualification", "release"], "actions": ["seal-candidate", "qualify-candidate", "publish-release"], "exclusions": ["development-debugging", "mutable-candidate", "qualification-inheritance"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 7.2 固定候选冻结与封存顺序", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "release-qualification", "source_span": "§7.2", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "server/tests/fixtures/p0e-runtime-qualification/matrix.json"}], "historical_sources": []
+    },
+    {
+      "id": "pa.local-execution-and-model-routing", "revision": 1, "kind": "method",
+      "authority": {"kind": "method", "issuer": "application-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "local-execution-and-model-routing", "modes": ["review", "development", "qualification", "release", "instance"], "actions": ["run-deterministic-check", "select-model"], "exclusions": ["model-for-deterministic-hash", "automatic-escalation"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md", "locator": "### 0.3 最小启动包与本地检查", "revision": "sha256:2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9", "sha256": "2b31207ffaa83cba6a0befda11adcb1bfad0a7c701dc2f163c86494c00ac3be9"},
+      "owner": "application-maintainers", "source_span": "§0.3", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+    },
+    {
+      "id": "pa.product-version-identity", "revision": 1, "kind": "product-contract",
+      "authority": {"kind": "product-contract", "issuer": "product-architecture", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "product-version-identity", "modes": ["development", "qualification", "release", "instance"], "actions": ["declare-product-version", "validate-edition-version", "validate-instance-version"], "exclusions": ["historical-release-rewrite", "module-version-coupling"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/architecture/product-version-identity-adr.md", "locator": "## 决定", "revision": "sha256:8804095b7a88ed8337495f96dbbab43f82b51d929e92f4c063ce7d8feffad291", "sha256": "8804095b7a88ed8337495f96dbbab43f82b51d929e92f4c063ce7d8feffad291"},
+      "owner": "product-architecture", "source_span": "#决定", "validation": "./scripts/check-release-consistency --static-only", "normative_sources": [], "observes": [{"kind": "path", "target": "release-versions.json"}], "historical_sources": []
+    },
+    {
+      "id": "pa.p0e-qualification", "revision": 1, "kind": "product-contract",
+      "authority": {"kind": "product-contract", "issuer": "release-qualification", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "p0e-fixed-qualification", "modes": ["qualification"], "actions": ["run-p0e", "record-p0e-result"], "exclusions": ["real-old-instance-upgrade", "signature-substitution", "resource-fallback"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/p0e-runtime-qualification.md", "locator": "## 固定资源", "revision": "sha256:df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3", "sha256": "df840bee177d2ff12b1bb95ff7748f28e7aea0957ab4c07331b3a8da9e7ba5f3"},
+      "owner": "release-qualification", "source_span": "#固定资源", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/p0e-runtime-qualification.json"}], "historical_sources": []
+    },
+    {
+      "id": "pa.consumer-ready-control", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "project-policy", "issuer": "release-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "consumer-ready-preflight", "modes": ["development", "qualification", "release"], "actions": ["run-consumer-preflight"], "exclusions": ["claim-resource", "run-qualification", "publish-release"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/operations/consumer-ready-control.md", "locator": "## 输入与权限边界", "revision": "sha256:405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0", "sha256": "405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0"},
+      "owner": "release-maintainers", "source_span": "#输入与权限边界", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [{"kind": "path", "target": "resources/consumer-ready-control.json"}], "historical_sources": []
+    },
+    {
+      "id": "pa.project-resource-registry", "revision": 1, "kind": "project-policy",
+      "authority": {"kind": "project-policy", "issuer": "resource-owner", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "project-runtime-resources", "modes": ["development", "qualification", "release", "instance"], "actions": ["select-resource", "validate-resource", "apply-registered-fallback"], "exclusions": ["guess-resource", "copy-secret", "cross-project-resource"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/resources/project-resources.json", "locator": "resource_observation_policy", "revision": "sha256:5224515cf1dc415461fa499b12544c05a31149d99c6d00be37977a90abf62feb", "sha256": "5224515cf1dc415461fa499b12544c05a31149d99c6d00be37977a90abf62feb"},
+      "owner": "resource-owner", "source_span": "/authority", "validation": "./scripts/project-resource-registry validate", "normative_sources": [], "observes": [], "historical_sources": []
+    },
+    {
+      "id": "pa.codegraph-policy", "revision": 1, "kind": "method",
+      "authority": {"kind": "project-policy", "issuer": "application-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "codegraph-routing", "modes": ["review", "development"], "actions": ["select-codegraph", "validate-codegraph-index"], "exclusions": ["pure-documentation", "automatic-index-build", "shared-worktree-index"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/resources/codegraph-registry.json", "locator": "not_global_policy", "revision": "sha256:664b92aae5cf9926b4f816ce93a4bdac183a257bc0251ee8ae8d2540a57a7607", "sha256": "664b92aae5cf9926b4f816ce93a4bdac183a257bc0251ee8ae8d2540a57a7607"},
+      "owner": "application-maintainers", "source_span": "/policy", "validation": "./scripts/docs-governance check --rules", "normative_sources": [], "observes": [], "historical_sources": []
+    },
+    {
+      "id": "pa.release-engineering", "revision": 1, "kind": "product-contract",
+      "authority": {"kind": "product-contract", "issuer": "release-maintainers", "decision_ref": null},
+      "scope": {"repository": "peanut-admin", "subject": "edition-packaging-signing-and-release", "modes": ["qualification", "release", "instance"], "actions": ["build-editions", "verify-upgrade-signature", "publish-application-release", "upgrade-instance"], "exclusions": ["unsigned-upgrade", "candidate-lock-mutation", "release-without-editions"]},
+      "status": "active", "effective_at": {"value": "2026-09-13T00:33:21Z", "precision": "timestamp"}, "supersedes": [],
+      "source": {"kind": "repository-file", "uri": "repo://peanut-admin/docs/release-engineering.md", "locator": "## 双 Edition 安装包与升级包", "revision": "sha256:09ce9be5c4b1a185b7cc2e4491f9c42426e9d95079f636477212ee4337a7e1c5", "sha256": "09ce9be5c4b1a185b7cc2e4491f9c42426e9d95079f636477212ee4337a7e1c5"},
+      "owner": "release-maintainers", "source_span": "#双-edition-安装包与升级包", "validation": "./scripts/check-release-consistency --static-only", "normative_sources": [{"kind": "rule", "target": "pa.product-version-identity", "revision": 1}], "observes": [], "historical_sources": []
+    }
+  ],
   "documents": [
     {
       "id": "pa-site-version-identity",
@@ -129,7 +345,7 @@
     {
       "id": "pa-convergence-plan-20260910",
       "path": "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
-      "title": "Peanut Admin 历史决策、规则与产品闭环方案",
+      "title": "Peanut Admin 产品收敛计划",
       "audience": [
         "maintainer",
         "architect",
@@ -138,9 +354,8 @@
       "content_type": "plan",
       "authority": "accepted-execution-plan",
       "canonical_sources": [
-        "AGENTS.md",
         "AGENT_EXECUTION_RULES.md",
-        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+        "docs/architecture/product-version-identity-adr.md"
       ],
       "owner": "product-architecture",
       "status": "current",
@@ -504,7 +719,6 @@
       "authority": "projection",
       "canonical_sources": [
         "docs/architecture/clean-native-multitenancy-baseline.md",
-        "docs/architecture/core-application-capability-graph.md",
         "resources/service-registry.json",
         "server/app/Modules"
       ],

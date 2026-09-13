@@ -8,6 +8,10 @@ Owner: `release-qualification`
 
 Audience: `maintainer, architect, ai`
 
+## 输入与权限边界
+
+当前授权、writer、失败预算与恢复动作只从[执行规范](../../AGENT_EXECUTION_RULES.md#current-control-state)定位唯一私有状态；本控制器的ready只说明声明的技术前置，不授予执行或发布权限。规则静态检查使用 `scripts/docs-governance check`，不启动本控制器的live资源/lease查询。
+
 ## 当前定位
 
 `scripts/consumer-ready-control` 当前是 Peanut Admin 仓内的**最小、只读、preflight-only

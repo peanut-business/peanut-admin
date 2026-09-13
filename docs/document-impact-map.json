@@ -13,6 +13,7 @@
       "paths": [
         "release-versions.json",
         "release-versions.schema.json",
+        "scripts/check-release-consistency",
         "docs/architecture/product-version-identity-adr.md",
         "docs/governance/current-state.md"
       ],
@@ -331,7 +332,7 @@
     },
     {
       "id": "documentation-governance",
-      "paths": ["docs/document-registry.json", "docs/document-impact-map.json", "docs/governance/**/*.md", "scripts/docs-governance", "docs-site/.vitepress/config.ts"],
+      "paths": ["AGENTS.md", "AGENT_EXECUTION_RULES.md", "docs/document-registry.json", "docs/document-impact-map.json", "docs/control-state.schema.json", "docs/rule-metadata.schema.json", "docs/governance/**/*.md", "scripts/docs-governance", "docs-site/.vitepress/config.ts"],
       "classifications": ["technical", "developer-site", "generated"],
       "upstream": ["documentation registries"],
       "technical_docs": ["docs/README.md", "docs/governance/authoritative-source-map.md"],
@@ -349,15 +350,15 @@
         "technical"
       ],
       "upstream": [
-        "task-scoped approved execution plan; stable safety rules"
+        "versioned rule metadata; accepted scope plan; stable safety rules"
       ],
       "technical_docs": [
         "docs/plans/history-rules-product-convergence-plan-2026-09-10.md",
-        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
+        "docs/governance/current-state.md"
       ],
       "site_docs": [],
       "generated": [],
-      "reason": "Changes to public task routing/recovery clauses require matching plan and issue register; root-local private controls remain outside public documentation closure."
+      "reason": "Changes to rule routing require the accepted scope plan and navigation projection to remain aligned; the private current state remains outside the versioned catalog."
     }
   ],
   "scenarios": [

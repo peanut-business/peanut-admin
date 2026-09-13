@@ -47,6 +47,8 @@
     ]
   },
   "observed_baseline": {
+    "status": "historical-observation",
+    "scope": "Recorded inspection only; not current worktree identity, index freshness, or runtime health.",
     "reviewed_at": "2026-08-23",
     "canonical_checkout": "/Users/xing/Documents/company-projects/peanut-admin",
     "current_worktree_at_review": "/Users/xing/.codex/worktrees/e147/peanut-admin",

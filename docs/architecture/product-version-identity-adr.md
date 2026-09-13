@@ -24,7 +24,7 @@ Instance 是客户基于某 Edition 二次开发、配置并部署的对象，�
 
 本 ADR supersede 该队列中“Peanut Application 产品版本与 Core 独立”的解释。客户派生应用的独立发布语义保留，并明确命名为 Instance。Alpha.13 仍是 v3.0.14 实际采用的历史 Core 版本，绝不补打 v3.0.14 Core tag 或修改既有 Release、lock、资格记录和历史 scaffold 制品来伪造一致。
 
-下一统一产品目标为 **3.1.0**：版本身份合同发生明确变化，采用新的产品 minor 发布；这不是已发布声明。Core 内容即使没有运行时变化，也必须形成新包身份并完成相应固定资格，随后 Application 精确消费并完成双 Edition L2/P0-E。若后续 ThinkPHP Runtime 迁移改变公开合同，其发布仍使用整个产品的版本策略，不再另行建立 Core 0.2.x 产品序列。
+新统一产品目标由根目录版本输入记录；版本身份合同变更采用新的产品 minor 发布，版本输入不是已发布声明。Core 内容即使没有运行时变化，也必须形成新包身份并完成相应固定资格，随后 Application 精确消费并完成双 Edition L2/P0-E。若后续 ThinkPHP Runtime 迁移改变公开合同，其发布仍使用整个产品的版本策略，不再另行建立 Core 0.2.x 产品序列。
 
 ## 发布合同与最小停止范围
 
@@ -42,6 +42,8 @@ Instance 是客户基于某 Edition 二次开发、配置并部署的对象，�
 - 当前发布身份：`release-versions.json`、`RELEASE_METADATA.json`、实际包 manifests/locks、正式 Release 快照。
 - 生成与升级：`VersionContract`、`ApplicationCreator`、`ApplicationReleaseVersions`、`ScaffoldUpgradeRunner` 及其实际消费者。
 - Module：各 `module.json`、Plugin manifest、`plugins.lock` 与 Package/installation 账本。
-- 当前交付状态与残余事项：[当前状态入口](../governance/current-state.md)；历史裁定：[主审计报告](../maintenance/fact-convergence-audit-2026-09-09.md)。
+- 公开交付事实导航与领域残余事项：[当前状态入口](../governance/current-state.md)；历史裁定：[主审计报告](../maintenance/fact-convergence-audit-2026-09-09.md)。
 
 解释文档不覆盖源码事实。新字段消费、Registry 发布和最终资格未完成时，状态必须继续写为计划或部分完成。
+
+规范元数据及替代关系在 `docs/document-registry.json` 的规则条目登记；本ADR只拥有版本语义，当前执行授权与恢复状态依[执行规范](../../AGENT_EXECUTION_RULES.md#current-control-state)。

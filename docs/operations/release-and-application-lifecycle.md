@@ -5,12 +5,12 @@ Peanut Admin 提供可复用后台底座，独立应用拥有自己的业务源�
 
 | 身份 | 事实源 | 决定什么 |
 | --- | --- | --- |
-| 应用版本 | `release-versions.json.product_release`、应用 tag、完整应用 Release | 业务应用本次发布和实例要部署的完整代码 |
+| Instance版本 | `release-versions.json.instance_version`、实例 tag、完整实例 Release | 客户应用本次独立发布与部署的完整代码 |
 | Scaffold 来源 | `scaffold_template`、签名升级包及不可变 manifest | 应用已采用的受管文件基线、渲染快照与 Peanut migration 目标 |
 | Core 依赖 | Composer/npm manifest 与 lock 中的精确包身份 | 应用实际安装的 PHP/Web 公共底座版本 |
 | Module 版本 | Module manifest、不可变 archive SHA-256 与签名、安装账本 | 独立业务模块的内容、依赖、migration 与生命周期 |
 
-表中 `product_release` 是已发布 v1 合同对客户实例版本的旧字段名。现行[版本身份 ADR](../architecture/product-version-identity-adr.md)
+`product_release` 仅是已发布 v1 合同对客户实例版本的历史字段名，现行指令使用 `instance_version`。现行[版本身份 ADR](../architecture/product-version-identity-adr.md)
 明确 Peanut 产品 Application、Core PHP/Web、scaffold 与双 Edition 共用产品版本；客户 Instance
 使用独立 `instance_version` 并另记 `source_product_version`。Module 也独立编号。
 Core 即使没有运行时改动也必须发布同号的新不可变包身份并完成资格，不能只修改号码或重新标记旧包。
@@ -19,7 +19,7 @@ Core 即使没有运行时改动也必须发布同号的新不可变包身份并
 `0.1.0-alpha.13`。发行列车必须先验证 Core 公共身份可消费，再更新应用 lock、生成同号 scaffold，
 最后在应用固定候选完成资格与发布。任一步失败时只阻塞依赖它的下游状态，不创建不对应真实包版本的
 别名。此前本页“撤销 Core/scaffold 同号”的决定已由新 ADR supersede；历史不同号事实保留，不能据此继续发布不同号的新产品。
-当前 3.1.0 开发线已经完成 Core 同号公共身份验证与 Application manifests/locks 采用；同号 scaffold
+同号 Core 真实包与 Application manifests/locks 采用分别核验；同号 scaffold
 生成输入和聚焦检查由 CR02 收敛，完整 Application P0-E、tag、Release 与 Edition 正式制品仍由后续
 固定候选 Gate 决定。
 
@@ -78,11 +78,11 @@ php scripts/create-app \
 3. Module 如需升级，先在应用仓采用它自己的签名 archive、固定版本与依赖，再安装依赖、构建并
    验收。private Module 的 `Http/routes.php` 不会由安装命令自动注册；应用 owner 在 app-owned 路由
    装配中显式引入它，并沿用认证、Module 与权限 middleware。卸载时由同一 owner 去除接线，不复制
-   业务 handler，也不增加在线动态路由 loader。Module 版本不随 `product_release`、
+   业务 handler，也不增加在线动态路由 loader。Module 版本不随 `instance_version`、
    `scaffold_template` 或 Core lock 自动变化。
 4. 在隔离开发/候选环境运行应用自己的数据库 migration 和业务检查。Peanut migration 以
    `scaffold_template` 为目标，应用 migration 和 Module migration 仍由各自账本负责。
-5. 确认完整源码、所有已安装 Package 身份和依赖后递增 `product_release`，形成应用自己的不可变
+5. 确认完整源码、所有已安装 Package 身份和依赖后递增 `instance_version`，形成应用自己的不可变
    commit/tree、tag、`RELEASE_METADATA.json` 和完整应用 Release。
 
 现有 `module:install-package` / `module:update-package` 的签名 archive 入口只允许 development、debug
@@ -168,7 +168,9 @@ php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade verify \
 Module migration，也不重启服务。显式 `--from-manifest/--to-manifest` 只供维护者诊断，不是普通
 用户的发布输入。
 
-## 当前证据边界
+## 历史 Development 证据边界
+
+以下只追溯本节明确的旧版本演练，不作为当前控制、完整产品发布或生产资格。当前事实从[事实导航](../governance/current-state.md)定位。
 
 本批在隔离 Development/Standalone 环境完成了一次真实完整应用切换：应用 A `0.1.4`、private
 Package `1.0.0` 经配对数据库与 storage 备份，升级为应用 B `0.2.0`、Package `2.0.0`。目标

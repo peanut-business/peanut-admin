@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -33,6 +34,19 @@ IMPACT_CLASSIFICATIONS = {
     "generated",
     "architecture-decision",
 }
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+RULE_STATUSES = {"proposed", "active", "superseded", "retired"}
+RULE_KINDS = {"project-policy", "product-contract", "observation", "projection", "method"}
+AUTHORITY_KINDS = {
+    "platform-system", "platform-developer", "user-decision", "user-default",
+    "project-policy", "product-contract", "observation", "projection", "method",
+}
+RULE_MODES = {"review", "development", "qualification", "release", "instance"}
+HISTORICAL_EXECUTION_MARKERS = (
+    "controller-takeover", "c2-control-before", "execution-state.json",
+    "cr03-recovery-execution-plan", "step_approval", "historical_tasks",
+)
 
 
 def load_json(path: Path) -> dict:
@@ -40,6 +54,41 @@ def load_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise SystemExit(f"ERROR: cannot read {path.relative_to(ROOT)}: {exc}") from exc
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def git_output(root: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=root, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+
+def valid_effective_at(value: object) -> bool:
+    if not isinstance(value, dict) or set(value) != {"value", "precision"}:
+        return False
+    raw = value.get("value")
+    if value.get("precision") == "date":
+        return isinstance(raw, str) and bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw))
+    if value.get("precision") != "timestamp" or not isinstance(raw, str):
+        return False
+    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z", raw))
+
+
+def repo_uri_path(uri: str, repository: str) -> str | None:
+    prefix = f"repo://{repository}/"
+    if not uri.startswith(prefix):
+        return None
+    relative = uri[len(prefix):]
+    if not relative or relative.startswith("/") or ".." in Path(relative).parts:
+        return None
+    return relative
 
 
 def tracked_markdown() -> list[str]:
@@ -70,6 +119,22 @@ def render_catalog(registry: dict) -> str:
             f"| `{doc['id']}` | `{doc['path']}` | `{doc['status']}` | "
             f"`{doc['content_type']}` | `{doc['owner']}` |"
         )
+    rules = registry.get("rules", [])
+    if rules:
+        lines.extend([
+            "",
+            "## Versioned rules",
+            "",
+            "Rule bodies remain in their declared sources; this table is routing metadata.",
+            "",
+            "| Stable ID | Revision | Subject | Status | Source | Owner |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ])
+        for rule in sorted(rules, key=lambda item: (item["id"], item["revision"])):
+            lines.append(
+                f"| `{rule['id']}` | `{rule['revision']}` | `{rule['scope']['subject']}` | "
+                f"`{rule['status']}` | `{rule['source']['uri']}{rule['source_span']}` | `{rule['owner']}` |"
+            )
     collections = registry.get("collections", [])
     if collections:
         lines.extend([
@@ -400,6 +465,536 @@ def public_exclusion_errors(registry: dict, config: str) -> list[str]:
         f"srcExclude page is not registered as non-public: {path}"
         for path in sorted(excluded - archived)
     )
+    return errors
+
+
+def rule_metadata_errors(registry: dict) -> list[str]:
+    """Validate the versioned rule DAG without interpreting prose as authority."""
+    errors: list[str] = []
+    rules = registry.get("rules")
+    if not isinstance(rules, list) or not rules:
+        return ["document registry must contain a non-empty rules list"]
+    documents = {item.get("id"): item for item in registry.get("documents", []) if isinstance(item, dict)}
+    required = {
+        "id", "revision", "kind", "authority", "scope", "status", "effective_at",
+        "supersedes", "source", "owner", "source_span", "validation",
+    }
+    allowed = required | {"normative_sources", "observes", "historical_sources", "retired_reason"}
+    identities: set[tuple[str, int]] = set()
+    by_identity: dict[tuple[str, int], dict] = {}
+    rule_references: list[tuple[tuple[str, int], str, dict]] = []
+    active_rules: list[dict] = []
+    for rule in rules:
+        if not isinstance(rule, dict):
+            errors.append("rule metadata item must be an object")
+            continue
+        identity = f"{rule.get('id', '<unknown>')}@{rule.get('revision', '?')}"
+        missing = required - set(rule)
+        extra = set(rule) - allowed
+        if missing:
+            errors.append(f"{identity}: missing rule fields {sorted(missing)}")
+        if extra:
+            errors.append(f"{identity}: unknown rule fields {sorted(extra)}")
+        rule_id = rule.get("id")
+        revision = rule.get("revision")
+        if not isinstance(rule_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9.-]+", rule_id):
+            errors.append(f"{identity}: invalid rule id")
+            continue
+        if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
+            errors.append(f"{identity}: revision must be a positive integer")
+            continue
+        key = (rule_id, revision)
+        if key in identities:
+            errors.append(f"duplicate rule identity: {identity}")
+        identities.add(key)
+        by_identity[key] = rule
+        if rule.get("kind") not in RULE_KINDS:
+            errors.append(f"{identity}: invalid rule kind")
+        if rule.get("status") not in RULE_STATUSES:
+            errors.append(f"{identity}: invalid rule status")
+        if rule.get("status") == "active":
+            active_rules.append(rule)
+        if rule.get("status") == "retired" and not rule.get("retired_reason"):
+            errors.append(f"{identity}: retired rule needs retired_reason")
+        if not valid_effective_at(rule.get("effective_at")):
+            errors.append(f"{identity}: invalid effective_at")
+
+        authority = rule.get("authority")
+        if not isinstance(authority, dict) or set(authority) != {"kind", "issuer", "decision_ref"}:
+            errors.append(f"{identity}: authority must contain only kind, issuer and decision_ref")
+        else:
+            if authority.get("kind") not in AUTHORITY_KINDS:
+                errors.append(f"{identity}: invalid authority kind")
+            if not isinstance(authority.get("issuer"), str) or not authority["issuer"].strip():
+                errors.append(f"{identity}: authority issuer is required")
+            if authority.get("kind") in {"user-decision", "user-default"} and not authority.get("decision_ref"):
+                errors.append(f"{identity}: user authority needs a decision_ref")
+            if authority.get("kind") in {"platform-system", "platform-developer"}:
+                errors.append(f"{identity}: repository metadata cannot claim platform authority")
+
+        scope = rule.get("scope")
+        if not isinstance(scope, dict) or set(scope) != {"repository", "subject", "modes", "actions", "exclusions"}:
+            errors.append(f"{identity}: scope must contain the five declared scope fields")
+        else:
+            if scope.get("repository") != registry.get("repository"):
+                errors.append(f"{identity}: scope repository must match this registry")
+            if not isinstance(scope.get("subject"), str) or not scope["subject"].strip():
+                errors.append(f"{identity}: scope subject is required")
+            for field in ("modes", "actions", "exclusions"):
+                values = scope.get(field)
+                if not isinstance(values, list) or any(not isinstance(item, str) or not item for item in values) or len(values) != len(set(values or [])):
+                    errors.append(f"{identity}: scope {field} must contain unique strings")
+            if isinstance(scope.get("modes"), list) and set(scope["modes"]) - RULE_MODES:
+                errors.append(f"{identity}: invalid scope mode")
+
+        source = rule.get("source")
+        if not isinstance(source, dict) or set(source) != {"kind", "uri", "locator", "revision", "sha256"}:
+            errors.append(f"{identity}: source must contain kind, uri, locator, revision and sha256")
+        else:
+            if source.get("kind") not in {"repository-file", "external-repository-file", "user-decision", "sealed-evidence"}:
+                errors.append(f"{identity}: invalid source kind")
+            if not all(isinstance(source.get(field), str) and source[field] for field in ("uri", "locator", "revision")):
+                errors.append(f"{identity}: source uri, locator and revision are required")
+            if not SHA256_PATTERN.fullmatch(str(source.get("sha256", ""))):
+                errors.append(f"{identity}: source sha256 is invalid")
+            if source.get("revision") != f"sha256:{source.get('sha256', '')}":
+                errors.append(f"{identity}: source revision must be the content-addressed source sha256")
+            if source.get("kind") == "repository-file":
+                relative = repo_uri_path(str(source.get("uri", "")), str(registry.get("repository", "")))
+                path = ROOT / relative if relative else None
+                if not relative or not path or not path.is_file():
+                    errors.append(f"{identity}: repository source does not exist")
+                elif sha256_file(path) != source.get("sha256"):
+                    errors.append(f"{identity}: repository source digest is stale")
+                elif source.get("locator") not in path.read_text(encoding="utf-8"):
+                    errors.append(f"{identity}: source locator is not present in source")
+        for field in ("owner", "source_span", "validation"):
+            if not isinstance(rule.get(field), str) or not rule[field].strip():
+                errors.append(f"{identity}: {field} is required")
+
+        for edge_type in ("normative_sources", "observes", "historical_sources"):
+            references = rule.get(edge_type, [])
+            if not isinstance(references, list):
+                errors.append(f"{identity}: {edge_type} must be a list")
+                continue
+            for reference in references:
+                if not isinstance(reference, dict) or set(reference) - {"kind", "target", "revision", "digest"} or not {"kind", "target"} <= set(reference):
+                    errors.append(f"{identity}: malformed {edge_type} reference")
+                    continue
+                kind, target = reference.get("kind"), reference.get("target")
+                if kind not in {"rule", "document", "path", "external"} or not isinstance(target, str) or not target:
+                    errors.append(f"{identity}: invalid {edge_type} reference")
+                    continue
+                if edge_type == "normative_sources" and any(marker in target for marker in HISTORICAL_EXECUTION_MARKERS):
+                    errors.append(f"{identity}: active execution history cannot be a normative source: {target}")
+                if kind == "document":
+                    target_doc = documents.get(target)
+                    if not target_doc:
+                        errors.append(f"{identity}: referenced document does not exist: {target}")
+                    elif edge_type == "normative_sources" and target_doc.get("status") not in {"authoritative", "current"}:
+                        errors.append(f"{identity}: normative document is not maintained: {target}")
+                if kind == "path" and (target.startswith("/") or ".." in Path(target).parts or not (ROOT / target).exists()):
+                    errors.append(f"{identity}: referenced repository path does not exist: {target}")
+                if kind == "rule":
+                    rule_references.append((key, edge_type, reference))
+
+    # Supersedes is the only precedence edge. It must resolve and remain acyclic.
+    graph: dict[tuple[str, int], list[tuple[str, int]]] = {key: [] for key in identities}
+    normative_graph: dict[tuple[str, int], list[tuple[str, int]]] = {key: [] for key in identities}
+    for source_key, edge_type, reference in rule_references:
+        target_key = (reference.get("target"), reference.get("revision"))
+        if not isinstance(reference.get("revision"), int) or target_key not in identities:
+            errors.append(
+                f"{source_key[0]}@{source_key[1]}: referenced rule does not exist: "
+                f"{target_key[0]}@{target_key[1]}"
+            )
+        elif edge_type == "normative_sources":
+            normative_graph[source_key].append(target_key)
+    for key, rule in by_identity.items():
+        edges = rule.get("supersedes")
+        if not isinstance(edges, list):
+            errors.append(f"{key[0]}@{key[1]}: supersedes must be a list")
+            continue
+        for edge in edges:
+            if not isinstance(edge, dict) or set(edge) != {"id", "revision", "scope"}:
+                errors.append(f"{key[0]}@{key[1]}: malformed supersedes edge")
+                continue
+            target = (edge.get("id"), edge.get("revision"))
+            scopes = edge.get("scope")
+            if target not in identities:
+                errors.append(f"{key[0]}@{key[1]}: superseded rule does not exist: {target[0]}@{target[1]}")
+            else:
+                graph[key].append(target)
+            if not isinstance(scopes, list) or not scopes or any(not isinstance(item, str) or not item for item in scopes):
+                errors.append(f"{key[0]}@{key[1]}: supersedes scope must be non-empty")
+    def check_dag(edges: dict[tuple[str, int], list[tuple[str, int]]], label: str) -> None:
+        visiting: set[tuple[str, int]] = set()
+        visited: set[tuple[str, int]] = set()
+        def visit(node: tuple[str, int]) -> None:
+            if node in visiting:
+                errors.append(f"rule {label} graph contains a cycle at {node[0]}@{node[1]}")
+                return
+            if node in visited:
+                return
+            visiting.add(node)
+            for target in edges.get(node, []):
+                visit(target)
+            visiting.remove(node)
+            visited.add(node)
+        for node in edges:
+            visit(node)
+    check_dag(graph, "supersedes")
+    check_dag(normative_graph, "normative source")
+
+    # An active canonical winner is unique for every intersecting subject/mode/action scope.
+    for index, left in enumerate(active_rules):
+        for right in active_rules[index + 1:]:
+            left_scope, right_scope = left.get("scope", {}), right.get("scope", {})
+            if left_scope.get("repository") != right_scope.get("repository") or left_scope.get("subject") != right_scope.get("subject"):
+                continue
+            if set(left_scope.get("modes", [])) & set(right_scope.get("modes", [])) and set(left_scope.get("actions", [])) & set(right_scope.get("actions", [])):
+                errors.append(f"multiple active rule winners overlap: {left.get('id')}@{left.get('revision')} and {right.get('id')}@{right.get('revision')}")
+    return errors
+
+
+def claim_paths_overlap(left: str, right: str) -> bool:
+    a = left.strip("/")
+    b = right.strip("/")
+    return a == b or a.startswith(f"{b}/") or b.startswith(f"{a}/")
+
+
+def evidence_index_errors(index_path: Path, expected_sha256: str) -> list[str]:
+    errors: list[str] = []
+    if not index_path.is_file() or index_path.is_symlink():
+        return [f"control evidence index is missing or unsafe: {index_path}"]
+    if sha256_file(index_path) != expected_sha256:
+        errors.append("control evidence index digest does not match state")
+    if index_path.stem != expected_sha256:
+        errors.append("control evidence index filename is not content-addressed")
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return errors + [f"control evidence index is unreadable: {exc}"]
+    forbidden = {"current", "queue", "authorization", "owner", "writer", "resume", "run"}
+    if forbidden & set(index):
+        errors.append("evidence index contains mutable control fields")
+    if index.get("schema_version") != 1 or index.get("protocol") != "peanut.rule-evidence-index.v1":
+        errors.append("evidence index must use peanut.rule-evidence-index.v1")
+    objects = index.get("objects")
+    if not isinstance(objects, list):
+        return errors + ["evidence index objects must be a list"]
+    ids: set[str] = set()
+    paths: set[Path] = set()
+    for item in objects:
+        if not isinstance(item, dict):
+            errors.append("evidence object must be an object")
+            continue
+        required = {"id", "kind", "path", "sha256", "bytes", "sealed_at", "source"}
+        if set(item) != required:
+            errors.append(f"evidence object fields are invalid: {item.get('id', '<unknown>')}")
+            continue
+        object_id = item.get("id")
+        path = Path(str(item.get("path", "")))
+        if not isinstance(object_id, str) or not object_id or object_id in ids:
+            errors.append("evidence object IDs must be non-empty and unique")
+        ids.add(str(object_id))
+        if not path.is_absolute() or path in paths or not path.is_file() or path.is_symlink():
+            errors.append(f"evidence object path is missing, duplicate or unsafe: {path}")
+            continue
+        paths.add(path)
+        if path.stat().st_size != item.get("bytes") or sha256_file(path) != item.get("sha256"):
+            errors.append(f"evidence object identity mismatch: {object_id}")
+        source = item.get("source")
+        if (not isinstance(source, dict) or set(source) != {"uri", "locator", "revision"}
+                or not isinstance(source.get("uri"), str) or not source["uri"]
+                or not isinstance(source.get("locator"), str)
+                or not isinstance(source.get("revision"), str) or not source["revision"]):
+            errors.append(f"evidence object source is incomplete: {object_id}")
+    for mapping in index.get("mappings", []):
+        if not isinstance(mapping, dict) or set(mapping) != {"subject", "source_object_id", "source_locator", "target_pointer"}:
+            errors.append("evidence mapping fields are invalid")
+        elif mapping.get("source_object_id") not in ids:
+            errors.append(f"evidence mapping source is unknown: {mapping.get('source_object_id')}")
+    parent = index.get("parent")
+    if parent is not None:
+        if not isinstance(parent, dict) or set(parent) != {"path", "sha256"}:
+            errors.append("evidence index parent is invalid")
+        else:
+            parent_path = Path(str(parent.get("path", "")))
+            if not parent_path.is_absolute() or not parent_path.is_file() or sha256_file(parent_path) != parent.get("sha256"):
+                errors.append("evidence index parent identity mismatch")
+    return errors
+
+
+def resolve_evidence_ref(reference: object, objects: dict[str, Path]) -> tuple[bool, object | None]:
+    if not isinstance(reference, str):
+        return False, None
+    match = re.fullmatch(r"evidence://([0-9a-f]{64})(?:#(.*))?", reference)
+    if not match or match.group(1) not in objects:
+        return False, None
+    path = objects[match.group(1)]
+    fragment = match.group(2)
+    if fragment in (None, ""):
+        return True, None
+    if not fragment.startswith("/"):
+        return False, None
+    try:
+        current: object = json.loads(path.read_text(encoding="utf-8"))
+        for raw in fragment[1:].split("/"):
+            token = raw.replace("~1", "/").replace("~0", "~")
+            current = current[int(token)] if isinstance(current, list) else current[token]  # type: ignore[index]
+        return True, current
+    except (OSError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError):
+        return False, None
+
+
+def control_state_errors(path: Path) -> list[str]:
+    """Validate the one private state supplied by its explicit locator."""
+    errors: list[str] = []
+    if not path.is_absolute():
+        return ["--control-state must be an absolute path"]
+    if not path.is_file() or path.is_symlink():
+        return [f"control state is missing or unsafe: {path}"]
+    if path.stat().st_size > 16 * 1024:
+        errors.append(f"control state exceeds 16384 bytes: {path.stat().st_size}")
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return errors + [f"control state is unreadable: {exc}"]
+    required = {"schema_version", "revision", "policy_ref", "control", "authorization", "work", "run", "failure", "manual_gates", "resume", "evidence_index"}
+    if not isinstance(state, dict) or set(state) != required:
+        return errors + [f"control state fields must be exactly {sorted(required)}"]
+    if state.get("schema_version") != 4 or not isinstance(state.get("revision"), int) or state["revision"] < 1:
+        errors.append("control state requires schema_version 4 and a positive revision")
+    control = state.get("control", {})
+    if not isinstance(control, dict) or set(control) != {"owner_task", "writer_task", "epoch"}:
+        errors.append("control owner/writer/epoch fields are invalid")
+    elif not all(isinstance(control.get(field), str) and control[field] for field in ("owner_task", "writer_task")) or not isinstance(control.get("epoch"), int) or control["epoch"] < 1:
+        errors.append("control owner/writer must be named and epoch must be positive")
+
+    policy = state.get("policy_ref", {})
+    if not isinstance(policy, dict) or set(policy) != {"repository", "root", "commit", "files"}:
+        errors.append("policy_ref fields are invalid")
+    else:
+        root = Path(str(policy.get("root", "")))
+        commit = str(policy.get("commit", ""))
+        files = policy.get("files")
+        if policy.get("repository") != "peanut-admin" or not root.is_absolute() or not root.is_dir() or not GIT_SHA_PATTERN.fullmatch(commit):
+            errors.append("policy_ref repository, root or commit is invalid")
+        elif not isinstance(files, dict) or not files:
+            errors.append("policy_ref files must be a non-empty digest map")
+        else:
+            try:
+                if git_output(root, "rev-parse", f"{commit}^{{commit}}") != commit:
+                    errors.append("policy_ref commit cannot be resolved exactly")
+            except subprocess.CalledProcessError:
+                errors.append("policy_ref commit cannot be resolved")
+            for relative, expected in files.items():
+                source = root / str(relative)
+                if str(relative).startswith("/") or ".." in Path(str(relative)).parts or not source.is_file() or not SHA256_PATTERN.fullmatch(str(expected)):
+                    errors.append(f"policy_ref file is invalid: {relative}")
+                    continue
+                if sha256_file(source) != expected:
+                    errors.append(f"policy_ref working file digest mismatch: {relative}")
+                try:
+                    committed = subprocess.run(["git", "show", f"{commit}:{relative}"], cwd=root, check=True, capture_output=True).stdout
+                    if hashlib.sha256(committed).hexdigest() != expected:
+                        errors.append(f"policy_ref commit file digest mismatch: {relative}")
+                except subprocess.CalledProcessError:
+                    errors.append(f"policy_ref commit file is unreadable: {relative}")
+
+    work = state.get("work", {})
+    work_required = {"id", "repository", "root", "head", "tree", "diff_ref", "claims"}
+    if not isinstance(work, dict) or set(work) != work_required:
+        errors.append("work fields are invalid")
+    else:
+        work_root = Path(str(work.get("root", "")))
+        if work.get("repository") != "peanut-admin" or not work_root.is_absolute() or not work_root.is_dir() or not GIT_SHA_PATTERN.fullmatch(str(work.get("head", ""))) or not GIT_SHA_PATTERN.fullmatch(str(work.get("tree", ""))):
+            errors.append("work repository/root/head/tree identity is invalid")
+        else:
+            try:
+                if git_output(work_root, "rev-parse", "HEAD") != work.get("head") or git_output(work_root, "rev-parse", "HEAD^{tree}") != work.get("tree"):
+                    errors.append("work head/tree does not match the declared execution root")
+            except subprocess.CalledProcessError:
+                errors.append("work git identity is unreadable")
+        claims = work.get("claims")
+        if not isinstance(claims, list) or any(not isinstance(item, str) or not item or item.startswith("/") or ".." in Path(item).parts for item in claims):
+            errors.append("work claims must be repository-relative paths")
+        else:
+            for index, left in enumerate(claims):
+                for right in claims[index + 1:]:
+                    if claim_paths_overlap(left, right):
+                        errors.append(f"work claims overlap: {left} and {right}")
+
+    authorization = state.get("authorization", {})
+    if not isinstance(authorization, dict) or set(authorization) != {"decision_ref", "scope_ref", "status", "exclusions"} or authorization.get("status") not in {"approved", "blocked", "revoked"}:
+        errors.append("authorization fields are invalid")
+    elif (not isinstance(authorization.get("decision_ref"), str) or not authorization["decision_ref"]
+          or not isinstance(authorization.get("scope_ref"), str) or not authorization["scope_ref"]
+          or not isinstance(authorization.get("exclusions"), list)):
+        errors.append("authorization source references and exclusions are invalid")
+    run = state.get("run", {})
+    if not isinstance(run, dict) or set(run) != {"mode", "status", "contract_ref", "preflight_ref", "lease_refs"} or run.get("mode") not in {"review", "development", "qualification", "release"} or run.get("status") not in {"ready", "running", "blocked", "complete"}:
+        errors.append("run fields are invalid")
+    elif run.get("status") in {"ready", "running"} and (authorization.get("status") != "approved" or run.get("preflight_ref") is None):
+        errors.append("ready or running requires approved authorization and immutable preflight evidence")
+    failure = state.get("failure", {})
+    if not isinstance(failure, dict) or set(failure) != {"family_id", "diagnoses_used", "reruns_used", "limit", "last_event_ref", "status"}:
+        errors.append("failure fields are invalid")
+    else:
+        limit = failure.get("limit", {})
+        counts = ([failure.get("diagnoses_used"), failure.get("reruns_used"), limit.get("diagnoses"), limit.get("reruns")]
+                  if isinstance(limit, dict) else [failure.get("diagnoses_used"), failure.get("reruns_used"), None, None])
+        if not isinstance(limit, dict) or set(limit) != {"diagnoses", "reruns"} or any(not isinstance(item, int) or isinstance(item, bool) or item < 0 for item in counts):
+            errors.append("failure budgets must be non-negative integers")
+        else:
+            if failure["diagnoses_used"] > limit["diagnoses"] or failure["reruns_used"] > limit["reruns"]:
+                errors.append("failure usage cannot exceed its declared limit")
+            exhausted = failure["diagnoses_used"] >= limit["diagnoses"] and failure["reruns_used"] >= limit["reruns"]
+            if failure.get("status") not in {"available", "exhausted"} or (failure.get("status") == "exhausted") != exhausted:
+                errors.append("failure status does not match its consumed budget")
+            if exhausted and (not isinstance(run, dict) or run.get("status") != "blocked"):
+                errors.append("exhausted failure budget requires a blocked run")
+    gates = state.get("manual_gates")
+    if not isinstance(gates, list) or any(not isinstance(item, dict) or set(item) != {"id", "status", "decision_ref"} or item.get("status") not in {"pending", "approved", "rejected"} for item in gates):
+        errors.append("manual_gates fields are invalid")
+    elif any(item.get("status") == "approved" and not item.get("decision_ref") for item in gates):
+        errors.append("approved manual gate requires immutable decision evidence")
+    resume = state.get("resume", {})
+    if not isinstance(resume, dict) or set(resume) != {"action", "depends_on", "last_operation_ref"}:
+        errors.append("resume fields are invalid")
+    elif not isinstance(resume.get("depends_on"), list):
+        errors.append("resume.depends_on must be a list")
+    elif isinstance(gates, list):
+        gates_by_id = {item.get("id"): item for item in gates if isinstance(item, dict)}
+        unknown = [item for item in resume["depends_on"] if item not in gates_by_id]
+        if unknown:
+            errors.append(f"resume.depends_on references unknown manual gates: {', '.join(unknown)}")
+        elif run.get("status") in {"ready", "running"} and any(gates_by_id[item].get("status") != "approved" for item in resume["depends_on"]):
+            errors.append("ready or running requires each directly depended-on manual gate to be approved")
+    evidence = state.get("evidence_index", {})
+    if not isinstance(evidence, dict) or set(evidence) != {"path", "sha256"} or not SHA256_PATTERN.fullmatch(str(evidence.get("sha256", ""))):
+        errors.append("evidence_index fields are invalid")
+    else:
+        index_path = Path(str(evidence.get("path", "")))
+        if not index_path.is_absolute():
+            errors.append("evidence_index path must be absolute")
+        else:
+            errors.extend(evidence_index_errors(index_path, evidence["sha256"]))
+            try:
+                index_data = json.loads(index_path.read_text(encoding="utf-8"))
+                evidence_objects = {
+                    item["id"]: Path(item["path"])
+                    for item in index_data.get("objects", [])
+                    if isinstance(item, dict) and isinstance(item.get("id"), str) and isinstance(item.get("path"), str)
+                }
+            except (OSError, json.JSONDecodeError):
+                evidence_objects = {}
+            refs = {
+                "authorization.decision_ref": authorization.get("decision_ref") if isinstance(authorization, dict) else None,
+                "authorization.scope_ref": authorization.get("scope_ref") if isinstance(authorization, dict) else None,
+                "work.diff_ref": work.get("diff_ref") if isinstance(work, dict) else None,
+                "run.contract_ref": run.get("contract_ref") if isinstance(run, dict) else None,
+                "failure.last_event_ref": failure.get("last_event_ref") if isinstance(failure, dict) else None,
+                "resume.last_operation_ref": resume.get("last_operation_ref") if isinstance(resume, dict) else None,
+            }
+            if isinstance(run, dict) and run.get("preflight_ref") is not None:
+                refs["run.preflight_ref"] = run.get("preflight_ref")
+            if isinstance(gates, list):
+                for gate_index, gate in enumerate(gates):
+                    if isinstance(gate, dict) and gate.get("decision_ref") is not None:
+                        refs[f"manual_gates[{gate_index}].decision_ref"] = gate.get("decision_ref")
+            for name, reference in refs.items():
+                if reference is None and name == "resume.last_operation_ref":
+                    continue
+                resolved, _ = resolve_evidence_ref(reference, evidence_objects)
+                if not resolved:
+                    errors.append(f"{name} does not resolve through the immutable evidence index")
+            diff_reference = work.get("diff_ref") if isinstance(work, dict) else None
+            diff_match = re.fullmatch(r"evidence://([0-9a-f]{64})(?:#)?", str(diff_reference or ""))
+            work_root = Path(str(work.get("root", ""))) if isinstance(work, dict) else Path()
+            if diff_match and work_root.is_absolute() and work_root.is_dir():
+                try:
+                    diff_bytes = subprocess.run(
+                        ["git", "diff", "--binary", "HEAD"], cwd=work_root,
+                        check=True, capture_output=True,
+                    ).stdout
+                    if hashlib.sha256(diff_bytes).hexdigest() != diff_match.group(1):
+                        errors.append("work.diff_ref does not match git diff --binary HEAD for the execution root")
+                except subprocess.CalledProcessError:
+                    errors.append("work diff identity is unreadable")
+            elif diff_reference is not None:
+                errors.append("work.diff_ref must select one whole content-addressed evidence object")
+    return errors
+
+
+def bootstrap_errors() -> list[str]:
+    path = ROOT / "AGENTS.md"
+    if not path.is_file():
+        return ["AGENTS.md bootstrap is missing"]
+    size = path.stat().st_size
+    lines = len(path.read_text(encoding="utf-8").splitlines())
+    errors = []
+    if size > 8 * 1024:
+        errors.append(f"AGENTS.md bootstrap exceeds 8192 bytes: {size}")
+    if lines > 60:
+        errors.append(f"AGENTS.md bootstrap exceeds 60 lines: {lines}")
+    return errors
+
+
+def static_control_policy_errors() -> list[str]:
+    """Check static controller references while preserving all runtime/resource gates."""
+    errors: list[str] = []
+    policy = load_json(ROOT / "resources/consumer-ready-control.json")
+    if policy.get("protocol") != "peanut.consumer-ready-control.v1" or policy.get("mode") != "minimal-read-only-preflight":
+        errors.append("consumer-ready control protocol or read-only mode changed")
+    required_authorities = {
+        "version_contract", "release_metadata", "application_inventory", "qualification_fixture",
+        "project_resources", "p0e_resources", "capability_ledger", "rule_metadata",
+        "rule_metadata_schema", "control_state_schema",
+    }
+    authorities = policy.get("authorities", {})
+    if not isinstance(authorities, dict) or not required_authorities <= set(authorities):
+        errors.append("consumer-ready control authority references are incomplete")
+    else:
+        for name in required_authorities:
+            raw = authorities[name]
+            relative = raw.split("#", 1)[0] if isinstance(raw, str) else ""
+            if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts or not (ROOT / relative).is_file():
+                errors.append(f"consumer-ready control authority is invalid: {name}")
+    required_commands = {
+        "release_consistency", "inventory_builder", "scaffold_builder", "browser_tooling",
+        "resource_registry", "resource_lease",
+    }
+    commands = policy.get("commands", {})
+    if not isinstance(commands, dict) or not required_commands <= set(commands):
+        errors.append("consumer-ready control runtime commands were weakened")
+    else:
+        for name in required_commands:
+            raw = commands[name]
+            if not isinstance(raw, str) or Path(raw).is_absolute() or not (ROOT / raw).is_file():
+                errors.append(f"consumer-ready control command is invalid: {name}")
+    static = policy.get("static_validation", {})
+    expected_static = {
+        "rules": ["scripts/docs-governance", "check", "--rules"],
+        "release_identity": ["scripts/check-release-consistency", "--static-only"],
+    }
+    if not isinstance(static, dict) or any(static.get(key) != value for key, value in expected_static.items()):
+        errors.append("consumer-ready static validation commands are invalid")
+    scope = policy.get("scope", {})
+    if not isinstance(scope, dict) or any(value is not False for value in scope.values()):
+        errors.append("consumer-ready read-only scope was weakened")
+    database_id = policy.get("p0e", {}).get("database_resource_id")
+    resources = load_json(ROOT / "resources/project-resources.json")
+    matches = [
+        item for item in resources.get("resources", {}).get("databases", [])
+        if isinstance(item, dict) and item.get("stable_resource_id") == database_id
+    ]
+    if not isinstance(database_id, str) or len(matches) != 1:
+        errors.append("consumer-ready P0-E resource reference is missing or ambiguous")
+    p0e = load_json(ROOT / "resources/p0e-runtime-qualification.json")
+    if p0e.get("database_administration_binding", {}).get("database_resource_id") != database_id:
+        errors.append("consumer-ready and P0-E resource bindings differ")
     return errors
 
 
@@ -739,7 +1334,15 @@ def fact_register_errors() -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("check")
+    check_parser = subparsers.add_parser("check")
+    check_parser.add_argument(
+        "--rules", action="store_true",
+        help="explicitly request the versioned rule checks (also included by default)",
+    )
+    check_parser.add_argument(
+        "--control-state", type=Path,
+        help="also validate the explicitly located private control state and evidence index",
+    )
     generate_parser = subparsers.add_parser("generate")
     generate_parser.add_argument("--check", action="store_true", dest="check_only")
     impact_parser = subparsers.add_parser("impact")
@@ -828,6 +1431,11 @@ def main() -> int:
         return 0
     registry = load_json(REGISTRY_PATH)
     errors = validate_registry(registry)
+    errors.extend(rule_metadata_errors(registry))
+    errors.extend(bootstrap_errors())
+    errors.extend(static_control_policy_errors())
+    if args.control_state is not None:
+        errors.extend(control_state_errors(args.control_state))
     errors.extend(fact_register_errors())
     errors.extend(generate(True))
     errors.extend(run_scenarios(impact))

@@ -5,7 +5,10 @@ import { createHash } from 'node:crypto'
 import { isAbsolute } from 'node:path'
 import { readFileSync, writeFileSync } from 'node:fs'
 
-const options = { tag: '', candidate: '', qualification: '', remote: '', writeLock: '', requireMain: false }
+const options = {
+  tag: '', candidate: '', qualification: '', remote: '', writeLock: '', requireMain: false,
+  staticOnly: false, editionManifests: [], releaseEvidence: '',
+}
 const args = process.argv.slice(2)
 for (let index = 0; index < args.length;) {
   const argument = args[index]
@@ -15,17 +18,26 @@ for (let index = 0; index < args.length;) {
     index += 1
     continue
   }
+  if (argument === '--static-only') {
+    options.staticOnly = true
+    index += 1
+    continue
+  }
   if (argument === '--help' || argument === '-h') {
     console.log(`Usage:
   scripts/check-release-consistency --candidate <full-commit> --qualification <summary.json> [--require-main]
   scripts/check-release-consistency --tag vX.Y.Z [--qualification <summary.json>] [--remote origin]
       [--write-lock <absolute-file>]
+  scripts/check-release-consistency --static-only [--edition-manifest <absolute-file>]...
+      [--release-evidence <absolute-file>]
 
 The candidate mode is the pre-tag release preflight. The tag mode verifies the
 immutable release identity. --require-main is the final-release gate and
 requires the candidate to be the current origin/main commit. --write-lock
 requires qualification evidence and creates an external, non-self-referential
-candidate lock.`)
+candidate lock. --static-only reads the current checkout, performs no network,
+resource, qualification or lock operation, and reports evidence completeness;
+it never establishes release readiness.`)
     process.exit(0)
   }
   if (argument === '--tag' && value) options.tag = value
@@ -33,6 +45,8 @@ candidate lock.`)
   else if (argument === '--qualification' && value) options.qualification = value
   else if (argument === '--remote' && value) options.remote = value
   else if (argument === '--write-lock' && value) options.writeLock = value
+  else if (argument === '--edition-manifest' && value) options.editionManifests.push(value)
+  else if (argument === '--release-evidence' && value) options.releaseEvidence = value
   else {
     console.error(`check-release-consistency: unknown or incomplete argument: ${argument}`)
     process.exit(64)
@@ -40,9 +54,23 @@ candidate lock.`)
   index += 2
 }
 
-if ((options.tag === '') === (options.candidate === '')) {
+if (!options.staticOnly && (options.tag === '') === (options.candidate === '')) {
   console.error('check-release-consistency: choose exactly one of --tag or --candidate')
   process.exit(64)
+}
+if (options.staticOnly && (options.tag || options.candidate || options.qualification || options.remote || options.writeLock || options.requireMain)) {
+  console.error('check-release-consistency: --static-only cannot run candidate, tag, remote, qualification or lock gates')
+  process.exit(64)
+}
+if (!options.staticOnly && (options.editionManifests.length || options.releaseEvidence)) {
+  console.error('check-release-consistency: Edition and release evidence inputs are only valid with --static-only')
+  process.exit(64)
+}
+for (const path of [...options.editionManifests, ...(options.releaseEvidence ? [options.releaseEvidence] : [])]) {
+  if (!isAbsolute(path)) {
+    console.error('check-release-consistency: static evidence paths must be absolute')
+    process.exit(64)
+  }
 }
 if (options.tag && !/^v\d+\.\d+\.\d+$/.test(options.tag)) {
   console.error('check-release-consistency: --tag must be an annotated stable tag such as v2.1.4')
@@ -70,7 +98,7 @@ const gitSucceeds = (command) => {
 }
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
 const failures = []
-const reference = options.tag || options.candidate
+const reference = options.staticOnly ? 'working-tree' : (options.tag || options.candidate)
 
 if (options.tag && gitOptional(['cat-file', '-t', options.tag]) !== 'tag') {
   failures.push(`tag is not annotated: ${options.tag}`)
@@ -96,14 +124,18 @@ let declaredCoreWeb = ''
 let declaredClientVersions = {}
 let declaredClientCoreVersions = {}
 let lockedCoreVersions = {}
+let staticEditionEvidence = { complete: false, editions: [], manifests: [] }
+let staticReleaseEvidence = { supplied: false, valid: false }
 
-const show = (path) => execFileSync('git', ['show', `${reference}:${path}`], {
-  encoding: 'utf8',
-  maxBuffer: 64 * 1024 * 1024,
-})
+const show = (path) => options.staticOnly
+  ? readFileSync(path, 'utf8')
+  : execFileSync('git', ['show', `${reference}:${path}`], {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    })
 try {
-  commit = git(['rev-parse', `${reference}^{commit}`])
-  tree = git(['rev-parse', `${reference}^{tree}`])
+  commit = git(['rev-parse', options.staticOnly ? 'HEAD' : `${reference}^{commit}`])
+  tree = git(['rev-parse', options.staticOnly ? 'HEAD^{tree}' : `${reference}^{tree}`])
   if (options.candidate && commit !== options.candidate) failures.push('candidate commit identity changed')
   if (options.requireMain) {
     const mainCommit = gitOptional(['rev-parse', 'origin/main^{commit}'])
@@ -258,6 +290,57 @@ if (ledger && commit) {
   if (!(ledger.overall?.summary ?? '').includes(version)) failures.push(`capability ledger overall summary does not describe ${version}`)
 }
 
+if (options.staticOnly) {
+  const editionNames = new Set()
+  for (const path of options.editionManifests) {
+    try {
+      const text = readFileSync(path, 'utf8')
+      const manifest = JSON.parse(text)
+      const edition = typeof manifest.edition === 'string' ? manifest.edition : manifest.edition?.name
+      const source = manifest.source ?? manifest.build_source ?? {}
+      const protocol = manifest.protocol
+      if (manifest.schema_version !== 1
+        || !['peanut.edition-installer.v1', 'peanut.edition-upgrade-artifact.v1'].includes(protocol)
+        || !['standalone', 'multi-tenant'].includes(edition)
+        || manifest.product?.version !== contractProductVersion
+        || source.commit !== commit || source.tree !== tree
+        || source.inventory_sha256 !== sha256(inventoryText)) {
+        failures.push(`static Edition manifest identity mismatch: ${path}`)
+        continue
+      }
+      const evidenceKey = `${protocol}:${edition}`
+      if (editionNames.has(evidenceKey)) failures.push(`duplicate static Edition manifest: ${evidenceKey}`)
+      editionNames.add(evidenceKey)
+      staticEditionEvidence.manifests.push({ protocol, edition, sha256: sha256(text) })
+    } catch (error) {
+      failures.push(`static Edition manifest is unreadable: ${path}: ${error.message}`)
+    }
+  }
+  staticEditionEvidence.editions = [...new Set(staticEditionEvidence.manifests
+    .filter((item) => item.protocol === 'peanut.edition-installer.v1')
+    .map((item) => item.edition))].sort()
+  staticEditionEvidence.complete = JSON.stringify(staticEditionEvidence.editions) === JSON.stringify(['multi-tenant', 'standalone'])
+
+  if (options.releaseEvidence) {
+    staticReleaseEvidence.supplied = true
+    try {
+      const evidence = JSON.parse(readFileSync(options.releaseEvidence, 'utf8'))
+      const editions = evidence.edition_artifacts ?? {}
+      const qualification = evidence.technical_qualification ?? {}
+      staticReleaseEvidence.valid = evidence.schema_version === 1
+        && evidence.product === metadata?.product
+        && evidence.version === contractProductVersion
+        && evidence.tag === expectedTag
+        && evidence.commit === commit
+        && qualification.status === 'passed'
+        && ['standalone', 'multi-tenant'].every((edition) => typeof editions?.[edition]?.installer === 'string')
+      if (!staticReleaseEvidence.valid) failures.push('static release evidence is incomplete or belongs to another candidate')
+    } catch (error) {
+      failures.push(`static release evidence is unreadable: ${error.message}`)
+    }
+  }
+}
+
 try {
   if (!show('CHANGELOG.md').includes(`## [${version}]`)) failures.push(`CHANGELOG.md has no ${version} release section`)
 } catch (error) {
@@ -303,6 +386,24 @@ if (failures.length > 0) {
   console.error(`check-release-consistency: FAIL ${reference}`)
   for (const failure of failures) console.error(`- ${failure}`)
   process.exit(1)
+}
+
+if (options.staticOnly) {
+  const pending = []
+  if (!staticEditionEvidence.complete) pending.push('two same-candidate Edition installer manifests')
+  if (!staticReleaseEvidence.valid) pending.push('sealed passed qualification and publication evidence')
+  console.log(JSON.stringify({
+    status: 'passed',
+    mode: 'static-only',
+    source_product_version: contractProductVersion,
+    instance_version: versionContract?.instance_version ?? null,
+    edition_evidence: staticEditionEvidence,
+    release_evidence: staticReleaseEvidence,
+    product_release_ready: false,
+    pending,
+    limitation: 'Static validation does not verify signatures, run qualification, approve dev-to-main, inspect a remote Release, or publish.',
+  }, null, 2))
+  process.exit(0)
 }
 
 if (options.writeLock) {

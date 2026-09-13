@@ -8,7 +8,7 @@ This directory is the maintainer-facing documentation layer for the Peanut Admin
 | --- | --- | --- |
 | Answer what the product is, where it stands, why and what comes next | [Current fact entry](governance/current-state.md), [version identity ADR](architecture/product-version-identity-adr.md) and [fact convergence audit](maintenance/fact-convergence-audit-2026-09-09.md) | canonical navigation, accepted decision and bounded audit; never substitute for release evidence |
 | Find the owner of a fact | [Authoritative source map](governance/authoritative-source-map.md) | authoritative index |
-| Audit related history, correct rules and resume interrupted work | [0–6阶段及消费优先路线](plans/history-rules-product-convergence-plan-2026-09-10.md), [历史决定与问题证据](maintenance/conversation-audit-2026-09-09.md), [source index](maintenance/fact-audit-2026-09-09/source-index.json) and [问题主登记](maintenance/runtime-convergence-issue-register-2026-09-09.json) | 阶段0–4、T01、CQ和C01已验收，CR01及CR02开发交付已验收；Core 3.1.0公开包、V2/同号依赖、整应用生成及旧实例显式归属采用已完成相应聚焦验证，按方案§12.8进入CR03独立资格准备，完成后再CR04交付。C02–C12仅非消费阻塞项后置。根核技术前置后按独立任务衔接，不重开全审或重派已验收修复。新发行/资格尚未完成；root-local recovery controls remain untracked. |
+| Resume the accepted convergence scope | [Product convergence plan](plans/history-rules-product-convergence-plan-2026-09-10.md) and [execution policy](../AGENT_EXECUTION_RULES.md#current-control-state) | Scope only; the unique private state owns current authority, writer, budget and recovery. Historical coverage and receipts never authorize actions. |
 | Understand the system boundary | [Clean native multitenancy baseline](architecture/clean-native-multitenancy-baseline.md) | current technical explanation |
 | Understand Core capabilities and actual application adoption | [Core 能力与独立应用采用全景](reference/core-capabilities-and-application-adoption.md), [Core 与应用技术边界](architecture/core-application-technical-boundary.md) and [Storage Driver 提取队列](plans/storage-driver-extraction-queue.md) | fixed-source audit, planned boundary and decision queue; not Runtime completion evidence |
 | Understand the Core runtime direction and cross-category remediation | [Core ThinkPHP 8 运行时收敛方向 ADR](architecture/core-thinkphp-runtime-direction-adr.md), [跨类别历史整改审计](maintenance/runtime-convergence-audit-2026-09-09.md) and [问题主登记](maintenance/runtime-convergence-issue-register-2026-09-09.json) | bounded actual-read coverage, current direct evidence and open remediation; no full-history or Runtime-complete claim |
@@ -50,7 +50,7 @@ Existing root-level contracts remain discoverable during the bounded migration. 
 ## AI reading order
 
 1. Use `AGENTS.md` to select the task-relevant sections of `AGENT_EXECUTION_RULES.md`.
-2. Read `docs/document-registry.json` and this index.
+2. Resolve the assigned rule IDs and relevant document entries in `docs/document-registry.json`; do not load the whole catalog into model context.
 3. Open only the authoritative machine source for the fact being changed.
 4. Use `docs/document-impact-map.json` to select the smallest affected explanations and projections.
 5. Read plans or evidence only when the task concerns their exact decision or qualification.
