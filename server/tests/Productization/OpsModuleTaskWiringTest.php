@@ -6,7 +6,8 @@ use app\AppService;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\audit\AuditContractHost;
-use app\platform\service\ops\PlatformOpsRuntimeFactory;
+use app\platform\service\ops\DeploymentModuleRequestService;
+use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
 use app\platform\service\plugin\ModuleCatalogApplier;
 use think\App;
 use think\console\Input;
@@ -41,26 +42,27 @@ $appService = new AppService($app);
 $registerPlatform = new ReflectionMethod(AppService::class, 'registerPlatform');
 $registerPlatform->invoke($appService);
 
-$registeredFactory = $app->make(PlatformOpsRuntimeFactory::class);
+$registeredService = $app->make(PdoModuleOperationTaskExecutionService::class);
 $command = $app->make(OpsModuleTask::class);
-$runtimeProperty = new ReflectionProperty(OpsModuleTask::class, 'runtime');
+$serviceProperty = new ReflectionProperty(OpsModuleTask::class, 'service');
 expectOpsModuleWiring(
-    $runtimeProperty->getValue($command) === $registeredFactory
-        && $registeredFactory === $app->make(PlatformOpsRuntimeFactory::class),
-    'OpsModuleTask did not receive the AppService-owned PlatformOpsRuntimeFactory instance',
+    $serviceProperty->getValue($command) === $registeredService
+        && $registeredService === $app->make(PdoModuleOperationTaskExecutionService::class),
+    'OpsModuleTask did not receive the AppService-owned execution service',
 );
-$moduleConfigProperty = new ReflectionProperty(PlatformOpsRuntimeFactory::class, 'moduleConfig');
+$requests = $app->make(DeploymentModuleRequestService::class);
+$moduleConfigProperty = new ReflectionProperty(DeploymentModuleRequestService::class, 'moduleConfig');
 expectOpsModuleWiring(
-    $moduleConfigProperty->getValue($registeredFactory) === ['official.article' => ['root' => 'app/Modules/Official/Article']],
-    'AppService did not provide Module configuration to the Ops Runtime factory',
+    $moduleConfigProperty->getValue($requests) === ['official.article' => ['root' => 'app/Modules/Official/Article']],
+    'AppService did not provide Module configuration to the request service',
 );
-$trustedKeysProperty = new ReflectionProperty(PlatformOpsRuntimeFactory::class, 'trustedKeys');
+$trustedKeysProperty = new ReflectionProperty(DeploymentModuleRequestService::class, 'trustedKeys');
 expectOpsModuleWiring(
-    $trustedKeysProperty->getValue($registeredFactory) === ['c01-test' => $trustedKey],
-    'AppService did not decode trusted Module keys for the Ops Runtime factory',
+    $trustedKeysProperty->getValue($requests) === ['c01-test' => $trustedKey],
+    'AppService did not decode trusted Module keys for the request service',
 );
 $source = (string)file_get_contents(dirname(__DIR__, 2) . '/app/command/OpsModuleTask.php');
-expectOpsModuleWiring(!str_contains($source, 'new PlatformOpsRuntimeFactory'), 'OpsModuleTask retained duplicate Runtime factory construction');
+expectOpsModuleWiring(!str_contains($source, 'RuntimeFactory'), 'OpsModuleTask retained Runtime factory construction');
 expectOpsModuleWiring(!str_contains($source, 'trustedKeys('), 'OpsModuleTask retained duplicate trusted-key decoding');
 
 $command->setApp($app);

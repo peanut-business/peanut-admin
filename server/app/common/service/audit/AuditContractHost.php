@@ -83,6 +83,27 @@ final class AuditContractHost implements AuditRepository
         ));
     }
 
+    public function appendPlatform(
+        string $eventType,
+        string $action,
+        string $requestId,
+        ?int $operatorId,
+        ?int $accountId,
+        array $metadata = [],
+    ): void {
+        $this->recordPlatform($eventType, $action, $requestId, $operatorId, $accountId, $metadata);
+    }
+
+    public function appendTenantSystem(
+        int $tenantId,
+        string $eventType,
+        string $action,
+        string $requestId,
+        array $metadata = [],
+    ): void {
+        $this->recordTenantSystem($tenantId, $eventType, $action, $requestId, $metadata);
+    }
+
     public function recordPlatform(
         string $eventType,
         string $operation,

@@ -11,6 +11,7 @@ use app\platform\service\plugin\PluginLockResolver;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
+use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
 use RuntimeException;
@@ -31,6 +32,7 @@ final readonly class PlatformUpgradeReadinessService
         private PdoModuleGovernanceProvider $moduleGovernance,
         private PlatformBackupCenterService $backups,
         private MaintenanceService $maintenance,
+        private PlatformPermissionChecker $permissions,
     ) {
     }
 
@@ -44,7 +46,7 @@ final readonly class PlatformUpgradeReadinessService
      */
     public function snapshot(PlatformContext $context, array $runtime): array
     {
-        if (!(new PlatformOpsPermissionChecker($this->pdo))->allows($context, Package::READ_PERMISSION)) {
+        if (!$this->permissions->allows($context, Package::READ_PERMISSION)) {
             throw OpsConsoleException::denied();
         }
 

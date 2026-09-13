@@ -72,12 +72,31 @@ use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
 use app\platform\service\module\PlatformTenantModuleService;
 use app\platform\service\ops\PlatformOpsApplicationService;
 use app\platform\service\ops\ApplicationRuntimeStatusProvider;
-use app\platform\service\ops\PlatformOpsRuntimeFactory;
+use app\platform\service\ops\DeploymentModuleRequestService;
+use app\platform\service\ops\PairedBackupProvider;
+use app\platform\service\ops\PdoMaintenanceWindowStore;
+use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\PdoOpsTaskDispatcher;
+use app\platform\service\ops\PdoUpgradeTaskExecutionService;
+use app\platform\service\ops\PlatformAuditRuntimeLogProvider;
+use app\platform\service\ops\PlatformBackupCenterService;
+use app\platform\service\ops\PlatformDiagnosticBundleService;
+use app\platform\service\ops\PlatformModuleOperationExecutionService;
+use app\platform\service\ops\PlatformOpsPermissionChecker;
+use app\platform\service\ops\PlatformUpgradeExecutionService;
+use app\platform\service\ops\PlatformUpgradeReadinessService;
 use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\ModuleDefinitionRegistryFactory;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\ModuleCatalogApplier;
+use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\platform\service\provider\NotificationQualificationContributor;
+use app\platform\service\provider\OauthQualificationContributor;
+use app\platform\service\provider\PaymentQualificationContributor;
+use app\platform\service\provider\PdoProviderQualificationEvidenceRepository;
+use app\platform\service\provider\PlatformProviderQualificationService;
+use app\platform\service\provider\StorageQualificationContributor;
 use think\Service;
 use think\Model;
 use think\facade\Config;
@@ -106,6 +125,18 @@ use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantRepository;
+use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
+use PeanutAdmin\OpsConsole\Logs\RuntimeLogProviderRegistry;
+use PeanutAdmin\OpsConsole\Logs\RuntimeLogService;
+use PeanutAdmin\OpsConsole\Logs\SafeLogMessageCatalog;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindowStore;
+use PeanutAdmin\OpsConsole\Status\OpsStatusService;
+use PeanutAdmin\OpsConsole\Status\RuntimeStatusProvider;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
+use PeanutAdmin\OpsConsole\Task\OpsTaskDispatcher;
+use PeanutAdmin\OpsConsole\Task\OpsTaskService;
 use PeanutAdmin\Settings\Persistence\SettingStore;
 use app\common\persistence\CoreTenantRepositoryFactory;
 
@@ -399,61 +430,140 @@ class AppService extends Service
         $this->app->bind(PlatformModuleRuntimeService::class, fn(): PlatformModuleRuntimeService => $this->app
             ->make(PlatformRuntimeFactory::class)
             ->moduleRuntime());
-        $this->app->bind(PlatformOpsRuntimeFactory::class, function (): PlatformOpsRuntimeFactory {
-            $moduleConfig = Config::get('modules', []);
-            if (!is_array($moduleConfig)) {
-                throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
-            }
-            $trustedKeys = [];
-            foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
-                $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
-                if (is_string($keyId) && is_string($decoded)
-                    && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
-                    $trustedKeys[$keyId] = $decoded;
-                }
-            }
-            return new PlatformOpsRuntimeFactory(
+        $this->app->bind(PlatformPermissionChecker::class, PlatformOpsPermissionChecker::class);
+        $this->app->bind(PdoOpsTaskDispatcher::class, PdoOpsTaskDispatcher::class);
+        $this->app->bind(OpsTaskDispatcher::class, PdoOpsTaskDispatcher::class);
+        $this->app->bind(PdoMaintenanceWindowStore::class, PdoMaintenanceWindowStore::class);
+        $this->app->bind(MaintenanceWindowStore::class, PdoMaintenanceWindowStore::class);
+        $this->app->bind(BackupRestoreProviderRegistry::class, fn(): BackupRestoreProviderRegistry =>
+            new BackupRestoreProviderRegistry([new PairedBackupProvider()]));
+        $this->app->bind(MaintenanceReasonRegistry::class, fn(): MaintenanceReasonRegistry =>
+            new MaintenanceReasonRegistry([
+                'planned-upgrade',
+                'database-maintenance',
+                'security-maintenance',
+                'module-lifecycle',
+            ]));
+        $this->app->bind(OpsTaskService::class, OpsTaskService::class);
+        $this->app->bind(MaintenanceService::class, MaintenanceService::class);
+        $this->app->bind(PdoModuleGovernanceProvider::class, fn(): PdoModuleGovernanceProvider =>
+            new PdoModuleGovernanceProvider(
                 $this->app->make(PDO::class),
-                $this->app->make(AuditContractHost::class),
-                dirname(__DIR__, 2),
-                $moduleConfig,
-                $trustedKeys,
+                dirname(__DIR__),
+                $this->moduleConfiguration(),
                 $this->app->make(ModuleCatalogApplier::class),
-            );
-        });
-        $this->app->bind(PdoModuleGovernanceProvider::class, fn(): PdoModuleGovernanceProvider => $this->app
-            ->make(PlatformOpsRuntimeFactory::class)
-            ->moduleGovernance());
+            ));
         $this->app->bind(ModuleQualificationQuery::class, fn(): ModuleQualificationQuery => $this->app
             ->make(PdoModuleGovernanceProvider::class)
             ->qualification());
-        $this->app->bind(ApplicationRuntimeStatusProvider::class, fn(): ApplicationRuntimeStatusProvider => $this->app
-            ->make(PlatformOpsRuntimeFactory::class)
-            ->runtimeStatusProvider());
-        $this->app->bind(\app\platform\service\ops\PlatformDiagnosticBundleService::class, fn(): \app\platform\service\ops\PlatformDiagnosticBundleService => $this->app
-            ->make(PlatformOpsRuntimeFactory::class)
-            ->diagnostics(
+        $this->app->bind(PluginRuntimeGovernanceService::class, fn(): PluginRuntimeGovernanceService =>
+            new PluginRuntimeGovernanceService(
+                $this->app->make(PDO::class),
+                dirname(__DIR__),
+                $this->moduleConfiguration(),
+                $this->app->make(ModuleCatalogApplier::class),
+            ));
+        $this->app->bind(DeploymentModuleRequestService::class, fn(): DeploymentModuleRequestService =>
+            new DeploymentModuleRequestService(
+                $this->app->make(PDO::class),
+                dirname(__DIR__, 2),
+                $this->moduleConfiguration(),
+                $this->trustedModuleKeys(),
+                $this->app->make(PluginRuntimeGovernanceService::class),
+                $this->app->make(ModuleCatalogApplier::class),
+            ));
+        $this->app->bind(PlatformBackupCenterService::class, PlatformBackupCenterService::class);
+        $this->app->bind(PlatformUpgradeReadinessService::class, fn(): PlatformUpgradeReadinessService =>
+            new PlatformUpgradeReadinessService(
+                $this->app->make(PDO::class),
+                dirname(__DIR__, 2),
+                $this->app->make(PdoModuleGovernanceProvider::class),
+                $this->app->make(PlatformBackupCenterService::class),
+                $this->app->make(MaintenanceService::class),
+                $this->app->make(PlatformPermissionChecker::class),
+            ));
+        $this->app->bind(ApplicationRuntimeStatusProvider::class, fn(): ApplicationRuntimeStatusProvider =>
+            new ApplicationRuntimeStatusProvider(
+                $this->app->make(PDO::class),
+                dirname(__DIR__, 2),
+                $this->app->make(PlatformUpgradeReadinessService::class),
+                $this->app->make(PdoModuleGovernanceProvider::class),
+            ));
+        $this->app->bind(RuntimeStatusProvider::class, ApplicationRuntimeStatusProvider::class);
+        $this->app->bind(OpsStatusService::class, fn(): OpsStatusService => new OpsStatusService(
+            $this->app->make(PlatformPermissionChecker::class),
+            $this->app->make(RuntimeStatusProvider::class),
+        ));
+        $this->app->bind(PlatformProviderQualificationService::class, fn(): PlatformProviderQualificationService =>
+            new PlatformProviderQualificationService(
+                $this->app->make(PlatformPermissionChecker::class),
+                new PdoProviderQualificationEvidenceRepository($this->app->make(PDO::class)),
+                [
+                    new PaymentQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
+                    new NotificationQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
+                    new OauthQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
+                    new StorageQualificationContributor($this->app->make(PDO::class), $this->providerDigestKey()),
+                ],
+                $this->providerDigestKey(),
+            ));
+        $this->app->bind(PlatformDiagnosticBundleService::class, function (): PlatformDiagnosticBundleService {
+            $permissions = $this->app->make(PlatformPermissionChecker::class);
+            return new PlatformDiagnosticBundleService(
+                $this->app->make(PDO::class),
+                $permissions,
+                fn(\DateTimeImmutable $since): RuntimeLogService => new RuntimeLogService(
+                    $permissions,
+                    new RuntimeLogProviderRegistry([
+                        new PlatformAuditRuntimeLogProvider(
+                            $this->app->make(PDO::class),
+                            $since->format('Y-m-d H:i:s.v'),
+                        ),
+                    ]),
+                    new SafeLogMessageCatalog([]),
+                ),
+                $this->app->make(OpsStatusService::class),
+                $this->app->make(PdoModuleGovernanceProvider::class),
                 (string)Config::get('deployment.mode', ''),
                 (bool)Config::get('app.app_debug', false),
-            ));
-        $this->app->bind(PlatformOpsApplicationService::class, function (): PlatformOpsApplicationService {
-            $runtime = $this->app->make(PlatformOpsRuntimeFactory::class);
-            return new PlatformOpsApplicationService(
-                $runtime->status(),
-                $runtime->runtimeStatusProvider(),
-                $runtime->providerQualifications(trim((string)Config::get('platform_auth.identifier_hmac_key', ''))),
-                $runtime->maintenance(),
-                $runtime->diagnostics(
-                    (string)Config::get('deployment.mode', ''),
-                    (bool)Config::get('app.app_debug', false),
-                ),
-                $this->app->make(AuditContractHost::class),
-                $runtime->tasks(),
-                $runtime->upgrades(),
-                $runtime->moduleOperations(),
-                $runtime->backups(),
             );
         });
+        $this->app->bind(PlatformUpgradeExecutionService::class, fn(): PlatformUpgradeExecutionService =>
+            new PlatformUpgradeExecutionService(
+                $this->app->make(PDO::class),
+                $this->app->make(PdoOpsTaskDispatcher::class),
+                dirname(__DIR__, 2),
+                $this->app->make(ApplicationRuntimeStatusProvider::class),
+                $this->app->make(PlatformPermissionChecker::class),
+            ));
+        $this->app->bind(PlatformModuleOperationExecutionService::class, fn(): PlatformModuleOperationExecutionService =>
+            new PlatformModuleOperationExecutionService(
+                $this->app->make(PDO::class),
+                $this->app->make(PdoOpsTaskDispatcher::class),
+                $this->app->make(DeploymentModuleRequestService::class),
+                $this->app->make(ApplicationRuntimeStatusProvider::class),
+                $this->app->make(PlatformPermissionChecker::class),
+            ));
+        $this->app->bind(PdoUpgradeTaskExecutionService::class, fn(): PdoUpgradeTaskExecutionService =>
+            new PdoUpgradeTaskExecutionService(
+                $this->app->make(PDO::class),
+                $this->app->make(AuditContractHost::class),
+                $this->app->make(PdoOpsTaskDispatcher::class),
+                $this->app->make(PdoMaintenanceWindowStore::class),
+                dirname(__DIR__, 2),
+                $this->app->make(BackupRestoreProviderRegistry::class),
+                $this->app->make(ApplicationRuntimeStatusProvider::class),
+            ));
+        $this->app->bind(PdoModuleOperationTaskExecutionService::class, fn(): PdoModuleOperationTaskExecutionService =>
+            new PdoModuleOperationTaskExecutionService(
+                $this->app->make(PDO::class),
+                $this->app->make(AuditContractHost::class),
+                $this->app->make(PdoOpsTaskDispatcher::class),
+                $this->app->make(PdoMaintenanceWindowStore::class),
+                $this->app->make(DeploymentModuleRequestService::class),
+                $this->app->make(BackupRestoreProviderRegistry::class),
+                $this->app->make(ApplicationRuntimeStatusProvider::class),
+            ));
+        $this->app->bind(PlatformOpsApplicationService::class, PlatformOpsApplicationService::class);
         $this->app->bind(\app\common\service\dict\DictionaryRuntime::class, function (): \app\common\service\dict\DictionaryRuntime {
             $tenant = new \app\common\service\dict\ThinkPhpTenantDictionaryProvider();
             $system = new \app\common\service\dict\ThinkPhpSystemDictionaryProvider();
@@ -576,6 +686,35 @@ class AppService extends Service
             false,
         );
         (new ModuleComposition($this->app))->register($registry);
+    }
+
+    /** @return array<string,mixed> */
+    private function moduleConfiguration(): array
+    {
+        $config = Config::get('modules', []);
+        if (!is_array($config)) {
+            throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
+        }
+        return $config;
+    }
+
+    /** @return array<string,string> */
+    private function trustedModuleKeys(): array
+    {
+        $trustedKeys = [];
+        foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
+            $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
+            if (is_string($keyId) && is_string($decoded)
+                && strlen($decoded) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
+                $trustedKeys[$keyId] = $decoded;
+            }
+        }
+        return $trustedKeys;
+    }
+
+    private function providerDigestKey(): string
+    {
+        return trim((string)Config::get('platform_auth.identifier_hmac_key', ''));
     }
 
     /** @return list<string> */

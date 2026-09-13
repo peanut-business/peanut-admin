@@ -5,10 +5,8 @@ namespace app\command;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\platform\service\ops\PlatformOpsRuntimeFactory;
-use app\common\execution\DatabaseContextualCommand;
-use PDO;
-use app\platform\service\plugin\ModuleCatalogApplier;
+use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -16,16 +14,14 @@ use think\console\Output;
 use Throwable;
 
 /** Deployment-control bridge for one fixed Module operation task. */
-final class OpsModuleTask extends DatabaseContextualCommand
+final class OpsModuleTask extends ContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
-        PDO $pdo,
-        ModuleCatalogApplier $catalogs,
-        private readonly PlatformOpsRuntimeFactory $runtime,
+        private readonly PdoModuleOperationTaskExecutionService $service,
     ) {
-        parent::__construct($contexts, $executionContext, $pdo, $catalogs);
+        parent::__construct($contexts, $executionContext);
     }
 
     protected function configure(): void
@@ -41,15 +37,14 @@ final class OpsModuleTask extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $service = $this->runtime->moduleTaskExecution();
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
-                'claim' => $service->claim(),
-                'advance' => $service->advance($this->taskKey($input), $this->revision($input)),
-                'execute' => $service->execute($this->taskKey($input), $this->revision($input)),
-                'heartbeat' => $service->heartbeat($this->taskKey($input), $this->revision($input)),
-                'succeed' => $service->succeed($this->taskKey($input), $this->revision($input)),
-                'fail' => $service->fail(
+                'claim' => $this->service->claim(),
+                'advance' => $this->service->advance($this->taskKey($input), $this->revision($input)),
+                'execute' => $this->service->execute($this->taskKey($input), $this->revision($input)),
+                'heartbeat' => $this->service->heartbeat($this->taskKey($input), $this->revision($input)),
+                'succeed' => $this->service->succeed($this->taskKey($input), $this->revision($input)),
+                'fail' => $this->service->fail(
                     $this->taskKey($input),
                     $this->revision($input),
                     trim((string)$input->getOption('error-code')),

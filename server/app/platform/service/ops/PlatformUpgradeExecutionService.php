@@ -6,6 +6,7 @@ namespace app\platform\service\ops;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
+use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
 use PeanutAdmin\OpsConsole\Package;
 
 /** Platform submission and read projection for the fixed PC42 upgrade workflow. */
@@ -21,15 +22,15 @@ final readonly class PlatformUpgradeExecutionService
         private PdoOpsTaskDispatcher $tasks,
         private string $projectRoot,
         private ApplicationRuntimeStatusProvider $runtimeStatus,
+        private PlatformPermissionChecker $permissions,
     ) {
     }
 
     /** @return array<string,mixed> */
     public function submit(PlatformContext $context, string $idempotencyKey): array
     {
-        $permissions = new PlatformOpsPermissionChecker($this->pdo);
-        if (!$permissions->allows($context, self::PERMISSION)
-            || !$permissions->allows($context, Package::READ_PERMISSION)
+        if (!$this->permissions->allows($context, self::PERMISSION)
+            || !$this->permissions->allows($context, Package::READ_PERMISSION)
         ) {
             throw OpsConsoleException::denied();
         }
@@ -195,7 +196,7 @@ SQL);
 
     private function assertRead(PlatformContext $context): void
     {
-        if (!(new PlatformOpsPermissionChecker($this->pdo))->allows($context, Package::READ_PERMISSION)) {
+        if (!$this->permissions->allows($context, Package::READ_PERMISSION)) {
             throw OpsConsoleException::denied();
         }
     }

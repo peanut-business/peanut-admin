@@ -8,6 +8,7 @@ use DateTimeZone;
 use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
+use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use PeanutAdmin\OpsConsole\Task\OpsTaskService;
@@ -22,13 +23,14 @@ final readonly class PlatformBackupCenterService
         private PDO $pdo,
         private BackupRestoreProviderRegistry $backupProviders,
         private OpsTaskService $tasks,
+        private PlatformPermissionChecker $permissions,
     ) {
     }
 
     /** @return array{provider:array<string,mixed>,latest_verified:?array<string,mixed>,latest_restore_verified:?array<string,mixed>,tasks:list<array<string,mixed>>} */
     public function snapshot(PlatformContext $context, string $runtimeCommit): array
     {
-        if (!(new PlatformOpsPermissionChecker($this->pdo))->allows($context, Package::READ_PERMISSION)) {
+        if (!$this->permissions->allows($context, Package::READ_PERMISSION)) {
             throw OpsConsoleException::denied();
         }
 

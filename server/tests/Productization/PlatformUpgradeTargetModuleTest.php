@@ -2,11 +2,20 @@
 declare(strict_types=1);
 
 use app\platform\service\ops\PlatformUpgradeReadinessService;
-use app\platform\service\ops\PlatformOpsRuntimeFactory;
 use app\platform\service\ops\PlatformUpgradeTarget;
+use app\platform\service\ops\PairedBackupProvider;
+use app\platform\service\ops\PdoMaintenanceWindowStore;
+use app\platform\service\ops\PdoOpsTaskDispatcher;
+use app\platform\service\ops\PlatformBackupCenterService;
+use app\platform\service\ops\PlatformOpsPermissionChecker;
 use app\common\service\audit\AuditContractHost;
+use app\platform\service\module\PdoModuleGovernanceProvider;
 use app\platform\service\plugin\PluginLockResolver;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
+use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
+use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
+use PeanutAdmin\OpsConsole\Task\OpsTaskService;
 use think\Config as ThinkConfig;
 use think\Container;
 use think\facade\Config;
@@ -402,14 +411,28 @@ SQL);
 
     $moduleConfig = Config::get('modules', []);
     upgradeTargetExpect(is_array($moduleConfig), 'Module fixture configuration is unavailable');
-    $service = (new PlatformOpsRuntimeFactory(
+    $audit = AuditContractHost::fromPdo($pdo);
+    $permissions = new PlatformOpsPermissionChecker($pdo);
+    $providers = new BackupRestoreProviderRegistry([new PairedBackupProvider()]);
+    $tasks = new OpsTaskService($permissions, $providers, new PdoOpsTaskDispatcher($pdo, $audit));
+    $maintenance = new MaintenanceService(
+        $permissions,
+        new MaintenanceReasonRegistry(['planned-upgrade']),
+        new PdoMaintenanceWindowStore($pdo, $audit),
+    );
+    $service = new PlatformUpgradeReadinessService(
         $pdo,
-        AuditContractHost::fromPdo($pdo),
         $projectRoot,
-        $moduleConfig,
-        [],
-        ThinkPhpTestConnection::moduleCatalogs($pdo),
-    ))->readiness();
+        new PdoModuleGovernanceProvider(
+            $pdo,
+            $projectRoot . '/server',
+            $moduleConfig,
+            ThinkPhpTestConnection::moduleCatalogs($pdo),
+        ),
+        new PlatformBackupCenterService($pdo, $providers, $tasks, $permissions),
+        $maintenance,
+        $permissions,
+    );
     $moduleProjection = Closure::bind(
         fn(PlatformUpgradeTarget $value): array => $this->moduleProjection($value),
         $service,

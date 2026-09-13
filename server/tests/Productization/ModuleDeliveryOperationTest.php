@@ -13,6 +13,7 @@ use app\platform\service\ops\PdoOpsTaskDispatcher;
 use app\platform\service\ops\PairedBackupProvider;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use app\platform\service\ops\PlatformModuleOperationExecutionService;
+use app\platform\service\ops\PlatformOpsPermissionChecker;
 use app\platform\service\plugin\PluginPackageArchiveService;
 use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
@@ -233,7 +234,13 @@ try {
     $audit = AuditContractHost::fromPdo($pdo);
     $tasks = new PdoOpsTaskDispatcher($pdo, $audit);
     $maintenance = new PdoMaintenanceWindowStore($pdo, $audit);
-    $platform = new PlatformModuleOperationExecutionService($pdo, $tasks, $requests, $runtime);
+    $platform = new PlatformModuleOperationExecutionService(
+        $pdo,
+        $tasks,
+        $requests,
+        $runtime,
+        new PlatformOpsPermissionChecker($pdo),
+    );
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
 

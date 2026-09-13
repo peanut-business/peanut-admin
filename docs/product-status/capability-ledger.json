@@ -358,7 +358,7 @@
         "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
         "server/app/platform/service/ops/RestoreVerificationEvidence.php",
         "server/app/platform/service/ops/PlatformBackupCenterService.php",
-        "server/app/platform/service/ops/PlatformOpsRuntimeFactory.php",
+        "server/app/AppService.php",
         "server/database/migrations/20260827-create-ops-backup-evidence.sql",
         "server/database/migrations/20260827-create-ops-restore-evidence.sql",
         "scripts/ops-backup-worker",
