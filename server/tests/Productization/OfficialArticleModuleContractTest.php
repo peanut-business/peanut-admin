@@ -32,12 +32,11 @@ officialArticleExpect(
 );
 officialArticleExpect(
     ($manifest['contracts']['exports'] ?? null) === [
-        'app\\Modules\\Official\\Article\\Contracts\\ArticleModuleAccess',
         'app\\Modules\\Official\\Article\\Contracts\\ArticleAdministration',
         'app\\Modules\\Official\\Article\\Contracts\\ArticleQueries',
         'app\\Modules\\Official\\Article\\Contracts\\PublicArticleQueries',
     ],
-    'official Article public contracts did not converge to four interfaces',
+    'official Article public contracts did not converge to three consumed interfaces',
 );
 officialArticleExpect(
     ($manifest['backend']['migrations'] ?? null) === 'Database/Migrations'
@@ -96,7 +95,6 @@ $legacyHostRoutes = implode('', array_map(
     ['app.php', 'platform.php', 'tenant.php', 'admin.php', 'public_api.php'],
 ));
 $repository = (string)file_get_contents($moduleRoot . '/Infrastructure/Persistence/ArticleTenantRepository.php');
-$capability = (string)file_get_contents($moduleRoot . '/Application/ArticleCapabilityAuthorization.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicTenantModuleMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
 $publicArticles = (string)file_get_contents($moduleRoot . '/Application/PublicArticleService.php');
@@ -212,7 +210,6 @@ officialArticleExpect(
         && !str_contains($repository, "['tenant_id' =>"),
     'Article repository reintroduced per-query Module or Tenant enforcement',
 );
-officialArticleExpect(str_contains($capability, 'assertTenant('), 'Article typed target lost TenantModule enforcement');
 officialArticleExpect(
     str_contains($publicMiddleware, '$this->entryBindings->system(')
         && str_contains($publicMiddleware, 'assertHttp($moduleKey, $operation)')

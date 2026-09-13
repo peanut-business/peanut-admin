@@ -8,8 +8,6 @@ use app\Modules\Official\Article\Model\Article;
 use app\Modules\Official\Article\Model\ArticleCate;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\Modules\Official\Article\Application\ArticleCapabilityAuthorization;
-use app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess;
 use app\common\service\decoration\DecorationSchemaService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -161,7 +159,6 @@ if (in_array('--collect-member-fk', $argv ?? [], true)) {
 $serverRoot = dirname(__DIR__, 2);
 foreach ([
     'app/common/execution/CurrentExecutionContext.php',
-    'app/Modules/Official/Article/Application/ArticleCapabilityAuthorization.php',
     'app/Modules/Official/Article/Model/Article.php',
     'app/Modules/Official/Article/Model/ArticleCate.php',
     'app/Modules/Official/Article/Model/ArticleCollect.php',
@@ -411,16 +408,6 @@ SQL);
             expectArticleTenant($exception->getMessage() === '文章链接必须指向存在且可见的文章', 'decoration target enumerated Tenant ownership');
         }
     }
-
-    $authorization = new ArticleCapabilityAuthorization(
-        new PdoArticleModuleAccess($pdo),
-        app(ArticleQueries::class),
-        static fn(): bool => true,
-    );
-    $expectedDenied = ['ARTICLE_CAPABILITY_DENIED', 404, 'Article capability is unavailable.'];
-    expectArticleTenant(deniedShape(fn() => $authorization->authorizedContext($alpha, '22', 'write')) === $expectedDenied, 'CAP06 adapter exposed cross-tenant Article');
-    expectArticleTenant(deniedShape(fn() => $authorization->authorizedContext($alpha, '999999', 'write')) === $expectedDenied, 'CAP06 missing target denial shape changed');
-    expectArticleTenant($authorization->authorizedContext($beta, '22', 'write')->tenantContext->tenantId === 202, 'Beta positive typed target failed');
 
     expectArticleTenant(
         app(ExecutionContextStore::class)->run(

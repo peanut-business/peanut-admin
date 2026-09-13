@@ -5069,20 +5069,6 @@
             "source_sha256": "baaf9fcd22a7fa35f3c48ecbd450fad99c69dce678022cde44c3c5b354bbcec8"
         },
         {
-            "path": "server/app/Modules/Official/Article/Application/ArticleCapabilityAuthorization.php",
-            "target": "server/app/Modules/Official/Article/Application/ArticleCapabilityAuthorization.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "e9a68f5219258fd67a23e30462355287c0522bde9132fd69340d648cb411d36d"
-        },
-        {
             "path": "server/app/Modules/Official/Article/Application/ArticleQueryService.php",
             "target": "server/app/Modules/Official/Article/Application/ArticleQueryService.php",
             "classification": "app-owned",
@@ -5123,20 +5109,6 @@
                 "full"
             ],
             "source_sha256": "4c76429e594db86e3833639ba29284e1dbf41667d671a44443c168f5097f95de"
-        },
-        {
-            "path": "server/app/Modules/Official/Article/Contracts/ArticleModuleAccess.php",
-            "target": "server/app/Modules/Official/Article/Contracts/ArticleModuleAccess.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "41b1a727e4f0b48d909b4f0d2a9bb74e61a3def5bd31a79b67e9666eaf7cc2b3"
         },
         {
             "path": "server/app/Modules/Official/Article/Contracts/ArticleQueries.php",
@@ -5237,20 +5209,6 @@
             "source_sha256": "792c428acef50a4005a9d9e388ed0a320fa14ff2e2ebf5d95f5fb82ba89217c9"
         },
         {
-            "path": "server/app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php",
-            "target": "server/app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "e253c42c4f55fd4eca34af869e5e1ed2d23d20f9e26c3056bf8903d184e5eca1"
-        },
-        {
             "path": "server/app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php",
             "target": "server/app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php",
             "classification": "app-owned",
@@ -5318,7 +5276,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "106e4861405912c9c62201e2137e30e96f57c7201154104ff897876a26867a96"
+            "source_sha256": "9fc69585740704d0f0bd5419b5666b0e13befeb1d92b01a680c2502eba5e2f8c"
         },
         {
             "path": "server/app/Modules/Official/Article/Resources/menus.json",
@@ -5416,7 +5374,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "109b2bd3295c1ef94af1423fa1c672d7949497ca898e8dae3bc223f483432e65"
+            "source_sha256": "039270ca27472d822e53102b3e795dd3e7b398e82f3fa35d02ea950792db3e51"
         },
         {
             "path": "server/app/Modules/Official/File/Application/FileAdministrationService.php",
@@ -16888,7 +16846,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "99e4aadeadf8bdd1b62cd315f2a90aa401b47ba59ce9733b07a006c721a40a53"
+            "source_sha256": "56b015526abd053363a999bff78ba6962bc7f629af3c24f60c42d661e027ae0d"
         },
         {
             "path": "server/tests/Multitenancy/OperationLogTenantIsolationTest.php",

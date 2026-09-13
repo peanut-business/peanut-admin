@@ -94,7 +94,6 @@ foreach ([
     'deployed_module_registry' => 'app/platform/service/module/DeployedTenantModuleRegistry.php',
     'fixture_module_access' => 'app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php',
     'official_article_manifest' => 'app/Modules/Official/Article/module.json',
-    'official_article_access' => 'app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php',
     'official_article_public' => 'app/api/middleware/PublicTenantModuleMiddleware.php',
     'member_token' => 'app/api/service/UserTokenService.php',
     'jwt_config' => 'config/jwt.php',
@@ -397,12 +396,11 @@ foreach (array_diff(array_keys($matrix), ['tenant_module', 'official_article_mod
 }
 qualificationExpect(
     str_contains($sources['official_article_manifest'], '"key": "official.article"')
-        && str_contains($sources['official_article_access'], 'ModuleGuard')
-        && str_contains($sources['official_article_access'], 'public function assertTenant(')
-        && str_contains($sources['official_article_access'], 'assertMemberAccess(')
+        && str_contains($sources['official_module_middleware'], 'ModuleExecutionBoundary')
         && str_contains($sources['official_article_public'], '$this->entryBindings->system(')
+        && str_contains($sources['official_article_public'], 'ModuleExecutionBoundary')
         && str_contains($sources['article_repository'], 'return Article::where([])'),
-    'official Article Module is not guarded across deployment, Tenant and public Host boundaries'
+    'official Article Module is not guarded by the shared execution and public Host boundaries'
 );
 qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")

@@ -209,7 +209,6 @@ pluginModuleContractExpect(
 );
 
 $officialAutowireTargets = [
-    \app\Modules\Official\Article\Contracts\ArticleModuleAccess::class => \app\Modules\Official\Article\Infrastructure\Authorization\PdoArticleModuleAccess::class,
     \app\Modules\Official\Article\Contracts\PublicArticleQueries::class => \app\Modules\Official\Article\Application\PublicArticleService::class,
     \app\Modules\Official\Article\Contracts\ArticleAdministration::class => \app\Modules\Official\Article\Application\ArticleAdministrationService::class,
     \app\Modules\Official\File\Contracts\FileAdministration::class => \app\Modules\Official\File\Application\FileAdministrationService::class,

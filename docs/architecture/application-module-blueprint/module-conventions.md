@@ -133,7 +133,7 @@ contract/
 
 同一 owner 面向不同受众时分别公开，例如：
 
-- Article：`ArticleAdministration`、`PublicArticleQueries`、`ArticleQueries`、`ArticleModuleAccess`；
+- Article：`ArticleAdministration`、`PublicArticleQueries`、`ArticleQueries`；Module 可用性由共享入口边界统一裁决；
 - Member：`MemberAdministration`、`MemberSelfService`、`MemberIdentityCommands`、`MemberBalanceCommands`；
 - Payment：`RechargeCheckout`、`PaymentCallbackCommands`、`RefundAdministration`、`RefundReconciliation`；
 - Task：`ScheduleAdministration`、`TaskSubmission`、`TaskExecution`。
