@@ -54,7 +54,8 @@ Plugin 身份另存于 `plugins/<module.key>/plugin.json`，bundled 部署身份
 - 应用服务直接使用 ThinkPHP Model、Query 和 Scope，并通过组合根完成构造函数注入。不得仅为了
   隔离 ThinkPHP 而新增 Repository、Port、Persistence Adapter 或兼容桥。
 - 新 Module 只使用复数 `Services/`；不要由生成器创建 `Application/`，也不要手工以 PDO 或
-  Factory 作为业务装配替代品。既有 Module 的目录不因本规则被批量迁移。
+  Factory 作为业务装配替代品。Peanut Admin 源仓中的存量业务服务仍属待迁移范围，完成条件见
+  `docs/architecture/application-module-blueprint/coding-standards.md`；已有派生应用由各自维护者决定采用范围。
 - `Contracts/` 只用于 Module 对外公开且确有跨 Module 消费者的稳定命令/查询合同；不得把每个内部
   Service 镜像成 Interface。
 - `Infrastructure/` 只容纳确有必要的外部系统或技术适配。Module 自有表仍由本 Module 的 Model/Scope
@@ -76,8 +77,8 @@ php think module:sync --module=<module.key>
 `module:check` 是只读作者预检，覆盖 manifest、版本、依赖、权限、菜单、migration、前端入口和
 Package。它不是业务行为、Tenant 隔离、浏览器或厂商集成测试的替代品。
 
-实现完成后，运行该 Module 的真实聚焦测试；不得把测试正文替换成输出 `PASSED` 后 `exit(0)` 的
-占位脚本。需要暂缓的 Gate 应记录为明确停止线，不能伪装成通过。
+实现完成后按仓库内 `docs/architecture/application-module-blueprint/coding-standards.md` 的开发检查策略核对；
+发布前的实际质量要求仍须满足。不得把测试正文替换成输出 `PASSED` 后 `exit(0)` 的占位脚本。
 
 ## 5. 打包与交付
 

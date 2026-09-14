@@ -1,7 +1,8 @@
 # Application 与 Module 代码规范
 
-本规范以当前 `ModuleHostLayout`、`module:create` 生成器、现行 Module 源码和
-`AGENT_EXECUTION_RULES.md` §6 为准。它约束目标实现，不把未完成的目录迁移写成已落地事实。
+本文是 Application 与 Module 目录和代码职责的统一规范入口，遵循最新有效用户决定及
+`AGENT_EXECUTION_RULES.md` §6 的适用架构要求。`ModuleHostLayout`、`module:create` 生成器和
+现行源码用于核对实现情况；存量实现不能反向改变已确认目标，也不能把未完成的迁移写成已落地事实。
 
 ## 1. 目录、namespace 与 key
 
@@ -24,8 +25,11 @@
   兼容桥；
 - `Contracts/` 只在存在真实跨 Module 消费者时定义稳定业务合同，且不能暴露 PDO、ORM Model 或
   Module-owned 表名。
-- 新 Module 不生成 `Application/`。该目录名不是迁移现有 Module 的指令；普通 App 服务仍采用
-  小写 `services/` 目录。
+- 新 Module 不生成 `Application/`。Module 业务服务统一进入大写复数 `Services/`；普通 App 的业务服务
+  统一进入小写复数 `services/`。非业务类按合同、值对象、策略等真实职责归属，保持所属 App 或 Module
+  的目录及 namespace 大小写约定。既有业务服务中的 `Application/application` 属于已确认整改范围，按原 owner
+  认领的完整业务切片退出；每一切片同步更新真实调用、namespace、装配、生成器及受影响路径检查，不做
+  全量盲改，也不新增兼容桥。这里保留 Application Service 作为语义术语。
 
 ## 3. Tenant、权限与失败
 
@@ -41,9 +45,14 @@
 `/adminapi/official.article.list`；路径不要求与 Controller 的物理目录逐段同名。前端由
 `contribution.ts` 声明路由和权限，并由 `module.json.frontend.entry` 固定其 key 派生路径。
 
-## 5. 验证与发布
+## 5. 存量退出、验证与发布
+
+本规范的完成条件是规则、生产调用、新生成入口、相关路径检查与开发说明一致；按业务切片实施不缩小既有服务目录统一目标，
+只改新生成器或只完成某个切片，都不能关闭整体目录整改；已确认范围的存量业务服务与调用未全部退出旧路径前，整体保持未完成。
+生成器改好不等于存量迁移完成，旧业务目录剩余项沿用现有问题登记，不建立第二套总账。Peanut 本仓开发期间只做直接必要的语法/类型/构建/启动与实际操作；
+自动测试须用户明确授权后运行，未授权不等于普通开发 blocked。发布资格测试和人工 Gate 仍保留。
 
 `module:check` 只负责作者静态预检；真实行为、Tenant/RBAC、migration、浏览器和外部 Provider 仍由
-对应聚焦测试负责。任何测试跳过必须以明确的 stopped/blocked 证据出现，不能输出 `PASSED` 后提前
-退出。Module 交付制品、状态和门禁见
+对应聚焦测试负责。开发期自动测试仅在用户明确授权后运行；已存在或已授权的测试不得用输出 `PASSED`
+后提前退出的占位实现冒充通过。Module 交付制品、状态和门禁见
 [Module 发布与制品合同](../module-publication-contract.md)。

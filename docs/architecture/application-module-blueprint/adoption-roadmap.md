@@ -10,6 +10,8 @@
 - **实施前核验**：必须用框架、精确 Core identity 或源码证明，未通过前不得开始依赖它的 Runtime 修改；
 - **完成证据**：固定 diff/commit/tree 与当前候选验证；计划、开放 PR、旧候选和文档本身都不是实现证据。
 
+下文“最低验证”描述候选资格所需证据，不自动启动开发期测试；Peanut 本仓的自动测试只在用户明确授权后运行。
+
 正式可消费源码、Tag、GitHub Release 和登记的多租户 Demo 已更新到 `v3.0.14`；版本状态不改变本路线图中
 尚未完成的 Runtime 架构迁移。架构实施不能继承 Release 资格或用部署状态提前改写实现状态。
 
@@ -22,7 +24,7 @@
 | `adminapi`、`api`、`platform` 目录和战略受众 | 升格为真正 Application | 不复制 Module 业务规则 |
 | `ExecutionContextStore` 的 scope/`finally` 机制 | 保留生命周期机制 | 退出 union Context、任意 attributes 和 actor 混用 |
 | Module `module.json`、registry、lock、权限/菜单和迁移声明 | 保留事实源 | manifest 最终删除 `backend.routes`；migration 只改 `owned_tables` |
-| Module `Application/contract/Model/Infrastructure` | 按需保留 | 不强制空 Domain/Repository/Event 层 |
+| Module `Application/` 与 `Contracts/`、`Model/`、`Infrastructure/` | 业务服务按认领切片退出 `Application/`；其余目录按真实职责保留 | 不强制空 Domain/Repository/Event 层，不误删有效合同、模型和适配器 |
 | 容器 binding 与构造器注入 | 收口到唯一 composition root | provider 只贡献启动期 binding |
 | Core Task Job/Attempt/lease/fencing、幂等、Audit、Outbound HTTP 基础 | 复用并校准 | 不把基础机制当成共享受众语义 |
 | 服务登记、资源登记、文档治理和发布控制 | 保留 | 不替代 Module、Schema、Release 或 Runtime 事实源 |
@@ -36,7 +38,7 @@
 | 当前事实 | 目标动作 |
 | --- | --- |
 | `server/route/app.php` 统一 require Admin/API/Platform/Tenant/Module route | 每个 endpoint 纵向硬切；最后一个域完成后关闭根业务装载 |
-| Official/fixture Module 含 `Http/Controller`、`Http/routes.php`、`Validation` | 入口移到消费 Application；Module 只留 owner 能力 |
+| 根路由、Application 与 Module 可能同时承载业务入口 | 业务 Controller 与可执行路由收敛到 owner Module 的 `Http/`；宿主 Application 保留并强制注入身份、安全与响应边界 |
 | manifest `backend.routes` | 对应 Module 迁移时删除；最终 schema 与结构门禁拒绝 |
 | 请求期 `new *ModuleProvider()`、业务 `app()`/Facade、Runtime factory | 唯一 root 启动期装配，业务构造器注入 |
 | 根 `AppService` 同时绑定基础设施、Host 和 Module 业务 | 根只留真共享基础，各 owner provider 贡献 binding |
@@ -44,7 +46,7 @@
 | Consumer/Provider/Worker 借用 System 或 Admin actor | 分别使用强类型 Consumer/Provider/System Context |
 | 通用 Context discriminator、union scope、任意 attributes | 每个顶层执行单元恰好一个 audience/Host 专属强类型 Context；tenant-scoped 端口恰好一个 current Tenant，认证、instance-public 与 Platform 明确 tenantless |
 | Application 或其他 Module 直写 owner Model/表 | 只调受众明确的公开 Query/Command |
-| 生成器继续产出 `Http/routes/Validation` | Article 样板后一次替换生成器、stub、作者检查和位置型断言 |
+| 旧生成器产出 `Application/` 或额外形式主义层 | 样板后一次替换生成器、stub、作者检查和位置型断言；保留 `Http/routes.php`、`Http/Controller/` 与 `ModuleProvider.php` |
 
 ## 3. 唯一迁移规则
 
@@ -52,7 +54,7 @@
 它不是 fallback，也不得与新 Application 同时注册同一个 method/path。每个域的 route、Controller、validation、窄端口、
 Context、授权、Tenant/DataScope、事务、审计和客户端/OpenAPI 在同一切片切换，旧入口同时退出。
 
-只有最后一个域迁完后，才关闭根业务 route、独立 `tenant` 入口和剩余 Module HTTP。`integrationapi` 不在地基阶段预建；
+只有最后一个域迁完后，才关闭根业务 route 中的重复业务入口与独立 `tenant` 入口；owner Module 的 HTTP 路由继续由宿主安全链挂载。`integrationapi` 不在地基阶段预建；
 它与首个真实 Payment/OAuth callback 同一切片创建。
 
 ## 4. 五个实施工作包
@@ -106,17 +108,17 @@ Context、授权、Tenant/DataScope、事务、审计和客户端/OpenAPI 在同
 
 **范围**：
 
-1. Admin route/controller/validate 调 `ArticleAdministration`；
-2. 匿名目录与会员收藏统一调用 `PublicArticleQueries`；
+1. Article Module 的 Admin route/controller/validate 调 `ArticleAdministration`，由 `adminapi` 宿主挂载管理身份与权限链；
+2. 同一 Module 的匿名目录与会员收藏入口调用 `PublicArticleQueries`，由 `api` 宿主挂载各自入口边界；
 3. 三端口分别接收强类型 Context/actor、scope、输入/输出 DTO，不接收 `actorType` 或任意 filters；
 4. Article owner 独占规则、Repository、`pa_article*` 表与事务；收藏显式声明 Member 依赖；
-5. 同切片删除 Article `Http/Validation`、`backend.routes`、手工 Provider locator 和旧位置断言；
-6. 样板通过后，一次替换 Module 生成器、stub、作者检查和新 Module 结构门禁，不生成旧目录或兼容开关；
+5. 同切片删除 Article 在根/Application 中的重复业务入口、`backend.routes`、手工 Provider locator 和旧位置断言，保留 owner Module 的 `Http/`；
+6. 样板通过后，一次替换 Module 生成器、stub、作者检查和新 Module 结构门禁，不生成 `Application/` 旧目录或兼容开关；
 7. 其余未迁移 Module 继续由显式暂态 inventory 承载，只减不增。
 
 **最低验证**：Admin CRUD 权限 + Tenant ownership + 对象 DataScope；匿名目录固定 published/not-deleted 谓词；会员只能
 修改自己的收藏；TenantModule disabled 拒绝；Context 类型错配不能调用；Article migration touched tables 是
-`owned_tables` 子集；新生成 Module 不含 `Http/routes/Validation/backend.routes`。
+`owned_tables` 子集；新生成 Module 包含现行 `Http/routes.php`，且不含 `Application/`、额外 `Validation/` 或 `backend.routes`。
 
 **停止线**：Consumer 能传隐藏过滤、Application 直引 Article Model、同一规则有两份实现、收藏绕过 Member/Module
 资格、旧 Article endpoint 仍可达或新生成器仍产旧结构时，阻塞后续 Module 模板采用。
@@ -135,7 +137,7 @@ Context、授权、Tenant/DataScope、事务、审计和客户端/OpenAPI 在同
   `integrationapi`，Provider receipt、资金事务和 unknown-result recovery 必须串行收口；
 - `plugins.lock`、Core lock、根 route inventory、共享 generator 和 catalog 始终只有一个 owner。
 
-**每域必须同时完成**：Application route/controller/validate、受众窄端口/DTO、每个顶层单元恰好一个强类型 Context、
+**每域必须同时完成**：owner Module 的 route/controller/validation、Application 宿主挂载、受众窄端口/DTO、每个顶层单元恰好一个强类型 Context、
 tenant-scoped 端口恰好一个 current Tenant、tenantless 端口显式声明、入口授权、对象 DataScope、owner
 transaction/participant、幂等、强制 Audit、错误映射、旧入口/locator 删除、manifest/migration owner。
 
@@ -153,7 +155,7 @@ lease/fencing/retry/dead 和异常清理；外部 HTTP 明确位于 DB 事务外
 
 **结构关闭**：
 
-1. 最后一个域迁完后删除根业务 route require、独立 `tenant` Application 和剩余 Module `Http/Validation`；
+1. 最后一个域迁完后删除根业务 route 中的重复入口与独立 `tenant` Application；Module 保留 owner `Http/`，旧的额外 `Validation/` 退出；
 2. 所有 manifest 删除 `backend.routes`，所有 Module migration 只修改 `owned_tables`；
 3. 删除请求期 Provider accessor、业务 Service Locator、第二 root、静态 Runtime factory、union Context/attributes；
 4. 删除业务回流 `common`、跨 Module Model/Infrastructure import、宽泛万能 CRUD 和旧生成器路径；
@@ -216,7 +218,7 @@ WP2 Article 样板 + 新生成合同
 
 门禁至少拒绝：
 
-- Module 下 `Http/Controller`、`Http/routes.php`、`Validation` 或 manifest `backend.routes`；
+- Module `Http/routes.php` 绕过宿主身份、安全或 Module/RBAC 链，存在重复业务入口、额外 `Validation/`，或 manifest 保留 `backend.routes`；
 - Module migration touched table 不属于自身 `owned_tables`；
 - 根路由 require 业务 route，或相同 method/path 在新旧入口重复注册；
 - 业务代码 `new *ModuleProvider()`、`app()`/Facade、静态 Runtime factory 或第二 composition root；
@@ -246,7 +248,7 @@ WP2 Article 样板 + 新生成合同
 - 不迁移 Hyperf/Swoole，不拆微服务；
 - 不增加旧 URL、旧 Controller、旧 Service、旧 manifest 字段的兼容代理；
 - 不建立双写、镜像、备用 Runtime 或隐式 fallback；
-- 不把所有 Service 重命名，不为目录对称创建空层；
+- 不把所有 Service 盲重命名，不为目录对称创建空层；
 - 不顺手改变业务字段、表、产品流程、Core/Module release policy 或前端架构；
 - 不为本设计冻结运行数据库、服务、Compose、浏览器或 P0-E。
 

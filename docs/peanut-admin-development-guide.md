@@ -189,15 +189,23 @@ commit/tree；worker 把两者成对交给 `deploy-release`，后者先核对远
 
 ## 开发最小路径
 
-1. 在 `server/app/Modules/<Vendor>/<Module>/` 定义 `Domain`、`Application`、`Contracts`、
-   `Infrastructure`、`Database/Migrations`、`Resources` 和 `Tests`。
-2. Module 表必须有明确 Tenant owner；SQL、唯一键、关联、缓存、文件和任务都保留 Tenant
-   维度。请求参数不得覆盖可信 TenantContext。
-3. 对外只公开命令接口和只读 DTO。调用方依赖 `Contracts`，由 Host/Provider 绑定实现。
+目录与服务职责统一按 [Application 与 Module 代码规范](architecture/application-module-blueprint/coding-standards.md)
+执行；本节只列开发步骤，不另设目录合同。规范说明的目标不等于现有源码已经全部迁移。
+
+1. 使用 `module:create` 在 `server/app/Modules/<Vendor>/<Module>/` 创建模块。在 `Services/`
+   实现业务用例，按职责使用 `Http/Controller/`、`Model/`、`Contracts/`、`Infrastructure/`、
+   `Database/Migrations/` 和 `Resources/`；不为目录对称创建空层。路由使用可执行的 `Http/routes.php`
+   并接入宿主认证、Module 与权限中间件，`ModuleProvider.php` 负责真实启动装配。
+2. Module 表必须有明确 Tenant owner；Tenant-owned Model 使用全局 TenantScope，禁止由业务代码
+   手写租户过滤或绕过 Scope。唯一键、关联、缓存、文件和任务也须保留适用的 Tenant 维度，
+   请求参数不得覆盖可信 TenantContext。
+3. 只有确有跨 Module 消费者时才在 `Contracts/` 公开稳定命令、查询和只读 DTO；不为内部 Service
+   镜像接口。真实接口由 Host/Provider 绑定，普通具体类采用构造函数注入。
 4. 管理端 contribution 放在 `web/src/modules/<module>/`，菜单和权限由 Module Resources
    声明；Plugin 安装、TenantModule 开通、成员 RBAC 是三道独立 Gate。
-5. 最低测试覆盖 Tenant A 正常读写、Tenant B 读取/写入同一 ID 被拒绝、Tenant 暂停、
-   Module 未开通和伪造资源 ID。
+5. 实现必须保证 Tenant A 正常读写、Tenant B 访问同一资源 ID 被隔离，并拒绝 Tenant 暂停、
+   Module 未开通和伪造资源 ID 等不合格请求。本仓维护的开发检查执行上述规范中的开发期策略；
+   自动化测试按明确授权的范围开展，未运行不记为通过，发布资格及人工 Gate 仍须满足。
 
 完整纵向示例、目录树、跨 Module 商品入库流程和常见错误见公开文档的
 [Module 开发教程](https://peanut-admin-doc.007345.xyz/guide/module-development)。API 响应、

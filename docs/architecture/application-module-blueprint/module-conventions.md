@@ -16,45 +16,26 @@ Module 只回答三个问题：
 
 ## 2. 标准 Module 目录
 
-```text
-modules/official-article/
-├── module.json                 # 唯一身份、依赖、资源、公开合同和数据 owner 声明
-├── server/
-│   ├── composer.json           # PSR-4 声明
-│   ├── routes.php              # 声明式路由映射（不含鉴权逻辑）
-│   ├── controller/            # Module 各端口 Controller
-│   │   ├── adminapi/
-│   │   └── api/
-│   ├── service/               # 业务逻辑、用例、事务边界（替代原 Application）
-│   ├── contract/              # 只放真正对外公开的 PHP 能力/DTO/已冻结 fact
-│   ├── model/                 # Module 自有 ThinkORM Model
-│   ├── database/migrations/    # Module 自有 append-only migration
-│   ├── resource/              # permissions、menus、settings 等声明
-│   └── infrastructure/         # 可选：外部 Provider 适配
-└── web/                        # 前端资产
-    ├── package.json
-    ├── contribution.ts         # 动态路由扫描入口
-    └── views/
-```
-
-目标态中，Module 是一个全栈自闭环的物理目录。为了支持插件市场的独立打包与分发，Controller 和路由表（`routes.php`）重新回到 Module 目录内部，但**严格禁止在路由表中直接写死租户上下文或安全中间件**；这部分安全防腐层由宿主 Application 在挂载时动态注入。同时，全面废除 `Application` 和 `Domain` 这种 DDD 形式主义目录，收敛为 `service`。
+目录矩阵以[核心代码规范与认知模型统一指南](coding-standards.md)为唯一入口：Module 根为 `server/app/Modules/<Vendor>/<Module>/`，namespace 为 `app\\Modules\\<Vendor>\\<Module>`，前端为 `web/src/modules/<module-slug>/`。现行根内包含 `module.json`、`ModuleProvider.php`、`Http/routes.php`、`Http/Controller/`；按需使用 `Services/`、`Contracts/`、`Model/`、`Infrastructure/`、`Resources/`、`Database/Migrations/`。
 
 ## 3. 哪些目录必须有，哪些按需增加
 
 | 目录/文件 | 默认 | 放什么 | 不放什么 |
 | --- | --- | --- | --- |
 | `module.json` | 必须 | key、version、依赖、权限资源、公开 Contract、自有表 | Runtime 状态、`backend.routes`、重复路由表 |
-| `server/routes.php` | 必须 | 纯声明式路由表，划分 admin/consumer 组 | 中间件调用、权限判断逻辑 |
-| `server/controller/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
-| `server/service/` | 必须 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
-| `server/model/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
-| `server/database/migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
-| `server/resource/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
-| `server/contract/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
-| `server/infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
-| `web/` | 必须 | 插件完整前端资产（含 vue 和路由贡献脚本）| - |
+| `Http/routes.php` | 必须 | 可执行 ThinkPHP 路由，接入 Host 认证、Module、RBAC 中间件 | 绕过宿主安全链 |
+| `Http/Controller/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
+| `Services/` | 生成；有用例时使用 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
+| `Model/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
+| `Database/Migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
+| `Resources/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
+| `Contracts/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
+| `Infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
+| `web/src/modules/<module-slug>/` | 必须 | 插件完整前端资产（含 vue 和路由贡献脚本）| - |
 
-空目录不提交。简单字典 CRUD 通常只需 `routes.php + controller + service + model + Database + web`。所有 Module 使用同一允许清单，心智模型稳定。**彻底废除原有的 `ModuleProvider.php`、`Application/` 和 `Domain/` 目录结构**。
+不为未列职责额外创建空层；生成器合同中的骨架目录可以用 `.gitkeep` 保留。简单字典 CRUD 按需使用
+`Http/routes.php + Http/Controller + Services + Model + Database/Migrations`。所有 Module 使用同一允许清单，
+心智模型稳定。`ModuleProvider.php` 保留为真实启动装配合同，不给内部 Service 镜像 interface。
 
 ## 4. 宿主 Application 内部目录
 
@@ -65,7 +46,7 @@ adminapi/
 ├── controller/
 │   ├── AuthController.php     # 仅保留宿主核心功能：管理登录、Tenant 选择等
 │   └── SystemController.php
-├── service/                  # 替代原 application/
+├── services/                 # Host 业务编排；替代旧 application/
 │   ├── Auth/
 │   └── Workbench/             # 确实需要跨 Module 聚合时才存在
 ├── middleware/
@@ -78,7 +59,7 @@ adminapi/
 
 业务 Module（如 `article`、`payment`）的 Controller 已经全部回归 Module 自身，`adminapi/controller/` 将变得非常轻量，**仅保留与核心鉴权、基础宿主配置相关的功能**。
 
-`adminapi/service/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 `modules/official-article/server/controller/adminapi/` 接管。Host 编排不得接管 owner Module 的业务事务。
+`adminapi/services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 Module 的 `Http/Controller/` 接管。Host 编排不得接管 owner Module 的业务事务。
 
 ## 5. Controller、Service、Model、Infrastructure 的职责
 
@@ -90,7 +71,7 @@ adminapi/
 | Model | 持久化 Module 自有数据 | 查询、锁行、保存、应用 DataScope | 代替权限 middleware、跨 owner 写表 |
 | Infrastructure | 对接技术细节 | SDK、外部 HTTP、文件、复杂持久化 | 决定业务成功状态 |
 
-一句话判断：Controller 说“请求长什么样”，Service 说“一次业务要完整完成什么”，Model/Infrastructure 说“数据和外部系统怎样读写”。彻底抛弃 Application/Domain 这种过重的心智负担。
+一句话判断：Controller 说“请求长什么样”，Service 说“一次业务要完整完成什么”，Model/Infrastructure 说“数据和外部系统怎样读写”。业务实现退出 `Application/Domain` 目录层次；Application Service 仍是有效的职责术语。
 
 ## 6. 跨 Module 调用
 
@@ -117,14 +98,14 @@ adminapi/
 Module 公开面越小越好：
 
 ```text
-contract/
+Contracts/
 ├── Dto/
 │   └── MemberBalanceSnapshot.php
 ├── MemberQueries.php
 └── MemberBalanceCommands.php
 ```
 
-只有真实提交后事实已经有具体消费者并另行冻结交付语义时，才在 `contract/` 增加对应 fact 类型；本蓝图明确
+只有真实提交后事实已经有具体消费者并另行冻结交付语义时，才在 `Contracts/` 增加对应 fact 类型；本蓝图明确
 排除 `Events/`、Event Bus 和 Outbox。未来如需可靠事件交付，必须以新的架构决定显式取代本合同。
 
 公开 DTO 使用标量、值对象和稳定枚举，不暴露 ThinkORM Model、PDO、Request、Response 或内部表字段。每个端口只
@@ -321,15 +302,15 @@ Attempt 新建 `SystemExecutionContext`，提交者只保留为 causation，完�
 
 ## 13. 生成器应该生成什么
 
-Module 生成器只生成最低骨架：manifest、`routes.php` 声明式模板、各端基础 Controller、`service` 示例骨架、Model/migration/web 前端脚手架。不再生成原有的 `ModuleProvider.php`。
+Module 生成器只生成最低骨架：manifest、可执行 `Http/routes.php` 模板、各端基础 Controller、`Services/` 目录、Model/migration/web 前端脚手架，并保留 `ModuleProvider.php`。
 
-目标生成器必须遵循新版架构规范（即 controller 与路由全栈回到 Module 目录中，但彻底去除鉴权决策逻辑）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑始终收敛在 `service/` 目录下。真实需求出现后再增加其它。
+目标生成器必须遵循新版架构规范（即 Controller 与路由全栈回到 Module 目录中，并接入认证、Module、RBAC 中间件）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑收敛在 `Services/` 目录下。真实需求出现后再增加其它。
 
 ## 14. 生命周期、升级和发布稳定面
 
 长期稳定合同只包含：Application ID/前缀/audience/错误语义、Module key、公开 Contract/DTO、permission key、
 `owned_tables`、migration key/checksum、Package identity、lock digest、Edition 和 Package/ModuleInstallation/
-TenantModule/RBAC 的分层。Controller 路径、根 route shim、`tenant` 独立入口、Module `Http/`、请求期 locator 和旧
+TenantModule/RBAC 的分层。Controller 类路径、根 route shim、`tenant` 独立入口、请求期 locator 和旧
 生成器输出都不是公共兼容面，可在对应纵向切片一次性替换。
 
 Module lifecycle 复用项目现有治理合同，对外顺序固定为 `check/preview → install|update → disable↔reactivate → retire →
