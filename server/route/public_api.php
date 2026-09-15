@@ -11,7 +11,6 @@ use app\api\controller\DecorationController as ApiDecorationController;
 use app\api\middleware\CheckTokenMiddleware;
 use app\api\middleware\PublicTenantModuleMiddleware;
 use app\common\infrastructure\module\OfficialModuleMiddleware;
-use app\modules\official\article\ModuleProvider as ArticleModuleProvider;
 use think\facade\Route;
 
 if (($peanutRouteApplication ?? null) !== 'api') {
@@ -70,4 +69,4 @@ Route::group(function () {
     Route::get('article/collect',        [ApiArticleController::class, 'collect']);
 
 })->middleware(CheckTokenMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ArticleModuleProvider())->moduleKey(), 'http.member');
+    ->middleware(OfficialModuleMiddleware::class, 'official.article', 'http.member');

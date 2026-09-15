@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\notification\ModuleProvider;
 use app\modules\official\notification\controller\NoticeChannelController;
 use app\modules\official\notification\controller\NoticeLogController;
 use app\modules\official\notification\controller\NoticeSceneController;
@@ -23,12 +22,12 @@ Route::group(function (): void {
     Route::get('official.notification.scene.detail', [NoticeSceneController::class, 'detail']);
     Route::post('official.notification.scene.save', [NoticeSceneController::class, 'save']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.notification', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
 }
 
 if (($peanutRouteApplication ?? null) === 'api') {
 Route::post('sms/sendCode', [ApiSmsController::class, 'sendCode'])
-    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.notice.verification', (new ModuleProvider())->moduleKey(), 'notice.verification.send');
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.notice.verification', 'official.notification', 'notice.verification.send');
 }

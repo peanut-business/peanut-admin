@@ -31,10 +31,12 @@ final class InstallationExecutionHost
     /** @return array<string,mixed> */
     public function status(): array
     {
+        $tenantBootstrap = \installationTenantBootstrapContract($this->serverRoot);
         $preflight = (new InstallationPreflightHost($this->serverRoot))->inspect();
         $base = [
             'mode' => $this->mode(),
             'deployment_mode' => $this->deploymentMode(),
+            'tenant_bootstrap' => $tenantBootstrap,
             'preflight' => $preflight,
             'official_modules' => $this->officialModules(),
         ];
@@ -311,6 +313,7 @@ final class InstallationExecutionHost
     private function health(array $moduleKeys): array
     {
         $pdo = $this->pdo();
+        $tenantBootstrap = \installationTenantBootstrapContract($this->serverRoot);
         $health = \assertCurrentDatabase($pdo);
         if ($moduleKeys !== []) {
             $placeholders = implode(',', array_fill(0, count($moduleKeys), '?'));
@@ -323,9 +326,9 @@ final class InstallationExecutionHost
             }
             $statement = $pdo->prepare(
                 "SELECT COUNT(*) FROM pa_tenant_module tm JOIN pa_tenant t ON t.id=tm.tenant_id "
-                . "WHERE t.code='default' AND tm.status='enabled' AND tm.module_key IN ({$placeholders})"
+                . "WHERE t.code=? AND tm.status='enabled' AND tm.module_key IN ({$placeholders})"
             );
-            $statement->execute($moduleKeys);
+            $statement->execute([$tenantBootstrap['code'], ...$moduleKeys]);
             if ((int)$statement->fetchColumn() !== count($moduleKeys)) {
                 throw new RuntimeException('Default Tenant Module selection is incomplete.');
             }

@@ -39,7 +39,7 @@ final readonly class EditionProfile
             || array_keys($document) !== ['schema_version', 'protocol', 'generator_version', 'editions']
             || ($document['schema_version'] ?? null) !== 1
             || ($document['protocol'] ?? null) !== 'peanut.edition-profiles.v1'
-            || ($document['generator_version'] ?? null) !== 1
+            || ($document['generator_version'] ?? null) !== 2
             || !is_array($document['editions'] ?? null)
             || array_keys($document['editions']) !== self::EDITIONS
             || !is_string($raw)) {
@@ -71,6 +71,7 @@ final readonly class EditionProfile
             'admin_bundle' => $this->definition['admin_bundle'],
             'platform_bundle' => $this->definition['platform_bundle'],
             'module_profile' => $this->definition['module_profile'],
+            'tenant_bootstrap' => $this->definition['tenant_bootstrap'],
             'schema' => $this->definition['schema'],
         ];
     }
@@ -107,12 +108,20 @@ final readonly class EditionProfile
         if (!is_array($definition) || array_is_list($definition)
             || array_keys($definition) !== [
                 'deployment_mode', 'data_scope_policy', 'admin_bundle',
-                'platform_bundle', 'module_profile', 'schema',
+                'platform_bundle', 'module_profile', 'tenant_bootstrap', 'schema',
             ]
             || ($definition['deployment_mode'] ?? null) !== $edition
             || ($definition['admin_bundle'] ?? null) !== $edition
             || !is_bool($definition['platform_bundle'] ?? null)
             || ($definition['module_profile'] ?? null) !== 'official-default'
+            || ($definition['tenant_bootstrap'] ?? null) !== [
+                'kind' => 'real-default-tenant',
+                'code' => 'default',
+                'tenant_identity' => 'required',
+                'rbac' => 'required',
+                'execution_context' => 'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+                'module_lifecycle' => 'required',
+            ]
             || !is_array($definition['schema'] ?? null)
             || array_keys($definition['schema']) !== [
                 'projection', 'retains_core_tenant_identity', 'table_rules',

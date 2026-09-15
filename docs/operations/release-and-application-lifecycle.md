@@ -61,7 +61,10 @@ php scripts/create-app \
 
 当前正式清单采用 `full` profile；`--edition` 必须选择 `standalone` 或 `multi-tenant`，生成后不能
 当作运行开关切换。目标中的 `.peanut/application-manifest.json` 固定 scaffold 来源、受管基线、
-生成参数和 managed/app-owned 摘要。应用 owner 随后初始化自己的 Git 仓库并登记自己的数据库、
+生成参数、Edition 的 `real-default-tenant` bootstrap 合同和 managed/app-owned 摘要。该合同要求
+两种 Edition 的首次安装都创建真实 `default` Tenant，并保留 Tenant identity、RBAC、
+`TenantSystemContext` 与 TenantModule 生命周期；Standalone 仅省略 Platform 控制面，不能把默认
+Tenant 解释为业务查询 fallback。应用 owner 随后初始化自己的 Git 仓库并登记自己的数据库、
 端口、域名、外部服务和凭据引用。
 
 `create-app` 是首次创建入口。已经存在的应用禁止再次运行生成器覆盖目录；重新生成会绕开三方比较，

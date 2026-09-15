@@ -21,7 +21,7 @@ require_once dirname(__DIR__, 3) . '/platform/service/plugin/PluginLockResolver.
 final class ApplicationCreator
 {
     private const CLASSIFICATIONS = ['managed', 'generated-managed', 'app-owned', 'excluded'];
-    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices', 'version-contract'];
+    private const TRANSFORMS = ['copy', 'text', 'brand', 'brand-asset', 'changelog', 'ci', 'docs-page', 'environment-guard', 'release-metadata', 'resources', 'readme', 'license', 'modules-config', 'package', 'plugins-lock', 'sbom', 'third-party-notices', 'version-contract', 'composer-lock'];
     private const VARIABLES = ['APPLICATION_VERSION', 'PACKAGE_IDENTITY', 'PRODUCT_NAME', 'SLUG'];
     private const PROFILES = ['minimal', 'standard', 'full'];
     private const WRITABLE_DIRECTORIES = [
@@ -97,7 +97,7 @@ final class ApplicationCreator
                 if (!is_string($content)) {
                     throw new RuntimeException('CREATE_APP_SOURCE_READ_FAILED: ' . $entry['path']);
                 }
-                $content = $this->transform($content, $entry, $parameters);
+                $content = $this->transform($content, $entry, $parameters, $stage);
                 $destination = $stage . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, (string)$entry['target']);
                 $this->writeFile($destination, $content, (int)$entry['mode']);
                 $files[] = [
@@ -310,14 +310,14 @@ final class ApplicationCreator
                 || !hash_equals((string)$artifact['template_sha256'], hash('sha256', $artifactContent))) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_DIGEST_MISMATCH: ' . $path);
             }
-            $rendered = $this->replaceReleaseTokens($artifactContent, $tokens, $renderParameters);
+            $rendered = $this->renderAdoptionArtifact($adoption, $artifact, $tokens, $renderParameters);
             if (!$this->isDerivedPluginArtifact($path)
                 && !hash_equals($generatedDigest, hash('sha256', $rendered))) {
                 throw new RuntimeException('CREATE_APP_ADOPTION_RENDER_MISMATCH: ' . $path);
             }
             $releaseTree[] = [
                 'path' => $path,
-                'sha256' => hash('sha256', $this->replaceReleaseTokens($artifactContent, $tokens, $tokens)),
+                'sha256' => hash('sha256', $this->renderAdoptionArtifact($adoption, $artifact, $tokens, $tokens)),
             ];
         }
         $releaseTreeDigest = $this->treeDigest($releaseTree);
@@ -341,6 +341,32 @@ final class ApplicationCreator
             $content = str_replace($tokens[$key], $values[$key], $content);
         }
         return $content;
+    }
+
+    /** @param array<string,mixed> $artifact @param array<string,string> $tokens @param array<string,string> $values */
+    private function renderAdoptionArtifact(ScaffoldManifest $adoption, array $artifact, array $tokens, array $values): string
+    {
+        $content = file_get_contents($adoption->artifactPath($artifact));
+        if (!is_string($content)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_ARTIFACT_INVALID: ' . ($artifact['path'] ?? ''));
+        }
+        $rendered = $this->replaceReleaseTokens($content, $tokens, $values);
+        if (($artifact['transform'] ?? null) !== 'composer-lock') {
+            return $rendered;
+        }
+        $composer = $adoption->files()['server/composer.json'] ?? null;
+        if (!is_array($composer)) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_COMPOSER_COMPANION_MISSING');
+        }
+        $composerContent = file_get_contents($adoption->artifactPath($composer));
+        if (!is_string($composerContent)
+            || !hash_equals((string)($composer['template_sha256'] ?? ''), hash('sha256', $composerContent))) {
+            throw new RuntimeException('CREATE_APP_ADOPTION_COMPOSER_COMPANION_INVALID');
+        }
+        return ScaffoldManifest::renderComposerLock(
+            $rendered,
+            $this->replaceReleaseTokens($composerContent, $tokens, $values),
+        );
     }
 
     /** @return array<string,string> */
@@ -412,6 +438,7 @@ final class ApplicationCreator
             }
             if (!in_array($classification, self::CLASSIFICATIONS, true)
                 || !in_array($transform, self::TRANSFORMS, true)
+                || ($transform === 'composer-lock' && $path !== 'server/composer.lock')
                 || !is_string($entry['owner'] ?? null)
                 || !is_array($entry['profiles'] ?? null)
                 || array_values(array_unique($entry['profiles'])) !== $entry['profiles']
@@ -517,7 +544,7 @@ final class ApplicationCreator
     }
 
     /** @param array<string,mixed> $entry @param array<string,string> $parameters */
-    private function transform(string $content, array $entry, array $parameters): string
+    private function transform(string $content, array $entry, array $parameters, string $stage): string
     {
         return match ($entry['transform']) {
             'copy' => $content,
@@ -538,8 +565,22 @@ final class ApplicationCreator
             'sbom' => $this->sbom($content, $parameters),
             'third-party-notices' => $this->thirdPartyNotices($content, $parameters),
             'version-contract' => $this->versionContractDocument($parameters),
+            'composer-lock' => $this->composerLock($content, $stage),
             default => throw new RuntimeException('CREATE_APP_INVENTORY_TRANSFORM_UNKNOWN'),
         };
+    }
+
+    private function composerLock(string $content, string $stage): string
+    {
+        $composerPath = $stage . '/server/composer.json';
+        if (!is_file($composerPath) || is_link($composerPath)) {
+            throw new RuntimeException('CREATE_APP_COMPOSER_COMPANION_MISSING');
+        }
+        $composer = file_get_contents($composerPath);
+        if (!is_string($composer)) {
+            throw new RuntimeException('CREATE_APP_COMPOSER_COMPANION_MISSING');
+        }
+        return ScaffoldManifest::renderComposerLock($content, $composer);
     }
 
     /** @param array<string,string> $parameters */

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use app\common\value\installation\ApplicationReleaseVersions;
+use app\common\value\scaffold\EditionProfile;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use think\App;
@@ -224,6 +225,70 @@ function loadCoreRuntime(string $serverDir): void
     require_once $autoload;
 }
 
+/**
+ * Resolve the Edition's required real-Tenant bootstrap contract.
+ *
+ * Generated applications are bound to the immutable application manifest. The
+ * product source tree uses the same Edition profile directly for development.
+ * Neither path may infer a default Tenant from a missing or mismatched contract.
+ *
+ * @return array{kind:string,code:string,tenant_identity:string,rbac:string,execution_context:string,module_lifecycle:string}
+ */
+function installationTenantBootstrapContract(string $serverDir): array
+{
+    $mode = getenv('DEPLOYMENT_MODE');
+    if ($mode !== 'standalone' && $mode !== 'multi-tenant') {
+        throw new RuntimeException('DEPLOYMENT_MODE 必须是 standalone 或 multi-tenant');
+    }
+
+    $projectRoot = dirname($serverDir);
+    $manifestPath = $projectRoot . '/.peanut/application-manifest.json';
+    if (file_exists($manifestPath) || is_link($manifestPath)) {
+        if (!is_file($manifestPath) || is_link($manifestPath)) {
+            throw new RuntimeException('INSTALL_EDITION_MANIFEST_INVALID');
+        }
+        try {
+            $manifest = json_decode((string)file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new RuntimeException('INSTALL_EDITION_MANIFEST_INVALID', 0, $exception);
+        }
+        if (!is_array($manifest)
+            || ($manifest['schema_version'] ?? null) !== 2
+            || ($manifest['protocol'] ?? null) !== 'peanut.application-scaffold.v2'
+            || ($manifest['application']['edition'] ?? null) !== $mode
+            || ($manifest['edition']['name'] ?? null) !== $mode
+            || ($manifest['edition']['deployment_mode'] ?? null) !== $mode
+            || !is_string($manifest['edition']['source_sha256'] ?? null)
+            || !hash_equals(
+                $manifest['edition']['source_sha256'],
+                (string)($manifest['generation_source']['edition_profile_sha256'] ?? ''),
+            )) {
+            throw new RuntimeException('INSTALL_EDITION_MANIFEST_INVALID');
+        }
+        $contract = $manifest['edition']['tenant_bootstrap'] ?? null;
+    } else {
+        $inventoryPath = $projectRoot . '/scaffold/application-template-inventory.json';
+        $profilePath = $projectRoot . '/scaffold/edition-profiles.json';
+        if (!is_file($inventoryPath) || is_link($inventoryPath)) {
+            throw new RuntimeException('INSTALL_EDITION_MANIFEST_MISSING');
+        }
+        $contract = EditionProfile::load($profilePath, $mode)->identity()['tenant_bootstrap'];
+    }
+
+    $expected = [
+        'kind' => 'real-default-tenant',
+        'code' => 'default',
+        'tenant_identity' => 'required',
+        'rbac' => 'required',
+        'execution_context' => 'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+        'module_lifecycle' => 'required',
+    ];
+    if ($contract !== $expected) {
+        throw new RuntimeException('INSTALL_TENANT_BOOTSTRAP_CONTRACT_INVALID');
+    }
+    return $contract;
+}
+
 function ensureThinkPhpApplication(string $serverDir): App
 {
     $container = Container::getInstance();
@@ -290,6 +355,7 @@ function executeSqlFile(PDO $pdo, string $file): void
 
 /**
  * @param array{email:string,password:string}|null $platformCredentials
+ * @param array{kind:string,code:string,tenant_identity:string,rbac:string,execution_context:string,module_lifecycle:string} $tenantBootstrap
  * @return array{tenant_id:int,account_id:int,member_id:int,operator_id:int}
  */
 function initializeCoreIdentity(
@@ -298,6 +364,7 @@ function initializeCoreIdentity(
     string $password,
     ?array $platformCredentials,
     \app\common\policy\DemoAccountPolicy $demoAccounts,
+    array $tenantBootstrap,
 ): array
 {
     foreach (KernelSchema::tableNames() as $table) {
@@ -326,7 +393,7 @@ function initializeCoreIdentity(
     );
     $owner = $service->provisionTenantOwnerCandidate(
         $platform->operatorId,
-        'default',
+        $tenantBootstrap['code'],
         'Peanut Admin',
         $email,
         $ownerPassword,
@@ -399,13 +466,11 @@ SQL);
 }
 
 /** @return array{tenant_count:int,owner_count:int,operator_count:int} */
-function coreIdentityCounts(PDO $pdo): array
+function coreIdentityCounts(PDO $pdo, string $tenantCode): array
 {
-    return [
-        'tenant_count' => (int)$pdo->query(
-            "SELECT COUNT(*) FROM pa_tenant WHERE code = 'default' AND status = 'active'"
-        )->fetchColumn(),
-        'owner_count' => (int)$pdo->query(<<<'SQL'
+    $tenant = $pdo->prepare("SELECT COUNT(*) FROM pa_tenant WHERE code = ? AND status = 'active'");
+    $tenant->execute([$tenantCode]);
+    $owner = $pdo->prepare(<<<'SQL'
 SELECT COUNT(DISTINCT tm.id)
 FROM pa_tenant t
 JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
@@ -413,8 +478,12 @@ JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
 JOIN pa_credential c ON c.account_id = a.id AND c.status = 'active'
 JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
 JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
-WHERE t.code = 'default' AND t.status = 'active' AND r.`key` = 'core.tenant-owner'
-SQL)->fetchColumn(),
+WHERE t.code = ? AND t.status = 'active' AND r.`key` = 'core.tenant-owner'
+SQL);
+    $owner->execute([$tenantCode]);
+    return [
+        'tenant_count' => (int)$tenant->fetchColumn(),
+        'owner_count' => (int)$owner->fetchColumn(),
         'operator_count' => (int)$pdo->query(
             "SELECT COUNT(*) FROM pa_platform_operator WHERE status = 'active'"
         )->fetchColumn(),
@@ -703,6 +772,7 @@ function installFreshDatabase(string $serverDir, array $input): array
     $databaseDir = $serverDir . '/database';
     loadCoreRuntime($serverDir);
     ensureThinkPhpApplication($serverDir);
+    $tenantBootstrap = installationTenantBootstrapContract($serverDir);
     $credentials = normalizeInstallationCredentials($input);
     $config = loadConfig($serverDir);
     $database = $config['DB_NAME'];
@@ -760,6 +830,7 @@ function installFreshDatabase(string $serverDir, array $input): array
             $adminPassword,
             $platformCredentials,
             $demoAccounts,
+            $tenantBootstrap,
         );
         if ($demoAccounts->enabled()) {
             replaceInstalledDemoCredentialHashes($pdo, [
@@ -776,7 +847,7 @@ function installFreshDatabase(string $serverDir, array $input): array
         $missing = array_values(array_diff($expected, $actual));
         $activeMenus = (int)$pdo->query('SELECT COUNT(*) FROM pa_system_menu')->fetchColumn();
         $configCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_config')->fetchColumn();
-        $identityCounts = coreIdentityCounts($pdo);
+        $identityCounts = coreIdentityCounts($pdo, $tenantBootstrap['code']);
         if ($missing !== []
             || $activeMenus === 0
             || $configCount === 0
@@ -791,6 +862,7 @@ function installFreshDatabase(string $serverDir, array $input): array
             'expected_tables' => count($expected),
             'active_menus' => $activeMenus,
             'configs' => $configCount,
+            'tenant_bootstrap' => $tenantBootstrap,
             'default_tenant_id' => $coreIdentity['tenant_id'],
             'owner_account_id' => $coreIdentity['account_id'],
             'owner_member_id' => $coreIdentity['member_id'],

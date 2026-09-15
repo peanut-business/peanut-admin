@@ -3367,5 +3367,525 @@
     ],
     "resource_execution": "No C11 database connection, lease claim, schema creation or destructive operation was attempted. The current resource registry has no DataPermission scenario; the existing Core P1-ED01 allocation permits only TaskJob and ImportExport and its registered credential was already proven unable to create or drop the isolated databases required by this PHPUnit group.",
     "resource_stop": "Do not reuse historical qualification databases, widen another domain allocation, guess privileged credentials or run the integration/security group until a current DataPermission resource and lease contract are registered."
+  },
+  "stage5_c12_execution": {
+    "status": "development-source-complete-dynamic-and-edition-gates-pending",
+    "issue_id": "S5-C12",
+    "core_commit": "dcdf8c6a3b09499447c57a685114150d84e4d647",
+    "core_tree": "35ff23bf2c5e92b45f843135ae8b8db2cf46641c",
+    "application_source_commit": "2ef59dade5f6af06b70867940347fe75893d947e",
+    "application_source_tree": "ef7a87513f0b0668b35e706ac6efee32bb2fdeca",
+    "completed": [
+      "Core Kernel Identity, Tenant, RBAC, audit and transaction production paths use caller-supplied ThinkPHP connection, Model, Query and transaction ownership; ordinary business-table PDO repositories and Runtime factories exited",
+      "Application AppService binds ThinkPHP Tenant, platform, authorization, Module runtime and menu catalog implementations through constructor injection while retaining typed fail-closed execution contexts",
+      "Tenant-owned Application models retain TenantOwnedModel and global TenantScope ownership; no compatibility repository, second runtime or fallback path was added",
+      "request routes use stable Module keys and no longer instantiate ModuleProvider during request route registration",
+      "current Module manifests and scaffold paths contain no backend.routes or legacy Application, Http or Validation business directories"
+    ],
+    "verified": [
+      "all eleven affected Application route files passed PHP syntax checks and their diff passed whitespace validation",
+      "production route scan found no request-time ModuleProvider construction",
+      "module dependency scan found no cross-owner model, service, infrastructure, controller or validation import; cross-owner dependencies use explicit contracts",
+      "Core production scan found zero ordinary business-table Db facade calls, retained ninety-three ThinkPHP transaction entries, three accepted MySQL advisory-lock connection uses and two TenantColumnScope information_schema expressions",
+      "both repository worktrees were clean at the fixed source commits before this documentation closeout"
+    ],
+    "not_run": [
+      "no unit, integration, API, E2E, regression, performance, security or qualification test was run because development tests remain user-triggered",
+      "known assertions that require request-time ModuleProvider construction remain pending test maintenance when the user authorizes testing"
+    ],
+    "pending": [
+      "S5 single multi-tenant source and scaffold with Standalone represented by a real default Tenant while Tenant, Module and RBAC remain active",
+      "creation, adoption and upgrade chain for both Editions",
+      "registered-resource dynamic Tenant, RBAC, transaction and lifecycle qualification",
+      "Application/Core version and lock alignment at release preparation only",
+      "fixed-candidate qualification, human release Gates, publication and deployment"
+    ],
+    "resource_execution": "No database, service, port, browser, container, provider or shared mutable resource was used for the C12 closeout.",
+    "next_action": "Transfer the sole writer to S5 and begin the first development slice without inheriting any qualification result."
+  },
+  "environment_file_configuration": {
+    "policy_id": "PA-ENV-FILE-ONLY-20260912",
+    "status": "design-recovered-remediation-pending-current-path-review",
+    "decision": "产品、部署、资格和测试配置必须来自明确选择、权限收紧且不提交的 env 文件。进程环境只能选择 env 文件路径、承载操作系统/CI 固有协议，或把已校验文件值传给协议上只能读取环境的受控子进程；ambient environment 不得覆盖或扩展文件配置。",
+    "supersedes": [
+      "068dab012cf666df6edec472a05d4945049c732d 中 ADMIN_INITIAL_* / PLATFORM_INITIAL_* 只经进程环境传入的例外",
+      "任何把 shell export、命令前缀赋值、Docker/Compose -e、CI job env 或 process.env/os.environ 本身当配置事实源的现行说明"
+    ],
+    "allowed_process_environment": {
+      "env_file_selectors": [
+        "PEANUT_SERVER_ENV_FILE",
+        "PEANUT_LOCAL_ENV_FILE",
+        "PEANUT_PREVIEW_SERVER_ENV_FILE",
+        "PEANUT_DEMO_ENV_FILE",
+        "后续任务登记的同义 *ENV_FILE 选择器"
+      ],
+      "os_ci_protocols": [
+        "PATH",
+        "HOME",
+        "TMPDIR",
+        "TERM",
+        "NO_COLOR",
+        "CI",
+        "GITHUB_*",
+        "SSH_AUTH_SOCK"
+      ],
+      "child_transport": "第三方协议确实只能读取环境时，值必须唯一来自已校验 env 文件，并在清理父进程项目键后的子进程中投影；禁止 ambient 覆写、未声明扩展和 shell export。"
+    },
+    "audit": {
+      "audited_at": "2026-09-12",
+      "application_baseline": "cd8ec7128dc3252f57fbe72737cc3833bfac9190",
+      "scope": [
+        "server",
+        "scripts",
+        "deploy",
+        "web",
+        "platform",
+        "pc",
+        "uniapp",
+        "docs-site",
+        ".github/workflows"
+      ],
+      "patterns": [
+        "PHP getenv/putenv/$_ENV/$_SERVER",
+        "JS/TS process.env and indirect globalThis.process.env",
+        "Python os.environ/os.getenv",
+        "Shell and Compose uppercase parameter expansion"
+      ],
+      "scan_commands": [
+        "rg -n --glob '!server/vendor/**' --glob '!**/node_modules/**' --glob '!scaffold/releases/**' --glob '!output/**' 'getenv\\(|putenv\\(|\\$_ENV|\\$_SERVER' server scripts deploy web platform pc uniapp docs-site .github/workflows",
+        "rg -n --glob '!server/vendor/**' --glob '!**/node_modules/**' --glob '!scaffold/releases/**' --glob '!output/**' 'process\\.env|globalThis\\.process|os\\.environ|os\\.getenv' server scripts deploy web platform pc uniapp docs-site .github/workflows",
+        "rg -n --glob '!server/vendor/**' --glob '!**/node_modules/**' --glob '!scaffold/releases/**' --glob '!output/**' '(^|[[:space:]])export[[:space:]]+[A-Z_][A-Z0-9_]*=|\\$\\{[A-Z][A-Z0-9_]*\\}|(^|[[:space:]])-e[[:space:]]+[A-Z][A-Z0-9_]*=' scripts deploy .github/workflows"
+      ],
+      "scan_result_policy": "扫描命令只产生当日原始命中诊断，不登记固定命中数，也不把原始命中数当作缺陷数量或完成度。每个语义确认的违规必须落入且只由一个ENV-CONFIG队列项负责；同一文件在不同生命周期同时出现时可在相关卡中重复列路径，但不得新增重复问题编号。",
+      "classification": "原始命中按来源、生命周期和消费者语义折叠为下列八个整改项。HTTP request/server 字段、argv、OS/CI协议、受控 env 文件选择器和已从同一受控文件加载后的内部投影不单独判错；Node/Vite运行模式协议（例如NODE_ENV）只有在承载项目业务配置时才进入队列。",
+      "immutable_exclusions": [
+        "scaffold/releases/** 历史快照",
+        "已发布安装包和升级包",
+        "server/vendor/**",
+        "**/node_modules/**",
+        "output/**"
+      ],
+      "coverage_assertion": "当前范围内所有语义确认的活动源码、编排、测试、发布和文档来源均已在ENV-CONFIG-001..008的affected_paths或source_patterns中登记；仅协议/历史制品排除项保留在immutable_exclusions和classification中。",
+      "known_protocol_only_paths": [
+        ".github/workflows/repository-policy.yml",
+        "scripts/project-resource-lease",
+        "scripts/p0e-browser-tooling",
+        "server/public/router.php"
+      ],
+      "limitations": "静态扫描不能证明运行时来源优先级；每张卡的完成条件均要求针对 ambient override、缺文件和未知键的负向运行检查。known_protocol_only_paths仅表示本轮未确认其承载业务配置，若后续改动扩大用途必须回填对应队列。 Original audit paths and baseline are historical; recheck current implementation in the owning slice. Recovery restores no old candidate, authorization, lease or failure budget."
+    },
+    "queue": [
+      {
+        "id": "ENV-CONFIG-001",
+        "priority": "P0",
+        "status": "queued-current-source-review-required",
+        "owner": "consumer-upgrade",
+        "problem": "升级验签只读取 PEANUT_UPGRADE_TRUSTED_KEYS_JSON 进程值，CLI 不接受受控 env 文件；当前双 Edition adoption-plan 因信任源未投影而返回 EDITION_UPGRADE_SOURCE_UNTRUSTED。",
+        "keys": [
+          "PEANUT_UPGRADE_TRUSTED_KEYS_JSON"
+        ],
+        "affected_paths": [
+          "scripts/scaffold-runtime/EditionUpgradePackage.php",
+          "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
+          "scripts/scaffold-upgrade",
+          "scripts/consumer-upgrade-qualification",
+          "scripts/build-edition-upgrades",
+          "server/tests/Productization/EditionUpgradePackageTest.php",
+          "docs/scaffold-upgrade.md",
+          "docs/operations/release-and-application-lifecycle.md",
+          "docs-site/guide/deployment-upgrade.md",
+          "docs-site/guide/application-module-lifecycle.md"
+        ],
+        "target_design": "scaffold-upgrade 显式接收受控 env 文件，EditionUpgradePackage 接收已解析可信键映射，不再自行 getenv；测试用临时 0600 文件覆盖可信/不可信/权限/ambient 冲突。",
+        "dependency": "Repair the current scaffold-upgrade input contract before a new signed candidate; do not revive any historical CR03 candidate.",
+        "minimum_verification": [
+          "双 Edition adoption-plan 只重跑当前失败组且均 ready",
+          "错误/权限过宽 env 文件、错误 key id、ambient 同名值和篡改签名均在写入前失败",
+          "stdout/stderr 分离并保存真实退出码；plan JSON 非空且来自实例 .peanut/upgrades/plans"
+        ],
+        "done_when": "即时阻塞解除与长期源修复分别有回执；长期实现生成的新候选完成受影响资格前不得关闭。"
+      },
+      {
+        "id": "ENV-CONFIG-002",
+        "priority": "P0",
+        "status": "queued-current-source-review-required",
+        "owner": "backend-configuration",
+        "problem": "后端 env 文件示例、受控键清单和消费者不闭合，部分值只有父进程注入时才生效或可绕过冲突拒绝。",
+        "keys": [
+          "PEANUT_SETTINGS_SECRET_KEYS",
+          "PEANUT_SETTINGS_ACTIVE_SECRET_KEY_ID",
+          "RICH_TEXT_COLLABORATION_URL",
+          "RICH_TEXT_COLLABORATION_SECRET",
+          "P0E_HOST_LEASE_PROOF",
+          "PEANUT_RESOURCE_LEASE_PROOF",
+          "COMPOSER_BINARY",
+          "PEANUT_MODULE_KERNEL_VERSION",
+          "PEANUT_DATABASE_RESOURCE_ID",
+          "PEANUT_DATABASE_ENDPOINT_ID",
+          "PEANUT_DATABASE_CONSUMER",
+          "APP_ENV",
+          "DEPLOYMENT_MODE",
+          "PEANUT_STORAGE_CREDENTIAL_MASTER_KEY"
+        ],
+        "affected_paths": [
+          "server/bootstrap/environment.php",
+          "server/.env.example",
+          "server/app/Modules/Official/ImportExport/ModuleProvider.php",
+          "server/app/Modules/Official/RichText/ModuleProvider.php",
+          "server/app/AppService.php",
+          "server/app/command/ModuleCheck.php",
+          "server/app/common/http/middleware/InstallationStateMiddleware.php",
+          "server/app/common/persistence/CoreTenantRepositoryFactory.php",
+          "server/app/common/service/installation/InstallationPreflightHost.php",
+          "server/app/common/service/installation/InstallationExecutionHost.php",
+          "server/app/common/service/module/ModuleScaffoldGenerator.php",
+          "server/app/common/service/runtime/RuntimeNamespace.php",
+          "server/app/common/service/storage/StorageCredentialCipher.php",
+          "server/database/install.php",
+          "server/database/environment-guard.php",
+          "server/database/seed-demo-data.php",
+          "server/database/seed-multi-tenant-demo.php",
+          "scripts/deploy-release",
+          "scripts/p0e-runtime-qualification"
+        ],
+        "target_design": "每个键归属一个 env 文件和严格加载器；COMPOSER_BINARY 若改为显式构造参数则仍必须由工具 env 文件解析，不保留 getenv fallback。未知键或 ambient 同名值在业务逻辑前失败。",
+        "dependency": "Keep templates, loaders and consumers aligned; new generated artifacts require their own candidate evidence.",
+        "minimum_verification": [
+          "后端键集合与 server/.env.example/消费者集合双向一致",
+          "文件值可达消费者",
+          "缺文件、未知键、进程新增键和进程冲突值负向检查"
+        ],
+        "done_when": "所有列名键均有唯一文件来源，现有静默退化和进程旁路消失。"
+      },
+      {
+        "id": "ENV-CONFIG-003",
+        "priority": "P0",
+        "status": "queued-current-source-review-required",
+        "owner": "installation-and-demo",
+        "problem": "自动安装身份和演示 Tenant id 仍由 shell/Compose/P0-E 进程注入；bootstrap 还把四项身份声明为 process-only 例外。",
+        "keys": [
+          "PEANUT_GENERATED_ADMIN_EMAIL",
+          "PEANUT_GENERATED_ADMIN_PASSWORD",
+          "PEANUT_GENERATED_PLATFORM_EMAIL",
+          "PEANUT_GENERATED_PLATFORM_PASSWORD",
+          "ADMIN_INITIAL_EMAIL",
+          "ADMIN_INITIAL_PASSWORD",
+          "PLATFORM_INITIAL_EMAIL",
+          "PLATFORM_INITIAL_PASSWORD",
+          "PEANUT_DEMO_MODE",
+          "PEANUT_DEMO_TENANT_ID",
+          "PEANUT_DEMO_TENANT_A_EMAIL",
+          "PEANUT_DEMO_TENANT_B_EMAIL",
+          "PEANUT_DEMO_SHARED_PASSWORD",
+          "PEANUT_DEMO_TENANT_A_HOST",
+          "PEANUT_DEMO_TENANT_B_HOST",
+          "PEANUT_DEMO_DOCS_URL",
+          "PEANUT_DEMO_LEASE_ID",
+          "PEANUT_DEMO_LEASE_OWNER"
+        ],
+        "affected_paths": [
+          "server/bootstrap/environment.php",
+          "server/database/install.php",
+          "server/database/seed-demo-data.php",
+          "server/database/seed-multi-tenant-demo.php",
+          "server/app/AppService.php",
+          "server/app/common/service/installation/InstallationExecutionHost.php",
+          "server/app/common/http/middleware/InstallationStateMiddleware.php",
+          "server/app/common/service/scaffold/ApplicationCreator.php",
+          "deploy/docker-compose.prod.yml",
+          "scripts/deploy-release",
+          "scripts/local-multi-tenant-demo",
+          "scripts/p0e-runtime-qualification",
+          "server/tests/Multitenancy/PlatformBootstrapInstallerTest.php",
+          "server/tests/Productization/InstallerBootstrapTest.php",
+          "server/tests/Productization/DemoDataSeederContractTest.php",
+          "README.md",
+          "docs-site/getting-started.md",
+          "docs/peanut-admin-release-deployment.md",
+          "docs/operations/release-and-application-lifecycle.md",
+          "docs/release-engineering.md",
+          "docs/peanut-admin-development-guide.md",
+          "docs/create-application.md",
+          "resources/project-resources.json"
+        ],
+        "target_design": "每次安装/seed 创建独立 0600 一次性 env 文件，通过只读挂载或 env-file 选择器消费；文件不进入长期容器、不写日志/证据，成功或失败均按精确路径销毁并登记 owner。",
+        "dependency": "先保留现有安装安全和密码校验语义；不得把秘密迁回长期 server/.env 或降级 guided setup 认证。",
+        "minimum_verification": [
+          "automatic Standalone/Multi-tenant 安装从一次性 env 文件成功",
+          "缺失/权限过宽/复用/ambient 覆写均失败",
+          "长期 PHP/cron 环境、日志、Compose config 和资格证据不含初始秘密"
+        ],
+        "done_when": "process-only 身份例外和所有 -e/命令前缀身份注入删除，一次性文件生命周期可验证。"
+      },
+      {
+        "id": "ENV-CONFIG-004",
+        "priority": "P1",
+        "status": "queued-current-source-review-required",
+        "owner": "deployment-orchestration",
+        "problem": "Compose 与本地/远程启动虽使用 env-file，但父进程同名值仍可能抢占插值；部分脚本直接从 ambient environment 创建端口、镜像、代理、日志和演示配置。",
+        "keys": [
+          "BUILD_HTTP_PROXY/BUILD_HTTPS_PROXY/BUILD_ALL_PROXY/BUILD_NO_PROXY",
+          "PHP_IMAGE/NGINX_IMAGE/PEANUT_DEPLOYMENT_RECEIPT_BASE64",
+          "HTTP_PORT/PHP_PORT/VITE_PORT/PLATFORM_PORT/PC_PORT/MOBILE_PORT/DOCS_PORT/DEV_HTTP_PORT/REDIS_PORT",
+          "DB_NAME/DB_USER/DB_PASS/DB_ROOT_PASS/DEPLOYMENT_MODE",
+          "VITE_API_PROXY_TARGET/VITE_ALLOWED_HOSTS/VITE_OPEN_BROWSER/NUXT_DEV_PROXY_TARGET/NUXT_DEV_PROXY_ORIGIN",
+          "LOG_SINCE/LOG_LINES/PEANUT_PHP_PID_FILE/PEANUT_PHP_LOG_FILE",
+          "PEANUT_API_HOST/PEANUT_API_PORT/PEANUT_LOCAL_CLIENT_DRY_RUN",
+          "PEANUT_SERVER_ENV_FILE/PEANUT_LOCAL_ENV_FILE/PEANUT_PREVIEW_SERVER_ENV_FILE"
+        ],
+        "affected_paths": [
+          ".env.example",
+          "deploy/local-stack.env.example",
+          "deploy/docker-compose.dev.yml",
+          "deploy/docker-compose.prod.yml",
+          "deploy/docker-compose.remote-development.yml",
+          "deploy/nginx/development.conf",
+          "deploy/docker/php-entrypoint.sh",
+          "deploy/docker/nginx-select-admin.sh",
+          "scripts/check-local-runtime-contract",
+          "scripts/deploy-release",
+          "scripts/local-client-dev",
+          "scripts/local-environment-probe",
+          "scripts/local-multi-tenant-demo",
+          "scripts/local-php-runtime",
+          "scripts/local-stack.sh",
+          "scripts/project-development-database.sh",
+          "server/app/common/service/scaffold/ApplicationCreator.php",
+          "resources/project-resources.json"
+        ],
+        "target_design": "所有 Compose 调用显式指定登记 env 文件并在执行前清除项目键；容器业务值只经 env_file/read-only file 投影，不用 -e。命令参数优先用 argv，持久选项写相应 env 文件。",
+        "dependency": "与 ENV-CONFIG-003 同批处理安装/seed；不得改变登记资源 ID、地址或默认端口。",
+        "minimum_verification": [
+          "相同命令在父进程预置冲突值时仍采用文件值或明确拒绝",
+          "docker compose config 脱敏检查",
+          "现有 local runtime contract 与 production Compose 聚焦检查"
+        ],
+        "done_when": "项目配置没有 ambient precedence，所有运行入口能指出唯一 env 文件。"
+      },
+      {
+        "id": "ENV-CONFIG-005",
+        "priority": "P1",
+        "status": "queued-current-source-review-required",
+        "owner": "frontend-build-configuration",
+        "problem": "Web/Platform/PC/UniApp/docs 构建配置直接读取 process.env 或其别名，且 Web 明确让进程 VITE_DEPLOYMENT_MODE 覆盖 loadEnv 文件；部分客户端没有受管 env 模板。CI docs-site 构建还用 workflow/job env 传递站点地址、项目名和发布输入。",
+        "keys": [
+          "VITE_API_PROXY_TARGET",
+          "VITE_ALLOWED_HOSTS",
+          "VITE_TENANT_ENTRY_HOST",
+          "VITE_OPEN_BROWSER",
+          "VITE_DEPLOYMENT_MODE",
+          "VITE_API_BASE_URL",
+          "VITE_APP_BASE_URL",
+          "NUXT_DEV_PROXY_TARGET",
+          "NUXT_DEV_PROXY_ORIGIN",
+          "PEANUT_DOCS_SITE_URL",
+          "DOCS_SITE_URL",
+          "DOCS_PROJECT",
+          "CLOUDFLARE_API_TOKEN",
+          "CLOUDFLARE_ACCOUNT_ID",
+          "VITEPRESS_DISABLE_GIT",
+          "REPORT"
+        ],
+        "affected_paths": [
+          "web/config/vite.config.base.ts",
+          "web/config/vite.config.dev.ts",
+          "web/config/utils/index.ts",
+          "web/.eslintrc.js",
+          "web/.env.example",
+          "web/.env.development",
+          "web/.env.production",
+          "web/package.json",
+          "web/tests/Productization/instance-tool-build-boundary.test.mjs",
+          "web/tests/Productization/vite-allowed-hosts.test.mjs",
+          "platform/vite.config.ts",
+          "pc/nuxt.config.ts",
+          "uniapp/vite.config.ts",
+          "server/app/common/service/scaffold/EditionProjector.php",
+          "docs-site/.vitepress/config.ts",
+          "docs-site/getting-started.md",
+          "README.md",
+          ".github/workflows/docs-site.yml",
+          ".github/workflows/ci.yml",
+          "deploy/docker/production.Dockerfile"
+        ],
+        "target_design": "各客户端/文档站显式 loadEnv 或读取指定 env 文件，补齐受管模板；构建模式使用 Vite/Nuxt mode/argv，禁止 process.env 优先级。浏览器 import.meta.env 仅消费构建器从已选文件注入的公开键。",
+        "dependency": "生产双 Edition 构建身份会变化，修复后须更新生成 inventory/scaffold 并形成新候选。",
+        "minimum_verification": [
+          "四客户端与 docs 配置的文件值正向检查",
+          "ambient 冲突值负向检查",
+          "修正当前要求 process.env 的反向测试",
+          "受影响生产构建与 manifest 身份检查"
+        ],
+        "done_when": "构建配置不直接依赖 ambient environment，所有公开注入键有模板和归属。"
+      },
+      {
+        "id": "ENV-CONFIG-006",
+        "priority": "P1",
+        "status": "queued-current-source-review-required",
+        "owner": "qualification-and-test-runtime",
+        "problem": "P0-E、consumer chain、浏览器和 PHP 测试把数据库凭据、身份、浏览器参数或 fault injection 写入 os.environ/process.env/putenv，测试 helper 也先从父进程取 DB 值再生成 env 文件；Core 资格 runner 批量 export 登记值，consumer-upgrade plan 继续构造环境字典和命令前缀，CI 还通过 GITHUB_ENV 写入测试配置。",
+        "keys": [
+          "P0E_DB_USER/P0E_DB_PASSWORD",
+          "P0E_ADMIN_INITIAL_*/P0E_PLATFORM_INITIAL_*",
+          "P0E_JWT_SECRET/P0E_TENANT_IDENTIFIER_HMAC_KEY/P0E_PLATFORM_IDENTIFIER_HMAC_KEY",
+          "P0E_PLAYWRIGHT_CLI/P0E_BROWSER_*/PLAYWRIGHT_CLI_SESSION",
+          "PEANUT_QUALIFICATION_*",
+          "DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS/ASYNC_PRIVATE_ROOT/PEANUT_TEST_DATABASE",
+          "MYSQL_ROOT_PASSWORD",
+          "P0E_HOST_LEASE_PROOF/PEANUT_RESOURCE_LEASE_PROOF",
+          "PEANUT_DATABASE_RESOURCE_ID/PEANUT_DATABASE_ENDPOINT_ID/PEANUT_DATABASE_CONSUMER",
+          "PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS/PEANUT_SCAFFOLD_ADOPTION_FAIL_AFTER_WRITES/MT05_MODE"
+        ],
+        "source_patterns": [
+          "qualification runner 批量 export registry 输出",
+          "consumer-upgrade plan 内联 host/container environment 与命令前缀",
+          "CI job env/GITHUB_ENV 写入业务测试配置"
+        ],
+        "affected_paths": [
+          "scripts/p0e-runtime-qualification",
+          "scripts/p0e-browser-smoke",
+          "scripts/consumer-module-reference-chain",
+          "scripts/core-qualification-runner",
+          "scripts/consumer-upgrade-qualification",
+          ".github/workflows/ci.yml",
+          "server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js",
+          "server/tests/fixtures/mt05/inspect.php",
+          "server/fixtures/plugin-module-lifecycle/run.php",
+          "server/tests/Support/IsolatedBackendEnvironment.php",
+          "server/tests/Productization/DatabaseResourceRegistryTest.php",
+          "server/tests/Productization/EditionUpgradePackageTest.php",
+          "server/tests/Productization/ModuleCatalogApplierTest.php",
+          "server/tests/Productization/ModuleRuntimeGovernanceTest.php",
+          "server/tests/Productization/OutboundHttpTransportObservabilityTest.php",
+          "server/tests/Productization/ScaffoldUpgradeRunnerTest.php",
+          "server/tests/Productization/TaskImportExportHostTest.php",
+          "server/tests/Productization/P0eRuntimeQualificationTest.php",
+          "server/tests/Productization/NotificationHostTest.php",
+          "server/tests/Multitenancy/ArticleTenantIsolationTest.php",
+          "server/tests/Multitenancy/DeploymentModuleInstallCommandTest.php",
+          "server/tests/Multitenancy/DictTenantIsolationTest.php",
+          "server/tests/Multitenancy/MemberTenantIsolationTest.php",
+          "server/tests/Multitenancy/OAuthTenantIsolationTest.php",
+          "server/tests/Multitenancy/TaskImportExportTenantIsolationTest.php"
+        ],
+        "env_file_helper_consumers": [
+          "server/tests/Multitenancy/AdminRbacTenantIsolationTest.php",
+          "server/tests/Multitenancy/CrontabTenantIsolationTest.php",
+          "server/tests/Multitenancy/DecorationPageTenantIsolationTest.php",
+          "server/tests/Multitenancy/DecorationTabbarTenantIsolationTest.php",
+          "server/tests/Multitenancy/FileTenantIsolationTest.php",
+          "server/tests/Multitenancy/HotSearchTenantIsolationTest.php",
+          "server/tests/Multitenancy/MemberUploadTenantWiringTest.php",
+          "server/tests/Multitenancy/NoticeTenantIsolationTest.php",
+          "server/tests/Multitenancy/OperationLogTenantIsolationTest.php",
+          "server/tests/Multitenancy/OrgTenantIsolationTest.php",
+          "server/tests/Multitenancy/PlatformAccessHttpWiringTest.php",
+          "server/tests/Multitenancy/PlatformBootstrapInstallerTest.php",
+          "server/tests/Multitenancy/PlatformModuleRuntimeHttpWiringTest.php",
+          "server/tests/Multitenancy/PlatformOperatorBoundaryTest.php",
+          "server/tests/Multitenancy/PlatformTenantLifecycleApiTest.php",
+          "server/tests/Multitenancy/PlatformTenantModuleServiceTest.php",
+          "server/tests/Multitenancy/PlatformTenantReadApiTest.php",
+          "server/tests/Multitenancy/RechargeRefundTenantIsolationTest.php",
+          "server/tests/Multitenancy/TenantGovernanceTest.php",
+          "server/tests/Multitenancy/TenantSessionHostTest.php",
+          "server/tests/Multitenancy/TransactionSettingTenantIsolationTest.php",
+          "server/tests/Productization/CrossProductDownstreamAdoptionTest.php",
+          "server/tests/Productization/ModuleBundleLifecycleTest.php",
+          "server/tests/Productization/ModuleDeliveryOperationTest.php",
+          "server/tests/Productization/ThinkPhpEditionIntegrationTest.php"
+        ],
+        "target_design": "runner 只读一份资格 env 文件并为每个子进程派生最小 0600 env 文件；fault injection 改显式构造参数/fixture 文件；测试 helper 从指定文件解析基值，不复制 ambient environment。",
+        "dependency": "按真实资源租约分别处理；不为改输入通道重跑未受影响的完整资格组。",
+        "minimum_verification": [
+          "P0-E/consumer plan 能列出所选 env 文件但不输出秘密",
+          "父进程预置错误 DB/身份/fault 值不能改变结果",
+          "现有正向及故障恢复断言保持失败传播"
+        ],
+        "done_when": "资格和测试项目值均可追溯到文件或显式 fixture/构造参数，ambient 清零。"
+      },
+      {
+        "id": "ENV-CONFIG-007",
+        "priority": "P1",
+        "status": "queued-current-source-review-required",
+        "owner": "toolchain-and-release-operations",
+        "problem": "工具链、发布与 Ops worker 仍用环境变量覆盖二进制、Core 路径、打包目录、候选/image/registry 和 GitHub Release 元数据；模块打包证据脚本把完整父进程环境复制给子进程，CI/workflow env 还承载 HUSKY、docs 项目与发布凭据。",
+        "keys": [
+          "PEANUT_PHP/PEANUT_COMPOSER/PEANUT_PNPM/PEANUT_NPM/COMPOSER_BINARY",
+          "PEANUT_ADMIN_CORE_DIR/WEB_DIR/SERVER_DIR/SKIP_WEB_BUILD",
+          "PEANUT_OPS_WORKER_IMAGE/PEANUT_OPS_WORKER_CANDIDATE/PEANUT_OPS_RESOURCE_REGISTRY",
+          "VERSION/TAG/OUTPUT_DIR/TAG_OBJECT/COMMIT/EDITION_ARTIFACTS/EDITION_BASELINE",
+          "HUSKY",
+          "DOCS_SITE_URL/DOCS_PROJECT/CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID"
+        ],
+        "source_patterns": [
+          "proc_open(getenv()) 全量继承父进程环境",
+          "CI job env/GITHUB_ENV 作为工具或发布配置源"
+        ],
+        "affected_paths": [
+          "scripts/generate-all-modules-packaging-evidence",
+          "scripts/combined-upgrade-qualification",
+          "scripts/core-upgrade-compatibility",
+          "scripts/core-dev",
+          "scripts/core-qualification-runner",
+          "scripts/local-core-composer",
+          "scripts/local-core-web",
+          "scripts/package-release.sh",
+          "scripts/scaffold-doctor",
+          "scripts/ops-backup-worker",
+          "scripts/ops-module-worker",
+          "scripts/ops-upgrade-worker",
+          "scripts/ops-restore-worker",
+          "scripts/project-resource-registry",
+          "scripts/publish-github-release",
+          "docs/development/local-core-composer.md",
+          "resources/project-resources.json",
+          ".github/workflows/ci.yml",
+          ".github/workflows/docs-site.yml"
+        ],
+        "target_design": "工具选择和发布元数据使用登记 env 文件或显式 argv/manifest；Node heredoc 接收文件/argv，不从 process.env 解包业务元数据；Ops worker 资格身份来自受控 env 文件并与登记资源核对。",
+        "dependency": "发布和生产动作仍受原人工 Gate；本卡只修输入合同，不自行发布或运行生产 worker。",
+        "minimum_verification": [
+          "shell syntax与只读 plan",
+          "ambient 冲突值拒绝",
+          "现有候选/工具/镜像身份检查保持有效"
+        ],
+        "done_when": "列名工具和发布入口不再把父进程环境当配置源。"
+      },
+      {
+        "id": "ENV-CONFIG-008",
+        "priority": "P1",
+        "status": "queued-current-source-review-required",
+        "owner": "configuration-governance",
+        "problem": "现有门禁只抽查少数后端键，且存在要求 process.env 的反向断言；没有防止新增 ambient 配置入口。",
+        "affected_paths": [
+          "scripts/check-local-runtime-contract",
+          "scripts/ci-server-check.sh",
+          ".github/workflows/ci.yml",
+          "web/tests/Productization/vite-allowed-hosts.test.mjs",
+          "server/tests/Productization/NotificationHostTest.php",
+          "server/tests/Productization/DatabaseResourceRegistryTest.php",
+          "server/tests/Productization/InstallerBootstrapTest.php",
+          "server/.env.example",
+          ".env.example",
+          "deploy/local-stack.env.example",
+          "docs/development-database-resource.md",
+          "docs/peanut-admin-development-guide.md",
+          "docs/peanut-admin-release-deployment.md",
+          "docs/p0e-runtime-qualification.md",
+          "docs/scaffold-upgrade.md"
+        ],
+        "target_design": "在现有检查入口增加活动源码配置来源扫描和正/负向 fixture：只放行登记 selector、OS/CI协议与文件加载器内部投影；新增业务键必须在所属模板/加载器/消费者闭合。",
+        "dependency": "001-007 实现后启用硬失败，避免在尚未迁移的全库制造永久红门禁；对应批次先用报告模式。",
+        "minimum_verification": [
+          "每类旧写法各有一个会失败的负向 fixture",
+          "合法 selector、HTTP/argv 和 OS/CI 协议不误报",
+          "docs-governance、JSON关系检查和 git diff --check"
+        ],
+        "done_when": "扫描器在 CI/本地入口硬失败且能拒绝本次列出的旧写法；文档不再描述 process-only 例外。"
+      }
+    ],
+    "execution_order": "Use the existing ENV-CONFIG-001..008 dependencies in the owning development slice. Product tests remain deferred unless explicitly authorized.",
+    "recovered_at": "2026-09-15"
   }
 }

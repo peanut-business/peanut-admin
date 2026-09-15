@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\import_export\ModuleProvider;
 use app\modules\official\import_export\controller\OperationLogExportController;
 use app\modules\official\import_export\controller\configurationTransferController;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -22,6 +21,6 @@ Route::group(function (): void {
     Route::post('official.import-export.configuration.dry-run', [ConfigurationTransferController::class, 'dryRun']);
     Route::post('official.import-export.configuration.apply', [ConfigurationTransferController::class, 'apply']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.import-export', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);

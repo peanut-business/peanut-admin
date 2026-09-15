@@ -10,9 +10,9 @@
 
 ## 先看四条真实调用链
 
-Core 既不是几个工具函数，也不是安装后自动得到完整后台的成品应用。它提供后端服务、合同、Schema 和前端运行时；Alpha.13 源码仍有 PDO persistence 实现，但正式方向是与 Application 一起收敛到 ThinkPHP 8。独立应用仍负责 ThinkPHP/Vue 宿主、路由、可信身份、业务数据和产品生命周期。当前最容易理解的采用例子是：
+Core 既不是几个工具函数，也不是安装后自动得到完整后台的成品应用。它提供后端服务、合同、Schema 和前端运行时；Alpha.13 固定审计快照仍有 PDO persistence 实现，当前 S4 开发源码已与 Application 一起收敛到 ThinkPHP 8。独立应用仍负责 ThinkPHP/Vue 宿主、路由、可信身份、业务数据和产品生命周期。当前最容易理解的采用例子是：
 
-1. **登录与权限。** 应用组合根把 Core 的 `TenantAuthService`、`PdoTenantAuthRepository`、`TenantAuthEndpoint`、事务管理和授权服务装入 ThinkPHP 容器；请求中间件建立可信 Tenant 上下文后，应用业务继续使用自己的 Model、Scope 和权限入口。见 [`AppService::registerAuthentication()` 与 `registerAuthorization()`](../../server/app/AppService.php#L156)。
+1. **登录与权限。** 应用组合根把 Core 的 `TenantAuthService`、ThinkPHP 认证/授权 Store、`TenantAuthEndpoint` 和事务管理装入 ThinkPHP 容器；请求中间件建立可信 Tenant 上下文后，应用业务继续使用自己的 Model、Scope 和权限入口。见 [`AppService::registerAuthentication()` 与 `registerAuthorization()`](../../server/app/AppService.php#L156)。
 2. **导入导出。** 官方 ImportExport Module 组合 Core Settings、TaskJob 和 ImportExport 机制，再注入应用的文件媒体网关、配置迁移规则与操作日志。Core 管通用任务和 CSV 流程，应用拥有具体格式、业务权限、文件账本及 Module 数据。见 [`ImportExport\ModuleProvider`](../../server/app/modules/official/import_export/ModuleProvider.php) 和 [`CoreSettingsConfigurationAdapter`](../../server/app/modules/official/import_export/infrastructure/configuration/CoreSettingsConfigurationAdapter.php#L20)。
 3. **平台运维控制台。** 后端由 [`AppService`](../../server/app/AppService.php) 将 Core OpsConsole 合同直接绑定到应用的备份、恢复、日志、权限和状态实现，HTTP 与 CLI 均采用构造注入；平台前端通过 [`@peanut-admin/admin/ops-console`](../../platform/src/App.vue#L37) 建立运行时。Core 给出控制台合同和 UI 机制，真正的运维动作与数据仍由应用实现。
 4. **PC 与 UniApp 客户端。** PC 用 [`@peanut-admin/admin/client/nuxt`](../../pc/composables/useRequest.ts#L1)，UniApp 用 [`@peanut-admin/admin/client/uniapp`](../../uniapp/src/utils/request.ts#L1)。Core 统一请求、会话和错误形状，两个宿主各自注入 base URL、平台 transport、session、decoder 与 hooks。
@@ -129,8 +129,8 @@ Core `backend/` 和 `frontend/` 把上述能力装配成 ThinkPHP route/controll
 
 | 域 | 当前应用接法与证据 | 数据 owner | 结论 | 最小后续任务与验收 |
 | --- | --- | --- | --- | --- |
-| Kernel | [`AppService`](../../server/app/AppService.php#L118) 当前绑定执行上下文、PDO 事务、认证和授权；业务 service/middleware 直接调用 Core | Core/Application 共同收敛到 ThinkPHP 8；应用业务表、ThinkPHP Model/Scope 与请求生命周期仍由应用拥有 | **已有能力复用，待按 ADR 微批次迁移** | 保留真实认证、Tenant、权限和 Module Gate；迁移后删除 PDO binding |
-| Settings | ImportExport 的 [`CoreSettingsConfigurationAdapter`](../../server/app/modules/official/import_export/infrastructure/configuration/CoreSettingsConfigurationAdapter.php#L53) 当前调用 `SettingAdminService`/PDO repository；Module manifest 提供 definition | 应用安装基线承载 `pa_setting_*` 表并拥有 key、默认值、业务含义和 protector；目标为 ThinkPHP Model/Transaction | **已有能力复用，待迁移** | 按 ADR 迁移 scope/secret/ETag/事务，不保留长期双实现 |
+| Kernel | [`AppService`](../../server/app/AppService.php#L118) 当前绑定强类型执行上下文、ThinkPHP 事务、认证和授权 Store；业务 service/middleware 直接调用 Core | 应用业务表、ThinkPHP Model/Scope 与请求生命周期仍由应用拥有 | **S4 开发源码已收敛，待动态资格** | 保留真实认证、Tenant、权限和 Module Gate；双 Edition 与固定候选另行验收 |
+| Settings | ImportExport 的 [`CoreSettingsConfigurationAdapter`](../../server/app/modules/official/import_export/infrastructure/configuration/CoreSettingsConfigurationAdapter.php#L53) 当前调用 `SettingAdminService`/ThinkPHP `SettingStore`；Module manifest 提供 definition | 应用安装基线承载 `pa_setting_*` 表并拥有 key、默认值、业务含义和 protector | **S4 开发源码已收敛，待动态资格** | 验收 scope/secret/ETag/事务和双 Edition，不恢复 PDO 双实现 |
 | TaskJob | [`ThinkPhpTaskJobRuntime`](../../server/app/modules/official/task/infrastructure/runtime/ThinkPhpTaskJobRuntime.php) 把 Core job service/worker 接入官方 Task Module，并与应用共享同一 ThinkPHP 连接和事务管理器 | 应用 `official.task` manifest 拥有 `pa_task_job*` 与 `pa_crontab`；Core Store 负责通用 job 状态流 | **3.1.1 收敛已实现，待固定候选资格** | 保持单任务机制；以 lease/retry/cancel、Tenant 复核和两 Edition 验收 |
 | ImportExport | ModuleProvider 组合 Core `ImportExportStore`、TaskJob 与应用 FileMedia/operation-log adapter；结果文件先经 ImportExport 查询合同校验，再由 Storage gateway 交付 | 应用 `official.import-export` manifest 拥有 operation/row-error 表、模板、字段和业务写入；Core service/store 执行通用状态流 | **3.1.1 收敛已实现，待固定候选资格** | 对具体导入导出只补业务 handler；验收文件、任务、失败补偿和权限链 |
 | OpsConsole | [`AppService`](../../server/app/AppService.php) 直接绑定 Core permission/status/maintenance/task 合同与应用 adapter，HTTP/CLI 构造注入具体执行服务；[`platform/src/App.vue`](../../platform/src/App.vue#L37) 直接创建 Core UI runtime | Core 控制台合同/页面状态；应用拥有备份、恢复、日志和权限数据 | **3.1.1 组合收敛已实现，待固定候选资格** | 逐个运维动作保留可信 descriptor 和脱敏；验收实际 provider、授权、任务恢复和失败路径 |

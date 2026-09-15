@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\oauth\ModuleProvider;
 use app\api\controller\OAuthController as ApiOAuthController;
 use app\api\controller\OfficialAccountController as ApiOfficialAccountController;
 use app\api\middleware\CheckTokenMiddleware;
@@ -37,7 +36,7 @@ Route::group(function (): void {
     Route::get('official.oauth.open-platform.config', [OpenPlatformController::class, 'getConfig']);
     Route::post('official.oauth.open-platform.save', [OpenPlatformController::class, 'setConfig']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.oauth', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
 }
@@ -54,6 +53,6 @@ Route::get('oauth/wechat/redirect/pc', [ApiOAuthController::class, 'redirectPc']
 Route::get('oauth/wechat/redirect/official-account', [ApiOAuthController::class, 'redirectOfficialAccount']);
 Route::post('oauth/wechat/bind', [ApiOAuthController::class, 'bind'])
     ->middleware(CheckTokenMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member-bind');
+    ->middleware(OfficialModuleMiddleware::class, 'official.oauth', 'http.member-bind');
 Route::get('wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'verify']);
 Route::post('wechat/official-account/callback/:binding', [ApiOfficialAccountController::class, 'callback']);

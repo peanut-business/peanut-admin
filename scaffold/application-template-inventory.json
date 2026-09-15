@@ -9212,7 +9212,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3339292a6826fab7b27b817afce06322db41a830c5c79a77d0bbd29caedbf4e9"
+            "source_sha256": "3de46c8d84ca103751a561b3b7da630a30baaab9edee80dff45003e060343665"
         },
         {
             "path": "server/app/common/services/installation/InstallationPreflightHost.php",
@@ -9676,7 +9676,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "928dfaf547274d086c80bb7f5276ad857e32454d0d4c1426a25d3b557f1a792f"
+            "source_sha256": "dee951f87278024ab5a9cc9b512fba8fe124ccc2982788502b4033e1fd4fb612"
         },
         {
             "path": "server/app/common/value/scaffold/ScaffoldManifest.php",
@@ -14993,7 +14993,7 @@
             "target": "server/composer.lock",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "text",
+            "transform": "composer-lock",
             "mode": 420,
             "profiles": [
                 "minimal",
@@ -15406,7 +15406,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "d7f9e2e494a3bf7d54de1e7288ce591d92b3452a4a5e77b8cbdf396681c584c1"
+            "source_sha256": "74f3058b2fea66872acc4c504b0d0acf2c0d4492e58846039db09ddf23cd31dc"
         },
         {
             "path": "server/database/migrations/20260822-classify-official-article-permissions.sql",

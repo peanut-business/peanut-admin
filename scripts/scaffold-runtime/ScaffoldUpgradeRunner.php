@@ -596,6 +596,22 @@ final class ScaffoldUpgradeRunner
         ];
         $rendered=$raw;
         foreach($tokens as $key=>$token)$rendered=str_replace($token,$values[$key],$rendered);
+        if (($file['transform'] ?? null) === 'composer-lock') {
+            $composer = $manifest->files()['server/composer.json'] ?? null;
+            if (!is_array($composer)) {
+                throw new RuntimeException('SCAFFOLD_COMPOSER_COMPANION_MISSING');
+            }
+            $composerPath = $manifest->artifactPath($composer);
+            $composerRaw = file_get_contents($composerPath);
+            if (!is_string($composerRaw)
+                || !hash_equals((string)($composer['template_sha256'] ?? ''), hash('sha256', $composerRaw))) {
+                throw new RuntimeException('SCAFFOLD_COMPOSER_COMPANION_INVALID');
+            }
+            foreach ($tokens as $key => $token) {
+                $composerRaw = str_replace($token, $values[$key], $composerRaw);
+            }
+            return ScaffoldManifest::renderComposerLock($rendered, $composerRaw);
+        }
         return $rendered;
     }
 
