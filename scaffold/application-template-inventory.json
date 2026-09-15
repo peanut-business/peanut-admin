@@ -3805,7 +3805,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0419e6ec41684da959d6a258c6d2846942768b9a3c7b8d8d00cfd01d495c24a9"
+            "source_sha256": "e0e5315c732313b36ceb395652e7e303499aad0043338a0b64ff9a156571c0a0"
         },
         {
             "path": "plugins/fixture.delivery-record/README.md",
@@ -3859,7 +3859,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "233fc796201cc49cdddf58b41b4f47715b4b97390989c94d0de177962fe518f6"
+            "source_sha256": "dac1b4b7fc6e9decfb143a51d9a5c300ef6195dad8dc1c5e69bff005157f7660"
         },
         {
             "path": "plugins/official.file/plugin.json",
@@ -3873,7 +3873,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "7fe571ef975bc87b78c145934307f0fe99504c2da6efa48e5823ca9fc446a07e"
+            "source_sha256": "ef9b0c8d11e391d22a16b4389716b8a87ebf06573904770ce84efc718e89ebc7"
         },
         {
             "path": "plugins/official.import-export/plugin.json",
@@ -3887,7 +3887,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "278875f42fab071f8ece60b0595f00222c6850870383bd02dc63754dd1b989b8"
+            "source_sha256": "6f46e94c0578ca1c1b28aa547eb3c4d47957451906d3b74b34b0958a85a4e97a"
         },
         {
             "path": "plugins/official.member/plugin.json",
@@ -3901,7 +3901,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "4a5f2d8aa421a38a54baf67076ab3e89fc5242c983f324c0662f8c5792760948"
+            "source_sha256": "fafde7ccae5a1bfe7a1a36e09b5b1230450a5a18afc5bcee00ca8bde05477f3a"
         },
         {
             "path": "plugins/official.notification/plugin.json",
@@ -3915,7 +3915,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2e2e9e3a5074d462c97f4d1c58a4870cf818db03b9217d488719ae5a4ff79c8c"
+            "source_sha256": "719e28953e019f86897f13e0bdb1939de0ca2959a0bcef7bdbf5e43769fa6dab"
         },
         {
             "path": "plugins/official.oauth/plugin.json",
@@ -3929,7 +3929,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e61913a566b921846b5849bd7cb5898382222a767d412d94299a3f6240be9a1a"
+            "source_sha256": "ecdba007b07f121c79527b6cf2c80b9023e3bf49b63111c9ddea3b453620e509"
         },
         {
             "path": "plugins/official.payment/plugin.json",
@@ -3943,7 +3943,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "51982d55d4da9a35fafd7b5cde78742bd626d03c9ff1a0222031b18b015e87c3"
+            "source_sha256": "0282928c968eeb0abfb207373cc6d364c12882e5d895908019cdd6445016dcfe"
         },
         {
             "path": "plugins/official.rich-text/plugin.json",
@@ -3957,7 +3957,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "3e80e2442e29ff983f45351ea14413de674359ced47486d1bad4227cb285dc6c"
+            "source_sha256": "15178e4dcd7df58e543b44cb96b1ac79f7003d6d25b1c9475a742cdbba5ec8d2"
         },
         {
             "path": "plugins/official.task/plugin.json",
@@ -3971,7 +3971,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "666e4cc4daf3aa2e683c8fd2e6066fe622026cec0a0b2e8bd9a59ae04b38b322"
+            "source_sha256": "8e3b2cb1ffdf6d0d95e3d473329c253a020a51e0cb05d325b8246254b6bfb5f7"
         },
         {
             "path": "release-versions.json",
