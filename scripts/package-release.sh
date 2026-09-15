@@ -4,12 +4,19 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
-WEB_DIR="${WEB_DIR:-$ROOT_DIR/web}"
-SERVER_DIR="${SERVER_DIR:-$ROOT_DIR/server}"
-CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
+WEB_DIR="$ROOT_DIR/web"
+SERVER_DIR="$ROOT_DIR/server"
+CORE_DIR=""
 COMPOSER_BIN="$ROOT_DIR/scripts/project-composer"
-SKIP_WEB_BUILD="${SKIP_WEB_BUILD:-0}"
-OUTPUT_DIR="${1:-$ROOT_DIR/release/peanut-admin}"
+SKIP_WEB_BUILD=0
+OUTPUT_DIR="$ROOT_DIR/release/peanut-admin"
+if [[ $# -gt 0 && "$1" != --* ]]; then OUTPUT_DIR="$1"; shift; fi
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-web-build) SKIP_WEB_BUILD=1; shift ;;
+    *) printf 'package-release: unsupported argument: %s\n' "$1" >&2; exit 2 ;;
+  esac
+done
 WEB_CORE_LINK="$WEB_DIR/node_modules/@peanut-admin/admin"
 RESTORE_LOCAL_WEB_CORE=0
 
@@ -31,14 +38,15 @@ require_command() {
 [[ ! -e "$OUTPUT_DIR" ]] || die "output already exists; choose a new path or remove it explicitly: $OUTPUT_DIR"
 [[ ! -e "$OUTPUT_DIR.tar.gz" ]] || die "archive already exists; choose a new path or remove it explicitly: $OUTPUT_DIR.tar.gz"
 
-if [[ -L "$WEB_CORE_LINK" && -d "$CORE_DIR/packages/web" \
-  && "$(realpath "$WEB_CORE_LINK")" == "$(CDPATH= cd -- "$CORE_DIR/packages/web" && pwd)" ]]; then
+if [[ -L "$WEB_CORE_LINK" ]]; then
+  linked_web_core="$(realpath "$WEB_CORE_LINK")"
+  CORE_DIR="$(CDPATH= cd -- "$linked_web_core/../.." && pwd)"
   RESTORE_LOCAL_WEB_CORE=1
 fi
 
 restore_local_web_core() {
   if [[ "$RESTORE_LOCAL_WEB_CORE" == 1 ]]; then
-    PEANUT_ADMIN_CORE_DIR="$CORE_DIR" "$ROOT_DIR/scripts/local-core-web" link >/dev/null
+    "$ROOT_DIR/scripts/local-core-web" link --core-dir "$CORE_DIR" >/dev/null
   fi
 }
 

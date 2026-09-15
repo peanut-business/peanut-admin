@@ -16,12 +16,14 @@ source commit/tree 生成 Standalone 与 Multi-tenant 两个独立升级包，�
 tar -xzf peanut-admin-X.Y.Z-standalone-upgrade.tar.gz
 
 # 公钥映射必须来自包外的正式 Release/维护者信任入口，不能读取包内自声明的公钥。
-export PEANUT_UPGRADE_TRUSTED_KEYS_JSON='{"<official-key-id>":"<base64-ed25519-public-key>"}'
+install -m 600 /dev/null /run/peanut/upgrade-trust.env
+printf '%s\n' 'PEANUT_UPGRADE_TRUSTED_KEYS_JSON={"<official-key-id>":"<base64-ed25519-public-key>"}' > /run/peanut/upgrade-trust.env
 
 php peanut-admin-X.Y.Z-standalone-upgrade/upgrader/scripts/scaffold-upgrade preflight \
   --project-root=/absolute/path/to/application \
   --package=/absolute/path/to/peanut-admin-X.Y.Z-standalone-upgrade \
-  --signature-key-id=<official-key-id>
+  --signature-key-id=<official-key-id> \
+  --env-file=/run/peanut/upgrade-trust.env
 
 php peanut-admin-X.Y.Z-standalone-upgrade/upgrader/scripts/scaffold-upgrade apply \
   --project-root=/absolute/path/to/application \

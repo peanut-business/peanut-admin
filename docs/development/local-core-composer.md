@@ -16,17 +16,12 @@
 scripts/project-composer prepare
 ```
 
-默认查找应用仓库同级目录的 `peanut-admin-core`：
+每次显式选择 Core checkout：
 
 ```bash
-scripts/local-core-composer install
-```
-
-核心库不在默认位置时显式指定：
-
-```bash
-PEANUT_ADMIN_CORE_DIR=/absolute/path/to/peanut-admin-core \
-  scripts/local-core-composer install
+scripts/local-core-composer install \
+  --core-dir /absolute/path/to/peanut-admin-core \
+  --backend-env /absolute/path/to/peanut-admin/server/.env.development
 ```
 
 脚本会动态验证应用要求版本与所选 Core 工作树的 package manifest 版本完全一致；
@@ -39,7 +34,9 @@ PEANUT_ADMIN_CORE_DIR=/absolute/path/to/peanut-admin-core \
 manifest、版本或依赖发生变化时，才执行：
 
 ```bash
-scripts/local-core-composer update
+scripts/local-core-composer update \
+  --core-dir /absolute/path/to/peanut-admin-core \
+  --backend-env /absolute/path/to/peanut-admin/server/.env.development
 ```
 
 ## 发布边界
@@ -59,14 +56,13 @@ scripts/project-composer install --working-dir=server --no-dev --prefer-dist
 当前安装目录中的该包替换为指向相邻核心工作树 `packages/web` 的软链接：
 
 ```bash
-scripts/local-core-web link
+scripts/local-core-web link --core-dir /absolute/path/to/peanut-admin-core
 ```
 
 核心源码、应用版本要求和软链接目标均由脚本校验；它还会在核心包被忽略的 `node_modules`
 目录中把 Vue、Router、Pinia 与 Element Plus 指向应用已安装的实例，以避免
 本地核心工作树的开发依赖覆盖应用的 peer 依赖。链接完成后核心 Web 源码的修改会立即被
-Vite 和 TypeScript 读取，不修改发布清单或 lock 文件。核心库不在默认同级路径时，使用
-`PEANUT_ADMIN_CORE_DIR=/absolute/path/to/peanut-admin-core` 指定。发布或线上安装必须重新用
+Vite 和 TypeScript 读取，不修改发布清单或 lock 文件。发布或线上安装必须重新用
 锁文件从 Registry 安装，而不能带入这个本地 `node_modules` 软链接：
 
 ```bash

@@ -111,12 +111,11 @@ git show "$TAG:THIRD_PARTY_NOTICES.md" > "$OUTPUT_DIR/peanut-admin-$VERSION-THIR
 git show "$TAG:RELEASE_SBOM.spdx.json" > "$OUTPUT_DIR/peanut-admin-$VERSION-SBOM.spdx.json"
 git show "$TAG:UPGRADE_TRUSTED_KEYS.json" > "$OUTPUT_DIR/UPGRADE_TRUSTED_KEYS.json"
 
-export VERSION TAG OUTPUT_DIR TAG_OBJECT COMMIT EDITION_ARTIFACTS EDITION_BASELINE
-node <<'NODE'
+node - "$VERSION" "$TAG" "$OUTPUT_DIR" "$TAG_OBJECT" "$COMMIT" "$EDITION_ARTIFACTS" "$EDITION_BASELINE" <<'NODE'
 const fs = require('node:fs')
 const cp = require('node:child_process')
 const crypto = require('node:crypto')
-const { VERSION, TAG, OUTPUT_DIR, TAG_OBJECT, COMMIT, EDITION_ARTIFACTS, EDITION_BASELINE } = process.env
+const [VERSION, TAG, OUTPUT_DIR, TAG_OBJECT, COMMIT, EDITION_ARTIFACTS, EDITION_BASELINE] = process.argv.slice(2)
 const baseline = EDITION_BASELINE === '1'
 const fromTag = (path) => cp.execFileSync('git', ['show', `${TAG}:${path}`], { encoding: 'utf8' })
 const candidateLock = JSON.parse(fs.readFileSync(`${OUTPUT_DIR}/RELEASE_CANDIDATE_LOCK.json`, 'utf8'))

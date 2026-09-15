@@ -3472,13 +3472,31 @@
         "scripts/p0e-browser-tooling",
         "server/public/router.php"
       ],
-      "limitations": "静态扫描不能证明运行时来源优先级；每张卡的完成条件均要求针对 ambient override、缺文件和未知键的负向运行检查。known_protocol_only_paths仅表示本轮未确认其承载业务配置，若后续改动扩大用途必须回填对应队列。 Original audit paths and baseline are historical; recheck current implementation in the owning slice. Recovery restores no old candidate, authorization, lease or failure budget."
+      "limitations": "静态扫描不能证明运行时来源优先级；每张卡的完成条件均要求针对 ambient override、缺文件和未知键的负向运行检查。known_protocol_only_paths仅表示本轮未确认其承载业务配置，若后续改动扩大用途必须回填对应队列。 Original audit paths and baseline are historical; recheck current implementation in the owning slice. Recovery restores no old candidate, authorization, lease or failure budget.",
+      "implementation_result": {
+        "source_completed_at": "2026-09-15",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
+        "checks_completed": [
+          "scripts/check-environment-sources",
+          "affected PHP, Python and shell syntax checks",
+          "application template inventory generation and check",
+          "documentation governance and JSON parsing",
+          "docs-site frozen-lock build"
+        ],
+        "deferred": [
+          "Product test files and automated test suites remain untouched and unrun under the current development policy.",
+          "P0-E, consumer, upgrade and production qualification remain outside this development slice.",
+          "Application client frozen-lock builds remain blocked until peanut-admin/core and @peanut-admin/admin 3.1.1 exist in the registered public registries.",
+          "Framework service discovery reaches application registration but remains blocked by the pre-existing plugins.lock canonical digest mismatch; this slice changes no Plugin source path."
+        ],
+        "registry_observation": "On 2026-09-15 the registered Packagist and npm read-only APIs exposed 3.1.0 as latest and did not expose 3.1.1; no lock was fabricated and no publication was attempted."
+      }
     },
     "queue": [
       {
         "id": "ENV-CONFIG-001",
         "priority": "P0",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "consumer-upgrade",
         "problem": "升级验签只读取 PEANUT_UPGRADE_TRUSTED_KEYS_JSON 进程值，CLI 不接受受控 env 文件；当前双 Edition adoption-plan 因信任源未投影而返回 EDITION_UPGRADE_SOURCE_UNTRUSTED。",
         "keys": [
@@ -3508,7 +3526,7 @@
       {
         "id": "ENV-CONFIG-002",
         "priority": "P0",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "backend-configuration",
         "problem": "后端 env 文件示例、受控键清单和消费者不闭合，部分值只有父进程注入时才生效或可绕过冲突拒绝。",
         "keys": [
@@ -3560,7 +3578,7 @@
       {
         "id": "ENV-CONFIG-003",
         "priority": "P0",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "installation-and-demo",
         "problem": "自动安装身份和演示 Tenant id 仍由 shell/Compose/P0-E 进程注入；bootstrap 还把四项身份声明为 process-only 例外。",
         "keys": [
@@ -3620,7 +3638,7 @@
       {
         "id": "ENV-CONFIG-004",
         "priority": "P1",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "deployment-orchestration",
         "problem": "Compose 与本地/远程启动虽使用 env-file，但父进程同名值仍可能抢占插值；部分脚本直接从 ambient environment 创建端口、镜像、代理、日志和演示配置。",
         "keys": [
@@ -3665,7 +3683,7 @@
       {
         "id": "ENV-CONFIG-005",
         "priority": "P1",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "frontend-build-configuration",
         "problem": "Web/Platform/PC/UniApp/docs 构建配置直接读取 process.env 或其别名，且 Web 明确让进程 VITE_DEPLOYMENT_MODE 覆盖 loadEnv 文件；部分客户端没有受管 env 模板。CI docs-site 构建还用 workflow/job env 传递站点地址、项目名和发布输入。",
         "keys": [
@@ -3706,7 +3724,17 @@
           "README.md",
           ".github/workflows/docs-site.yml",
           ".github/workflows/ci.yml",
-          "deploy/docker/production.Dockerfile"
+          "deploy/docker/production.Dockerfile",
+          "scripts/client-environment.ts",
+          "scripts/local-client-dev",
+          "platform/.env.example",
+          "platform/.env.production",
+          "pc/.env.example",
+          "pc/.env.production",
+          "uniapp/.env.example",
+          "uniapp/.env.production",
+          "docs-site/.env.example",
+          "docs-site/.env.production"
         ],
         "target_design": "各客户端/文档站显式 loadEnv 或读取指定 env 文件，补齐受管模板；构建模式使用 Vite/Nuxt mode/argv，禁止 process.env 优先级。浏览器 import.meta.env 仅消费构建器从已选文件注入的公开键。",
         "dependency": "生产双 Edition 构建身份会变化，修复后须更新生成 inventory/scaffold 并形成新候选。",
@@ -3721,7 +3749,7 @@
       {
         "id": "ENV-CONFIG-006",
         "priority": "P1",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "qualification-and-test-runtime",
         "problem": "P0-E、consumer chain、浏览器和 PHP 测试把数据库凭据、身份、浏览器参数或 fault injection 写入 os.environ/process.env/putenv，测试 helper 也先从父进程取 DB 值再生成 env 文件；Core 资格 runner 批量 export 登记值，consumer-upgrade plan 继续构造环境字典和命令前缀，CI 还通过 GITHUB_ENV 写入测试配置。",
         "keys": [
@@ -3807,7 +3835,7 @@
       {
         "id": "ENV-CONFIG-007",
         "priority": "P1",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "toolchain-and-release-operations",
         "problem": "工具链、发布与 Ops worker 仍用环境变量覆盖二进制、Core 路径、打包目录、候选/image/registry 和 GitHub Release 元数据；模块打包证据脚本把完整父进程环境复制给子进程，CI/workflow env 还承载 HUSKY、docs 项目与发布凭据。",
         "keys": [
@@ -3855,7 +3883,7 @@
       {
         "id": "ENV-CONFIG-008",
         "priority": "P1",
-        "status": "queued-current-source-review-required",
+        "status": "source-implemented-tests-and-candidate-verification-deferred",
         "owner": "configuration-governance",
         "problem": "现有门禁只抽查少数后端键，且存在要求 process.env 的反向断言；没有防止新增 ambient 配置入口。",
         "affected_paths": [
@@ -3873,7 +3901,10 @@
           "docs/peanut-admin-development-guide.md",
           "docs/peanut-admin-release-deployment.md",
           "docs/p0e-runtime-qualification.md",
-          "docs/scaffold-upgrade.md"
+          "docs/scaffold-upgrade.md",
+          "scripts/check-environment-sources",
+          "scripts/client-environment.ts",
+          "scripts/run-with-environment-file"
         ],
         "target_design": "在现有检查入口增加活动源码配置来源扫描和正/负向 fixture：只放行登记 selector、OS/CI协议与文件加载器内部投影；新增业务键必须在所属模板/加载器/消费者闭合。",
         "dependency": "001-007 实现后启用硬失败，避免在尚未迁移的全库制造永久红门禁；对应批次先用报告模式。",

@@ -1,9 +1,11 @@
 import defaultBrand from './generated/brand.json'
+import { resolve } from 'node:path'
+import { readClientEnvironment } from '../scripts/client-environment'
 
-const runtimeEnv =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {}
-const devProxyOrigin = runtimeEnv.NUXT_DEV_PROXY_ORIGIN || 'http://127.0.0.1'
-const devProxyTarget = runtimeEnv.NUXT_DEV_PROXY_TARGET || `${devProxyOrigin}/api`
+const fileEnv = readClientEnvironment(resolve(import.meta.dirname, '.env.production'))
+const devProxyOrigin = fileEnv.NUXT_DEV_PROXY_ORIGIN ||
+  (fileEnv.PHP_PORT ? `http://127.0.0.1:${fileEnv.PHP_PORT}` : 'http://127.0.0.1')
+const devProxyTarget = fileEnv.NUXT_DEV_PROXY_TARGET || `${devProxyOrigin}/api`
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',

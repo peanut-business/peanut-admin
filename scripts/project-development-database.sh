@@ -7,16 +7,25 @@ remote=mac-14
 remote_dir=/Users/xing/.config/peanut-admin
 remote_env="$remote_dir/development-db.env"
 remote_compose="$remote_dir/docker-compose.remote-development.yml"
-local_env=${PEANUT_SERVER_ENV_FILE:-"$repo_dir/server/.env"}
+local_env="$repo_dir/server/.env"
 local_state=$(dirname "$local_env")
 
-case "${1:-}" in
+command=${1:-}
+[ $# -gt 0 ] && shift
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --backend-env) [ $# -ge 2 ] || { printf '%s\n' '--backend-env requires a value' >&2; exit 2; }; local_env=$2; local_state=$(dirname "$local_env"); shift 2 ;;
+        *) printf 'unsupported argument: %s\n' "$1" >&2; exit 2 ;;
+    esac
+done
+
+case "$command" in
     provision)
         ssh "$remote" "umask 077; mkdir -p '$remote_dir'; if [ ! -f '$remote_env' ]; then { printf '%s\n' 'DB_NAME=peanut_admin_development' 'DB_USER=peanut_admin_development'; printf 'DB_PASS=%s\n' \"\$(openssl rand -hex 24)\"; printf 'DB_ROOT_PASS=%s\n' \"\$(openssl rand -hex 24)\"; } > '$remote_env'; chmod 600 '$remote_env'; fi"
         ssh "$remote" "for name in DB_NAME DB_USER DB_PASS DB_ROOT_PASS; do grep -q \"^\${name}=.\" '$remote_env' || { printf 'registered database credential is missing: %s\\n' \"\$name\" >&2; exit 1; }; done"
         scp -q "$repo_dir/deploy/docker-compose.remote-development.yml" "$remote:$remote_compose"
         ssh "$remote" "/usr/local/bin/docker compose --env-file '$remote_env' -f '$remote_compose' up -d --wait"
-        "$0" sync-credentials
+        "$0" sync-credentials --backend-env "$local_env"
         ;;
     sync-credentials)
         mkdir -p "$local_state"
@@ -45,7 +54,7 @@ case "${1:-}" in
         ssh -o BatchMode=yes "$remote" "/usr/local/bin/docker inspect peanut-admin-mysql84-development --format 'image={{.Config.Image}} status={{.State.Status}} health={{.State.Health.Status}}'"
         ;;
     *)
-        printf 'Usage: %s {provision|sync-credentials|status}\n' "$0" >&2
+        printf 'Usage: %s {provision|sync-credentials|status} [--backend-env path]\n' "$0" >&2
         exit 2
         ;;
 esac

@@ -2,11 +2,11 @@ import { existsSync, readFileSync, realpathSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import {
   defineConfig,
-  loadEnv,
   type ConfigEnv,
   type Plugin,
   type UserConfig,
 } from 'vite';
+import { readClientEnvironment } from '../../scripts/client-environment';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import svgLoader from 'vite-svg-loader';
@@ -98,10 +98,7 @@ function instanceToolRouteManifest(instanceToolsCompiled: boolean): Plugin {
   };
 }
 
-function compileInstanceTools({ command, mode }: ConfigEnv): boolean {
-  const fileEnv = loadEnv(mode, resolve(__dirname, '..'), '');
-  const deploymentMode =
-    process.env.VITE_DEPLOYMENT_MODE ?? fileEnv.VITE_DEPLOYMENT_MODE;
+function compileInstanceTools({ command, mode }: ConfigEnv, deploymentMode?: string): boolean {
   return (
     command === 'serve' &&
     mode === 'development' &&
@@ -113,7 +110,8 @@ export function createBaseConfig(
   configEnv: ConfigEnv,
   contributionEntries: () => string[] = lockedAdminContributions
 ): UserConfig {
-  const instanceToolsCompiled = compileInstanceTools(configEnv);
+  const fileEnv = readClientEnvironment(resolve(__dirname, `../.env.${configEnv.mode}`));
+  const instanceToolsCompiled = compileInstanceTools(configEnv, fileEnv.VITE_DEPLOYMENT_MODE);
   return {
     // The admin SPA is published below server/public/admin in every environment.
     base: '/admin/',
@@ -150,6 +148,12 @@ export function createBaseConfig(
       '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': false,
       '__PEANUT_INSTANCE_TOOLS_COMPILED__': JSON.stringify(
         instanceToolsCompiled
+      ),
+      'import.meta.env.VITE_DEPLOYMENT_MODE': JSON.stringify(
+        fileEnv.VITE_DEPLOYMENT_MODE || 'standalone'
+      ),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(
+        fileEnv.VITE_API_BASE_URL || ''
       ),
     },
     css: {

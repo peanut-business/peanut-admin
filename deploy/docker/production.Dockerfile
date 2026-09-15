@@ -7,18 +7,19 @@ RUN corepack enable && corepack prepare pnpm@9.15.6 --activate
 COPY web/package.json web/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY plugins.lock /build/plugins.lock
+COPY scripts/client-environment.ts /build/scripts/client-environment.ts
 COPY web/ ./
 RUN pnpm exec vue-tsc --noEmit \
-    && VITE_DEPLOYMENT_MODE=standalone pnpm exec vite build --config ./config/vite.config.prod.ts --outDir dist/standalone \
-    && VITE_DEPLOYMENT_MODE=multi-tenant pnpm exec vite build --config ./config/vite.config.prod.ts --outDir dist/multi-tenant
+    && PEANUT_CLIENT_ENV_FILE=/build/web/.env.standalone pnpm exec vite build --config ./config/vite.config.prod.ts --outDir dist/standalone \
+    && PEANUT_CLIENT_ENV_FILE=/build/web/.env.multi-tenant pnpm exec vite build --config ./config/vite.config.prod.ts --outDir dist/multi-tenant
 
 FROM node:20.19.4-bookworm-slim AS mobile-builder
 
 WORKDIR /build/uniapp
 COPY uniapp/package.json uniapp/package-lock.json ./
 RUN npm ci --legacy-peer-deps
+COPY scripts/client-environment.ts /build/scripts/client-environment.ts
 COPY uniapp/ ./
-ENV VITE_APP_BASE_URL=""
 RUN npm run build:h5
 
 FROM node:20.19.4-bookworm-slim AS platform-builder
@@ -26,6 +27,7 @@ FROM node:20.19.4-bookworm-slim AS platform-builder
 WORKDIR /build/platform
 COPY platform/package.json platform/package-lock.json ./
 RUN npm ci
+COPY scripts/client-environment.ts /build/scripts/client-environment.ts
 COPY platform/ ./
 RUN npm run build
 
@@ -34,6 +36,7 @@ FROM node:20.19.4-bookworm-slim AS pc-builder
 WORKDIR /build/pc
 COPY pc/package.json pc/package-lock.json ./
 RUN npm ci
+COPY scripts/client-environment.ts /build/scripts/client-environment.ts
 COPY pc/ ./
 RUN npm run generate
 

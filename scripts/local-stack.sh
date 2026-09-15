@@ -4,9 +4,10 @@ set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 state_dir="$repo_dir/.local"
-orchestration_env=${PEANUT_LOCAL_ENV_FILE:-"$state_dir/stack.env"}
-backend_env=${PEANUT_SERVER_ENV_FILE:-"$repo_dir/server/.env"}
-preview_backend_env=${PEANUT_PREVIEW_SERVER_ENV_FILE:-"$repo_dir/server/.env.local-production-preview"}
+orchestration_env="$state_dir/stack.env"
+backend_env="$repo_dir/server/.env"
+preview_backend_env="$repo_dir/server/.env.local-production-preview"
+container_client_env="$state_dir/container-client.env"
 env_dir=$(dirname "$orchestration_env")
 dev_compose="$repo_dir/deploy/docker-compose.dev.yml"
 prod_compose="$repo_dir/deploy/docker-compose.prod.yml"
@@ -40,6 +41,16 @@ clear_env_value() (
     temporary=$(mktemp "$target_dir/environment.XXXXXX")
     awk -F= -v name="$name" '$1 != name { print }' "$target" > "$temporary"
     printf '%s=\n' "$name" >> "$temporary"
+    chmod 600 "$temporary"
+    mv "$temporary" "$target"
+)
+
+remove_env_value() (
+    target=$1
+    name=$2
+    target_dir=$(dirname "$target")
+    temporary=$(mktemp "$target_dir/environment.XXXXXX")
+    awk -F= -v name="$name" '$1 != name { print }' "$target" > "$temporary"
     chmod 600 "$temporary"
     mv "$temporary" "$target"
 )
@@ -83,10 +94,10 @@ ensure_env() {
     grep -q '^JWT_SECRET=..' "$backend_env" || set_env_value "$backend_env" JWT_SECRET "$(make_secret 32)"
     grep -q '^TENANT_IDENTIFIER_HMAC_KEY=..' "$backend_env" || set_env_value "$backend_env" TENANT_IDENTIFIER_HMAC_KEY "$(make_secret 32)"
     grep -q '^PLATFORM_IDENTIFIER_HMAC_KEY=..' "$backend_env" || set_env_value "$backend_env" PLATFORM_IDENTIFIER_HMAC_KEY "$(make_secret 32)"
-    clear_env_value "$backend_env" ADMIN_INITIAL_EMAIL
-    clear_env_value "$backend_env" ADMIN_INITIAL_PASSWORD
-    clear_env_value "$backend_env" PLATFORM_INITIAL_EMAIL
-    clear_env_value "$backend_env" PLATFORM_INITIAL_PASSWORD
+    remove_env_value "$backend_env" ADMIN_INITIAL_EMAIL
+    remove_env_value "$backend_env" ADMIN_INITIAL_PASSWORD
+    remove_env_value "$backend_env" PLATFORM_INITIAL_EMAIL
+    remove_env_value "$backend_env" PLATFORM_INITIAL_PASSWORD
     set_env_default "$backend_env" PEANUT_PLUGIN_LOCK ../plugins.lock
     set_env_default "$backend_env" PEANUT_MODULE_KERNEL_VERSION 1.0.0
     set_env_default "$backend_env" PEANUT_MODULE_TRUSTED_KEYS_JSON '{}'
@@ -98,12 +109,25 @@ ensure_env() {
         while IFS='=' read -r name value; do
             set_env_default "$orchestration_env" "$name" "$value"
         done
+    php_port=$(awk -F= '$1 == "PHP_PORT" { print $2; exit }' "$orchestration_env")
+    [ -n "$php_port" ] || die 'registered PHP_PORT is missing from the orchestration environment'
+    : > "$container_client_env"
+    chmod 600 "$container_client_env"
+    for name in PHP_PORT VITE_PORT PLATFORM_PORT MOBILE_PORT PC_PORT DOCS_PORT DEV_HTTP_PORT HTTP_PORT REDIS_PORT; do
+        value=$(awk -F= -v name="$name" '$1 == name { print $2; exit }' "$orchestration_env")
+        [ -z "$value" ] || set_env_value "$container_client_env" "$name" "$value"
+    done
+    set_env_value "$container_client_env" VITE_API_PROXY_TARGET "http://host.docker.internal:$php_port"
+    set_env_value "$container_client_env" NUXT_DEV_PROXY_TARGET "http://host.docker.internal:$php_port/api"
+    set_env_value "$container_client_env" NUXT_DEV_PROXY_ORIGIN "http://host.docker.internal:$php_port"
+    set_env_value "$container_client_env" VITE_OPEN_BROWSER false
+    set_env_value "$container_client_env" VITEPRESS_DISABLE_GIT true
     # Daily development uses the registered host endpoint and host PHP runtime.
     "$resource_registry" database-env --deployment-target local-development --consumer host |
         while IFS='=' read -r name value; do set_env_value "$backend_env" "$name" "$value"; done
     if ! grep -q '^DB_USER=peanut_admin_development$' "$backend_env" ||
         ! grep -q '^DB_PASS=..' "$backend_env"; then
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/project-development-database.sh" sync-credentials
+        "$repo_dir/scripts/project-development-database.sh" sync-credentials --backend-env "$backend_env"
     fi
 }
 
@@ -124,11 +148,11 @@ prepare_preview_backend_env() {
 }
 
 compose_dev() {
-    docker compose --env-file "$orchestration_env" -f "$dev_compose" "$@"
+    env -i PATH="$PATH" HOME="$HOME" docker compose --env-file "$orchestration_env" -f "$dev_compose" "$@"
 }
 
 compose_prod() {
-    PEANUT_SERVER_ENV_FILE="$preview_backend_env" \
+    env -i PATH="$PATH" HOME="$HOME" PEANUT_SERVER_ENV_FILE="$preview_backend_env" \
         docker compose --env-file "$orchestration_env" --env-file "$preview_backend_env" -f "$prod_compose" "$@"
 }
 
@@ -161,18 +185,18 @@ show_urls() {
 case "${1:-}" in
     dev-up)
         ensure_env
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" start
+        "$repo_dir/scripts/local-php-runtime" start --env-file "$orchestration_env" --backend-env "$backend_env"
         if ! compose_dev up -d --remove-orphans; then
-            PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" stop
+            "$repo_dir/scripts/local-php-runtime" stop --env-file "$orchestration_env" --backend-env "$backend_env"
             exit 1
         fi
         show_urls
         ;;
     dev-build)
         ensure_env
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" start
+        "$repo_dir/scripts/local-php-runtime" start --env-file "$orchestration_env" --backend-env "$backend_env"
         if ! compose_dev up -d --build --remove-orphans; then
-            PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" stop
+            "$repo_dir/scripts/local-php-runtime" stop --env-file "$orchestration_env" --backend-env "$backend_env"
             exit 1
         fi
         show_urls
@@ -181,7 +205,7 @@ case "${1:-}" in
         ensure_env
         compose_status=0
         compose_dev down --remove-orphans || compose_status=$?
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" stop
+        "$repo_dir/scripts/local-php-runtime" stop --env-file "$orchestration_env" --backend-env "$backend_env"
         exit "$compose_status"
         ;;
     prod-up)
@@ -204,7 +228,7 @@ case "${1:-}" in
         ;;
     status)
         ensure_env
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" status
+        "$repo_dir/scripts/local-php-runtime" status --env-file "$orchestration_env" --backend-env "$backend_env"
         compose_dev ps
         if [ -f "$preview_backend_env" ]; then
             compose_prod ps
@@ -213,11 +237,11 @@ case "${1:-}" in
         ;;
     credentials)
         ensure_env
-        printf '%s\n' 'Fresh-install identities are process-only; use the guided installer or inject them into the automatic installer command.'
+        printf '%s\n' 'Fresh-install identities use a dedicated permission-0600 file selected only for the automatic installer command.'
         ;;
     database-status)
         ensure_env
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" status
+        "$repo_dir/scripts/local-php-runtime" status --env-file "$orchestration_env" --backend-env "$backend_env"
         "$0" database-host-status
         ;;
     database-host-status)
@@ -229,8 +253,10 @@ case "${1:-}" in
         mkdir -p "$repo_dir/output/local-diagnostics"
         log_file="$repo_dir/output/local-diagnostics/backend-live.log"
         printf 'Backend log: %s\n' "$log_file"
-        PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/local-php-runtime" logs
-        compose_dev logs --no-color --since "${LOG_SINCE:-10m}" -f nginx web platform pc mobile docs | tee -a "$log_file"
+        "$repo_dir/scripts/local-php-runtime" logs --env-file "$orchestration_env" --backend-env "$backend_env"
+        log_since=$(awk -F= '$1 == "LOG_SINCE" { print $2; exit }' "$orchestration_env")
+        [ -n "$log_since" ] || log_since=10m
+        compose_dev logs --no-color --since "$log_since" -f nginx web platform pc mobile docs | tee -a "$log_file"
         ;;
     urls)
         ensure_env

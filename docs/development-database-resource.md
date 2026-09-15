@@ -115,7 +115,7 @@ V1/V2 Development 验证使用两个精确命名的固定逻辑资源：Standalo
 Docker PHP 只用于此生产模式预览、生产构建和明确要求容器等价性的 Gate，不是日常
 `dev-up` 的后端 Runtime。
 
-`201xx` 是项目登记的本地监听默认值，不是不可覆盖常量。`.local/stack.env`（或
-`PEANUT_LOCAL_ENV_FILE`）是单次运行的端口事实源；后台配置只在 `server/.env`（或显式选择的
+`201xx` 是项目登记的本地监听默认值，不是不可覆盖常量。`.local/stack.env`
+是单次运行的端口事实源；后台配置只在 `server/.env`（或显式选择的
 同目录 sibling 文件）中，已有端口覆盖不会被 `ensure_env` 重写。
 生产服务器的实际默认端口仍是 `18092`，本地 production preview 的登记默认才是 `20190`。

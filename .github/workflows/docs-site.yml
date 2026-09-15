@@ -14,10 +14,6 @@ on:
 permissions:
   contents: read
 
-env:
-  DOCS_SITE_URL: https://peanut-admin-doc.007345.xyz
-  DOCS_PROJECT: peanut-admin-docs
-
 jobs:
   build:
     name: Build documentation site
@@ -40,8 +36,6 @@ jobs:
         working-directory: docs-site
         run: pnpm install --frozen-lockfile
       - name: Build
-        env:
-          PEANUT_DOCS_SITE_URL: ${{ env.DOCS_SITE_URL }}
         run: |
           ./scripts/docs-governance check
           pnpm --dir docs-site run build
@@ -70,7 +64,7 @@ jobs:
           path: docs-site/.vitepress/dist
       - name: Publish to Cloudflare Pages
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
-        run: npx --yes wrangler@3.114.14 pages deploy docs-site/.vitepress/dist --project-name "$DOCS_PROJECT" --branch main
+        run: npx --yes wrangler@3.114.14 pages deploy docs-site/.vitepress/dist --project-name peanut-admin-docs --branch main
       - name: Report deferred publish
         if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
         run: echo 'Cloudflare credentials are not configured; build artifact is ready for the Pages integration.'

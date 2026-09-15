@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import http.client
 import json
+import os
 import re
 import socket
 import subprocess
@@ -174,6 +175,11 @@ class Probe:
                 stderr=subprocess.PIPE,
                 timeout=timeout,
                 check=False,
+                env={
+                    key: value
+                    for key in ("PATH", "HOME", "TMPDIR", "DOCKER_HOST", "SystemRoot", "COMSPEC", "PATHEXT")
+                    if (value := os.environ.get(key))
+                },
             )
         except (OSError, subprocess.TimeoutExpired) as exception:
             return False, self._redact(str(exception))
@@ -589,13 +595,7 @@ class Probe:
         )
 
         baseline_ok, baseline_output = self.run_command(
-            [
-                "env",
-                f"PEANUT_LOCAL_ENV_FILE={self.orchestration_env}",
-                f"PEANUT_SERVER_ENV_FILE={self.backend_env}",
-                str(REPO / "scripts/local-stack.sh"),
-                "database-host-status",
-            ],
+            [str(REPO / "scripts/local-stack.sh"), "database-host-status"],
             timeout=30,
             output_limit=20_000,
         )

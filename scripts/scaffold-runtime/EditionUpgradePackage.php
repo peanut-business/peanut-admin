@@ -39,24 +39,24 @@ final class EditionUpgradePackage
     ];
 
     /** @return array{from_manifest:string,to_manifest:string,package:array<string,mixed>} */
-    public function prepare(string $projectRoot, string $packageRoot, string $signatureKeyId): array
+    public function prepare(string $projectRoot, string $packageRoot, string $signatureKeyId, array $trustedKeys): array
     {
-        $prepared = $this->authenticate($projectRoot, $packageRoot, $signatureKeyId);
+        $prepared = $this->authenticate($projectRoot, $packageRoot, $signatureKeyId, $trustedKeys);
         $prepared['from_manifest'] = $this->writeBaselineManifest($prepared['project_root'], $prepared['application']);
         unset($prepared['project_root'], $prepared['application']);
         return $prepared;
     }
 
     /** Authenticate a formal package without writing source-baseline metadata. */
-    public function prepareAdoption(string $projectRoot, string $packageRoot, string $signatureKeyId): array
+    public function prepareAdoption(string $projectRoot, string $packageRoot, string $signatureKeyId, array $trustedKeys): array
     {
-        $prepared = $this->authenticate($projectRoot, $packageRoot, $signatureKeyId);
+        $prepared = $this->authenticate($projectRoot, $packageRoot, $signatureKeyId, $trustedKeys);
         unset($prepared['project_root'], $prepared['application']);
         return $prepared;
     }
 
     /** @return array<string,mixed> */
-    private function authenticate(string $projectRoot, string $packageRoot, string $signatureKeyId): array
+    private function authenticate(string $projectRoot, string $packageRoot, string $signatureKeyId, array $trustedKeys): array
     {
         $project = ScaffoldPathGuard::projectRoot($projectRoot);
         $package = realpath($packageRoot);
@@ -73,7 +73,7 @@ final class EditionUpgradePackage
         }
         $inventory = (string)file_get_contents($inventoryPath);
         $files = $this->verifyInventory($package, $inventory);
-        $this->verifySignature($package, $inventory, $signatureKeyId);
+        $this->verifySignature($package, $inventory, $signatureKeyId, $trustedKeys);
 
         $manifestPath = $package . '/upgrade-manifest.json';
         if (!isset($files['upgrade-manifest.json'])) {
@@ -297,12 +297,10 @@ final class EditionUpgradePackage
         return $inventory;
     }
 
-    private function verifySignature(string $root, string $inventory, string $keyId): void
+    /** @param array<string,string> $trustedKeys */
+    private function verifySignature(string $root, string $inventory, string $keyId, array $trustedKeys): void
     {
-        $trusted = json_decode((string)getenv('PEANUT_UPGRADE_TRUSTED_KEYS_JSON'), true);
-        $public = is_array($trusted) && !array_is_list($trusted)
-            ? base64_decode((string)($trusted[$keyId] ?? ''), true)
-            : false;
+        $public = base64_decode((string)($trustedKeys[$keyId] ?? ''), true);
         $path = $root . '/META-INF/signatures/' . $keyId . '.json';
         try {
             $signature = is_file($path) && !is_link($path)

@@ -4,6 +4,9 @@
  */
 export default {};
 
+import { resolve } from 'node:path';
+import { readClientEnvironment } from '../../../scripts/client-environment';
+
 export function isReportMode(): boolean {
-  return process.env.REPORT === 'true';
+  return readClientEnvironment(resolve(__dirname, '../../.env.production')).REPORT === 'true';
 }

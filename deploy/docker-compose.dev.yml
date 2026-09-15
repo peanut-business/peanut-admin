@@ -19,10 +19,10 @@ services:
     environment:
       <<: *node-environment
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
-      VITE_API_PROXY_TARGET: http://host.docker.internal:${PHP_PORT:?set the registered host PHP port}
-      VITE_OPEN_BROWSER: "false"
+      PEANUT_CLIENT_ENV_FILE: /run/peanut/client.env
     volumes:
       - ../web:/workspace/web
+      - ../.local/container-client.env:/run/peanut/client.env:ro
       - web-node-modules:/workspace/web/node_modules
     ports:
       - "127.0.0.1:${VITE_PORT:?set the registered admin port}:5173"
@@ -34,9 +34,10 @@ services:
     environment:
       <<: *node-environment
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
-      VITE_API_PROXY_TARGET: http://host.docker.internal:${PHP_PORT:?set the registered host PHP port}
+      PEANUT_CLIENT_ENV_FILE: /run/peanut/client.env
     volumes:
       - ../platform:/workspace/platform
+      - ../.local/container-client.env:/run/peanut/client.env:ro
       - platform-node-modules:/workspace/platform/node_modules
     ports:
       - "127.0.0.1:${PLATFORM_PORT:?set the registered platform port}:5177"
@@ -48,10 +49,10 @@ services:
     environment:
       <<: *node-environment
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
-      NUXT_DEV_PROXY_TARGET: http://host.docker.internal:${PHP_PORT:?set the registered host PHP port}/api
-      NUXT_DEV_PROXY_ORIGIN: http://host.docker.internal:${PHP_PORT:?set the registered host PHP port}
+      PEANUT_CLIENT_ENV_FILE: /run/peanut/client.env
     volumes:
       - ../pc:/workspace/pc
+      - ../.local/container-client.env:/run/peanut/client.env:ro
       - pc-node-modules:/workspace/pc/node_modules
     ports:
       - "127.0.0.1:${PC_PORT:?set the registered PC port}:3100"
@@ -63,9 +64,10 @@ services:
     environment:
       <<: *node-environment
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
-      VITE_API_PROXY_TARGET: http://host.docker.internal:${PHP_PORT:?set the registered host PHP port}
+      PEANUT_CLIENT_ENV_FILE: /run/peanut/client.env
     volumes:
       - ../uniapp:/workspace/uniapp
+      - ../.local/container-client.env:/run/peanut/client.env:ro
       - mobile-node-modules:/workspace/uniapp/node_modules
     ports:
       - "127.0.0.1:${MOBILE_PORT:?set the registered mobile port}:5174"
@@ -76,9 +78,10 @@ services:
     command: ["sh", "-c", "test -x node_modules/.bin/vitepress || (corepack enable && corepack prepare pnpm@9.15.6 --activate && pnpm install --frozen-lockfile); node scripts/sync-legal-assets.mjs; exec node node_modules/vitepress/bin/vitepress.js dev . --host 0.0.0.0 --port 4173"]
     environment:
       <<: *node-environment
-      VITEPRESS_DISABLE_GIT: "true"
+      PEANUT_CLIENT_ENV_FILE: /run/peanut/client.env
     volumes:
       - ../docs-site:/workspace/docs-site
+      - ../.local/container-client.env:/run/peanut/client.env:ro
       - ../LICENSE:/workspace/LICENSE:ro
       - ../NOTICE:/workspace/NOTICE:ro
       - ../THIRD_PARTY_NOTICES.md:/workspace/THIRD_PARTY_NOTICES.md:ro

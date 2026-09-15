@@ -41,6 +41,7 @@ BACKEND_ENVIRONMENT_KEYS = {
     "PEANUT_MODULE_KERNEL_VERSION",
     "PEANUT_MODULE_TRUSTED_KEYS_JSON",
 }
+CONFIG_VALUES: dict[str, str] = {}
 
 
 class ChainError(RuntimeError):
@@ -58,10 +59,11 @@ def command(
     env: dict[str, str] | None = None,
     log: Path | None = None,
 ) -> str:
-    merged = os.environ.copy()
-    if env and "PEANUT_SERVER_ENV_FILE" in env:
-        for name in BACKEND_ENVIRONMENT_KEYS:
-            merged.pop(name, None)
+    merged = {
+        key: value
+        for key in ("PATH", "HOME", "TMPDIR", "SystemRoot", "COMSPEC", "PATHEXT")
+        if (value := os.environ.get(key))
+    }
     if env:
         merged.update(env)
     result = subprocess.run(
@@ -187,7 +189,7 @@ def lease_fields(lease_id: str) -> tuple[dict[str, str], list[tuple[str, str]]]:
 
 
 def required_environment(name: str) -> str:
-    value = os.environ.get(name, "")
+    value = CONFIG_VALUES.get(name, "")
     if value == "":
         fail(f"missing required environment: {name}")
     return value
@@ -349,9 +351,9 @@ def install_dependencies(
     log: Path,
 ) -> None:
     command(
-        [str(COMPOSER), "install", "--no-interaction", "--no-progress", "--prefer-dist"],
+        [str(COMPOSER), "install", "--no-interaction", "--no-progress", "--prefer-dist", "--no-cache"],
         cwd=project / "server",
-        env=backend_env | {"COMPOSER_CACHE_DIR": str(cache)},
+        env=backend_env,
         log=log,
     )
 
@@ -696,13 +698,18 @@ def run_chain(args: argparse.Namespace) -> dict[str, Any]:
         ], logs / "author.log")
         expect(check_v1_package.get("status") == "ready", "module:check did not accept signed v1 package")
 
-        install_env = consumer_env | {
-            "ADMIN_INITIAL_EMAIL": "cr21-admin@example.test",
-            "ADMIN_INITIAL_PASSWORD": "cr21-admin-strong-password",
-        }
+        installation_path = consumer / "server/.env.cr21.installation"
+        installation_path.write_text(
+            "ADMIN_INITIAL_EMAIL=cr21-admin@example.test\n"
+            "ADMIN_INITIAL_PASSWORD=cr21-admin-strong-password\n",
+            encoding="utf-8",
+        )
+        installation_path.chmod(0o600)
+        install_env = consumer_env | {"PEANUT_INSTALLATION_ENV_FILE": str(installation_path)}
         installed = json_output(command(
             [str(PHP), "server/database/install.php"], cwd=consumer, env=install_env, log=logs / "consumer.log"
         ), "consumer fresh install")
+        installation_path.unlink()
         expect(installed.get("state") == "installed"
                and int(installed.get("health", {}).get("installed_table_count", 0)) > 0,
                "consumer fresh install did not create the canonical schema")
@@ -858,9 +865,22 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--lease", required=True)
     parser.add_argument("--database", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--env-file", required=True)
     parser.add_argument("--formal-release-adoption", action="store_true")
     parser.add_argument("--keep", action="store_true", help="Keep the lease-owned output after success")
-    return parser.parse_args()
+    args = parser.parse_args()
+    path = Path(args.env_file)
+    if not path.is_absolute() or not path.is_file() or path.is_symlink() or (path.stat().st_mode & 0o777) != 0o600:
+        fail("--env-file must name an absolute permission-0600 file")
+    allowed = {"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS"}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        name, separator, value = line.partition("=")
+        if not separator or name not in allowed or name in CONFIG_VALUES or value == "":
+            fail("--env-file has an invalid schema")
+        CONFIG_VALUES[name] = value
+    if CONFIG_VALUES.keys() != allowed:
+        fail("--env-file is missing a required database value")
+    return args
 
 
 def main() -> int:

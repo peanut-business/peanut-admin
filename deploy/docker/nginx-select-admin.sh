@@ -2,7 +2,13 @@
 
 set -eu
 
-case "${DEPLOYMENT_MODE:-}" in
+backend_source=/var/www/peanut-admin/server/.env.source
+[ -f "$backend_source" ] && [ ! -L "$backend_source" ] || {
+    printf 'nginx-select-admin: backend environment source is unavailable\n' >&2
+    exit 1
+}
+DEPLOYMENT_MODE=$(awk -F= '$1 == "DEPLOYMENT_MODE" { print $2; exit }' "$backend_source")
+case "$DEPLOYMENT_MODE" in
     standalone|multi-tenant) ;;
     *)
         printf 'nginx-select-admin: DEPLOYMENT_MODE must be standalone or multi-tenant\n' >&2

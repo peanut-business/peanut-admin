@@ -114,8 +114,8 @@ Mobile、Docs 和固定网关可由 development Compose 运行；Docker PHP 仅�
 
 登记的默认入口为 `http://127.0.0.1:20187/admin/`；API、Web、Mobile、MySQL、PC、Docs 与
 本地生产预览的登记默认端口依次为 `20180`、`20181`、`20182`、`20183`、`20185`、
-`20186`、`20190`。除唯一数据库 `20183` 外，本地监听均从 `.local/stack.env`（或
-`PEANUT_LOCAL_ENV_FILE`）读取；每个 clone/worktree 可覆盖，`ensure_env` 不会重写已有值。
+`20186`、`20190`。除唯一数据库 `20183` 外，本地监听均从 `.local/stack.env` 读取；
+每个 clone/worktree 可直接维护自己的私有文件，`ensure_env` 不会重写已有值。
 非秘密示例见 `deploy/local-stack.env.example`。停止时运行
 `./scripts/local-stack.sh dev-down`，该命令会同时停止容器和受 PID/日志管理的宿主 PHP。
 使用安装时提供的管理员邮箱和密码登录。管理身份必须使用有效邮箱，不能只填写 `@` 前的

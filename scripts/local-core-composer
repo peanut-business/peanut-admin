@@ -8,17 +8,33 @@ SERVER_DIR="$ROOT_DIR/server"
 LOCAL_COMPOSER_DIR="$ROOT_DIR/.local/composer-core"
 LOCAL_COMPOSER="$LOCAL_COMPOSER_DIR/composer.json"
 LOCAL_LOCK="$LOCAL_COMPOSER_DIR/composer.lock"
-CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
-COMPOSER_BIN="${PEANUT_COMPOSER:-$ROOT_DIR/scripts/project-composer}"
+CORE_DIR=""
+BACKEND_ENV=""
+COMPOSER_BIN="$ROOT_DIR/scripts/project-composer"
 ACTION="${1:-install}"
+[ $# -gt 0 ] && shift
 
 die() {
     printf 'local-core-composer: %s\n' "$*" >&2
     exit 1
 }
 
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --core-dir) [[ $# -ge 2 ]] || die '--core-dir requires a value'; CORE_DIR="$2"; shift 2 ;;
+        --backend-env) [[ $# -ge 2 ]] || die '--backend-env requires a value'; BACKEND_ENV="$2"; shift 2 ;;
+        *) die "unsupported argument: $1" ;;
+    esac
+done
+[[ "$CORE_DIR" == /* ]] || die '--core-dir must be an absolute path'
+if [[ "$ACTION" != manifest ]]; then
+    [[ "$BACKEND_ENV" == /* && -f "$BACKEND_ENV" && ! -L "$BACKEND_ENV" ]] \
+        || die '--backend-env must be an absolute regular file'
+    [[ "$(stat -f '%Lp %l' "$BACKEND_ENV" 2>/dev/null || stat -c '%a %h' "$BACKEND_ENV" 2>/dev/null)" == '600 1' ]] \
+        || die '--backend-env must have mode 0600 and one hard link'
+fi
 command -v "$COMPOSER_BIN" >/dev/null 2>&1 || die "Composer is unavailable: $COMPOSER_BIN"
-[[ -d "$CORE_DIR/packages/php" ]] || die "core checkout not found: $CORE_DIR/packages/php (set PEANUT_ADMIN_CORE_DIR explicitly)"
+[[ -d "$CORE_DIR/packages/php" ]] || die "core checkout not found: $CORE_DIR/packages/php"
 
 CORE_DIR="$(CDPATH= cd -- "$CORE_DIR" && pwd)"
 CORE_PACKAGE_DIR="$CORE_DIR/packages/php"
@@ -38,20 +54,26 @@ $source["repositories"] = array_merge([
         "options" => ["symlink" => true],
     ],
 ], $source["repositories"] ?? []);
+$source["autoload"]["psr-4"]["app\\"] = $argv[5];
 $source["config"]["vendor-dir"] = $argv[3];
 file_put_contents(
     $argv[4],
     json_encode($source, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL
 );
-' "$SERVER_DIR/composer.json" "$CORE_PACKAGE_DIR" "$SERVER_DIR/vendor" "$LOCAL_COMPOSER"
+' "$SERVER_DIR/composer.json" "$CORE_PACKAGE_DIR" "$SERVER_DIR/vendor" "$LOCAL_COMPOSER" "$SERVER_DIR/app"
 
 run_composer() {
-    COMPOSER="$LOCAL_COMPOSER" "$COMPOSER_BIN" \
-        --working-dir="$SERVER_DIR" \
+    local tool_environment
+    tool_environment="$(mktemp "$LOCAL_COMPOSER_DIR/tool-environment.XXXXXX")"
+    chmod 600 "$tool_environment"
+    printf 'COMPOSER=%s\nPEANUT_SERVER_ENV_FILE=%s\n' "$LOCAL_COMPOSER" "$BACKEND_ENV" > "$tool_environment"
+    local status=0
+    "$ROOT_DIR/scripts/run-with-environment-file" --env-file "$tool_environment" -- \
+        "$COMPOSER_BIN" --working-dir="$SERVER_DIR" \
         --no-interaction \
-        --no-progress \
-        --prefer-source \
-        "$@"
+        "$@" || status=$?
+    rm -f "$tool_environment"
+    return "$status"
 }
 
 LOCK_BACKUP=""
@@ -76,20 +98,23 @@ case "$ACTION" in
         preserve_application_lock
         trap restore_application_lock EXIT
         cp "$SERVER_DIR/composer.lock" "$LOCAL_LOCK"
-        run_composer update peanut-admin/core --with-dependencies
+        run_composer update peanut-admin/core --with-dependencies --no-progress --prefer-source
         ;;
     update|refresh)
         preserve_application_lock
         trap restore_application_lock EXIT
         cp "$SERVER_DIR/composer.lock" "$LOCAL_LOCK"
-        run_composer update peanut-admin/core --with-dependencies
+        run_composer update peanut-admin/core --with-dependencies --no-progress --prefer-source
+        ;;
+    autoload)
+        run_composer dump-autoload
         ;;
     manifest)
         printf '%s\n' "$LOCAL_COMPOSER"
         exit 0
         ;;
     *)
-        die "usage: $0 {install|update|refresh|manifest}"
+        die "usage: $0 {install|update|refresh|autoload|manifest} --core-dir /absolute/path [--backend-env /absolute/server/.env.name]"
         ;;
 esac
 

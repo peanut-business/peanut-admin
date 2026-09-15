@@ -21,25 +21,26 @@ EDITION_MANIFEST_SHA256=""
 CONFIRM_DESTROY=""
 EXPECTED_COMMIT=""
 EXPECTED_TREE=""
-ADMIN_EMAIL="${PEANUT_GENERATED_ADMIN_EMAIL:-}"
-ADMIN_PASSWORD="${PEANUT_GENERATED_ADMIN_PASSWORD:-}"
-PLATFORM_EMAIL="${PEANUT_GENERATED_PLATFORM_EMAIL:-}"
-PLATFORM_PASSWORD="${PEANUT_GENERATED_PLATFORM_PASSWORD:-}"
-DEMO_MODE="${PEANUT_DEMO_MODE:-disabled}"
+ENV_FILE=""
+ADMIN_EMAIL=""
+ADMIN_PASSWORD=""
+PLATFORM_EMAIL=""
+PLATFORM_PASSWORD=""
+DEMO_MODE="disabled"
 DEMO_MODE_SET=0
-[[ -n "${PEANUT_DEMO_MODE+x}" ]] && DEMO_MODE_SET=1
-DEMO_TENANT_A_EMAIL="${PEANUT_DEMO_TENANT_A_EMAIL:-}"
-DEMO_TENANT_B_EMAIL="${PEANUT_DEMO_TENANT_B_EMAIL:-}"
-DEMO_SHARED_PASSWORD="${PEANUT_DEMO_SHARED_PASSWORD:-}"
-DEMO_TENANT_A_HOST="${PEANUT_DEMO_TENANT_A_HOST:-}"
-DEMO_TENANT_B_HOST="${PEANUT_DEMO_TENANT_B_HOST:-}"
-DEMO_DOCS_URL="${PEANUT_DEMO_DOCS_URL:-}"
+DEMO_TENANT_A_EMAIL=""
+DEMO_TENANT_B_EMAIL=""
+DEMO_SHARED_PASSWORD=""
+DEMO_TENANT_A_HOST=""
+DEMO_TENANT_B_HOST=""
+DEMO_DOCS_URL=""
 
 usage() {
   cat <<'EOF'
 Usage: scripts/deploy-release <vX.Y.Z> --target <production|production-candidate> \
   (--install | --update | --fresh) [--apply | --dry-run] [--ssh-alias <alias>] \
   [--expected-commit <sha1> --expected-tree <sha1>] \
+  [--env-file <permission-0600-file>] \
   [--edition-package <installer.tar.gz> --edition-manifest <manifest.json>] \
   [--overlay <demo-patch.tar>] \
   [--confirm-destroy <target>]
@@ -176,8 +177,10 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || fail '--ssh-alias requires a value'
       SSH_ALIAS="$2"; shift 2 ;;
     --admin-password)
-      [[ $# -ge 2 ]] || fail '--admin-password requires a value'
-      ADMIN_PASSWORD="$2"; shift 2 ;;
+      fail 'use --env-file for installation identities' ;;
+    --env-file)
+      [[ $# -ge 2 ]] || fail '--env-file requires a value'
+      ENV_FILE="$2"; shift 2 ;;
     --overlay)
       [[ $# -ge 2 ]] || fail '--overlay requires a value'
       OVERLAY="$2"; shift 2 ;;
@@ -201,6 +204,43 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+for ambient_name in \
+  PEANUT_GENERATED_ADMIN_EMAIL PEANUT_GENERATED_ADMIN_PASSWORD \
+  PEANUT_GENERATED_PLATFORM_EMAIL PEANUT_GENERATED_PLATFORM_PASSWORD \
+  PEANUT_DEMO_MODE PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
+  PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST \
+  PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
+  if printenv "$ambient_name" >/dev/null 2>&1; then
+    fail "ambient deployment configuration is forbidden: $ambient_name"
+  fi
+done
+
+if [[ -n "$ENV_FILE" ]]; then
+  [[ "$ENV_FILE" == /* && -f "$ENV_FILE" && ! -L "$ENV_FILE" ]] || fail '--env-file must be an absolute regular file'
+  env_mode="$(stat -f '%Lp' "$ENV_FILE" 2>/dev/null || stat -c '%a' "$ENV_FILE" 2>/dev/null || true)"
+  [[ "$env_mode" == 600 ]] || fail '--env-file must have mode 0600'
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    [[ "$line" == *=* ]] || fail '--env-file contains a malformed line'
+    name="${line%%=*}"
+    value="${line#*=}"
+    case "$name" in
+      PEANUT_GENERATED_ADMIN_EMAIL) ADMIN_EMAIL="$value" ;;
+      PEANUT_GENERATED_ADMIN_PASSWORD) ADMIN_PASSWORD="$value" ;;
+      PEANUT_GENERATED_PLATFORM_EMAIL) PLATFORM_EMAIL="$value" ;;
+      PEANUT_GENERATED_PLATFORM_PASSWORD) PLATFORM_PASSWORD="$value" ;;
+      PEANUT_DEMO_MODE) DEMO_MODE="$value"; DEMO_MODE_SET=1 ;;
+      PEANUT_DEMO_TENANT_A_EMAIL) DEMO_TENANT_A_EMAIL="$value" ;;
+      PEANUT_DEMO_TENANT_B_EMAIL) DEMO_TENANT_B_EMAIL="$value" ;;
+      PEANUT_DEMO_SHARED_PASSWORD) DEMO_SHARED_PASSWORD="$value" ;;
+      PEANUT_DEMO_TENANT_A_HOST) DEMO_TENANT_A_HOST="$value" ;;
+      PEANUT_DEMO_TENANT_B_HOST) DEMO_TENANT_B_HOST="$value" ;;
+      PEANUT_DEMO_DOCS_URL) DEMO_DOCS_URL="$value" ;;
+      *) fail "--env-file contains unsupported key: $name" ;;
+    esac
+  done < "$ENV_FILE"
+fi
+
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'tag must be an immutable vX.Y.Z release tag'
 [[ -z "$EXPECTED_COMMIT" || "$EXPECTED_COMMIT" =~ ^[a-f0-9]{40}$ ]] || fail 'expected commit must be a full lowercase SHA-1'
 [[ -z "$EXPECTED_TREE" || "$EXPECTED_TREE" =~ ^[a-f0-9]{40}$ ]] || fail 'expected tree must be a full lowercase SHA-1'
@@ -209,6 +249,9 @@ done
 [[ "$TARGET" == production || "$TARGET" == production-candidate ]] || fail 'target must be production or production-candidate'
 [[ $((INSTALL + UPDATE + FRESH)) -eq 1 ]] || fail 'choose exactly one of --install, --update or --fresh'
 [[ $((APPLY + DRY_RUN)) -eq 1 ]] || fail 'choose exactly one of --apply or --dry-run'
+if [[ "$UPDATE" != 1 && -z "$ENV_FILE" ]]; then
+  fail '--install and --fresh require --env-file for initial identities'
+fi
 if [[ "$FRESH" == 1 && "$CONFIRM_DESTROY" != "$TARGET" ]]; then
   fail "--fresh requires --confirm-destroy $TARGET"
 fi
@@ -353,7 +396,7 @@ if [[ -n "$EDITION_PACKAGE" ]]; then
 fi
 
 if [[ "$UPDATE" != 1 && ( -z "$ADMIN_EMAIL" || -z "$ADMIN_PASSWORD" ) ]]; then
-  fail 'fresh deployment requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
+  fail 'installation env file requires PEANUT_GENERATED_ADMIN_EMAIL and PEANUT_GENERATED_ADMIN_PASSWORD'
 fi
 if [[ "$UPDATE" != 1 ]]; then
   validate_env_value PEANUT_GENERATED_ADMIN_EMAIL "$ADMIN_EMAIL"
@@ -549,7 +592,7 @@ sudo -n grep -Fqx "PEANUT_DEPLOYMENT_TARGET=$target" server/.env || fail 'server
 sudo -n grep -Fqx "PEANUT_DATABASE_RESOURCE_ID=$database_resource" server/.env || fail 'server/.env database resource mismatch'
 sudo -n grep -Fqx "DEPLOYMENT_MODE=$deployment_mode" server/.env || fail 'server/.env deployment mode mismatch'
 
-current_compose=(sudo -n env "PEANUT_SERVER_ENV_FILE=$root/server/.env" docker compose --env-file .env --env-file server/.env -p "$project" -f compose.yaml --profile bundled-db)
+current_compose=(sudo -n env -i "PATH=$PATH" "HOME=$HOME" "PEANUT_SERVER_ENV_FILE=$root/server/.env" docker compose --env-file .env --env-file server/.env -p "$project" -f compose.yaml --profile bundled-db)
 "${current_compose[@]}" config >/dev/null || fail 'Compose configuration is invalid'
 if [[ "$mode" == update ]]; then
   [[ -f DEPLOYMENT_RECEIPT.json && ! -L DEPLOYMENT_RECEIPT.json ]] \
@@ -691,7 +734,7 @@ fi
 php_image="peanut-admin-php:${image_suffix}"
 nginx_image="peanut-admin-nginx:${image_suffix}"
 candidate_compose=(
-  sudo -n env "PHP_IMAGE=$php_image" "NGINX_IMAGE=$nginx_image" "PEANUT_SERVER_ENV_FILE=$root/server/.env"
+  sudo -n env -i "PATH=$PATH" "HOME=$HOME" "PHP_IMAGE=$php_image" "NGINX_IMAGE=$nginx_image" "PEANUT_SERVER_ENV_FILE=$root/server/.env"
   "PEANUT_DEPLOYMENT_RECEIPT_BASE64=$deployment_receipt_base64"
   docker compose --env-file "$root/.env" --env-file "$root/server/.env" -p "$project"
   -f "$staging/compose.yaml" --profile bundled-db
@@ -755,10 +798,14 @@ else
 fi
 
 backend_environment_copy="$(mktemp /tmp/peanut-admin-backend-env.XXXXXX)"
+installation_env=""
+seed_env=""
 cleanup_backend_environment_copy() {
   if [[ -n "${backend_environment_copy:-}" ]]; then
     sudo -n rm -f -- "$backend_environment_copy"
   fi
+  [[ -z "${installation_env:-}" ]] || rm -f -- "$installation_env"
+  [[ -z "${seed_env:-}" ]] || rm -f -- "$seed_env"
 }
 trap cleanup_backend_environment_copy EXIT
 sudo -n cp "$root/server/.env" "$backend_environment_copy"
@@ -820,6 +867,8 @@ if [[ "$mode" != update ]]; then
     PEANUT_DEMO_SHARED_PASSWORD PEANUT_DEMO_TENANT_A_HOST PEANUT_DEMO_TENANT_B_HOST PEANUT_DEMO_DOCS_URL; do
     set_env_key server/.env "$key" "${!key:-}"
   done
+  set_env_key server/.env PEANUT_DEMO_ADMIN_EMAIL "$(printf '%s' "$ADMIN_INITIAL_EMAIL" | tr '[:upper:]' '[:lower:]')"
+  set_env_key server/.env PEANUT_DEMO_PLATFORM_EMAIL "$(printf '%s' "$PLATFORM_INITIAL_EMAIL" | tr '[:upper:]' '[:lower:]')"
 elif [[ "$DEMO_MODE_SET" == 1 ]]; then
   set_env_key server/.env PEANUT_DEMO_MODE "$DEMO_MODE"
   for key in PEANUT_DEMO_TENANT_A_EMAIL PEANUT_DEMO_TENANT_B_EMAIL \
@@ -829,7 +878,7 @@ elif [[ "$DEMO_MODE_SET" == 1 ]]; then
 fi
 actual_commit="$expected_commit"
 
-compose=(sudo -n env "PEANUT_SERVER_ENV_FILE=$root/server/.env" docker compose --env-file .env --env-file server/.env -p "$project" -f compose.yaml --profile bundled-db)
+compose=(sudo -n env -i "PATH=$PATH" "HOME=$HOME" "PEANUT_SERVER_ENV_FILE=$root/server/.env" docker compose --env-file .env --env-file server/.env -p "$project" -f compose.yaml --profile bundled-db)
 "${compose[@]}" config >/dev/null || fail 'updated Compose configuration is invalid'
 if [[ "$mode" == update ]]; then
   # Runtime code is copied to the deployment root only; persistent volumes are
@@ -855,17 +904,27 @@ if [[ "$mode" == update ]]; then
   printf 'updated_tag=%s\ncommit=%s\nruntime_version=%s\ntarget=%s\n' "$tag" "$expected_commit" "$runtime_version" "$target"
   exit 0
 fi
-# Initial identities are injected into the one automatic installation client
-# for this process only. They are never written to server/.env or retained by
-# the long-running PHP/cron containers.
+# Initial identities are mounted into the one automatic installation client
+# from a permission-0600 file. They are never written to server/.env or retained
+# by the long-running PHP/cron containers.
+installation_env="$(mktemp /tmp/peanut-admin-installation.XXXXXX.env)"
+chmod 600 "$installation_env"
+{
+  printf 'ADMIN_INITIAL_EMAIL=%s\n' "$ADMIN_INITIAL_EMAIL"
+  printf 'ADMIN_INITIAL_PASSWORD=%s\n' "$ADMIN_INITIAL_PASSWORD"
+  if [[ "$deployment_mode" == multi-tenant ]]; then
+    printf 'PLATFORM_INITIAL_EMAIL=%s\n' "$PLATFORM_INITIAL_EMAIL"
+    printf 'PLATFORM_INITIAL_PASSWORD=%s\n' "$PLATFORM_INITIAL_PASSWORD"
+  fi
+} > "$installation_env"
+unset ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
 "${compose[@]}" up -d --wait mysql
 "${compose[@]}" run -T --rm --no-deps --entrypoint php \
-  -e "ADMIN_INITIAL_EMAIL=$ADMIN_INITIAL_EMAIL" \
-  -e "ADMIN_INITIAL_PASSWORD=$ADMIN_INITIAL_PASSWORD" \
-  -e "PLATFORM_INITIAL_EMAIL=$PLATFORM_INITIAL_EMAIL" \
-  -e "PLATFORM_INITIAL_PASSWORD=$PLATFORM_INITIAL_PASSWORD" \
+  --volume "$installation_env:/run/peanut/installation.env:ro" \
+  --env PEANUT_INSTALLATION_ENV_FILE=/run/peanut/installation.env \
   php server/database/install.php </dev/null
-unset ADMIN_INITIAL_EMAIL ADMIN_INITIAL_PASSWORD PLATFORM_INITIAL_EMAIL PLATFORM_INITIAL_PASSWORD
+rm -f "$installation_env"
+installation_env=""
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/install.php --migrate --target-version="$migration_target_version" </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/database/environment-guard.php --current </dev/null
 "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think plugin:reconcile --release-locked </dev/null
@@ -881,8 +940,15 @@ if [[ "$deployment_mode" == multi-tenant && "$demo_mode_enabled" == 1 && -n "$ex
   [[ "$tenant_a_id" =~ ^[1-9][0-9]*$ && "$tenant_b_id" =~ ^[1-9][0-9]*$ ]] || fail 'demo Tenant seed returned invalid identifiers'
   "${compose[@]}" run -T --rm --no-deps --entrypoint php php server/think tenant-module:apply-profile demo </dev/null
   for tenant_id in "$tenant_a_id" "$tenant_b_id"; do
+    seed_env="$(mktemp /tmp/peanut-admin-demo-seed.XXXXXX.env)"
+    chmod 600 "$seed_env"
+    printf 'PEANUT_DEMO_TENANT_ID=%s\n' "$tenant_id" > "$seed_env"
     "${compose[@]}" run -T --rm --no-deps --entrypoint php \
-      -e PEANUT_DEMO_TENANT_ID="$tenant_id" php server/database/seed-demo-data.php --apply </dev/null
+      --volume "$seed_env:/run/peanut/demo-seed.env:ro" \
+      --env PEANUT_INSTALLATION_ENV_FILE=/run/peanut/demo-seed.env \
+      php server/database/seed-demo-data.php --apply </dev/null
+    rm -f "$seed_env"
+    seed_env=""
   done
 elif [[ -n "$expected_overlay_sha" ]]; then
   fail 'demo overlay requires persistent PEANUT_DEMO_MODE=enabled in server/.env'

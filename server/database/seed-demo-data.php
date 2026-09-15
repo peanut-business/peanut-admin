@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/environment-guard.php';
-require __DIR__ . '/../bootstrap/environment.php';
+require_once __DIR__ . '/../bootstrap/environment.php';
 require __DIR__ . '/../vendor/autoload.php';
 
 use think\App;

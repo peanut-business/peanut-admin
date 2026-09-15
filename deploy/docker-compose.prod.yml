@@ -32,14 +32,8 @@ services:
       extra_hosts: *build-hosts
     restart: unless-stopped
     command: ["/usr/local/bin/peanut-php-entrypoint"]
-    env_file:
-      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}
     environment:
       PEANUT_SERVER_ENV_FILE: /var/www/peanut-admin/server/.env.source
-      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-}
-      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
-      PLATFORM_INITIAL_EMAIL: ${PLATFORM_INITIAL_EMAIL:-}
-      PLATFORM_INITIAL_PASSWORD: ${PLATFORM_INITIAL_PASSWORD:-}
     depends_on:
       mysql:
         condition: service_healthy
@@ -66,11 +60,10 @@ services:
       args: *build-proxy
       extra_hosts: *build-hosts
     restart: unless-stopped
-    environment:
-      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:?set DEPLOYMENT_MODE in server/.env to standalone or multi-tenant}
     ports:
       - "127.0.0.1:${HTTP_PORT:-18092}:80"
     volumes:
+      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}:/var/www/peanut-admin/server/.env.source:ro
       - php-storage:/var/www/peanut-admin/server/public/storage:ro
     depends_on:
       php:
@@ -111,8 +104,6 @@ services:
     restart: unless-stopped
     working_dir: /var/www/peanut-admin/server
     command: ["/usr/local/bin/peanut-php-entrypoint", "cron"]
-    env_file:
-      - ${PEANUT_SERVER_ENV_FILE:-../server/.env}
     environment:
       PEANUT_SERVER_ENV_FILE: /var/www/peanut-admin/server/.env.source
     volumes:

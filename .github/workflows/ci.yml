@@ -18,7 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Reject retired current guidance
-        run: ./scripts/check-stale-facts.sh
+        run: |
+          ./scripts/check-stale-facts.sh
+          ./scripts/check-environment-sources
 
   changes:
     name: Changed paths
@@ -127,7 +129,6 @@ jobs:
             'DB_PASS=mt02_root' \
             'DB_ROOT_PASS=mt02_root' \
             'DB_PREFIX=pa_' > "$backend_env"
-          printf 'PEANUT_SERVER_ENV_FILE=%s\n' "$backend_env" >> "$GITHUB_ENV"
 
       - name: Cache Composer downloads
         uses: actions/cache@v4
@@ -151,18 +152,19 @@ jobs:
           CI_BASE_REF: ${{ github.event.pull_request.base.sha }}
           CI_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
           CI_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: ./scripts/ci-server-check.sh --fast
+        run: ./scripts/ci-server-check.sh --fast --env-file "$GITHUB_WORKSPACE/server/.env.ci-${GITHUB_RUN_ID}"
 
       - name: Run stage server gates
         if: github.event_name == 'workflow_dispatch'
-        run: ./scripts/ci-server-check.sh --full
+        run: ./scripts/ci-server-check.sh --full --env-file "$GITHUB_WORKSPACE/server/.env.ci-${GITHUB_RUN_ID}"
 
       - name: Remove isolated backend environment
         if: always()
         shell: bash
         run: |
-          case "$PEANUT_SERVER_ENV_FILE" in
-            "$GITHUB_WORKSPACE"/server/.env.ci-*) rm -f -- "$PEANUT_SERVER_ENV_FILE" ;;
+          backend_env="$GITHUB_WORKSPACE/server/.env.ci-${GITHUB_RUN_ID}"
+          case "$backend_env" in
+            "$GITHUB_WORKSPACE"/server/.env.ci-*) rm -f -- "$backend_env" ;;
             *) exit 1 ;;
           esac
 

@@ -205,7 +205,6 @@ scripts/scaffold-doctor \
   --core-dir=/absolute/path/to/peanut-admin-core
 ```
 
-也可用 `PEANUT_ADMIN_CORE_DIR` 指定同一路径。此时输出
-`scope=php,web mode=local-core-development`，并额外核对 checkout 的 PHP/Web package 版本和
+此时输出 `scope=php,web mode=local-core-development`，并额外核对 checkout 的 PHP/Web package 版本和
 现有本地依赖软链接是否都指向所选源码。该模式只服务本地联合开发，不代表 Registry 发布包或
 生产运行已经验证。

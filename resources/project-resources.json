@@ -2324,11 +2324,12 @@
         "credential_ref": "operator-local SSH configuration for alias oracle3; the one-Gate MySQL password is generated at oracle3:/www/docker/peanut-admin/restore-verification/mysql-root-password mode 0600",
         "data_source": "one immutable paired artifact under /www/docker/peanut-admin/backups resolved by backup_reference_key",
         "qualification_registry_path": "/www/docker/peanut-admin/restore-verification-registry.json",
+        "qualification_environment_path": "/www/docker/peanut-admin/.ops/qualification-worker.env",
         "freshness_requirement": "immediately before each Gate, prove the fixed root, container, two volumes, internal network, qualification registry file and candidate-tagged worker image are absent; capture the observed production and production-candidate protected identities and require the same identities after the Gate",
         "preflight_checks": {
           "isolation": "the target root, container, volumes and network must be absent; Docker network is internal and the container has zero published ports",
           "source": "manifest, SHA256SUMS, gzip and tar checks pass and the canonical manifest SHA-256 matches pa_ops_backup_evidence",
-          "worker_image": "build the exact lease candidate with target php and an OCI revision label; PEANUT_OPS_WORKER_IMAGE and PEANUT_OPS_WORKER_CANDIDATE must match before a task CLI starts",
+          "worker_image": "build the exact lease candidate with target php and an OCI revision label; the mode-0600 one-link qualification_environment_path supplies PEANUT_OPS_WORKER_IMAGE, PEANUT_OPS_WORKER_CANDIDATE and the registered qualification registry path before a task CLI starts",
           "protected_targets": "production and production-candidate container IDs, images, running states and volume mount identities are hashed before and after the Gate and must be identical",
           "failure_policy": "do not clean or reuse failed target resources; stop and retain the exact path, container, volumes and network for explicit diagnosis"
         },

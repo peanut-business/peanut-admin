@@ -41,6 +41,7 @@ ADMIN_TOOLING_ID = "peanut-admin-mysql84-remote-admin-cli"
 BROWSER_TOOLING_ID = "peanut-admin-p0e-playwright-cli"
 DATABASE_TUNNEL_ID = "peanut-admin-p0e-mysql84-container-tunnel"
 GROUP_RESULT = re.compile(r"^[a-z0-9][a-z0-9.-]{0,63}$")
+RUNTIME_VALUES: dict[str, str] = {}
 
 
 class GateError(RuntimeError):
@@ -49,6 +50,14 @@ class GateError(RuntimeError):
 
 def fail(message: str) -> None:
     raise GateError(message)
+
+
+def operating_system_environment() -> dict[str, str]:
+    return {
+        key: value
+        for key in ("PATH", "HOME", "TMPDIR", "SSH_AUTH_SOCK", "SystemRoot", "COMSPEC", "PATHEXT")
+        if (value := os.environ.get(key))
+    }
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -70,7 +79,7 @@ def command(
     capture: bool = False,
     check: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    merged = os.environ.copy()
+    merged = operating_system_environment()
     if env:
         merged.update(env)
     if log is not None:
@@ -116,7 +125,7 @@ def sha256(path: Path) -> str:
 
 
 def required_environment(name: str) -> str:
-    value = os.environ.get(name, "")
+    value = RUNTIME_VALUES.get(name, "")
     if not value:
         fail(f"missing required environment: {name}")
     return value
@@ -140,12 +149,11 @@ def read_private_environment(path: Path, required: set[str]) -> dict[str, str]:
 
 def prepare_database_credentials() -> None:
     command(
-        [str(DEVELOPMENT_DATABASE_SYNC), "sync-credentials"],
-        env={"PEANUT_SERVER_ENV_FILE": str(LOCAL_BACKEND_ENV)},
+        [str(DEVELOPMENT_DATABASE_SYNC), "sync-credentials", "--backend-env", str(LOCAL_BACKEND_ENV)],
     )
     values = read_private_environment(LOCAL_BACKEND_ENV, {"DB_USER", "DB_PASS"})
-    os.environ["P0E_DB_USER"] = values["DB_USER"]
-    os.environ["P0E_DB_PASSWORD"] = values["DB_PASS"]
+    RUNTIME_VALUES["P0E_DB_USER"] = values["DB_USER"]
+    RUNTIME_VALUES["P0E_DB_PASSWORD"] = values["DB_PASS"]
 
 
 def registered_browser_cli_path(p0e_registry: dict[str, Any] | None = None) -> Path:
@@ -660,15 +668,10 @@ class Runner:
                 encoding="utf-8",
             )
             self.runtime_credentials.chmod(0o600)
-        os.environ.update(values)
+        RUNTIME_VALUES.update(values)
 
     def playwright_cli(self) -> str:
-        explicit = os.environ.get("P0E_PLAYWRIGHT_CLI", "")
         registered = registered_browser_cli_path()
-        if explicit:
-            if Path(os.path.realpath(explicit)) != registered or not os.access(explicit, os.X_OK):
-                fail("P0E_PLAYWRIGHT_CLI must equal the registered fixed Playwright CLI path")
-            return explicit
         if not registered.is_file() or not os.access(registered, os.X_OK):
             fail(f"P0-E Playwright CLI is unavailable; run {BROWSER_TOOLING} install")
         return str(registered)
@@ -693,6 +696,7 @@ class Runner:
             stdin=stdin,
             stdout=stdout,
             stderr=subprocess.PIPE,
+            env=operating_system_environment(),
             check=False,
         )
         if check and result.returncode != 0:
@@ -749,6 +753,7 @@ class Runner:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=True,
+            env=operating_system_environment(),
         )
         deadline = time.time() + 10
         while time.time() < deadline:
@@ -936,6 +941,8 @@ class Runner:
         )
         if container_runtime:
             values["PEANUT_RESOURCE_LEASE_PROOF"] = self.plan["lease_proof_container_path"]
+        else:
+            values["P0E_HOST_LEASE_PROOF"] = self.plan["lease_proof_dir"]
         temporary = path.with_suffix(path.suffix + ".tmp")
         temporary.write_text(
             "".join(f"{key}={value}\n" for key, value in sorted(values.items())),
@@ -953,22 +960,31 @@ class Runner:
         mode: str,
     ) -> Any:
         path = self.write_backend_env(project_root, database, mode)
-        environment = {
-            "PEANUT_SERVER_ENV_FILE": str(path),
-            "P0E_HOST_LEASE_PROOF": self.plan["lease_proof_dir"],
+        installation_path = path.with_name(path.name + ".installation")
+        installation_values = {
             "ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
             "ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
         }
         if mode == "multi-tenant":
-            environment.update({
+            installation_values.update({
                 "PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
                 "PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
             })
+        installation_path.write_text(
+            "".join(f"{key}={value}\n" for key, value in sorted(installation_values.items())),
+            encoding="utf-8",
+        )
+        installation_path.chmod(0o600)
+        environment = {
+            "PEANUT_SERVER_ENV_FILE": str(path),
+            "PEANUT_INSTALLATION_ENV_FILE": str(installation_path),
+        }
         try:
             yield environment
         finally:
-            with contextlib.suppress(FileNotFoundError):
-                path.unlink()
+            for owned_path in (path, installation_path):
+                with contextlib.suppress(FileNotFoundError):
+                    owned_path.unlink()
 
     def database_exists(self, database: str) -> bool:
         escaped = database.replace("'", "''")
@@ -1478,17 +1494,26 @@ class Runner:
             "--output", str(output),
             "--formal-release-adoption",
         ]
-        result = command(
-            arguments,
-            env=self.create_app_environment() | {
+        consumer_environment = self.cache / "consumer-module-environment.env"
+        consumer_environment.write_text(
+            "".join(f"{name}={value}\n" for name, value in {
                 "DB_HOST": host,
                 "DB_PORT": port,
                 "DB_USER": required_environment("P0E_DB_USER"),
                 "DB_PASS": required_environment("P0E_DB_PASSWORD"),
-            },
+            }.items()),
+            encoding="utf-8",
+        )
+        consumer_environment.chmod(0o600)
+        arguments.extend(["--env-file", str(consumer_environment)])
+        result = command(
+            arguments,
+            env=self.create_app_environment(),
             capture=True,
             check=False,
         )
+        with contextlib.suppress(FileNotFoundError):
+            consumer_environment.unlink()
         with log.open("a", encoding="utf-8") as stream:
             stream.write("$ " + shlex.join(arguments) + "\n")
             stream.write(result.stdout)
@@ -1550,8 +1575,6 @@ class Runner:
         overlay = (
             "services:\n"
             "  php:\n"
-            "    environment:\n"
-            f"      PEANUT_RESOURCE_LEASE_PROOF: {self.plan['lease_proof_container_path']}\n"
             "    volumes:\n"
             "      - type: bind\n"
             f"        source: {proof_dir}\n"
@@ -1674,7 +1697,8 @@ class Runner:
         self.docs_process = subprocess.Popen([
             "pnpm", "exec", "vitepress", "preview", ".", "--host", "127.0.0.1",
             "--port", str(self.plan["ports"]["docs"]),
-        ], cwd=project_root / "docs-site", stdout=log, stderr=subprocess.STDOUT, text=True)
+        ], cwd=project_root / "docs-site", stdout=log, stderr=subprocess.STDOUT, text=True,
+            env=operating_system_environment())
         self.docs_root = project_root
         self.wait_http(f"http://127.0.0.1:{self.plan['ports']['docs']}/")
 
@@ -1709,13 +1733,6 @@ class Runner:
             self.active_compose_root = project_root
             self.wait_http(f"http://127.0.0.1:{self.plan['ports']['http']}/healthz")
         self.start_docs(project_root)
-        env = {
-            "P0E_PLAYWRIGHT_CLI": self.playwright_cli(),
-            "P0E_ADMIN_INITIAL_EMAIL": required_environment("P0E_ADMIN_INITIAL_EMAIL"),
-            "P0E_ADMIN_INITIAL_PASSWORD": required_environment("P0E_ADMIN_INITIAL_PASSWORD"),
-            "P0E_PLATFORM_INITIAL_EMAIL": required_environment("P0E_PLATFORM_INITIAL_EMAIL"),
-            "P0E_PLATFORM_INITIAL_PASSWORD": required_environment("P0E_PLATFORM_INITIAL_PASSWORD"),
-        }
         browser_output = self.output / "browser" / output_scope
         browser_output.mkdir(parents=True, exist_ok=True)
         command([
@@ -1725,7 +1742,9 @@ class Runner:
             "--docs-url", f"http://127.0.0.1:{self.plan['ports']['docs']}",
             "--output-dir", str(browser_output),
             "--session", f"p0e-{self.args.run_id}",
-        ], env=env, log=self.group_log(group))
+            "--env-file", str(self.runtime_credentials),
+            "--playwright-cli", self.playwright_cli(),
+        ], log=self.group_log(group))
 
     def browser(self, mode: str) -> None:
         group = f"{mode}-browser"

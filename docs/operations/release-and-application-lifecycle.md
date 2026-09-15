@@ -159,11 +159,13 @@ Peanut Admin 当前登记的生产 worker 只
 正式 Release 提供对应升级附件时，应用 owner 从正式入口取得升级包和受信公钥，在开发分支执行：
 
 ```bash
-export PEANUT_UPGRADE_TRUSTED_KEYS_JSON='{"<official-key-id>":"<base64-ed25519-public-key>"}'
+install -m 600 /dev/null /run/peanut/upgrade-trust.env
+printf '%s\n' 'PEANUT_UPGRADE_TRUSTED_KEYS_JSON={"<official-key-id>":"<base64-ed25519-public-key>"}' > /run/peanut/upgrade-trust.env
 php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade preflight \
   --project-root=/path/to/app \
   --package=/path/to/extracted-upgrade \
-  --signature-key-id=<official-key-id>
+  --signature-key-id=<official-key-id> \
+  --env-file=/run/peanut/upgrade-trust.env
 php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade apply \
   --project-root=/path/to/app --plan=/path/to/app/.peanut/upgrades/plans/<candidate>.json
 php /path/to/extracted-upgrade/upgrader/scripts/scaffold-upgrade verify \

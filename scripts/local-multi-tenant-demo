@@ -4,10 +4,10 @@ set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 state_dir="$repo_dir/.local"
-orchestration_env=${PEANUT_DEMO_ENV_FILE:-"$state_dir/mt-demo-stack.env"}
-backend_env=${PEANUT_SERVER_ENV_FILE:-"$repo_dir/server/.env.mt-demo"}
-lease_id=${PEANUT_DEMO_LEASE_ID:-local-multi-tenant-demo-mtlocal01}
-lease_owner=${PEANUT_DEMO_LEASE_OWNER:-codex-root}
+orchestration_env="$state_dir/mt-demo-stack.env"
+backend_env="$repo_dir/server/.env.mt-demo"
+lease_id=local-multi-tenant-demo-mtlocal01
+lease_owner=codex-root
 php_pid="$state_dir/mt-demo-php.pid"
 php_log="$state_dir/mt-demo-php.log"
 admin_pid="$state_dir/mt-demo-admin.pid"
@@ -55,7 +55,7 @@ prepare_env() {
     [ -f "$orchestration_env" ] || : > "$orchestration_env"
     [ -f "$backend_env" ] || : > "$backend_env"
     chmod 600 "$orchestration_env" "$backend_env"
-    PEANUT_SERVER_ENV_FILE="$backend_env" "$repo_dir/scripts/project-development-database.sh" sync-credentials >/dev/null
+    "$repo_dir/scripts/project-development-database.sh" sync-credentials --backend-env "$backend_env" >/dev/null
     "$registry" database-env \
         --deployment-target local-multi-tenant-demo \
         --consumer host \
@@ -67,6 +67,8 @@ prepare_env() {
     set_env "$orchestration_env" VITE_PORT 20179
     set_env "$orchestration_env" PLATFORM_PORT 20176
     set_env "$orchestration_env" VITE_ALLOWED_HOSTS platform.peanut-admin.test,admin.peanut-admin.test,tenant-a.peanut-admin.test,tenant-b.peanut-admin.test
+    set_env "$orchestration_env" VITE_DEPLOYMENT_MODE multi-tenant
+    set_env "$orchestration_env" VITE_OPEN_BROWSER false
     set_env "$backend_env" APP_ENV development
     set_env "$backend_env" APP_DEBUG true
     set_env "$backend_env" DB_PREFIX pa_
@@ -80,6 +82,8 @@ prepare_env() {
     clear_env "$backend_env" ADMIN_INITIAL_PASSWORD
     clear_env "$backend_env" PLATFORM_INITIAL_EMAIL
     clear_env "$backend_env" PLATFORM_INITIAL_PASSWORD
+    set_env "$backend_env" PEANUT_DEMO_ADMIN_EMAIL owner@local.test
+    set_env "$backend_env" PEANUT_DEMO_PLATFORM_EMAIL platform@local.test
     set_env "$backend_env" PEANUT_DEMO_TENANT_A_EMAIL tenant-a@local.test
     set_env "$backend_env" PEANUT_DEMO_TENANT_B_EMAIL tenant-b@local.test
     set_env "$backend_env" PEANUT_DEMO_SHARED_PASSWORD 'peanut1234'
@@ -170,9 +174,8 @@ start_clients() {
         (
             trap '' HUP
             cd "$repo_dir/web"
-            VITE_API_PROXY_TARGET=http://127.0.0.1:20178 VITE_OPEN_BROWSER=false \
-                VITE_DEPLOYMENT_MODE=multi-tenant \
-                exec node node_modules/vite/bin/vite.js --config ./config/vite.config.dev.ts \
+            exec env -i PATH="$PATH" HOME="$HOME" PEANUT_CLIENT_ENV_FILE="$orchestration_env" \
+                node node_modules/vite/bin/vite.js --config ./config/vite.config.dev.ts \
                 --host 127.0.0.1 --port 20179
         ) >> "$admin_log" 2>&1 &
         printf '%s\n' "$!" > "$admin_pid"
@@ -182,8 +185,8 @@ start_clients() {
         (
             trap '' HUP
             cd "$repo_dir/platform"
-            VITE_API_PROXY_TARGET=http://127.0.0.1:20178 \
-                exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 20176
+            exec env -i PATH="$PATH" HOME="$HOME" PEANUT_CLIENT_ENV_FILE="$orchestration_env" \
+                node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 20176
         ) >> "$platform_log" 2>&1 &
         printf '%s\n' "$!" > "$platform_pid"
     fi
@@ -211,17 +214,23 @@ case "${1:-}" in
     up)
         assert_lease
         [ -f "$orchestration_env" ] && [ -f "$backend_env" ] || prepare_env
-        load_env
-        ADMIN_INITIAL_EMAIL=owner@local.test ADMIN_INITIAL_PASSWORD=peanut1234 \
-            PLATFORM_INITIAL_EMAIL=platform@local.test PLATFORM_INITIAL_PASSWORD=peanut1234 \
-            PEANUT_SERVER_ENV_FILE="$backend_env" \
+        installation_env=$(mktemp "$state_dir/installation.XXXXXX.env")
+        trap 'rm -f "$installation_env"' EXIT HUP INT TERM
+        chmod 600 "$installation_env"
+        printf '%s\n' \
+            'ADMIN_INITIAL_EMAIL=owner@local.test' \
+            'ADMIN_INITIAL_PASSWORD=peanut1234' \
+            'PLATFORM_INITIAL_EMAIL=platform@local.test' \
+            'PLATFORM_INITIAL_PASSWORD=peanut1234' > "$installation_env"
+        PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_INSTALLATION_ENV_FILE="$installation_env" \
             php "$repo_dir/server/database/install.php" --skip-if-installed
+        rm -f "$installation_env"
+        trap - EXIT HUP INT TERM
         PEANUT_SERVER_ENV_FILE="$backend_env" \
             php "$repo_dir/server/database/seed-multi-tenant-demo.php" --apply
         PEANUT_SERVER_ENV_FILE="$backend_env" php "$repo_dir/server/database/environment-guard.php" --current
-        PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_PHP_PID_FILE="$php_pid" \
-            PEANUT_PHP_LOG_FILE="$php_log" \
-            "$repo_dir/scripts/local-php-runtime" start
+        "$repo_dir/scripts/local-php-runtime" start --env-file "$orchestration_env" --backend-env "$backend_env" \
+            --pid-file "$php_pid" --log-file "$php_log"
         start_clients
         wait_http http://127.0.0.1:20179/admin/ "$admin_log"
         wait_http http://127.0.0.1:20176/platform/ "$platform_log"
@@ -231,8 +240,8 @@ case "${1:-}" in
     down)
         stop_pid "$platform_pid" '--port 20176'
         stop_pid "$admin_pid" '--port 20179'
-        PEANUT_LOCAL_ENV_FILE="$orchestration_env" PEANUT_SERVER_ENV_FILE="$backend_env" PEANUT_PHP_PID_FILE="$php_pid" \
-            PEANUT_PHP_LOG_FILE="$php_log" "$repo_dir/scripts/local-php-runtime" stop
+        "$repo_dir/scripts/local-php-runtime" stop --env-file "$orchestration_env" --backend-env "$backend_env" \
+            --pid-file "$php_pid" --log-file "$php_log"
         ;;
     status)
         assert_lease

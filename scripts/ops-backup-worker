@@ -11,11 +11,38 @@ command -v sha256sum >/dev/null || die 'sha256sum is required'
 project_root="$(pwd -P)"
 [[ -f "$project_root/compose.yaml" && -f "$project_root/server/think" ]] || die 'run from a Peanut Admin deployment root'
 
-qualification_image="${PEANUT_OPS_WORKER_IMAGE:-}"
+for name in PEANUT_OPS_RESOURCE_REGISTRY PEANUT_OPS_WORKER_IMAGE PEANUT_OPS_WORKER_CANDIDATE; do
+  if printenv "$name" >/dev/null 2>&1; then
+    die "ambient qualification configuration is forbidden: $name"
+  fi
+done
+qualification_environment="$project_root/.ops/qualification-worker.env"
+qualification_image=''
+qualification_candidate=''
+qualification_registry=''
+if [[ -e "$qualification_environment" || -L "$qualification_environment" ]]; then
+  [[ -f "$qualification_environment" && ! -L "$qualification_environment" ]] \
+    || die 'qualification worker environment must be a regular file'
+  [[ "$(stat -c '%a %h' "$qualification_environment")" == '600 1' ]] \
+    || die 'qualification worker environment must have mode 0600 and one hard link'
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    [[ "$line" == *=* ]] || die 'qualification worker environment contains a malformed line'
+    name="${line%%=*}"; value="${line#*=}"
+    case "$name" in
+      PEANUT_OPS_RESOURCE_REGISTRY) qualification_registry="$value" ;;
+      PEANUT_OPS_WORKER_IMAGE) qualification_image="$value" ;;
+      PEANUT_OPS_WORKER_CANDIDATE) qualification_candidate="$value" ;;
+      *) die "qualification worker environment contains an unsupported key: $name" ;;
+    esac
+  done < "$qualification_environment"
+  [[ "$qualification_registry" == "$project_root/restore-verification-registry.json" \
+      && -n "$qualification_image" && -n "$qualification_candidate" ]] \
+    || die 'qualification worker environment is incomplete'
+fi
 backend_env="$project_root/server/.env"
 if [[ -n "$qualification_image" ]]; then
   backend_env="$project_root/.env"
-  qualification_candidate="${PEANUT_OPS_WORKER_CANDIDATE:-}"
   [[ "$qualification_image" =~ ^peanut-admin-restore-verify-worker:[a-f0-9]{12}$ \
     && "$qualification_candidate" =~ ^[a-f0-9]{40}$ \
     && "${qualification_candidate:0:12}" == "${qualification_image##*:}" ]] \

@@ -107,7 +107,7 @@ PLATFORM_HOSTS=<your-platform-host>
 TENANT_ADMIN_HOSTS=<your-tenant-admin-host>
 ```
 
-同时填写你自己的 `DB_*` 连接参数和部署专用随机密钥。数据库必须是空库；不要清空或接管不确定归属的数据库。初始身份不要写进 `server/.env`，只在安装命令的进程环境中一次性提供。
+同时填写你自己的 `DB_*` 连接参数和部署专用随机密钥。数据库必须是空库；不要清空或接管不确定归属的数据库。初始身份不要写进 `server/.env`；创建独立的 permission-0600 文件，并只在安装命令上用 `PEANUT_INSTALLATION_ENV_FILE` 选择它，命令结束后删除该文件。
 
 ## 5. 安装并登录
 

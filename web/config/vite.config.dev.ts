@@ -3,15 +3,7 @@ import { resolve } from 'path';
 import { defineConfig, mergeConfig } from 'vite';
 import eslint from 'vite-plugin-eslint';
 import { createBaseConfig } from './vite.config.base';
-
-const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1';
-const allowedHosts = (process.env.VITE_ALLOWED_HOSTS || '')
-  .split(',')
-  .map((host) => host.trim())
-  .filter(Boolean);
-const tenantEntryHost = process.env.VITE_TENANT_ENTRY_HOST || '';
-
-const proxyHeaders = tenantEntryHost ? { host: tenantEntryHost } : undefined;
+import { readClientEnvironment } from '../../scripts/client-environment';
 
 interface ModuleManifest {
   key?: unknown;
@@ -100,12 +92,26 @@ export function discoverAdminContributions(
     .map(([, entry]) => entry);
 }
 
-export default defineConfig((configEnv) =>
-  mergeConfig(
+export default defineConfig((configEnv) => {
+  const environment = readClientEnvironment(
+    resolve(__dirname, `../.env.${configEnv.mode}`)
+  );
+  const apiProxyTarget =
+    environment.VITE_API_PROXY_TARGET ||
+    (environment.PHP_PORT
+      ? `http://127.0.0.1:${environment.PHP_PORT}`
+      : 'http://127.0.0.1');
+  const allowedHosts = (environment.VITE_ALLOWED_HOSTS || '')
+    .split(',')
+    .map((host) => host.trim())
+    .filter(Boolean);
+  const tenantEntryHost = environment.VITE_TENANT_ENTRY_HOST || '';
+  const proxyHeaders = tenantEntryHost ? { host: tenantEntryHost } : undefined;
+  return mergeConfig(
     {
       mode: 'development',
       server: {
-        open: process.env.VITE_OPEN_BROWSER !== 'false',
+        open: environment.VITE_OPEN_BROWSER !== 'false',
         allowedHosts,
         fs: {
           strict: true,
@@ -152,5 +158,5 @@ export default defineConfig((configEnv) =>
       ],
     },
     createBaseConfig(configEnv, discoverAdminContributions)
-  )
-);
+  );
+});

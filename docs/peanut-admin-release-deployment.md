@@ -172,7 +172,7 @@ PEANUT_INSTALLATION_MODE=automatic
 旧 JWT 的兼容入口，升级后旧 Token 全部失效，会员需重新登录。
 
 多租户模式将 `DEPLOYMENT_MODE` 改为 `multi-tenant`。Platform 初始身份与 Admin 初始身份
-必须不同，但二者都只通过 automatic 命令的进程环境或 guided 页面请求提供。同时配置：
+必须不同；automatic 使用仅在安装命令上选择的 permission-0600 一次性 env 文件，guided 使用认证页面请求。同时配置：
 
 ```dotenv
 PLATFORM_HOSTS=platform.example.com

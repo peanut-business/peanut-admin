@@ -17,11 +17,14 @@ function packagingEvidenceFail(string $message): never
 function packagingEvidenceRun(array $command, ?string $cwd = null, array $environment = []): array
 {
     $pipes = [];
-    $childEnvironment = getenv();
-    if (!is_array($childEnvironment)) {
-        $childEnvironment = [];
+    $childEnvironment = [];
+    foreach (['PATH', 'HOME', 'TMPDIR', 'SystemRoot', 'COMSPEC', 'PATHEXT'] as $osKey) {
+        $osValue = getenv($osKey);
+        if ($osValue !== false) {
+            $childEnvironment[$osKey] = $osValue;
+        }
     }
-    foreach (array_merge($_ENV, $environment) as $key => $value) {
+    foreach ($environment as $key => $value) {
         $childEnvironment[(string)$key] = (string)$value;
     }
     $process = proc_open(
@@ -29,7 +32,7 @@ function packagingEvidenceRun(array $command, ?string $cwd = null, array $enviro
         [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
         $pipes,
         $cwd,
-        $environment === [] ? null : $childEnvironment,
+        $childEnvironment,
     );
     if (!is_resource($process)) {
         packagingEvidenceFail('unable to start packaging evidence command');

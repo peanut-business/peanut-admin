@@ -225,8 +225,8 @@ class AppService extends Service
         $this->app->bind(DemoAccountPolicy::class, fn(): DemoAccountPolicy => new DemoAccountPolicy(
             (bool)Config::get('peanut.demo.enabled', false),
             array_values(array_filter([
-                (string)Config::get('peanut.demo.admin_initial_email', ''),
-                (string)Config::get('peanut.demo.platform_initial_email', ''),
+                (string)Config::get('peanut.demo.admin_email', ''),
+                (string)Config::get('peanut.demo.platform_email', ''),
                 (string)Config::get('peanut.demo.tenant_a_email', ''),
                 (string)Config::get('peanut.demo.tenant_b_email', ''),
             ], static fn(string $email): bool => trim($email) !== '')),

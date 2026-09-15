@@ -11,12 +11,6 @@ REGISTRY=""
 die() { printf 'scaffold-doctor: %s\n' "$*" >&2; exit 1; }
 usage() { printf '%s\n' "Usage: $0 --resource-id <registered-id> [--path <application>] [--core-dir <core>]"; }
 
-if [[ ${PEANUT_ADMIN_CORE_DIR+x} == x ]]; then
-  [[ -n "$PEANUT_ADMIN_CORE_DIR" ]] || die 'PEANUT_ADMIN_CORE_DIR cannot be empty'
-  CORE_DIR="$PEANUT_ADMIN_CORE_DIR"
-  LOCAL_CORE_MODE=1
-fi
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --resource-id) [[ $# -gt 1 ]] || die '--resource-id requires a value'; RESOURCE_ID="$2"; shift 2 ;;

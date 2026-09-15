@@ -1,7 +1,10 @@
 import { defineConfig } from 'vitepress'
+import { resolve } from 'node:path'
 import brandManifest from '../generated/brand.json'
+import { readClientEnvironment } from '../../scripts/client-environment'
 
-const canonicalUrl = process.env.PEANUT_DOCS_SITE_URL?.trim()
+const fileEnv = readClientEnvironment(resolve(import.meta.dirname, '../.env.production'))
+const canonicalUrl = fileEnv.PEANUT_DOCS_SITE_URL?.trim()
 const { website } = brandManifest
 
 const guide = [
@@ -50,7 +53,7 @@ export default defineConfig({
   title: `${website.name} 开发者文档`,
   description: 'Peanut Admin 面向应用开发者、Module 作者与运维人员的任务型文档。',
   cleanUrls: true,
-  lastUpdated: process.env.VITEPRESS_DISABLE_GIT !== 'true',
+  lastUpdated: fileEnv.VITEPRESS_DISABLE_GIT !== 'true',
   ignoreDeadLinks: false,
   sitemap: canonicalUrl ? { hostname: canonicalUrl } : undefined,
   head: [

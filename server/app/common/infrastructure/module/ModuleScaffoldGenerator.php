@@ -266,7 +266,7 @@ final class ModuleScaffoldGenerator
 
     private function validateComposer(string $backendRoot): void
     {
-        $binary = trim($this->composerBinary ?? (string)(getenv('COMPOSER_BINARY') ?: 'composer'));
+        $binary = trim($this->composerBinary ?? ($this->projectRoot . '/scripts/project-composer'));
         if ($binary === '' || str_contains($binary, "\0")) {
             throw new ModuleScaffoldException('MODULE_CREATE_COMPOSER_INVALID', 'Composer validator is unavailable.');
         }

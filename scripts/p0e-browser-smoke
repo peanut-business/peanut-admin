@@ -9,6 +9,8 @@ PLATFORM_URL=""
 DOCS_URL=""
 OUTPUT_DIR=""
 SESSION=""
+ENV_FILE=""
+PLAYWRIGHT_CLI=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode) MODE="${2:-}"; shift 2 ;;
@@ -17,6 +19,8 @@ while [[ $# -gt 0 ]]; do
     --docs-url) DOCS_URL="${2:-}"; shift 2 ;;
     --output-dir) OUTPUT_DIR="${2:-}"; shift 2 ;;
     --session) SESSION="${2:-}"; shift 2 ;;
+    --env-file) ENV_FILE="${2:-}"; shift 2 ;;
+    --playwright-cli) PLAYWRIGHT_CLI="${2:-}"; shift 2 ;;
     *) die "unknown option: $1" ;;
   esac
 done
@@ -27,9 +31,11 @@ done
 [[ "$DOCS_URL" =~ ^http://127\.0\.0\.1:[0-9]{1,5}$ ]] || die '--docs-url must be an explicit registered loopback URL'
 [[ "$OUTPUT_DIR" == /* && -d "$OUTPUT_DIR" ]] || die '--output-dir must be an existing absolute directory'
 [[ "$SESSION" =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]] || die '--session is invalid'
-[[ -n "${P0E_PLAYWRIGHT_CLI:-}" && -x "$P0E_PLAYWRIGHT_CLI" ]] || die 'P0E_PLAYWRIGHT_CLI must name an executable Playwright CLI wrapper'
+[[ -x "$PLAYWRIGHT_CLI" ]] || die '--playwright-cli must name an executable Playwright CLI wrapper'
+[[ "$ENV_FILE" == /* && -f "$ENV_FILE" && ! -L "$ENV_FILE" ]] || die '--env-file must name an absolute regular file'
+[[ "$(stat -f '%Lp' "$ENV_FILE" 2>/dev/null || stat -c '%a' "$ENV_FILE")" == 600 ]] || die '--env-file must have mode 0600'
 for name in P0E_ADMIN_INITIAL_EMAIL P0E_ADMIN_INITIAL_PASSWORD P0E_PLATFORM_INITIAL_EMAIL P0E_PLATFORM_INITIAL_PASSWORD; do
-  [[ -n "${!name:-}" ]] || die "missing environment: $name"
+  grep -q "^${name}=." "$ENV_FILE" || die "missing file value: $name"
 done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -38,35 +44,41 @@ FIXTURE="$ROOT/server/tests/fixtures/p0e-runtime-qualification/browser-smoke.js"
 LOG="$OUTPUT_DIR/$MODE-playwright.log"
 OPENED=0
 RUNTIME_FIXTURE=""
+cli() {
+  env -i PATH="$PATH" HOME="$HOME" PLAYWRIGHT_CLI_SESSION="$SESSION" "$PLAYWRIGHT_CLI" "$@"
+}
 cleanup() {
   if [[ "$OPENED" == 1 ]]; then
-    "$P0E_PLAYWRIGHT_CLI" close >>"$LOG" 2>&1 || true
+    cli close >>"$LOG" 2>&1 || true
   fi
   if [[ -n "$RUNTIME_FIXTURE" && -e "$RUNTIME_FIXTURE" ]]; then
     rm -f "$RUNTIME_FIXTURE"
   fi
 }
 trap cleanup EXIT INT TERM
-export PLAYWRIGHT_CLI_SESSION="$SESSION"
-export P0E_BROWSER_MODE="$MODE"
-export P0E_BROWSER_TENANT_ADMIN_URL="$TENANT_ADMIN_URL"
-export P0E_BROWSER_PLATFORM_URL="$PLATFORM_URL"
-export P0E_BROWSER_DOCS_URL="$DOCS_URL"
-export P0E_BROWSER_OUTPUT_DIR="$OUTPUT_DIR"
 
 cd "$OUTPUT_DIR"
-"$P0E_PLAYWRIGHT_CLI" open "$TENANT_ADMIN_URL/admin/login" >"$LOG" 2>&1
+cli open "$TENANT_ADMIN_URL/admin/login" >"$LOG" 2>&1
 OPENED=1
-"$P0E_PLAYWRIGHT_CLI" resize 1440 1000 >>"$LOG" 2>&1
-"$P0E_PLAYWRIGHT_CLI" snapshot >"$OUTPUT_DIR/$MODE-initial-snapshot.txt" 2>>"$LOG"
-browser_environment="$(node -e '
-const names = [
-  "P0E_BROWSER_MODE", "P0E_BROWSER_TENANT_ADMIN_URL", "P0E_BROWSER_PLATFORM_URL", "P0E_BROWSER_DOCS_URL", "P0E_BROWSER_OUTPUT_DIR",
-  "P0E_ADMIN_INITIAL_EMAIL", "P0E_ADMIN_INITIAL_PASSWORD",
-  "P0E_PLATFORM_INITIAL_EMAIL", "P0E_PLATFORM_INITIAL_PASSWORD",
-];
-process.stdout.write(JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name] || ""]))));
-')"
+cli resize 1440 1000 >>"$LOG" 2>&1
+cli snapshot >"$OUTPUT_DIR/$MODE-initial-snapshot.txt" 2>>"$LOG"
+browser_environment="$(node - "$ENV_FILE" "$MODE" "$TENANT_ADMIN_URL" "$PLATFORM_URL" "$DOCS_URL" "$OUTPUT_DIR" <<'NODE'
+const fs = require('node:fs');
+const [path, mode, tenantAdminUrl, platformUrl, docsUrl, outputDir] = process.argv.slice(2);
+const values = Object.fromEntries(fs.readFileSync(path, 'utf8').trim().split(/\r?\n/u).map((line) => line.split(/=(.*)/s, 2)));
+process.stdout.write(JSON.stringify({
+  P0E_BROWSER_MODE: mode,
+  P0E_BROWSER_TENANT_ADMIN_URL: tenantAdminUrl,
+  P0E_BROWSER_PLATFORM_URL: platformUrl,
+  P0E_BROWSER_DOCS_URL: docsUrl,
+  P0E_BROWSER_OUTPUT_DIR: outputDir,
+  P0E_ADMIN_INITIAL_EMAIL: values.P0E_ADMIN_INITIAL_EMAIL || '',
+  P0E_ADMIN_INITIAL_PASSWORD: values.P0E_ADMIN_INITIAL_PASSWORD || '',
+  P0E_PLATFORM_INITIAL_EMAIL: values.P0E_PLATFORM_INITIAL_EMAIL || '',
+  P0E_PLATFORM_INITIAL_PASSWORD: values.P0E_PLATFORM_INITIAL_PASSWORD || '',
+}));
+NODE
+)"
 RUNTIME_FIXTURE="$(mktemp "${TMPDIR:-/tmp}/p0e-browser-fixture.XXXXXX")"
 chmod 600 "$RUNTIME_FIXTURE"
 {
@@ -75,8 +87,8 @@ chmod 600 "$RUNTIME_FIXTURE"
   cat "$FIXTURE"
   printf '%s\n' '}'
 } >"$RUNTIME_FIXTURE"
-"$P0E_PLAYWRIGHT_CLI" run-code --filename "$RUNTIME_FIXTURE" >>"$LOG" 2>&1
-"$P0E_PLAYWRIGHT_CLI" snapshot >"$OUTPUT_DIR/$MODE-final-snapshot.txt" 2>>"$LOG"
-"$P0E_PLAYWRIGHT_CLI" close >>"$LOG" 2>&1
+cli run-code --filename "$RUNTIME_FIXTURE" >>"$LOG" 2>&1
+cli snapshot >"$OUTPUT_DIR/$MODE-final-snapshot.txt" 2>>"$LOG"
+cli close >>"$LOG" 2>&1
 OPENED=0
 printf 'browser_mode=%s\nstatus=passed\nlog=%s\n' "$MODE" "$LOG"

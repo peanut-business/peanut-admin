@@ -3,7 +3,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-BACKEND_ENV="${PEANUT_SERVER_ENV_FILE:-$ROOT/server/.env}"
+mode="${1:-}"
+shift || true
+BACKEND_ENV=""
+if [[ "${1:-}" == --env-file && $# -ge 2 ]]; then
+  BACKEND_ENV="$2"
+  shift 2
+fi
+[[ $# -eq 0 && "$BACKEND_ENV" == /* ]] || { echo 'ERROR: --env-file /absolute/path is required' >&2; exit 2; }
 [[ -f "$BACKEND_ENV" ]] || { echo "ERROR: backend environment is missing: $BACKEND_ENV" >&2; exit 2; }
 export PEANUT_SERVER_ENV_FILE="$BACKEND_ENV"
 
@@ -12,7 +19,6 @@ run_php_test() {
     "$ROOT/server/bootstrap/environment.php" "$ROOT/$1"
 }
 
-mode="${1:-}"
 if [[ "$mode" != '--fast' && "$mode" != '--full' ]]; then
   echo 'ERROR: ci-server-check.sh requires --fast or --full' >&2
   exit 2

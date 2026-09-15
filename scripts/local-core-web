@@ -5,11 +5,12 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 WEB_DIR="$ROOT_DIR/web"
-CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
+CORE_DIR=""
 CORE_PACKAGE_DIR="$CORE_DIR/packages/web"
 TARGET_DIR="$WEB_DIR/node_modules/@peanut-admin"
 TARGET="$TARGET_DIR/admin"
 ACTION="${1:-link}"
+[ $# -gt 0 ] && shift
 PEER_PACKAGES=(element-plus pinia vue vue-router)
 
 die() {
@@ -17,6 +18,14 @@ die() {
     exit 1
 }
 
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --core-dir) [[ $# -ge 2 ]] || die '--core-dir requires a value'; CORE_DIR="$2"; shift 2 ;;
+        *) die "unsupported argument: $1" ;;
+    esac
+done
+[[ "$CORE_DIR" == /* ]] || die '--core-dir must be an absolute path'
+CORE_PACKAGE_DIR="$CORE_DIR/packages/web"
 [[ -d "$WEB_DIR" ]] || die "application Web directory is missing: $WEB_DIR"
 [[ -f "$WEB_DIR/package.json" ]] || die "application Web manifest is missing: $WEB_DIR/package.json"
 [[ -f "$CORE_PACKAGE_DIR/package.json" ]] || die "core Web package is missing: $CORE_PACKAGE_DIR/package.json"
@@ -69,7 +78,7 @@ case "$ACTION" in
         done
         ;;
     *)
-        die 'usage: scripts/local-core-web {link|status}'
+        die 'usage: scripts/local-core-web {link|status} --core-dir /absolute/path'
         ;;
 esac
 

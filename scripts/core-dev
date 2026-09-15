@@ -3,14 +3,26 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
-CORE_DIR="${PEANUT_ADMIN_CORE_DIR:-$ROOT_DIR/../peanut-admin-core}"
+CORE_DIR=""
+BACKEND_ENV=""
 PHP_LINK="$ROOT_DIR/server/vendor/peanut-admin/core"
 WEB_LINK="$ROOT_DIR/web/node_modules/@peanut-admin/admin"
 COMPOSER_BIN="$ROOT_DIR/scripts/project-composer"
 
 die() { printf 'core-dev: %s\n' "$*" >&2; exit 1; }
 action="${1:-status}"
-[[ $# -le 1 ]] || die 'usage: scripts/core-dev {link|status|unlink|verify}'
+[ $# -gt 0 ] && shift
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --core-dir) [[ $# -ge 2 ]] || die '--core-dir requires a value'; CORE_DIR="$2"; shift 2 ;;
+    --backend-env) [[ $# -ge 2 ]] || die '--backend-env requires a value'; BACKEND_ENV="$2"; shift 2 ;;
+    *) die "unsupported argument: $1" ;;
+  esac
+done
+[[ "$CORE_DIR" == /* ]] || die '--core-dir must be an absolute path'
+if [[ "$action" == link || "$action" == unlink ]]; then
+  [[ "$BACKEND_ENV" == /* ]] || die '--backend-env is required for link and unlink'
+fi
 CORE_DIR="$(CDPATH= cd -- "$CORE_DIR" 2>/dev/null && pwd)" || die "core checkout not found: $CORE_DIR"
 PHP_CORE="$CORE_DIR/packages/php"
 WEB_CORE="$CORE_DIR/packages/web"
@@ -31,8 +43,8 @@ assert_versions
 
 case "$action" in
   link)
-    "$ROOT_DIR/scripts/local-core-composer" install
-    "$ROOT_DIR/scripts/local-core-web" link
+    "$ROOT_DIR/scripts/local-core-composer" install --core-dir "$CORE_DIR" --backend-env "$BACKEND_ENV"
+    "$ROOT_DIR/scripts/local-core-web" link --core-dir "$CORE_DIR"
     ;;
   status)
     [[ -L "$PHP_LINK" ]] || die "PHP Core is not symlinked: $PHP_LINK"
@@ -49,12 +61,9 @@ case "$action" in
       [[ "$(realpath "$WEB_LINK")" == "$WEB_CORE" ]] || die 'refusing to unlink an unrelated Web Core path'
       rm "$WEB_LINK"
     fi
-    "$COMPOSER_BIN" install --working-dir="$ROOT_DIR/server" --no-interaction --no-progress --prefer-dist
-    if command -v pnpm >/dev/null 2>&1; then
-      pnpm --dir "$ROOT_DIR/web" install --frozen-lockfile --ignore-scripts
-    else
-      npm --prefix "$ROOT_DIR/web" install --package-lock=false --ignore-scripts
-    fi
+    "$ROOT_DIR/scripts/run-with-environment-file" --env-file "$BACKEND_ENV" --as-selector PEANUT_SERVER_ENV_FILE -- \
+      "$COMPOSER_BIN" install --working-dir="$ROOT_DIR/server" --no-interaction --no-progress --prefer-dist
+    corepack pnpm --dir "$ROOT_DIR/web" install --frozen-lockfile --ignore-scripts
     ;;
   verify)
     if [[ -L "$PHP_LINK" && "$(realpath "$PHP_LINK")" == "$PHP_CORE" ]]; then
@@ -66,7 +75,7 @@ case "$action" in
     "$COMPOSER_BIN" validate --no-check-publish --working-dir="$ROOT_DIR/server" >/dev/null
     php "$ROOT_DIR/scripts/build-application-template-inventory" --check >/dev/null
     ;;
-  *) die 'usage: scripts/core-dev {link|status|unlink|verify}' ;;
+  *) die 'usage: scripts/core-dev {link|status|unlink|verify} --core-dir /absolute/path [--backend-env /absolute/server/.env.name]' ;;
 esac
 
 printf 'core-dev: %s php=%s web=%s\n' "$action" "$(jq -r '.version' "$PHP_CORE/composer.json")" "$(node -e 'process.stdout.write(require(process.argv[1]).version)' "$WEB_CORE/package.json")"

@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "../scripts/local-client-dev web",
     "build": "vue-tsc --noEmit && vite build --config ./config/vite.config.prod.ts",
-    "report": "cross-env REPORT=true npm run build",
+    "report": "PEANUT_CLIENT_ENV_FILE=$PWD/.env.report npm run build",
     "preview": "npm run build && vite preview --host",
     "type:check": "vue-tsc --noEmit --skipLibCheck",
     "lint-staged": "npx lint-staged",

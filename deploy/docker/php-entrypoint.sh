@@ -4,7 +4,7 @@ set -eu
 
 cd /var/www/peanut-admin
 
-backend_source=${PEANUT_SERVER_ENV_FILE:-/var/www/peanut-admin/server/.env.source}
+backend_source=/var/www/peanut-admin/server/.env.source
 backend_runtime=/var/www/peanut-admin/server/.env.container
 
 [ -f "$backend_source" ] || {
@@ -17,9 +17,14 @@ backend_runtime=/var/www/peanut-admin/server/.env.container
 }
 install -o www-data -g www-data -m 600 "$backend_source" "$backend_runtime"
 export PEANUT_SERVER_ENV_FILE="$backend_runtime"
+installation_mode=$(awk -F= '$1 == "PEANUT_INSTALLATION_MODE" { print $2; exit }' "$backend_runtime")
+case "$installation_mode" in automatic|guided) ;; *)
+    printf 'PEANUT_INSTALLATION_MODE must be automatic or guided\n' >&2
+    exit 1
+esac
 
 if [ "${1:-}" = cron ]; then
-    if [ "${PEANUT_INSTALLATION_MODE:-automatic}" = guided ]; then
+    if [ "$installation_mode" = guided ]; then
         until php server/database/install.php --status >/dev/null 2>&1; do
             sleep 10
         done
@@ -28,17 +33,13 @@ if [ "${1:-}" = cron ]; then
 fi
 
 php server/database/environment-guard.php --wait=60
-case "${PEANUT_INSTALLATION_MODE:-automatic}" in
+case "$installation_mode" in
     automatic)
         php server/database/install.php --skip-if-installed
         php server/database/environment-guard.php --current
         ;;
     guided)
         php server/database/install.php --preflight
-        ;;
-    *)
-        printf 'PEANUT_INSTALLATION_MODE must be automatic or guided\n' >&2
-        exit 1
         ;;
 esac
 touch /tmp/peanut-ready

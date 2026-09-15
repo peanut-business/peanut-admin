@@ -9,7 +9,34 @@ for command_name in jq gzip sha256sum tar openssl; do
 done
 
 project_root="$(pwd -P)"
-registry="${PEANUT_OPS_RESOURCE_REGISTRY:-$project_root/resources/project-resources.json}"
+for name in PEANUT_OPS_RESOURCE_REGISTRY PEANUT_OPS_WORKER_IMAGE PEANUT_OPS_WORKER_CANDIDATE; do
+  if printenv "$name" >/dev/null 2>&1; then
+    die "ambient qualification configuration is forbidden: $name"
+  fi
+done
+qualification_environment="$project_root/.ops/qualification-worker.env"
+registry="$project_root/resources/project-resources.json"
+qualification_image=''
+qualification_candidate=''
+if [[ -e "$qualification_environment" || -L "$qualification_environment" ]]; then
+  [[ -f "$qualification_environment" && ! -L "$qualification_environment" ]] \
+    || die 'qualification worker environment must be a regular file'
+  [[ "$(stat -c '%a %h' "$qualification_environment")" == '600 1' ]] \
+    || die 'qualification worker environment must have mode 0600 and one hard link'
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    [[ "$line" == *=* ]] || die 'qualification worker environment contains a malformed line'
+    name="${line%%=*}"; value="${line#*=}"
+    case "$name" in
+      PEANUT_OPS_RESOURCE_REGISTRY) registry="$value" ;;
+      PEANUT_OPS_WORKER_IMAGE) qualification_image="$value" ;;
+      PEANUT_OPS_WORKER_CANDIDATE) qualification_candidate="$value" ;;
+      *) die "qualification worker environment contains an unsupported key: $name" ;;
+    esac
+  done < "$qualification_environment"
+  [[ -n "$qualification_image" && -n "$qualification_candidate" ]] \
+    || die 'qualification worker environment is incomplete'
+fi
 if [[ "$registry" != "$project_root/resources/project-resources.json" \
   && "$registry" != "$project_root/restore-verification-registry.json" ]]; then
   die 'qualification registry path is not registered'
@@ -28,11 +55,9 @@ for resource_id in \
     || die "registered resource is missing: $resource_id"
 done
 
-qualification_image="${PEANUT_OPS_WORKER_IMAGE:-}"
 backend_env="$project_root/server/.env"
 if [[ -n "$qualification_image" ]]; then
   backend_env="$project_root/.env"
-  qualification_candidate="${PEANUT_OPS_WORKER_CANDIDATE:-}"
   [[ "$qualification_image" =~ ^peanut-admin-restore-verify-worker:[a-f0-9]{12}$ \
     && "$qualification_candidate" =~ ^[a-f0-9]{40}$ \
     && "${qualification_candidate:0:12}" == "${qualification_image##*:}" ]] \

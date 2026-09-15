@@ -14,6 +14,16 @@ use Throwable;
 /** Plan, apply, verify, and recover scaffold-owned changes with frozen application identities. */
 final class ScaffoldUpgradeRunner
 {
+    public function __construct(
+        private readonly ?int $failAfterReplacements = null,
+        private readonly ?int $failAfterAdoptionWrites = null,
+    ) {
+        if (($failAfterReplacements !== null && $failAfterReplacements < 1)
+            || ($failAfterAdoptionWrites !== null && $failAfterAdoptionWrites < 1)) {
+            throw new RuntimeException('SCAFFOLD_FAULT_INJECTION_INVALID');
+        }
+    }
+
     private const STRICT_SEMVER = '/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D';
     private const VERSION_CONTRACT_V1_KEYS = [
         'schema_version',
@@ -119,10 +129,10 @@ final class ScaffoldUpgradeRunner
     }
 
     /** Build a metadata-only ownership-adoption plan from an authenticated formal package. */
-    public function adoptionPlan(string $projectRoot, string $packageRoot, string $signatureKeyId): array
+    public function adoptionPlan(string $projectRoot, string $packageRoot, string $signatureKeyId, array $trustedKeys): array
     {
         $root = ScaffoldPathGuard::projectRoot($projectRoot);
-        $prepared = (new EditionUpgradePackage())->prepareAdoption($root, $packageRoot, $signatureKeyId);
+        $prepared = (new EditionUpgradePackage())->prepareAdoption($root, $packageRoot, $signatureKeyId, $trustedKeys);
         $plan = $this->buildAdoptionPlan($root, $prepared, $packageRoot, $signatureKeyId);
         $stateRoot = ScaffoldPathGuard::projectPath($root, '.peanut/upgrades');
         $path = $stateRoot . '/plans/' . $plan['candidate'] . '.json';
@@ -140,8 +150,9 @@ final class ScaffoldUpgradeRunner
         string $planPath,
         string $confirmedPlanSha256,
         array $confirmedPaths,
+        array $trustedKeys,
     ): array {
-        return $this->locked($projectRoot, function (string $root) use ($planPath, $confirmedPlanSha256, $confirmedPaths): array {
+        return $this->locked($projectRoot, function (string $root) use ($planPath, $confirmedPlanSha256, $confirmedPaths, $trustedKeys): array {
             $plan = $this->loadAdoptionPlan($root, $planPath);
             if (!hash_equals($plan['plan_sha256'], $confirmedPlanSha256)
                 || array_values($confirmedPaths) !== $plan['paths']) {
@@ -155,6 +166,7 @@ final class ScaffoldUpgradeRunner
                 $root,
                 $plan['formal_package']['root'],
                 $plan['formal_package']['signature_key_id'],
+                $trustedKeys,
             );
             $expected = $this->buildAdoptionPlan(
                 $root,
@@ -240,8 +252,7 @@ final class ScaffoldUpgradeRunner
                     if (!unlink($target)) throw new RuntimeException('SCAFFOLD_ATOMIC_DELETE_FAILED: ' . $action['path']);
                     $this->pruneEmptyParents(dirname($target), $root);
                     $writes++;
-                    $failAfter = getenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');
-                    if ($failAfter !== false && ctype_digit($failAfter) && $writes >= (int)$failAfter) {
+                    if ($this->failAfterReplacements !== null && $writes >= $this->failAfterReplacements) {
                         throw new RuntimeException('SCAFFOLD_FAULT_INJECTED');
                     }
                 }
@@ -253,8 +264,7 @@ final class ScaffoldUpgradeRunner
                     $baseline = '.peanut/scaffold-baseline/' . $to->version() . '/files/' . $action['path'];
                     $this->writeFileAtomic(ScaffoldPathGuard::projectPath($root, $baseline), $artifact, 0644);
                     $writes++;
-                    $failAfter = getenv('PEANUT_SCAFFOLD_FAIL_AFTER_REPLACEMENTS');
-                    if ($failAfter !== false && ctype_digit($failAfter) && $writes >= (int)$failAfter) {
+                    if ($this->failAfterReplacements !== null && $writes >= $this->failAfterReplacements) {
                         throw new RuntimeException('SCAFFOLD_FAULT_INJECTED');
                     }
                 }
@@ -505,8 +515,7 @@ final class ScaffoldUpgradeRunner
 
     private function adoptionFault(int $writes): void
     {
-        $failAfter = getenv('PEANUT_SCAFFOLD_ADOPTION_FAIL_AFTER_WRITES');
-        if ($failAfter !== false && ctype_digit($failAfter) && $writes >= (int)$failAfter) {
+        if ($this->failAfterAdoptionWrites !== null && $writes >= $this->failAfterAdoptionWrites) {
             throw new RuntimeException('SCAFFOLD_ADOPTION_FAULT_INJECTED');
         }
     }

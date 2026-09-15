@@ -4,10 +4,10 @@ declare(strict_types=1);
 /**
  * Load the one backend configuration source before ThinkPHP boots.
  *
- * Normal runtime uses server/.env. Isolated tests and qualification runs may
- * select a sibling server/.env.<run-id> through PEANUT_SERVER_ENV_FILE. The
- * selected file must exist. Normal settings are file-owned; fresh-install
- * identities are the only process-only inputs and may never be persisted.
+ * Normal runtime uses server/.env. A caller may select a sibling
+ * server/.env.<run-id> through PEANUT_SERVER_ENV_FILE. Automatic installation
+ * identities and the per-Tenant demo seed id come only from an independent
+ * permission-0600 file selected through PEANUT_INSTALLATION_ENV_FILE.
  */
 
 if (!function_exists('peanutBackendEnvironmentKeys')) {
@@ -22,6 +22,7 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             'PEANUT_DATABASE_ENDPOINT_ID',
             'PEANUT_DATABASE_CONSUMER',
             'PEANUT_RESOURCE_LEASE_PROOF',
+            'P0E_HOST_LEASE_PROOF',
             'DEPLOYMENT_MODE',
             'PUBLIC_DEFAULT_TENANT_FALLBACK',
             'PLATFORM_HOSTS',
@@ -35,12 +36,12 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             'ADMIN_LOGIN_LOCK_MINUTES',
             'TENANT_IDENTIFIER_HMAC_KEY',
             'PLATFORM_IDENTIFIER_HMAC_KEY',
-            'ADMIN_INITIAL_EMAIL',
-            'ADMIN_INITIAL_PASSWORD',
-            'PLATFORM_INITIAL_EMAIL',
-            'PLATFORM_INITIAL_PASSWORD',
             'PEANUT_STORAGE_CREDENTIAL_MASTER_KEY',
+            'PEANUT_SETTINGS_SECRET_KEYS',
+            'PEANUT_SETTINGS_ACTIVE_SECRET_KEY_ID',
             'PEANUT_DEMO_MODE',
+            'PEANUT_DEMO_ADMIN_EMAIL',
+            'PEANUT_DEMO_PLATFORM_EMAIL',
             'PEANUT_DEMO_TENANT_A_EMAIL',
             'PEANUT_DEMO_TENANT_B_EMAIL',
             'PEANUT_DEMO_SHARED_PASSWORD',
@@ -65,6 +66,8 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             'PEANUT_PLUGIN_LOCK',
             'PEANUT_MODULE_KERNEL_VERSION',
             'PEANUT_MODULE_TRUSTED_KEYS_JSON',
+            'RICH_TEXT_COLLABORATION_URL',
+            'RICH_TEXT_COLLABORATION_SECRET',
             'PEANUT_INSTALLATION_MODE',
             'PEANUT_INSTALLATION_SETUP_TOKEN',
             'PEANUT_INSTALLATION_OFFICIAL_MODULES',
@@ -79,6 +82,7 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             'ADMIN_INITIAL_PASSWORD',
             'PLATFORM_INITIAL_EMAIL',
             'PLATFORM_INITIAL_PASSWORD',
+            'PEANUT_DEMO_TENANT_ID',
         ];
     }
 
@@ -105,8 +109,8 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
         return $path;
     }
 
-    /** @param array<string,mixed> $values */
-    function peanutApplyBackendEnvironment(array $values): void
+    /** @param array<string,mixed> $values @param list<string> $keys */
+    function peanutApplyEnvironmentFile(array $values, array $keys, string $scope): void
     {
         $process = getenv();
         if (is_array($process)) {
@@ -119,51 +123,28 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
                 }
             }
         }
-        $managed = array_fill_keys(peanutBackendEnvironmentKeys(), true);
-        $transient = array_fill_keys(peanutTransientInstallationKeys(), true);
+        $managed = array_fill_keys($keys, true);
+        foreach ($values as $key => $value) {
+            if (!is_string($key) || !isset($managed[$key])) {
+                throw new RuntimeException("{$scope}_ENVIRONMENT_UNKNOWN_KEY:" . (string)$key);
+            }
+            if (!is_string($value) && !is_int($value) && !is_float($value) && !is_bool($value)) {
+                throw new RuntimeException("{$scope}_ENVIRONMENT_VALUE_INVALID:{$key}");
+            }
+        }
         foreach ($managed as $key => $_) {
             $legacy = getenv('PHP_' . $key);
             if ($legacy !== false) {
                 throw new RuntimeException("BACKEND_ENVIRONMENT_LEGACY_PREFIX_FORBIDDEN:{$key}");
             }
             $existing = getenv($key);
-            if ($existing === false) {
-                continue;
-            }
-            if (isset($transient[$key])) {
-                $declared = $values[$key] ?? '';
-                if ((string)$declared !== '') {
-                    throw new RuntimeException("BACKEND_ENVIRONMENT_TRANSIENT_IDENTITY_PERSISTED:{$key}");
-                }
-                continue;
-            }
-            if (!array_key_exists($key, $values)) {
-                throw new RuntimeException("BACKEND_ENVIRONMENT_PROCESS_VALUE_UNDECLARED:{$key}");
-            }
-            $declared = $values[$key];
-            if (!is_string($declared) && !is_int($declared) && !is_float($declared) && !is_bool($declared)) {
-                throw new RuntimeException("BACKEND_ENVIRONMENT_VALUE_INVALID:{$key}");
-            }
-            $declared = is_bool($declared) ? ($declared ? 'true' : 'false') : (string)$declared;
-            if (!hash_equals((string)$existing, $declared)) {
-                throw new RuntimeException("BACKEND_ENVIRONMENT_CONFLICT:{$key}");
+            if ($existing !== false) {
+                throw new RuntimeException("{$scope}_ENVIRONMENT_AMBIENT_VALUE_FORBIDDEN:{$key}");
             }
         }
 
         foreach ($values as $key => $value) {
-            if (!is_string($key) || !isset($managed[$key])) {
-                continue;
-            }
-            if (!is_string($value) && !is_int($value) && !is_float($value) && !is_bool($value)) {
-                throw new RuntimeException("BACKEND_ENVIRONMENT_VALUE_INVALID:{$key}");
-            }
             $value = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
-            if (isset($transient[$key])) {
-                if ($value !== '') {
-                    throw new RuntimeException("BACKEND_ENVIRONMENT_TRANSIENT_IDENTITY_PERSISTED:{$key}");
-                }
-                continue;
-            }
             putenv($key . '=' . $value);
             $_ENV[$key] = $value;
             $_SERVER[$key] = $value;
@@ -172,6 +153,8 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
 
     function peanutLoadBackendEnvironment(): void
     {
+        static $loaded = false;
+        if ($loaded) return;
         $path = peanutBackendEnvironmentPath();
         if (!is_file($path)) {
             throw new RuntimeException('BACKEND_ENVIRONMENT_FILE_MISSING');
@@ -179,15 +162,15 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
         if (is_link($path)) {
             throw new RuntimeException('BACKEND_ENVIRONMENT_SYMLINK_FORBIDDEN');
         }
-        $mode = fileperms($path);
-        if (!is_int($mode) || ($mode & 0077) !== 0) {
+        $stat = lstat($path);
+        if (!is_array($stat) || ($stat['nlink'] ?? 0) !== 1 || (($stat['mode'] ?? 0) & 0777) !== 0600) {
             throw new RuntimeException('BACKEND_ENVIRONMENT_PERMISSIONS_TOO_OPEN');
         }
         $values = parse_ini_file($path, false, INI_SCANNER_RAW);
         if (!is_array($values)) {
             throw new RuntimeException('BACKEND_ENVIRONMENT_PARSE_FAILED');
         }
-        peanutApplyBackendEnvironment($values);
+        peanutApplyEnvironmentFile($values, peanutBackendEnvironmentKeys(), 'BACKEND');
 
         $basename = basename($path);
         if ($basename !== '.env') {
@@ -195,6 +178,24 @@ if (!function_exists('peanutBackendEnvironmentKeys')) {
             $_ENV['ENV_NAME'] = $name;
             $_SERVER['ENV_NAME'] = $name;
         }
+
+        $installationPath = getenv('PEANUT_INSTALLATION_ENV_FILE');
+        if ($installationPath !== false && trim($installationPath) !== '') {
+            $installationPath = trim($installationPath);
+            if (!str_starts_with($installationPath, '/') || !is_file($installationPath) || is_link($installationPath)) {
+                throw new RuntimeException('INSTALLATION_ENVIRONMENT_FILE_INVALID');
+            }
+            $stat = lstat($installationPath);
+            if (!is_array($stat) || ($stat['nlink'] ?? 0) !== 1 || (($stat['mode'] ?? 0) & 0777) !== 0600) {
+                throw new RuntimeException('INSTALLATION_ENVIRONMENT_PERMISSIONS_INVALID');
+            }
+            $installationValues = parse_ini_file($installationPath, false, INI_SCANNER_RAW);
+            if (!is_array($installationValues) || $installationValues === []) {
+                throw new RuntimeException('INSTALLATION_ENVIRONMENT_PARSE_FAILED');
+            }
+            peanutApplyEnvironmentFile($installationValues, peanutTransientInstallationKeys(), 'INSTALLATION');
+        }
+        $loaded = true;
     }
 }
 
