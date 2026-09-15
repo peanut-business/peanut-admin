@@ -6,8 +6,8 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\LoginApplicationService;
-use app\common\application\BusinessException;
+use app\api\services\LoginApplicationService;
+use app\common\exception\BusinessException;
 
 class LoginController extends BaseApiController
 {

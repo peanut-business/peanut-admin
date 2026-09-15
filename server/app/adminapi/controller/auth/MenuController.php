@@ -7,10 +7,10 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\auth\MenuApplicationService;
+use app\adminapi\services\auth\MenuApplicationService;
 use app\adminapi\validate\auth\MenuValidate;
-use app\common\service\instance\InstanceToolAccessGuard;
-use app\common\service\JsonService;
+use app\common\validation\instance\InstanceToolAccessGuard;
+use app\common\http\JsonResponseFactory;
 use think\response\Json;
 
 class MenuController extends BaseAdminController

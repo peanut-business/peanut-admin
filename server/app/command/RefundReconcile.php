@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\Modules\Official\Payment\Contracts\RefundReconciliationCommands;
-use app\common\service\payment\PaymentScheduledTenantContext;
-use app\common\service\payment\PaymentTenantDiagnostics;
+use app\modules\official\payment\contracts\RefundReconciliationCommands;
+use app\common\context\payment\PaymentScheduledTenantContext;
+use app\common\infrastructure\payment\PaymentTenantDiagnostics;
 use app\common\execution\ContextualCommand;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;

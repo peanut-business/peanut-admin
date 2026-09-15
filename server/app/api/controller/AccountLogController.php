@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\Modules\Official\Member\Contracts\MemberQueries;
+use app\modules\official\member\contracts\MemberQueries;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 

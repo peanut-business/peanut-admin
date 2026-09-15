@@ -8,7 +8,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\ApiProblem;
 use app\common\http\RequestTrace;
-use app\common\service\module\ModuleExecutionBoundary;
+use app\common\infrastructure\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 

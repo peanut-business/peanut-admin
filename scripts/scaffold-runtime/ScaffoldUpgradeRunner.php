@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\scaffold;
+namespace app\common\infrastructure\scaffold;
 
-use app\platform\service\plugin\PluginDescriptor;
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginLockResolver;
+use app\common\validation\scaffold\ScaffoldPathGuard;
+use app\common\value\scaffold\ScaffoldManifest;
+use app\platform\value\plugin\PluginDescriptor;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\infrastructure\plugin\PluginLockResolver;
 use RuntimeException;
 use Throwable;
 

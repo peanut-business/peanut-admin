@@ -36,9 +36,8 @@ Composer 与 npm Registry、Marketplace 不是当前已开放的独立交付通�
 | Plugin 交付身份 | `plugins/<package.key>/plugin.json` | 打包时重新生成并纳入 inventory | bundled 身份另由根 `plugins.lock` 固定 |
 | 测试、临时脚本、工作区证据 | `server/tests/`、临时目录 | 否 | 测试和证据不进入交付 tar；不得把临时脚本提交为 Runtime |
 
-该表冻结目标制品路径。当前 `module:pack`、`bundle:pack`、preflight、manifest 和加载工具仍读取旧
-`server/app/Modules/` 根；S3 必须与源码、autoload、检查器和生成器同批切换，完成前不能从本表推断
-目标 Package 已可生成，也不能并行保留两个 canonical root。
+该表冻结制品路径。`module:pack`、`bundle:pack`、preflight、manifest、加载工具、autoload、检查器和生成器
+均读取 `server/app/modules/` 根并使用同一 key 派生规则；不得并行保留两个 canonical root。
 
 Bundled 与独立 Package 使用不同的不可变身份。Bundled Module 的最终身份是完整应用 Release 的
 commit/tree、根 `plugins.lock` digest 和其中的 canonical contents digest；在它尚未签发独立 Package 时，

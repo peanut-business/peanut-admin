@@ -7,8 +7,8 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\common\validate\ListsValidate;
-use app\common\application\BusinessException;
-use app\Modules\Official\Article\Contracts\PublicArticleQueries;
+use app\common\exception\BusinessException;
+use app\modules\official\article\contracts\PublicArticleQueries;
 
 class ArticleController extends BaseApiController
 {

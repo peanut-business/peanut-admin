@@ -2,8 +2,8 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\scaffold\ApplicationCreator;
-use app\common\service\scaffold\DeterministicEditionArchive;
+use app\common\infrastructure\scaffold\ApplicationCreator;
+use app\common\infrastructure\scaffold\DeterministicEditionArchive;
 
 function editionInstallerUsage(): never
 {
@@ -112,10 +112,10 @@ try {
         || preg_match('/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D', $versions['generated_instance_default']) !== 1) {
         throw new RuntimeException('EDITION_BUILD_VERSION_IDENTITY_MISMATCH');
     }
-    require $source . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-    require $source . '/server/app/common/service/scaffold/ScaffoldManifest.php';
-    require $source . '/server/app/common/service/scaffold/ApplicationCreator.php';
-    require $source . '/server/app/common/service/scaffold/DeterministicEditionArchive.php';
+    require $source . '/server/app/common/validation/scaffold/ScaffoldPathGuard.php';
+    require $source . '/server/app/common/value/scaffold/ScaffoldManifest.php';
+    require $source . '/server/app/common/infrastructure/scaffold/ApplicationCreator.php';
+    require $source . '/server/app/common/infrastructure/scaffold/DeterministicEditionArchive.php';
 
     $dependencyLocks = [];
     foreach ([

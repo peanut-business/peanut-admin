@@ -7,7 +7,7 @@ use app\common\model\decoration\DecoratePage;
 use app\common\model\decoration\DecorateTabbar;
 use app\common\model\decoration\DecorationTabbarSetting;
 use app\common\model\setting\TransactionSetting;
-use app\platform\service\TenantApplicationBootstrapPersistence;
+use app\platform\contract\TenantApplicationBootstrapPersistence;
 
 final class ThinkPhpTenantApplicationBootstrapPersistence implements TenantApplicationBootstrapPersistence
 {

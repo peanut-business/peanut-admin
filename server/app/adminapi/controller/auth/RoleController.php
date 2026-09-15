@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\auth\RoleApplicationService;
+use app\adminapi\services\auth\RoleApplicationService;
 
 class RoleController extends BaseAdminController
 {

@@ -6,12 +6,12 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\Modules\Official\Oauth\Contracts\OfficialAccountCallbacks;
-use app\common\application\BusinessException;
+use app\modules\official\oauth\contracts\OfficialAccountCallbacks;
+use app\common\exception\BusinessException;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
-use app\common\service\module\ModuleExecutionBoundary;
+use app\common\infrastructure\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 

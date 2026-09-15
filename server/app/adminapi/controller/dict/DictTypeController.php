@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\dict\DictTypeApplicationService;
+use app\adminapi\services\dict\DictTypeApplicationService;
 use app\adminapi\validate\dict\DictTypeValidate;
 use app\common\traits\CrudTrait;
 use PeanutAdmin\Kernel\Auth\TenantContext;

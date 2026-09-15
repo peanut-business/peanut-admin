@@ -142,7 +142,7 @@
     },
     {
       "id": "application-scaffold-version-contract",
-      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/service/installation/InstallationExecutionHost.php", "server/app/common/service/installation/ApplicationReleaseVersions.php", "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php", "server/app/platform/service/ops/PlatformUpgradeTarget.php", "server/app/platform/service/ops/PlatformUpgradeReadinessService.php", "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php", "server/app/command/PluginReleaseComposition.php", "server/app/command/PluginReconcile.php", "server/app/command/PluginInstall.php", "server/app/common/service/scaffold/ApplicationCreator.php", "release-versions.json"],
+      "paths": ["scripts/scaffold-runtime/ScaffoldUpgradeRunner.php", "scripts/deploy-release", "scripts/build-demo-site-patch", "server/database/install.php", "server/app/common/services/installation/InstallationExecutionHost.php", "server/app/common/value/installation/ApplicationReleaseVersions.php", "server/app/platform/infrastructure/ops/ApplicationRuntimeStatusProvider.php", "server/app/platform/value/ops/PlatformUpgradeTarget.php", "server/app/platform/services/ops/PlatformUpgradeReadinessService.php", "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php", "server/app/command/PluginReleaseComposition.php", "server/app/command/PluginReconcile.php", "server/app/command/PluginInstall.php", "server/app/common/infrastructure/scaffold/ApplicationCreator.php", "release-versions.json"],
       "classifications": ["architecture-decision", "technical"],
       "upstream": ["application release contract", "scaffold adoption manifest", "migration ledger and immutable SQL"],
       "technical_docs": ["docs/plans/application-scaffold-version-contract-queue.md", "docs/create-application.md", "docs/scaffold-upgrade.md", "docs/peanut-admin-development-guide.md", "docs/peanut-admin-release-deployment.md", "docs/operations/release-and-application-lifecycle.md"],
@@ -163,9 +163,9 @@
     {
       "id": "module-manifest",
       "paths": [
-        "server/app/Modules/**/module.json",
-        "server/app/Modules/**/Module.php",
-        "server/app/Modules/**/ModuleProvider.php"
+        "server/app/modules/**/module.json",
+        "server/app/modules/**/module.php",
+        "server/app/modules/**/module_provider.php"
       ],
       "classifications": [
         "technical",
@@ -189,7 +189,7 @@
     },
     {
       "id": "module-publication",
-      "paths": ["plugins.lock", "plugins/*/plugin.json", "server/app/command/ModulePack.php", "server/app/command/BundlePack.php", "server/app/platform/service/plugin/PluginPackageArchiveService.php", "server/app/platform/service/plugin/ModulePackagePreflight.php", "server/resources/schemas/plugin.schema.json", "server/tests/Productization/AllModulesPackagingTest.php"],
+      "paths": ["plugins.lock", "plugins/*/plugin.json", "server/app/command/ModulePack.php", "server/app/command/BundlePack.php", "server/app/platform/services/plugin/PluginPackageArchiveService.php", "server/app/platform/validation/plugin/ModulePackagePreflight.php", "server/resources/schemas/plugin.schema.json", "server/tests/Productization/AllModulesPackagingTest.php"],
       "classifications": ["architecture-decision", "technical", "developer-site"],
       "upstream": ["Module source and manifests", "deterministic package builder", "bundled Plugin lock"],
       "technical_docs": ["docs/architecture/module-publication-contract.md", "docs/architecture/consumer-module-lifecycle-contract.md", "docs/plugin-module-development.md", "docs/release-engineering.md"],
@@ -231,10 +231,10 @@
     {
       "id": "product-closure-upgrade-execution",
       "paths": [
-        "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+        "server/app/platform/services/ops/PlatformUpgradeExecutionService.php",
         "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
-        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
-        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/value/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/services/ops/PlatformUpgradeReadinessService.php",
         "server/app/command/OpsUpgradeTask.php",
         "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
         "scripts/ops-upgrade-worker",
@@ -290,7 +290,7 @@
     },
     {
       "id": "core-thinkphp-runtime-direction",
-      "paths": ["server/app/AppService.php", "server/app/common/execution/**/*.php", "server/app/Modules/**/ModuleProvider.php", "server/app/**/*Pdo*.php", "server/database/**/*.php", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"],
+      "paths": ["server/app/AppService.php", "server/app/common/execution/**/*.php", "server/app/modules/**/module_provider.php", "server/app/**/*Pdo*.php", "server/database/**/*.php", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"],
       "classifications": ["architecture-decision", "technical"],
       "upstream": ["Core/Application ThinkPHP 8 direction ADR", "Application AppService and ModuleProvider sources", "Core Composer and package sources"],
       "technical_docs": ["docs/README.md", "docs/governance/current-state.md", "docs/architecture/core-thinkphp-runtime-direction-adr.md", "docs/architecture/core-application-technical-boundary.md", "docs/reference/core-capabilities-and-application-adoption.md", "docs/reference/scaffold-core-boundary-comparison.md", "docs/plans/gemini-refactor-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-audit-2026-09-09.md", "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"],
@@ -304,7 +304,7 @@
         "resources/service-registry.json",
         "docs/architecture/**/*.md",
         "docs/design/**/*.md",
-        "server/app/Modules/**/module.json",
+        "server/app/modules/**/module.json",
         "server/vendor/peanut-admin/core/**/*",
         "web/node_modules/@peanut-admin/admin/**/*"
       ],
@@ -366,7 +366,7 @@
     {"id": "http-api", "path": "server/app/adminapi/controller/ExampleController.php", "must_include": ["technical", "developer-site", "generated"], "must_not_include": ["none"]},
     {"id": "cli-command", "path": "scripts/example-command", "must_include": ["technical", "developer-site"], "must_not_include": ["architecture-decision"]},
     {"id": "schema-owner", "path": "server/database/migrations/20260827-example.sql", "must_include": ["technical", "developer-site", "architecture-decision"], "must_not_include": ["none"]},
-    {"id": "module-manifest", "path": "server/app/Modules/Official/Article/module.json", "must_include": ["technical", "developer-site"], "must_not_include": ["none"]},
+    {"id": "module-manifest", "path": "server/app/modules/official/article/module.json", "must_include": ["technical", "developer-site"], "must_not_include": ["none"]},
     {"id": "resource-change", "path": "resources/project-resources.json", "must_include": ["technical", "developer-site"], "must_not_include": ["none", "generated"]},
     {"id": "capability-status", "path": "docs/product-status/capability-ledger.json", "must_include": ["technical"], "must_not_include": ["developer-site", "generated"]},
     {"id": "architecture-boundary", "path": "resources/service-registry.json", "must_include": ["architecture-decision", "technical", "developer-site"], "must_not_include": ["none"]}

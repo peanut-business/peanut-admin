@@ -5,7 +5,7 @@ namespace app\common\http\middleware;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
-use app\common\service\audit\AuditContractHost;
+use app\common\services\audit\AuditContractHost;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use think\facade\Db;
 

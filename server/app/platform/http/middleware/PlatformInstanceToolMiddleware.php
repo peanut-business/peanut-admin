@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\http\middleware;
 
-use app\common\service\instance\InstanceToolAccessGuard;
-use app\common\service\JsonService;
+use app\common\validation\instance\InstanceToolAccessGuard;
+use app\common\http\JsonResponseFactory;
 use think\facade\Config;
 
 /** Environment/deployment gate applied after Platform authentication and exact permission checks. */

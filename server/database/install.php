@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\installation\ApplicationReleaseVersions;
+use app\common\value\installation\ApplicationReleaseVersions;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use think\App;
@@ -11,7 +11,7 @@ $installerArguments = $_SERVER['argv'] ?? [];
 $installerIsDirect = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
 if ($installerIsDirect && in_array('--preflight', $installerArguments, true)) {
     require_once dirname(__DIR__) . '/app/common/service/installation/InstallationPreflightHost.php';
-    $preflight = (new \app\common\service\installation\InstallationPreflightHost(dirname(__DIR__)))->inspect();
+    $preflight = (new \app\common\services\installation\InstallationPreflightHost(dirname(__DIR__)))->inspect();
     echo json_encode($preflight, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
     exit($preflight['status'] === 'ready' ? 0 : 1);
 }
@@ -297,7 +297,7 @@ function initializeCoreIdentity(
     string $email,
     string $password,
     ?array $platformCredentials,
-    \app\common\service\DemoAccountPolicy $demoAccounts,
+    \app\common\policy\DemoAccountPolicy $demoAccounts,
 ): array
 {
     foreach (KernelSchema::tableNames() as $table) {
@@ -307,7 +307,7 @@ function initializeCoreIdentity(
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
 
     $service = new BootstrapService(
-        passwords: \app\common\service\ApplicationPasswordPolicy::hasher(),
+        passwords: \app\common\security\ApplicationPasswordPolicy::hasher(),
     );
     $separatePlatformOperator = $platformCredentials !== null;
     $demoBootstrapPassword = $demoAccounts->enabled()
@@ -747,7 +747,7 @@ function installFreshDatabase(string $serverDir, array $input): array
         $adminEmail = $credentials['admin_email'];
         $adminPassword = $credentials['admin_password'];
         $platformCredentials = $credentials['platform_credentials'];
-        $demoAccounts = new \app\common\service\DemoAccountPolicy(
+        $demoAccounts = new \app\common\policy\DemoAccountPolicy(
             getenv('PEANUT_DEMO_MODE') === 'enabled',
             array_values(array_filter([
                 $adminEmail,
@@ -816,7 +816,7 @@ if ($installerIsDirect) {
             exit(0);
         }
         $application = ensureThinkPhpApplication(dirname(__DIR__));
-        $host = $application->make(\app\common\service\installation\InstallationExecutionHost::class);
+        $host = $application->make(\app\common\services\installation\InstallationExecutionHost::class);
         if (in_array('--status', $_SERVER['argv'] ?? [], true)) {
             $status = $host->status();
             echo json_encode($status, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
@@ -831,7 +831,7 @@ if ($installerIsDirect) {
         $result = $host->executeAutomatic(automaticInstallationInput());
         echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;
         exit(0);
-    } catch (\app\common\service\installation\InstallationExecutionException $exception) {
+    } catch (\app\common\exception\installation\InstallationExecutionException $exception) {
         fwrite(STDERR, '安装失败：' . $exception->errorCode . PHP_EOL);
         exit(1);
     } catch (Throwable $exception) {

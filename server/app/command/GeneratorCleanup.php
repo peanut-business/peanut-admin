@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\adminapi\service\generator\GeneratorArchiveService;
+use app\adminapi\services\generator\GeneratorArchiveService;
 use app\common\model\generator\GeneratorDownload;
 use app\common\execution\ContextualCommand;
 use think\console\Input;

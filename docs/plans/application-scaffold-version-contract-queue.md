@@ -57,7 +57,7 @@
   B 执行 `plugin:release-composition --current-root=<A-root>`、停写与配对备份、完整构建物切换、
   `server/database/install.php --migrate --target-version=3.0.13`、
   `plugin:reconcile --release-locked`、重启和 HTTP 核验。private route 由 app-owned
-  `server/route/proof_upgrade_note.php` 引用 Package 自身 `Http/routes.php`，再进入应用 route 清单。
+  `server/route/proof_upgrade_note.php` 引用 Package 自身 `route/app.php`，再进入应用 route 清单。
 - composition 正例为 ready（9 个 official 保留、private 1.0→2.0）；缺失与降级分别拒绝
   `PLUGIN_RELEASE_PACKAGE_REMOVED` / `PLUGIN_RELEASE_PACKAGE_DOWNGRADE`，正常 maintenance 禁用为
   `preserve-disabled`，恢复 opening 后继续可用。同版本不同内容的动态目标没有形成合规 manifest/lock，

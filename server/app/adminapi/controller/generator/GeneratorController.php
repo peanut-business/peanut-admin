@@ -8,10 +8,10 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\adminapi\services\generator\GeneratorService;
-use app\adminapi\service\generator\GeneratorArchiveService;
+use app\adminapi\services\generator\GeneratorArchiveService;
 use app\adminapi\validate\generator\GeneratorValidate;
-use app\common\service\instance\InstanceToolAccessGuard;
-use app\common\service\JsonService;
+use app\common\validation\instance\InstanceToolAccessGuard;
+use app\common\http\JsonResponseFactory;
 use think\response\Json;
 
 class GeneratorController extends BaseAdminController

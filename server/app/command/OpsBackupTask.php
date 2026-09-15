@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\audit\AuditContractHost;
-use app\platform\service\ops\ThinkPhpBackupTaskExecutionService;
+use app\common\services\audit\AuditContractHost;
+use app\platform\infrastructure\ops\ThinkPhpBackupTaskExecutionService;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

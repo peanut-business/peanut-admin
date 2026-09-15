@@ -100,10 +100,10 @@
         "存储 Driver 配置"
       ],
       "current_implementation": [
-        "server/app/common/service/tenant/TenantSettingService.php",
-        "server/app/common/service/config/TenantApplicationSettingService.php",
-        "server/app/common/service/config/WebsiteConfigService.php",
-        "server/app/common/service/config/TenantSettingWebsiteStore.php"
+        "server/app/common/services/tenant/TenantSettingService.php",
+        "server/app/common/services/config/TenantApplicationSettingService.php",
+        "server/app/common/services/config/WebsiteConfigService.php",
+        "server/app/common/infrastructure/config/TenantSettingWebsiteStore.php"
       ],
       "actual_callers": [
         "网站与工作台",
@@ -133,9 +133,9 @@
         "具体业务对象的数据权限规则"
       ],
       "current_implementation": [
-        "server/app/adminapi/service/AdminPermissionService.php",
-        "server/app/adminapi/service/CoreTenantModuleAdminBridge.php",
-        "server/app/adminapi/service/NativeAdminPrincipalRepository.php"
+        "server/app/common/services/authorization/AdminAuthorizationService.php",
+        "server/app/common/infrastructure/authorization/CoreTenantModuleAdminBridge.php",
+        "server/app/common/infrastructure/authorization/NativeAdminPrincipalRepository.php"
       ],
       "actual_callers": [
         "Admin 登录",
@@ -217,9 +217,9 @@
         "把系统参考码改成 Tenant 可写数据"
       ],
       "current_implementation": [
-        "server/app/common/service/dict/DictionaryRuntime.php",
-        "server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php",
-        "server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php"
+        "server/app/common/runtime/dict/DictionaryRuntime.php",
+        "server/app/common/infrastructure/dict/ThinkPhpTenantDictionaryProvider.php",
+        "server/app/common/infrastructure/dict/ThinkPhpSystemDictionaryProvider.php"
       ],
       "actual_callers": [
         "字典类型管理",
@@ -252,9 +252,9 @@
         "短信 Scene、模板和发送日志"
       ],
       "current_implementation": [
-        "server/app/common/service/external/ExternalChannelBindingService.php",
+        "server/app/common/services/external/ExternalChannelBindingService.php",
         "PeanutAdmin IntegrationSecurity ExternalTenantResolver",
-        "server/app/common/service/external/ThinkPhpExternalTenantBindingRepository.php"
+        "server/app/common/infrastructure/external/ThinkPhpExternalTenantBindingRepository.php"
       ],
       "actual_callers": [
         "支付配置与回调",
@@ -283,13 +283,13 @@
         "跨应用运营平台"
       ],
       "current_implementation": [
-        "server/app/platform/service/plugin/PluginLifecycleService.php",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
-        "server/app/platform/service/plugin/ModuleCatalogApplier.php",
-        "server/app/platform/service/plugin/DevelopmentModuleDiscovery.php",
-        "server/app/platform/service/module/PlatformTenantModuleService.php",
-        "server/app/common/service/module/ModuleExecutionGuard.php",
-        "server/app/common/service/module/OfficialModuleMiddleware.php"
+        "server/app/platform/services/plugin/PluginLifecycleService.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/platform/infrastructure/plugin/ModuleCatalogApplier.php",
+        "server/app/platform/infrastructure/plugin/DevelopmentModuleDiscovery.php",
+        "server/app/platform/services/module/PlatformTenantModuleService.php",
+        "server/app/common/infrastructure/module/ModuleExecutionBoundary.php",
+        "server/app/common/infrastructure/module/OfficialModuleMiddleware.php"
       ],
       "actual_callers": [
         "Platform Plugin/Module 管理",
@@ -326,9 +326,9 @@
       ],
       "current_implementation": [
         "PeanutAdmin Kernel Idempotency primitives",
-        "server/app/Modules/Official/Member/Application/MemberAdministrationService.php",
-        "server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php",
-        "server/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php"
+        "server/app/modules/official/member/services/MemberAdministrationService.php",
+        "server/app/modules/official/payment/services/RechargeAdministrationService.php",
+        "server/app/modules/official/import_export/services/TaskImportExportRuntime.php"
       ],
       "actual_callers": [
         "会员余额调账",
@@ -357,10 +357,10 @@
         "默认合并 Tenant 与 Platform 审计表"
       ],
       "current_implementation": [
-        "server/app/adminapi/service/OperationLogService.php",
-        "server/app/common/service/audit/OperationLogTenantRepository.php",
+        "server/app/adminapi/services/OperationLogService.php",
+        "server/app/common/infrastructure/audit/OperationLogProjection.php",
         "PeanutAdmin Kernel PdoAuditRepository",
-        "server/app/common/service/external/ThinkPhpExternalTenantAudit.php"
+        "server/app/common/infrastructure/external/ThinkPhpExternalTenantAudit.php"
       ],
       "actual_callers": [
         "Tenant Admin HTTP 操作",
@@ -389,8 +389,8 @@
         "业务内容、会员、OAuth 和导出自己的领域规则"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/File/module.json",
-        "server/app/Modules/Official/File/ModuleProvider.php",
+        "server/app/modules/official/file/module.json",
+        "server/app/modules/official/file/ModuleProvider.php",
         "server/app/common/services/FileService.php",
         "server/app/common/services/storage/StorageService.php",
         "server/app/common/infrastructure/storage/StorageRepository.php",
@@ -423,7 +423,7 @@
         "会员注册或找回密码业务状态机"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/Notification/module.json",
+        "server/app/modules/official/notification/module.json",
         "server/app/common/services/notice/NoticeChannelService.php",
         "server/app/common/infrastructure/notice/ApplicationNoticeSmsSender.php",
         "server/app/common/infrastructure/notice/sms/AliyunSms.php",
@@ -431,12 +431,12 @@
         "server/app/common/contract/notice/sms/SmsDriver.php",
         "server/app/common/value/notice/sms/SmsDriverResult.php",
         "server/app/common/context/notice/NoticeTenantContext.php",
-        "server/app/Modules/Official/Notification/Application/NotificationApplicationService.php",
-        "server/app/Modules/Official/Notification/Application/VerificationCodeService.php",
-        "server/app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php",
-        "server/app/Modules/Official/Notification/Contracts/NotificationCommands.php",
-        "server/app/Modules/Official/Notification/Contracts/NotificationQueries.php",
-        "server/app/Modules/Official/Notification/Contracts/VerificationCodeCommands.php"
+        "server/app/modules/official/notification/services/NotificationApplicationService.php",
+        "server/app/modules/official/notification/services/VerificationCodeService.php",
+        "server/app/modules/official/notification/services/NotificationApplicationService.php",
+        "server/app/modules/official/notification/contracts/NotificationCommands.php",
+        "server/app/modules/official/notification/contracts/NotificationQueries.php",
+        "server/app/modules/official/notification/contracts/VerificationCodeCommands.php"
       ],
       "actual_callers": [
         "注册",
@@ -466,22 +466,22 @@
         "文件对象生命周期"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/Member/module.json",
-        "server/app/Modules/Official/Member/Application/MemberAdministrationService.php",
-        "server/app/Modules/Official/Member/Application/MemberBalanceService.php",
-        "server/app/Modules/Official/Member/Application/MemberBalanceContractService.php",
-        "server/app/Modules/Official/Member/Application/MemberIdentityContractService.php",
-        "server/app/Modules/Official/Member/Application/MemberProfileContractService.php",
-        "server/app/Modules/Official/Member/Application/MemberQueryService.php",
-        "server/app/Modules/Official/Member/Application/MemberTagContractService.php",
-        "server/app/Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php",
-        "server/app/Modules/Official/Member/Contracts/MemberAdministration.php",
-        "server/app/Modules/Official/Member/Contracts/MemberBalanceCommands.php",
-        "server/app/Modules/Official/Member/Contracts/MemberIdentityCommands.php",
-        "server/app/Modules/Official/Member/Contracts/MemberProfileCommands.php",
-        "server/app/Modules/Official/Member/Contracts/MemberQueries.php",
-        "server/app/Modules/Official/Member/Contracts/MemberTagCommands.php",
-        "server/app/api/service/UserTokenService.php"
+        "server/app/modules/official/member/module.json",
+        "server/app/modules/official/member/services/MemberAdministrationService.php",
+        "server/app/modules/official/member/services/MemberBalanceService.php",
+        "server/app/modules/official/member/services/MemberBalanceContractService.php",
+        "server/app/modules/official/member/services/MemberIdentityContractService.php",
+        "server/app/modules/official/member/services/MemberProfileContractService.php",
+        "server/app/modules/official/member/services/MemberQueryService.php",
+        "server/app/modules/official/member/services/MemberTagContractService.php",
+        "server/app/modules/official/member/infrastructure/persistence/ThinkPhpMemberSubjectLookup.php",
+        "server/app/modules/official/member/contracts/MemberAdministration.php",
+        "server/app/modules/official/member/contracts/MemberBalanceCommands.php",
+        "server/app/modules/official/member/contracts/MemberIdentityCommands.php",
+        "server/app/modules/official/member/contracts/MemberProfileCommands.php",
+        "server/app/modules/official/member/contracts/MemberQueries.php",
+        "server/app/modules/official/member/contracts/MemberTagCommands.php",
+        "server/app/api/services/UserTokenService.php"
       ],
       "actual_callers": [
         "管理端会员 CRUD 和余额调账",
@@ -515,18 +515,18 @@
         "通用幂等记录实现"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/Payment/module.json",
-        "server/app/common/service/payment/PaymentServiceFactory.php",
-        "server/app/Modules/Official/Payment/Application/PayConfigApplicationService.php",
-        "server/app/Modules/Official/Payment/Application/PaymentChannelGrantService.php",
-        "server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php",
-        "server/app/Modules/Official/Payment/Application/RechargeSettingApplicationService.php",
-        "server/app/Modules/Official/Payment/Application/RechargeTenantSettingService.php",
-        "server/app/Modules/Official/Payment/Application/RefundApplicationService.php",
-        "server/app/Modules/Official/Payment/Contracts/PaymentChannelGrantCommands.php",
-        "server/app/Modules/Official/Payment/Infrastructure/ThinkPhpPaymentChannelGrantCommands.php",
-        "server/app/Modules/Official/Payment/Infrastructure/Persistence/FinanceTenantRepository.php",
-        "server/app/api/application/RechargeApplicationService.php",
+        "server/app/modules/official/payment/module.json",
+        "server/app/common/composition/payment/PaymentServiceFactory.php",
+        "server/app/modules/official/payment/services/PayConfigApplicationService.php",
+        "server/app/modules/official/payment/infrastructure/ThinkPhpPaymentChannelGrantCommands.php",
+        "server/app/modules/official/payment/services/RechargeAdministrationService.php",
+        "server/app/modules/official/payment/services/RechargeSettingApplicationService.php",
+        "server/app/modules/official/payment/services/RechargeTenantSettingService.php",
+        "server/app/modules/official/payment/services/RefundApplicationService.php",
+        "server/app/modules/official/payment/contracts/PaymentChannelGrantCommands.php",
+        "server/app/modules/official/payment/infrastructure/ThinkPhpPaymentChannelGrantCommands.php",
+        "server/app/modules/official/payment/model/RechargeOrder.php",
+        "server/app/api/services/RechargeApplicationService.php",
         "server/app/command/RefundReconcile.php"
       ],
       "actual_callers": [
@@ -561,16 +561,16 @@
         "文件对象与 Provider 绑定的底层生命周期"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/Oauth/module.json",
-        "server/app/Modules/Official/Oauth/Application/OAuthCommandService.php",
-        "server/app/Modules/Official/Oauth/Application/OAuthQueryService.php",
-        "server/app/Modules/Official/Oauth/Application/OAuthCallbackLocator.php",
-        "server/app/Modules/Official/Oauth/Contracts/OAuthCommands.php",
-        "server/app/Modules/Official/Oauth/Contracts/OAuthQueries.php",
-        "server/app/Modules/Official/Oauth/Infrastructure/Persistence/OAuthTenantRepository.php",
-        "server/app/api/application/OAuthApplicationService.php",
-        "server/app/common/service/oauth/OAuthBrowserCallbackService.php",
-        "server/app/Modules/Official/Oauth/Application/OfficialAccountApplicationService.php"
+        "server/app/modules/official/oauth/module.json",
+        "server/app/modules/official/oauth/services/OAuthCommandService.php",
+        "server/app/modules/official/oauth/services/OAuthQueryService.php",
+        "server/app/modules/official/oauth/contracts/OAuthCallbackLocator.php",
+        "server/app/modules/official/oauth/contracts/OAuthCommands.php",
+        "server/app/modules/official/oauth/contracts/OAuthQueries.php",
+        "server/app/modules/official/oauth/infrastructure/persistence/ThinkPhpOAuthPersistence.php",
+        "server/app/common/services/oauth/OAuthBrowserCallbackService.php",
+        "server/app/common/services/oauth/OAuthBrowserCallbackService.php",
+        "server/app/modules/official/oauth/services/OfficialAccountApplicationService.php"
       ],
       "actual_callers": [
         "PC 微信登录",
@@ -606,17 +606,17 @@
         "通用事件总线"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/Task/module.json",
-        "server/app/Modules/Official/Task/Application/CrontabApplicationService.php",
-        "server/app/Modules/Official/Task/Application/CrontabSchedulerService.php",
-        "server/app/Modules/Official/Task/Application/CrontabTaskDefinition.php",
-        "server/app/Modules/Official/Task/Infrastructure/Runtime/ThinkPhpTaskJobRuntime.php",
-        "server/app/Modules/Official/Task/Application/TaskAuthorizationRouter.php",
-        "server/app/Modules/Official/Task/Application/TaskSchedulerService.php",
-        "server/app/Modules/Official/Task/Contracts/TaskJobRuntime.php",
-        "server/app/Modules/Official/Task/Contracts/TaskScheduler.php",
-        "server/app/Modules/Official/Task/Contracts/TaskWorkerDefinition.php",
-        "server/app/Modules/Official/Task/Infrastructure/Persistence/CrontabTenantRepository.php",
+        "server/app/modules/official/task/module.json",
+        "server/app/modules/official/task/services/CrontabApplicationService.php",
+        "server/app/modules/official/task/services/CrontabSchedulerService.php",
+        "server/app/modules/official/task/services/CrontabTaskDefinition.php",
+        "server/app/modules/official/task/infrastructure/runtime/ThinkPhpTaskJobRuntime.php",
+        "server/app/modules/official/task/services/TaskAuthorizationRouter.php",
+        "server/app/modules/official/task/services/TaskSchedulerService.php",
+        "server/app/modules/official/task/contracts/TaskJobRuntime.php",
+        "server/app/modules/official/task/contracts/TaskScheduler.php",
+        "server/app/modules/official/task/contracts/TaskWorkerDefinition.php",
+        "server/app/modules/official/task/model/Crontab.php",
         "server/app/common/infrastructure/async/ModuleAwareTaskHandler.php",
         "server/app/command/TenantTaskWorker.php"
       ],
@@ -644,7 +644,7 @@
       "explicit_exclusions": ["Module scaffold", "运行时数据库迁移"],
       "current_implementation": [
         "server/app/adminapi/services/generator/GeneratorService.php",
-        "server/app/adminapi/service/generator/GeneratorRenderService.php"
+        "server/app/adminapi/services/generator/GeneratorRenderService.php"
       ],
       "actual_callers": ["GeneratorController", "AppService"],
       "data_ownership": {"owned_tables": ["pa_gen_table", "pa_gen_table_column"], "shared_or_read_only_tables": [], "policy": "生成配置归 Generator 所有"},
@@ -664,11 +664,11 @@
         "文件对象存储实现"
       ],
       "current_implementation": [
-        "server/app/Modules/Official/ImportExport/module.json",
-        "server/app/Modules/Official/ImportExport/Application/TaskImportExportRuntime.php",
-        "server/app/Modules/Official/ImportExport/Application/ImportExportTaskWorkerDefinition.php",
-        "server/app/Modules/Official/ImportExport/Infrastructure/Authorization/AdminAsyncAuthorization.php",
-        "server/app/Modules/Official/ImportExport/Infrastructure/File/AppFileMediaGateway.php",
+        "server/app/modules/official/import_export/module.json",
+        "server/app/modules/official/import_export/services/TaskImportExportRuntime.php",
+        "server/app/modules/official/import_export/services/ImportExportTaskWorkerDefinition.php",
+        "server/app/modules/official/import_export/infrastructure/authorization/AdminAsyncAuthorization.php",
+        "server/app/modules/official/import_export/infrastructure/file/AppFileMediaGateway.php",
         "server/app/common/infrastructure/export/OperationLogExportProvider.php",
         "server/app/common/services/XlsxExportService.php"
       ],

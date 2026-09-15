@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\execution\ModuleContextualCommand;
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginReleaseCompositionGuard;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\validation\plugin\PluginReleaseCompositionGuard;
 use think\console\Input;
 use think\console\input\Option;
 use think\console\Output;

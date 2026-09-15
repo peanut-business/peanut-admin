@@ -10,8 +10,8 @@ use app\api\controller\PcController as ApiPcController;
 use app\api\controller\DecorationController as ApiDecorationController;
 use app\api\middleware\CheckTokenMiddleware;
 use app\api\middleware\PublicTenantModuleMiddleware;
-use app\common\service\module\OfficialModuleMiddleware;
-use app\Modules\Official\Article\ModuleProvider as ArticleModuleProvider;
+use app\common\infrastructure\module\OfficialModuleMiddleware;
+use app\modules\official\article\ModuleProvider as ArticleModuleProvider;
 use think\facade\Route;
 
 if (($peanutRouteApplication ?? null) !== 'api') {

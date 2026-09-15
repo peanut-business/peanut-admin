@@ -1,0 +1,38 @@
+<?php
+declare(strict_types=1);
+
+use app\modules\official\file\ModuleProvider;
+use app\modules\official\file\controller\fileController;
+use app\modules\official\file\controller\UploadController;
+use app\api\controller\UploadController as ApiUploadController;
+use app\api\middleware\CheckTokenMiddleware;
+use app\adminapi\http\middleware\AuthMiddleware;
+use app\adminapi\http\middleware\LoginMiddleware;
+use app\adminapi\http\middleware\OperationLogMiddleware;
+use app\common\infrastructure\module\OfficialModuleMiddleware;
+use think\facade\Route;
+
+if (($peanutRouteApplication ?? null) === 'adminapi') {
+Route::group(function (): void {
+    Route::post('official.file.upload.image', [UploadController::class, 'image']);
+    Route::post('official.file.upload.video', [UploadController::class, 'video']);
+    Route::post('official.file.upload.file', [UploadController::class, 'file']);
+    Route::get('official.file.list', [FileController::class, 'lists']);
+    Route::post('official.file.move', [FileController::class, 'move']);
+    Route::post('official.file.rename', [FileController::class, 'rename']);
+    Route::post('official.file.delete', [FileController::class, 'delete']);
+    Route::get('official.file.category.list', [FileController::class, 'listCate']);
+    Route::post('official.file.category.add', [FileController::class, 'addCate']);
+    Route::post('official.file.category.edit', [FileController::class, 'editCate']);
+    Route::post('official.file.category.delete', [FileController::class, 'delCate']);
+})->middleware(LoginMiddleware::class)
+    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(AuthMiddleware::class)
+    ->middleware(OperationLogMiddleware::class);
+}
+
+if (($peanutRouteApplication ?? null) === 'api') {
+Route::post('upload/image', [ApiUploadController::class, 'image'])
+    ->middleware(CheckTokenMiddleware::class)
+    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member-upload');
+}

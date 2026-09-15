@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\config\ConfigApplicationService;
+use app\adminapi\services\config\ConfigApplicationService;
 use app\adminapi\validate\config\WebsiteValidate;
 
 class ConfigController extends BaseAdminController

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\traits;
 
 use app\common\http\PageResult;
-use app\common\application\BusinessException;
+use app\common\exception\BusinessException;
 use app\common\validate\TenantContextValidate;
 use LogicException;
 use PeanutAdmin\Kernel\Auth\TenantContext;

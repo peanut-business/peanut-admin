@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\common\application\BusinessException;
+use app\common\exception\BusinessException;
 use app\common\execution\CurrentExecutionContext;
 use app\common\services\storage\StorageService;
 use think\App;

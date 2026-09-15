@@ -6,7 +6,7 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\RechargeApplicationService;
+use app\api\services\RechargeApplicationService;
 use app\api\validate\RechargeValidate;
 class RechargeController extends BaseApiController
 {

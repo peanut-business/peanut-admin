@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "22f504e7a479570894abde5907747b0ff2d5b890d5ef8c37e0743dbfea9898a3"
+        "sha256": "73f2a9ef43b2aae10b42120ce062ba8ac4e9c9188cd3a3772b9dbbfeecfe42dc"
     },
     "trust": {
         "channel": "bundled",
@@ -52,7 +52,7 @@
                         }
                     ],
                     "permissions": {
-                        "path": "Resources/permissions.json",
+                        "path": "resources/permissions.json",
                         "sha256": "56a3a9e239f6d924540f4900197a272ea5368237d98c64f1882865277daf864e"
                     },
                     "migrations": {
@@ -72,7 +72,7 @@
         {
             "name": "peanut-business/official-import-export",
             "version": "1.0.0",
-            "sha256": "5366f299b3162fa3b6dd41b7408534a8e7429c17faa3709107c467f6c15e27d3"
+            "sha256": "333ea85de66bb950d9240b441bc10d1a8e7efb0532a291798b9de153fc70c071"
         }
     ],
     "npm": [
@@ -94,7 +94,7 @@
     "modules": [
         {
             "key": "official.import-export",
-            "root": "server/app/Modules/Official/ImportExport"
+            "root": "server/app/modules/official/import_export"
         }
     ]
 }

@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\common\services\storage;
 
-use app\common\application\BusinessException;
+use app\common\exception\BusinessException;
 use app\common\infrastructure\storage\StorageAccess;
 use app\common\infrastructure\storage\StorageCredentialCipher;
 use app\common\infrastructure\storage\StorageRepository;
-use app\common\service\audit\AuditContractHost;
+use app\common\services\audit\AuditContractHost;
 use app\common\value\storage\StoragePurpose;
 use app\platform\context\PlatformOperatorContext;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;

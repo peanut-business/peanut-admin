@@ -6,7 +6,7 @@ use app\api\middleware\CheckTokenMiddleware;
 use app\api\middleware\PublicTenantModuleMiddleware;
 use app\common\http\middleware\InstallationStateMiddleware;
 use app\common\http\middleware\MaintenanceWriteGateMiddleware;
-use app\common\service\module\OfficialModuleMiddleware;
+use app\common\infrastructure\module\OfficialModuleMiddleware;
 use app\platform\http\middleware\PlatformHostMiddleware;
 use app\platform\http\middleware\PlatformInstanceToolMiddleware;
 use app\platform\http\middleware\PlatformLoginMiddleware;

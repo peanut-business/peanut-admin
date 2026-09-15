@@ -2,14 +2,14 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\scaffold\ApplicationCreator;
-use app\common\service\scaffold\ScaffoldManifest;
+use app\common\infrastructure\scaffold\ApplicationCreator;
+use app\common\value\scaffold\ScaffoldManifest;
 
 $root = dirname(__DIR__);
-require $root . '/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-require $root . '/server/app/common/service/scaffold/ScaffoldManifest.php';
-require $root . '/server/app/common/service/scaffold/VersionContract.php';
-require $root . '/server/app/common/service/scaffold/ApplicationCreator.php';
+require $root . '/server/app/common/validation/scaffold/ScaffoldPathGuard.php';
+require $root . '/server/app/common/value/scaffold/ScaffoldManifest.php';
+require $root . '/server/app/common/value/scaffold/VersionContract.php';
+require $root . '/server/app/common/infrastructure/scaffold/ApplicationCreator.php';
 
 function createAppUsage(): never
 {
@@ -35,7 +35,7 @@ try {
     $inventoryRaw = file_get_contents($inventoryPath);
     $inventory = is_string($inventoryRaw) ? json_decode($inventoryRaw, true, 512, JSON_THROW_ON_ERROR) : null;
     $templateVersion = is_array($inventory) ? ($inventory['template_version'] ?? null) : null;
-    $versions = \app\common\service\scaffold\VersionContract::load($root . '/release-versions.json');
+    $versions = \app\common\value\scaffold\VersionContract::load($root . '/release-versions.json');
     if (!is_string($templateVersion)) {
         throw new RuntimeException('CREATE_APP_ADOPTION_INVENTORY_VERSION_INVALID');
     }

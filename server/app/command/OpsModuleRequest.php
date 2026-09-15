@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\ops\DeploymentModuleRequestService;
-use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\platform\services\ops\DeploymentModuleRequestService;
+use app\platform\services\plugin\PluginRuntimeGovernanceService;
 use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

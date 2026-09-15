@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\services;
 
-use app\common\service\HtmlSanitizerService;
+use app\common\services\HtmlSanitizerService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\persistence;
 
-use app\common\service\runtime\RuntimeNamespace;
+use app\common\value\runtime\RuntimeNamespace;
 use think\facade\Db;
 
 /** Executes one callback while holding a bounded MySQL advisory lock. */

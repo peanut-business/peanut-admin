@@ -1031,9 +1031,9 @@
       "canonical_sources": [
         "docs/architecture/core-thinkphp-runtime-direction-adr.md",
         "server/app/AppService.php",
-        "server/app/Modules/Official/Article/ModuleProvider.php",
-        "server/app/Modules/Official/Member/ModuleProvider.php",
-        "server/app/Modules/Official/Oauth/ModuleProvider.php",
+        "server/app/modules/official/article/ModuleProvider.php",
+        "server/app/modules/official/member/ModuleProvider.php",
+        "server/app/modules/official/oauth/ModuleProvider.php",
         "repo://peanut-admin-core/packages/php/",
         "repo://peanut-admin-core/docs/architecture/index.md",
         "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
@@ -1099,7 +1099,7 @@
         "server/composer.json",
         "server/app/AppService.php",
         "server/app/common/execution/",
-        "server/app/Modules/",
+        "server/app/modules/",
         "repo://peanut-admin-core/composer.json",
         "repo://peanut-admin-core/packages/php/composer.json",
         "repo://peanut-admin-core/packages/php/",
@@ -1242,8 +1242,8 @@
       "canonical_sources": [
         "server/app/command/ModulePack.php",
         "server/app/command/BundlePack.php",
-        "server/app/platform/service/plugin/PluginPackageArchiveService.php",
-        "server/app/platform/service/plugin/ModulePackagePreflight.php",
+        "server/app/platform/services/plugin/PluginPackageArchiveService.php",
+        "server/app/platform/validation/plugin/ModulePackagePreflight.php",
         "server/resources/schemas/plugin.schema.json",
         "plugins.lock",
         "docs/architecture/application-module-blueprint/coding-standards.md",
@@ -1285,14 +1285,14 @@
         "server/database/install.php",
         "scripts/deploy-release",
         "scripts/ops-upgrade-worker",
-        "server/app/common/service/installation/ApplicationReleaseVersions.php",
-        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
-        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
-        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/common/value/installation/ApplicationReleaseVersions.php",
+        "server/app/platform/value/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/services/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/infrastructure/ops/ThinkPhpUpgradeTaskExecutionService.php",
         "docs/architecture/consumer-module-lifecycle-contract.md",
         "plugins.lock",
         "server/app/adminapi/route/app.php",
-        "server/app/platform/service/module/ProductTenantModuleProfileService.php"
+        "server/app/platform/services/module/ProductTenantModuleProfileService.php"
       ],
       "owner": "application-maintainers",
       "status": "current",
@@ -1350,7 +1350,7 @@
       "canonical_sources": [
         "docs/api/openapi.yaml",
         "server/route/app.php",
-        "server/app/common/service/JsonService.php",
+        "server/app/common/http/JsonResponseFactory.php",
         "docs/plugin-module-development.md",
         "server/composer.lock",
         "web/package.json"
@@ -1437,7 +1437,7 @@
       "canonical_sources": [
         "docs/architecture/clean-native-multitenancy-baseline.md",
         "resources/service-registry.json",
-        "server/app/Modules"
+        "server/app/modules"
       ],
       "owner": "developer-experience",
       "status": "current",
@@ -1466,7 +1466,7 @@
         "repo://peanut-admin-core/packages/php/kernel/src/Persistence/Schema/KernelSchema.php",
         "server/database/init.sql",
         "server/database/migrations",
-        "server/app/Modules",
+        "server/app/modules",
         "docs/architecture/clean-native-multitenancy-baseline.md"
       ],
       "owner": "developer-experience",
@@ -1525,7 +1525,7 @@
       "authority": "projection",
       "canonical_sources": [
         "resources/service-registry.json",
-        "server/app/Modules",
+        "server/app/modules",
         "server/composer.json",
         "web/package.json",
         "AGENT_EXECUTION_RULES.md"
@@ -1618,9 +1618,9 @@
         "web/pnpm-lock.yaml",
         "plugins.lock",
         "server/app/adminapi/route/app.php",
-        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/common/services/installation/InstallationExecutionHost.php",
         "server/app/command/TenantModuleProfile.php",
-        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/app/platform/services/module/ProductTenantModuleProfileService.php",
         "server/route/platform.php",
         "server/app/adminapi/controller/auth/RoleController.php",
         "server/app/command/ModuleCreate.php",
@@ -1633,7 +1633,7 @@
         "server/app/command/PluginReleaseComposition.php",
         "server/app/command/PluginReconcile.php",
         "server/app/command/PluginInstall.php",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
         "web/config/vite.config.base.ts",
         "web/src/router/routes/plugin-contributions.ts",
         "docs/architecture/consumer-module-lifecycle-contract.md",
@@ -1790,7 +1790,7 @@
         "server/route",
         "server/.env.example",
         "server/database/init.sql",
-        "server/app/Modules",
+        "server/app/modules",
         "server/config/console.php",
         "server/app/adminapi/route/app.php",
         "server/app/command/ModuleCreate.php",
@@ -1890,7 +1890,7 @@
       "canonical_sources": [
         "SECURITY.md",
         "server/app/platform/controller/PlatformOpsController.php",
-        "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
+        "server/app/platform/services/ops/PlatformDiagnosticBundleService.php",
         "platform/src/api/platform.ts"
       ],
       "owner": "developer-experience",
@@ -2207,9 +2207,9 @@
         "docs/architecture/product-closure-maintenance-gate.md",
         "docs/architecture/product-closure-backup-provider-contract.md",
         "server/app/common/contract/module/PluginLifecycleCommands.php",
-        "server/app/platform/service/plugin/PluginPackageInstaller.php",
-        "server/app/platform/service/plugin/PluginLifecycleService.php",
-        "server/app/platform/service/plugin/PluginRuntimeGovernanceService.php"
+        "server/app/platform/infrastructure/plugin/PluginPackageInstaller.php",
+        "server/app/platform/services/plugin/PluginLifecycleService.php",
+        "server/app/platform/services/plugin/PluginRuntimeGovernanceService.php"
       ],
       "owner": "product-architecture",
       "status": "current",
@@ -2238,7 +2238,7 @@
       "authority": "interpretation",
       "canonical_sources": [
         "resources/service-registry.json",
-        "server/app/Modules/",
+        "server/app/modules/",
         "server/composer.lock",
         "web/pnpm-lock.yaml"
       ],
@@ -2298,7 +2298,7 @@
       "authority": "interpretation",
       "canonical_sources": [
         "server/app/common/execution/",
-        "server/app/Modules/",
+        "server/app/modules/",
         "resources/service-registry.json",
         "repo://peanut-admin-core/packages/php/"
       ],
@@ -2330,7 +2330,7 @@
       "authority": "interpretation",
       "canonical_sources": [
         "resources/service-registry.json",
-        "server/app/Modules/",
+        "server/app/modules/",
         "server/database/migrations/",
         "server/route/app.php"
       ],
@@ -2416,7 +2416,7 @@
       "canonical_sources": [
         "server/route/app.php",
         "resources/service-registry.json",
-        "server/app/Modules/"
+        "server/app/modules/"
       ],
       "owner": "architecture",
       "status": "archived",
@@ -2470,9 +2470,9 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/Official/Task/module.json",
-        "server/app/Modules/Official/ImportExport/module.json",
-        "server/route/official_import_export.php"
+        "server/app/modules/official/task/module.json",
+        "server/app/modules/official/import_export/module.json",
+        "server/app/modules/official/import_export/route/app.php"
       ],
       "owner": "architecture",
       "status": "archived",
@@ -2498,7 +2498,7 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/Official/Member/module.json",
+        "server/app/modules/official/member/module.json",
         "server/database/init.sql",
         "resources/service-registry.json"
       ],
@@ -2526,7 +2526,7 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/Official/Article/module.json",
+        "server/app/modules/official/article/module.json",
         "server/database/init.sql",
         "resources/service-registry.json"
       ],
@@ -2554,8 +2554,8 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/Official/Notification/module.json",
-        "server/route/official_notification.php",
+        "server/app/modules/official/notification/module.json",
+        "server/app/modules/official/notification/route/app.php",
         "resources/service-registry.json"
       ],
       "owner": "architecture",
@@ -2582,8 +2582,8 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/Official/Oauth/module.json",
-        "server/route/official_oauth.php",
+        "server/app/modules/official/oauth/module.json",
+        "server/app/modules/official/oauth/route/app.php",
         "resources/service-registry.json"
       ],
       "owner": "architecture",
@@ -2610,8 +2610,8 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/Official/Payment/module.json",
-        "server/route/official_payment.php",
+        "server/app/modules/official/payment/module.json",
+        "server/app/modules/official/payment/route/app.php",
         "server/database/migrations/20260824-payment-channel-grants.sql"
       ],
       "owner": "architecture",
@@ -2753,8 +2753,8 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/platform/service/ops/PairedBackupProvider.php",
-        "server/app/platform/service/ops/PairedBackupManifest.php",
+        "server/app/platform/infrastructure/ops/PairedBackupProvider.php",
+        "server/app/platform/value/ops/PairedBackupManifest.php",
         "resources/project-resources.json",
         "server/composer.lock",
         "repo://peanut-admin-core/packages/php/ops-console"
@@ -2788,9 +2788,9 @@
       "canonical_sources": [
         "server/app/platform/service/provider/",
         "server/database/migrations/20260828-provider-qualification-evidence.sql",
-        "server/app/Modules/Official/Payment/module.json",
-        "server/app/Modules/Official/Notification/module.json",
-        "server/app/Modules/Official/Oauth/module.json",
+        "server/app/modules/official/payment/module.json",
+        "server/app/modules/official/notification/module.json",
+        "server/app/modules/official/oauth/module.json",
         "server/app/common/composition/storage/",
         "server/app/common/infrastructure/storage/",
         "server/app/common/services/storage/"
@@ -2825,7 +2825,7 @@
       "authority": "interpretation",
       "canonical_sources": [
         "server/app/common/http/middleware/MaintenanceWriteGateMiddleware.php",
-        "server/app/platform/service/ops/PdoMaintenanceWindowStore.php",
+        "server/app/platform/infrastructure/ops/ThinkPhpMaintenanceWindowStore.php",
         "server/app/platform/controller/PlatformOpsController.php",
         "server/route/app.php",
         "server/composer.lock",
@@ -2859,8 +2859,8 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
-        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
+        "server/app/platform/services/ops/PlatformUpgradeExecutionService.php",
+        "server/app/platform/infrastructure/ops/ThinkPhpUpgradeTaskExecutionService.php",
         "server/app/command/OpsUpgradeTask.php",
         "server/database/migrations/20260828-create-ops-upgrade-execution.sql",
         "scripts/ops-upgrade-worker",
@@ -3060,12 +3060,12 @@
         "web/pnpm-lock.yaml",
         "plugins.lock",
         "server/app/adminapi/route/app.php",
-        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/common/services/installation/InstallationExecutionHost.php",
         "server/app/command/TenantModuleProfile.php",
-        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/app/platform/services/module/ProductTenantModuleProfileService.php",
         "server/route/platform.php",
         "server/app/adminapi/controller/auth/RoleController.php",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
         "server/app/command/PluginReleaseComposition.php",
         "server/app/command/PluginReconcile.php",
         "server/app/command/PluginInstall.php",
@@ -4011,7 +4011,7 @@
       "content_type": "reference",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/",
+        "server/app/modules/",
         "plugins.lock",
         "server/route/app.php"
       ],
@@ -4104,15 +4104,15 @@
         "web/pnpm-lock.yaml",
         "plugins.lock",
         "server/app/adminapi/route/app.php",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
         "server/app/command/PluginReleaseComposition.php",
         "server/app/command/PluginReconcile.php",
         "server/app/command/PluginInstall.php",
         "web/config/vite.config.base.ts",
         "web/src/router/routes/plugin-contributions.ts",
-        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/common/services/installation/InstallationExecutionHost.php",
         "server/app/command/TenantModuleProfile.php",
-        "server/app/platform/service/module/ProductTenantModuleProfileService.php",
+        "server/app/platform/services/module/ProductTenantModuleProfileService.php",
         "server/route/platform.php",
         "server/app/adminapi/controller/auth/RoleController.php",
         "docs/architecture/consumer-module-lifecycle-contract.md"
@@ -4210,10 +4210,10 @@
         "release-versions.json",
         "scripts/deploy-release",
         "scripts/ops-upgrade-worker",
-        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
-        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
-        "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/platform/value/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/services/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/infrastructure/ops/ThinkPhpUpgradeTaskExecutionService.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
         "server/app/command/PluginReleaseComposition.php",
         "server/app/command/PluginReconcile.php",
         "server/app/command/PluginInstall.php",
@@ -4247,7 +4247,7 @@
       "authority": "interpretation",
       "canonical_sources": [
         "scripts/deploy-release",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
         "server/app/command/PluginReleaseComposition.php",
         "server/app/command/PluginReconcile.php",
         "server/app/command/PluginInstall.php",
@@ -4376,8 +4376,8 @@
         "docs/product-status/product-closure-observability.md",
         "docs/product-status/capability-ledger.json",
         "server/config/console.php",
-        "server/app/platform/service/plugin/PluginPackageInstaller.php",
-        "server/app/platform/service/plugin/PluginLifecycleService.php",
+        "server/app/platform/infrastructure/plugin/PluginPackageInstaller.php",
+        "server/app/platform/services/plugin/PluginLifecycleService.php",
         "resources/service-registry.json"
       ],
       "owner": "product-architecture",
@@ -4667,7 +4667,7 @@
         "server/composer.json",
         "server/composer.lock",
         "server/app/AppService.php",
-        "server/app/Modules",
+        "server/app/modules",
         "web/package.json",
         "platform/package.json",
         "pc/package.json",
@@ -4829,9 +4829,9 @@
         "scripts/build-edition-upgrades",
         "scripts/scaffold-runtime/EditionUpgradePackage.php",
         "scripts/deploy-release",
-        "server/app/common/service/installation/ApplicationReleaseVersions.php",
-        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
-        "server/app/platform/service/plugin/PluginReleaseCompositionGuard.php",
+        "server/app/common/value/installation/ApplicationReleaseVersions.php",
+        "server/app/platform/value/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/validation/plugin/PluginReleaseCompositionGuard.php",
         "server/app/command/PluginReleaseComposition.php",
         "server/app/command/PluginReconcile.php",
         "server/app/command/PluginInstall.php",
@@ -4920,7 +4920,7 @@
       "content_type": "archive",
       "authority": "scaffold-source",
       "canonical_sources": [
-        "server/app/Modules/",
+        "server/app/modules/",
         "plugins.lock",
         "server/route/app.php"
       ],
@@ -4949,7 +4949,7 @@
       "content_type": "reference",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/",
+        "server/app/modules/",
         "resources/service-registry.json",
         "docs/reference/product-capability-reference-matrix.md"
       ],

@@ -5,7 +5,7 @@ namespace app\installation\controller;
 
 use app\BaseController;
 use app\common\traits\ApiResponseTrait;
-use app\common\service\installation\InstallationExecutionHost;
+use app\common\services\installation\InstallationExecutionHost;
 use think\App;
 
 final class InstallationController extends BaseController

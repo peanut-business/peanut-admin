@@ -6,8 +6,8 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\UserApplicationService;
-use app\common\application\BusinessException;
+use app\api\services\UserApplicationService;
+use app\common\exception\BusinessException;
 
 class UserController extends BaseApiController
 {

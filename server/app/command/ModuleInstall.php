@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\module\DeploymentModuleInstaller;
+use app\platform\infrastructure\module\DeploymentModuleInstaller;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use app\common\execution\ModuleContextualCommand;
 use think\console\Input;

@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "0ede56496200c1caabfad54dbc6d744663b760c1dd7603c365c7c4fd22bea90e"
+        "sha256": "45599a537dea653f959041fa7528e3e5a9149ff3ef02b092f50b2b5c51b2d89b"
     },
     "trust": {
         "channel": "bundled",
@@ -48,7 +48,7 @@
                         }
                     ],
                     "permissions": {
-                        "path": "Resources/permissions.json",
+                        "path": "resources/permissions.json",
                         "sha256": "acfaad21285fbd1de4fa6120f309e1c85eeb5e77dcb1fa60f1aa9cf88a6158d1"
                     },
                     "migrations": {
@@ -72,7 +72,7 @@
         {
             "name": "peanut-business/official-article",
             "version": "1.0.0",
-            "sha256": "78f0359ff410d5eb6904df5174bcb6e50ad298b1015ff38696c00f1456cfc7be"
+            "sha256": "aad872436832fa2fb93fd1a9bfdce3e6fb3b9c3678924ad028f630bc2c4891ad"
         }
     ],
     "npm": [
@@ -94,7 +94,7 @@
     "modules": [
         {
             "key": "official.article",
-            "root": "server/app/Modules/Official/Article"
+            "root": "server/app/modules/official/article"
         }
     ]
 }

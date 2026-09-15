@@ -15,17 +15,17 @@ php think module:check <module.key>
 
 生成器会创建：
 
-- `server/app/Modules/<Vendor>/<Module>/` 后端、manifest 和 migration 骨架；
+- `server/app/modules/<vendor>/<module>/` 后端、manifest 和 migration 骨架；
 - `web/src/modules/<module-slug>/` 前端贡献；
 - `server/tests/Modules/<Vendor>/<Module>/` Tenant 安全测试骨架。
 
-它不会创建 `modules/<slug>/{server,web}`，也不会生成全小写 PHP namespace。后端模块使用
-`app\\Modules\\<Vendor>\\<Module>` PSR-4 namespace。
+它不会创建 `modules/<slug>/{server,web}`。后端 Module 使用与目录逐段一致的
+`app\\modules\\<vendor>\\<module>` PSR-4 namespace，多词 key 段转换为 `snake_case`。
 
 ## 开发约束
 
 - `module.json` 是 Module 业务身份、依赖、资源和 owned tables 的事实源；
-- `Http/routes.php` 是 ThinkPHP 路由并必须挂载宿主要求的认证、Module 和权限中间件；
+- `route/app.php` 是 ThinkPHP 路由并必须挂载宿主要求的认证、Module 和权限中间件；
 - Tenant-owned Model 依赖全局 TenantScope，业务代码禁止手写 tenant 过滤或绕过 Scope；
 - Application Service 直接使用 ThinkPHP Model/Query/Scope 和构造函数注入，不新增仅用于隔离框架
   的 Repository/Port/Adapter；

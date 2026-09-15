@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\execution\ModuleContextualCommand;
-use app\common\service\audit\AuditContractHost;
-use app\common\service\instance\DeploymentMode;
-use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
-use app\platform\service\module\ProductTenantModuleProfileService;
-use app\platform\service\plugin\PluginLockResolver;
-use app\platform\service\plugin\PluginLifecycleException;
+use app\common\services\audit\AuditContractHost;
+use app\common\enum\instance\DeploymentMode;
+use app\platform\infrastructure\module\ThinkPhpModuleGovernanceProvider;
+use app\platform\services\module\ProductTenantModuleProfileService;
+use app\platform\infrastructure\plugin\PluginLockResolver;
+use app\platform\exception\plugin\PluginLifecycleException;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use think\console\Input;

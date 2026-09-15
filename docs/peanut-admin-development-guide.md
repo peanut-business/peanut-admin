@@ -26,7 +26,7 @@ server/app/adminapi/       管理 API 与 Tenant 会话 Application
 server/app/api/            业务会员和公开 API Host
 server/app/platform/       PlatformOperator 与实例内 Tenant 治理
 server/app/common/         应用公共模型、服务和横切适配
-server/app/modules/        应用 Module 后端目标根；当前源码仍在旧 `Modules/`，待 S3 同批切换
+server/app/modules/        应用 Module 后端唯一根
 server/database/           canonical Schema、安装器和追加 migration
 server/route/app.php       HTTP 路由入口
 web/                       Vue 管理端
@@ -190,13 +190,13 @@ commit/tree；worker 把两者成对交给 `deploy-release`，后者先核对远
 ## 开发最小路径
 
 目录与服务职责统一按 [Application 与 Module 代码规范](architecture/application-module-blueprint/coding-standards.md)
-执行；本节只列开发步骤，不另设目录合同。规范说明的目标不等于现有源码已经全部迁移。
+执行；本节只列开发步骤，不另设目录合同。
 
 1. 目标 Module 位于 `server/app/modules/<vendor>/<module>/`，业务用例进入 `services/`，按职责使用
    `controller/`、`model/`、`contracts/`、`infrastructure/`、`database/migrations/` 和 `resources/`；
    不为目录对称创建空层。路由使用可执行的 `route/app.php` 并接入宿主认证、Module 与权限中间件，
-   `ModuleProvider.php` 负责真实启动装配。当前 `module:create` 仍输出旧结构，须等 S3 将生成、检查、
-   加载、打包和 autoload 同批切换后再按目标合同使用，期间不手工维护双根。
+   `ModuleProvider.php` 负责真实启动装配。`module:create`、检查、加载、打包和 autoload 使用相同的
+   目录派生规则，不手工维护双根。
 2. Module 表必须有明确 Tenant owner；Tenant-owned Model 使用全局 TenantScope，禁止由业务代码
    手写租户过滤或绕过 Scope。唯一键、关联、缓存、文件和任务也须保留适用的 Tenant 维度，
    请求参数不得覆盖可信 TenantContext。

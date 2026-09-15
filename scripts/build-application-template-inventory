@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $output = $root . '/scaffold/application-template-inventory.json';
-require_once $root . '/server/app/common/service/scaffold/VersionContract.php';
-$versions = \app\common\service\scaffold\VersionContract::load($root . '/release-versions.json');
+require_once $root . '/server/app/common/value/scaffold/VersionContract.php';
+$versions = \app\common\value\scaffold\VersionContract::load($root . '/release-versions.json');
 
 function inventoryGitFiles(string $root): array
 {
@@ -87,8 +87,7 @@ function excluded(string $path): bool
         || str_starts_with($path, 'scripts/scaffold-runtime/')
         || str_starts_with($path, 'web/.claude/')
         || str_starts_with($path, 'plugins/fixture.delivery-record/')
-        || str_starts_with($path, 'server/app/Modules/Fixture/DeliveryRecord/')
-        || $path === 'server/route/fixture_delivery_record.php'
+        || str_starts_with($path, 'server/app/modules/fixture/delivery_record/')
         || str_starts_with($path, 'server/fixtures/plugin-module-lifecycle/')
         || str_starts_with($path, 'web/src/modules/fixture-delivery-record/')
         || $path === 'web/tests/Productization/plugin-contribution.test.ts'
@@ -109,21 +108,21 @@ function classification(string $path): string
         'server/app/common/persistence/AdvisoryLockUnavailable.php',
         'server/app/common/persistence/CoreTenantRepositoryFactory.php',
         'server/app/platform/service/module/ThinkPhpModuleGovernanceProvider.php',
-        'server/app/platform/service/module/DeployedTenantModuleRegistry.php',
-        'server/app/platform/service/module/ModuleQualificationQueryService.php',
-        'server/app/platform/service/module/OpisManifestSchemaValidator.php',
-        'server/app/platform/service/module/ReflectionContractInspector.php',
-        'server/app/platform/service/module/StrictVersionConstraintMatcher.php',
-        'server/app/platform/service/plugin/PluginLifecycleService.php',
-        'server/app/platform/service/plugin/PluginLifecycleException.php',
-        'server/app/platform/service/plugin/PluginDescriptor.php',
-        'server/app/platform/service/plugin/PluginLockResolver.php',
-        'server/app/platform/service/plugin/PluginModuleRegistryFactory.php',
-        'server/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php',
-        'server/app/platform/service/plugin/ModuleLifecyclePolicy.php',
-        'server/app/platform/service/plugin/ModuleCatalogApplier.php',
-        'server/app/platform/service/plugin/ScopedMenuCatalogRepository.php',
-        'server/app/platform/service/plugin/ModuleCatalogMutationRepository.php',
+        'server/app/platform/infrastructure/module/DeployedTenantModuleRegistry.php',
+        'server/app/platform/services/module/ModuleQualificationQueryService.php',
+        'server/app/platform/validation/module/OpisManifestSchemaValidator.php',
+        'server/app/platform/validation/module/ReflectionContractInspector.php',
+        'server/app/platform/validation/module/StrictVersionConstraintMatcher.php',
+        'server/app/platform/services/plugin/PluginLifecycleService.php',
+        'server/app/platform/exception/plugin/PluginLifecycleException.php',
+        'server/app/platform/value/plugin/PluginDescriptor.php',
+        'server/app/platform/infrastructure/plugin/PluginLockResolver.php',
+        'server/app/platform/composition/plugin/PluginModuleRegistryFactory.php',
+        'server/app/platform/composition/plugin/ModuleDefinitionRegistryFactory.php',
+        'server/app/platform/policy/plugin/ModuleLifecyclePolicy.php',
+        'server/app/platform/infrastructure/plugin/ModuleCatalogApplier.php',
+        'server/app/platform/infrastructure/plugin/ScopedMenuCatalogRepository.php',
+        'server/app/platform/infrastructure/plugin/ModuleCatalogMutationRepository.php',
     ];
     if (in_array($path, $managedHostPaths, true)) {
         return 'managed';
@@ -152,7 +151,7 @@ function classification(string $path): string
     if ($path === 'server/database/seed-demo-data.php') {
         return 'managed';
     }
-    if ($path === 'server/app/common/service/installation/ApplicationReleaseVersions.php') {
+    if ($path === 'server/app/common/value/installation/ApplicationReleaseVersions.php') {
         return 'managed';
     }
     if ($path === 'scripts/seed-demo-data') {
@@ -189,7 +188,7 @@ function transform(string $path, string $classification): string
     if ($path === 'server/config/modules.php') return 'modules-config';
     if ($path === '.github/workflows/ci.yml') return 'ci';
     if ($path === 'server/database/environment-guard.php') return 'environment-guard';
-    if ((str_starts_with($path, 'server/app/Modules/') && basename($path) === 'composer.json')
+    if ((str_starts_with($path, 'server/app/modules/') && basename($path) === 'composer.json')
         || (str_starts_with($path, 'web/src/modules/') && basename($path) === 'package.json')) {
         return 'text';
     }
@@ -212,31 +211,31 @@ function transform(string $path, string $classification): string
 function adapterKind(string $path): ?string
 {
     return match ($path) {
-        'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
-        'server/app/common/service/dict/ThinkPhpTenantDictionaryProvider.php',
-        'server/app/common/service/dict/ThinkPhpSystemDictionaryProvider.php',
+        'server/app/common/policy/permission/RegisteredAdminPermissionPolicy.php',
+        'server/app/common/infrastructure/dict/ThinkPhpTenantDictionaryProvider.php',
+        'server/app/common/infrastructure/dict/ThinkPhpSystemDictionaryProvider.php',
         'server/app/common/service/crontab/CrontabSchedulerService.php',
         'server/app/common/service/crontab/CrontabTenantContext.php',
         'server/app/common/service/crontab/CrontabTenantRepository.php',
         'server/app/common/service/file/FileTenantRepository.php',
-        'server/app/common/service/config/TenantSettingWebsiteStore.php',
+        'server/app/common/infrastructure/config/TenantSettingWebsiteStore.php',
         'server/app/common/service/export/AppFileMediaGateway.php',
-        'server/app/common/service/notice/ApplicationNoticeSmsSender.php',
-        'server/app/common/service/notice/NoticeChannelService.php',
-        'server/app/common/service/notice/NoticeTenantContext.php',
+        'server/app/common/infrastructure/notice/ApplicationNoticeSmsSender.php',
+        'server/app/common/services/notice/NoticeChannelService.php',
+        'server/app/common/context/notice/NoticeTenantContext.php',
         'server/app/common/service/notice/NoticeTenantRepository.php',
         'server/app/common/service/notice/VerificationCodeService.php',
         'server/app/common/service/oauth/OAuthTenantRepository.php',
-        'server/app/common/service/org/OrgTenantRepository.php' => 'framework-adapter',
-        'server/app/common/service/config/BrandDefaults.php',
-        'server/app/common/service/config/WebsiteConfigService.php',
-        'server/app/common/service/crontab/CrontabTenantLock.php',
-        'server/app/common/service/export/OperationLogExportProvider.php',
-        'server/app/common/service/notice/driver/sms/SmsDriver.php',
-        'server/app/common/service/notice/driver/sms/AliyunSms.php',
-        'server/app/common/service/notice/driver/sms/TencentSms.php',
-        'server/app/common/service/oauth/OAuthBrowserCallbackService.php',
-        'server/app/common/service/oauth/WechatOAuthTransport.php',
+        'server/app/common/infrastructure/org/OrgTenantRepository.php' => 'framework-adapter',
+        'server/app/common/infrastructure/config/BrandDefaults.php',
+        'server/app/common/services/config/WebsiteConfigService.php',
+        'server/app/common/infrastructure/crontab/CrontabTenantLock.php',
+        'server/app/common/infrastructure/export/OperationLogExportProvider.php',
+        'server/app/common/contract/notice/sms/SmsDriver.php',
+        'server/app/common/infrastructure/notice/sms/AliyunSms.php',
+        'server/app/common/infrastructure/notice/sms/TencentSms.php',
+        'server/app/common/services/oauth/OAuthBrowserCallbackService.php',
+        'server/app/common/infrastructure/oauth/WechatOAuthTransport.php',
         'web/src/core/tenant-session.ts',
         'web/src/core/runtime.ts' => 'application-provider',
         default => null,

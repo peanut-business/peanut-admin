@@ -4,14 +4,14 @@ declare(strict_types=1);
 namespace app\common\traits;
 
 use app\common\http\PageResult;
-use app\common\service\JsonService;
+use app\common\http\JsonResponseFactory;
 use think\response\Json;
 
 trait ApiResponseTrait
 {
     protected function success(string $msg = 'success', mixed $data = []): Json
     {
-        return JsonService::success($msg, $data);
+        return JsonResponseFactory::success($msg, $data);
     }
 
     protected function fail(string $msg = 'fail'): never
@@ -21,11 +21,11 @@ trait ApiResponseTrait
 
     protected function data(mixed $data): Json
     {
-        return JsonService::data($data);
+        return JsonResponseFactory::data($data);
     }
 
     protected function dataLists(PageResult $page): Json
     {
-        return JsonService::dataLists($page);
+        return JsonResponseFactory::dataLists($page);
     }
 }

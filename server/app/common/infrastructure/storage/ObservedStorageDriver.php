@@ -5,7 +5,7 @@ namespace app\common\infrastructure\storage;
 
 use app\common\exception\storage\StorageProviderException;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\runtime\OperationalLog;
+use app\common\infrastructure\runtime\OperationalLog;
 use PeanutAdmin\FileMedia\Storage\StorageDriver;
 
 /** 为 Core 技术 Driver 统一应用层异常语义，并只记录无密钥诊断。 */

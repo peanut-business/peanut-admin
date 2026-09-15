@@ -2,8 +2,8 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\DemoAccountPolicy;
-use app\platform\service\TenantOwnerAdminProvisioner;
+use app\common\policy\DemoAccountPolicy;
+use app\platform\contract\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;

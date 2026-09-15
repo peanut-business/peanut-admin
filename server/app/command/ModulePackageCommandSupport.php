@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\plugin\PluginPackageException;
+use app\platform\exception\plugin\PluginPackageException;
 use think\console\Input;
 use think\console\Output;
 

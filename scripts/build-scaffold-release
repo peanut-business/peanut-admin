@@ -102,12 +102,12 @@ try {
     $archive=$temporary.'/source.tar'; $source=$temporary.'/source'; mkdir($source,0700);
     releaseRun(['git','-C',$root,'archive','--format=tar','--output='.$archive,$commit]);
     (new PharData($archive))->extractTo($source);
-    require $source.'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-    require $source.'/server/app/common/service/scaffold/ScaffoldManifest.php';
-    require $source.'/server/app/common/service/scaffold/ApplicationCreator.php';
+    require $source.'/server/app/common/validation/scaffold/ScaffoldPathGuard.php';
+    require $source.'/server/app/common/value/scaffold/ScaffoldManifest.php';
+    require $source.'/server/app/common/infrastructure/scaffold/ApplicationCreator.php';
     $application=$temporary.'/application';
     $edition=$options['edition']??null;
-    $creator=new \app\common\service\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,$edition!==null);
+    $creator=new \app\common\infrastructure\scaffold\ApplicationCreator($source,$source.'/scaffold/application-template-inventory.json',['commit'=>$commit,'tree'=>$tree],null,$edition!==null);
     $create=new ReflectionMethod($creator,'create');
     $createParameters=array_map(static fn(ReflectionParameter $parameter):string=>$parameter->getName(),$create->getParameters());
     if($createParameters===['productName','slug','packageIdentity','target']) {

@@ -6,7 +6,7 @@ namespace app\adminapi\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\adminapi\application\WorkbenchApplicationService;
+use app\adminapi\services\WorkbenchApplicationService;
 
 class WorkbenchController extends BaseAdminController
 {

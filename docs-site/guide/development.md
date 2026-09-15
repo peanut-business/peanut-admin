@@ -25,8 +25,8 @@ description: Peanut Admin Application、Core、Module 与各客户端的开发�
 
 Application 只消费公开的 Core 包边界。不要修改 `vendor/` 或 `node_modules/`；需要 Core 变更时，在 Core 仓独立提交并让 Application 固定采用已接受身份。
 
-Module 目标根、namespace 和 PHP 业务目录均为小写，业务用例统一进入 `services/`。当前源码和工具仍使用
-旧 `server/app/Modules/` 与 `Http/` 布局；在生成、检查、autoload、加载和打包同批切换前，不维护双根。
+Module 根、namespace 和 PHP 业务目录均为小写，业务用例统一进入 `services/`。源码、生成、检查、
+autoload、加载和打包使用同一套 `server/app/modules/` 与 `route/app.php` 规则，不维护双根。
 
 Platform 运行维护采用同一原则：Core 提供维护窗口合同，Application Host 提供持久化、
 HTTP transport 和全局写入门禁。窗口生效时，不能以页面隐藏替代后端拒绝；只有明确受

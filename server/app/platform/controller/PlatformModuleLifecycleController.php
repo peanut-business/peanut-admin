@@ -5,10 +5,10 @@ namespace app\platform\controller;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
-use app\platform\service\plugin\PlatformModuleRuntimeService;
-use app\platform\service\plugin\DeterministicTarArchive;
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginPackageException;
+use app\platform\services\plugin\PlatformModuleRuntimeService;
+use app\platform\infrastructure\plugin\DeterministicTarArchive;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\exception\plugin\PluginPackageException;
 use think\App;
 
 final class PlatformModuleLifecycleController extends BasePlatformController

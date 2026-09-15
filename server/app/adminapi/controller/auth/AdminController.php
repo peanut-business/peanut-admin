@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\auth\AdminApplicationService;
+use app\adminapi\services\auth\AdminApplicationService;
 use app\adminapi\validate\auth\AdminValidate;
 use app\adminapi\validate\auth\EditSelfValidate;
 

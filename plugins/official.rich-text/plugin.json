@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "b07e0e95f8ff486911718a7488e38ea8c95074f747e7625d318b81c126d5c46c"
+        "sha256": "ed7899fe73268c3bf093cd3279e1dbcefdcae73f344c3badbd1a1f468502ce86"
     },
     "trust": {
         "channel": "bundled",
@@ -43,7 +43,7 @@
                     "kernel_constraint": "^1.0",
                     "dependencies": [],
                     "permissions": {
-                        "path": "Resources/permissions.json",
+                        "path": "resources/permissions.json",
                         "sha256": "289640e0f2c43a3dee7d6557005a1ad72a01bf180c3492d5f0dbd08acb5fe2e1"
                     },
                     "migrations": {
@@ -63,7 +63,7 @@
         {
             "name": "peanut-business/official-rich-text",
             "version": "1.0.1",
-            "sha256": "29bbc27a13f1b59abdb9b18bf517214c9b3b2b60e77d76b4f0744ab069b5da62"
+            "sha256": "f3e79546f6ab40d9950692019ddb97a256d91685a863efc9515d9ca097ff3c21"
         }
     ],
     "npm": [
@@ -85,7 +85,7 @@
     "modules": [
         {
             "key": "official.rich-text",
-            "root": "server/app/Modules/Official/RichText"
+            "root": "server/app/modules/official/rich_text"
         }
     ]
 }

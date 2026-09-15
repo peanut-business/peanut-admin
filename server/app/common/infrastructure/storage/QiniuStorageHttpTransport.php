@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\infrastructure\storage;
 
-use app\common\service\http\OutboundHttpRequest;
-use app\common\service\http\OutboundHttpTransport;
+use app\common\value\http\OutboundHttpRequest;
+use app\common\contract\http\OutboundHttpTransport;
 use PeanutAdmin\FileMedia\Storage\StorageHttpTransport;
 
 /** 将 Core 七牛窄传输合同映射到应用统一出站 HTTP 观测与重试通道。 */

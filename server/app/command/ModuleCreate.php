@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\module\ModuleScaffoldException;
-use app\common\service\module\ModuleScaffoldGenerator;
+use app\common\exception\module\ModuleScaffoldException;
+use app\common\infrastructure\module\ModuleScaffoldGenerator;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

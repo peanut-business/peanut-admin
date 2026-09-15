@@ -108,14 +108,14 @@ while IFS= read -r path; do
     scripts/check-test-integrity)
       integrity_checker_changed=1
       ;;
-    server/app/platform/service/plugin/*|server/app/command/Plugin*.php|server/app/Modules/Fixture/DeliveryRecord/*|server/app/Modules/Official/*|server/route/official_*.php|plugins/*|plugins.lock|server/config/modules.php|server/resources/schemas/plugin.schema.json)
+    server/app/platform/*/plugin/*|server/app/command/Plugin*.php|server/app/modules/fixture/delivery_record/*|server/app/modules/official/*|plugins/*|plugins.lock|server/config/modules.php|server/resources/schemas/plugin.schema.json)
       select_test server/tests/Productization/PluginArtifactContractTest.php
       select_test server/tests/Productization/PluginModuleContractTest.php
       select_test server/tests/Productization/PluginLifecycleMigrationContractTest.php
       select_test server/tests/Productization/OfficialArticleModuleContractTest.php
       select_test server/tests/Multitenancy/OfficialCapabilityTenantQualificationTest.php
       ;;
-    server/app/platform/controller/PlatformTenantController.php|server/app/platform/service/PlatformTenantQueryService.php|server/tests/Multitenancy/PlatformTenantReadApiTest.php)
+    server/app/platform/controller/PlatformTenantController.php|server/app/platform/services/PlatformTenantQueryService.php|server/tests/Multitenancy/PlatformTenantReadApiTest.php)
       select_test server/tests/Multitenancy/PlatformTenantReadApiTest.php
       ;;
     server/app/platform/service/PlatformRuntimeFactory.php)
@@ -157,7 +157,7 @@ while IFS= read -r path; do
       ;;
   esac
 
-  if [[ "$path" == server/app/Modules/Official/Oauth/* \
+  if [[ "$path" == server/app/modules/official/oauth/* \
     || "$path" == server/app/api/application/OAuthApplicationService.php \
     || "$path" == server/app/api/application/RechargeApplicationService.php \
     || "$path" == server/app/common/service/oauth/* ]]; then

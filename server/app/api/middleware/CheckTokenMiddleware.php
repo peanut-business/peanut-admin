@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\api\middleware;
 
-use app\api\service\UserTokenService;
-use app\Modules\Official\Member\Contracts\MemberQueries;
+use app\api\services\UserTokenService;
+use app\modules\official\member\contracts\MemberQueries;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
-use app\common\service\JsonService;
-use app\common\service\member\MemberApiTenantContextResolver;
+use app\common\http\JsonResponseFactory;
+use app\common\infrastructure\member\MemberApiTenantContextResolver;
 
 /**
  * 用户端登录中间件

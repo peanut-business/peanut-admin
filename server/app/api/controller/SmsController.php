@@ -6,7 +6,7 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\SmsApplicationService;
+use app\api\services\SmsApplicationService;
 use app\api\validate\SmsValidate;
 
 class SmsController extends BaseApiController

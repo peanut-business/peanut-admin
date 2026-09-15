@@ -76,7 +76,7 @@ php scripts/create-app \
    `scaffold-upgrade preflight/apply/verify` 更新受管源码；发生冲突时解决或 `recover`，不能重生成。
 2. 按兼容信息更新应用自己的 Composer/npm manifest 与 lock，并用锁定安装验证 Core 依赖。
 3. Module 如需升级，先在应用仓采用它自己的签名 archive、固定版本与依赖，再安装依赖、构建并
-   验收。private Module 的 `Http/routes.php` 不会由安装命令自动注册；应用 owner 在 app-owned 路由
+   验收。private Module 的 `route/app.php` 不会由安装命令自动注册；应用 owner 在 app-owned 路由
    装配中显式引入它，并沿用认证、Module 与权限 middleware。卸载时由同一 owner 去除接线，不复制
    业务 handler，也不增加在线动态路由 loader。Module 版本不随 `instance_version`、
    `scaffold_template` 或 Core lock 自动变化。

@@ -6,7 +6,7 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\api\application\SearchApplicationService;
+use app\api\services\SearchApplicationService;
 
 class SearchController extends BaseApiController
 {

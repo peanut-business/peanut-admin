@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\adminapi\http\middleware;
 
-use app\adminapi\service\AdminApiAccessRegistry;
+use app\adminapi\infrastructure\AdminApiAccessRegistry;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
-use app\common\service\authorization\AdminAuthorizationService;
-use app\common\service\JsonService;
-use app\common\service\DemoAccountPolicy;
+use app\common\services\authorization\AdminAuthorizationService;
+use app\common\http\JsonResponseFactory;
+use app\common\policy\DemoAccountPolicy;
 use app\common\execution\AdminExecutionContext;
 use app\common\execution\CurrentExecutionContext;
 

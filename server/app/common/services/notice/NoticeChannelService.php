@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\common\services\notice;
 
 use app\common\context\notice\NoticeTenantContext;
-use app\common\service\external\ExternalChannelBindingService;
-use app\common\service\external\ExternalTenantContext;
+use app\common\services\external\ExternalChannelBindingService;
+use app\common\context\external\ExternalTenantContext;
 use app\common\infrastructure\notice\sms\AliyunSms;
 use app\common\contract\notice\sms\SmsDriver;
 use app\common\value\notice\sms\SmsDriverResult;
 use app\common\infrastructure\notice\sms\TencentSms;
-use app\common\service\http\OutboundHttpTransport;
+use app\common\contract\http\OutboundHttpTransport;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;

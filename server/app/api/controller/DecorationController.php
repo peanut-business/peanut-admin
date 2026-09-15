@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\api\controller;
 
 use app\common\enum\decoration\DecorationEnum;
-use app\common\service\decoration\DecorationReadService;
-use app\common\application\BusinessException;
+use app\common\services\decoration\DecorationReadService;
+use app\common\exception\BusinessException;
 use app\common\execution\CurrentExecutionContext;
 use think\App;
 

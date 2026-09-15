@@ -6,7 +6,7 @@ namespace app\platform\query;
 use app\common\contract\module\ModuleQualification;
 use app\common\contract\module\ModuleQualificationQuery;
 use app\platform\context\PlatformOperatorContext;
-use app\platform\service\PlatformOperatorSessionService;
+use app\platform\services\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use think\db\Query;

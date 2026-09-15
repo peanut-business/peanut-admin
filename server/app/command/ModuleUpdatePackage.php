@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\instance\InstanceToolAccessGuard;
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginPackageException;
-use app\platform\service\plugin\PluginPackageInstaller;
+use app\common\validation\instance\InstanceToolAccessGuard;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\exception\plugin\PluginPackageException;
+use app\platform\infrastructure\plugin\PluginPackageInstaller;
 use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

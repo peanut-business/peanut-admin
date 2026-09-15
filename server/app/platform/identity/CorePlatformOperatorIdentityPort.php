@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\platform\identity;
 
 use app\platform\context\PlatformOperatorContext;
-use app\platform\service\PlatformOperatorSessionService;
+use app\platform\services\PlatformOperatorSessionService;
 
 /** Bridges governance services to the independently validated platform session audience. */
 final readonly class CorePlatformOperatorIdentityPort implements PlatformOperatorIdentityPort

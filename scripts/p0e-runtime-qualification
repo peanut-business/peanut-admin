@@ -1400,7 +1400,7 @@ class Runner:
             [
                 "php", "-r",
                 r"require 'server/vendor/autoload.php'; "
-                r"$result=(new \app\platform\service\plugin\PluginArtifactWriter(getcwd().'/server'))->checkLock(); "
+                r"$result=(new \app\platform\infrastructure\plugin\PluginArtifactWriter(getcwd().'/server'))->checkLock(); "
                 r"echo json_encode($result, JSON_UNESCAPED_SLASHES), PHP_EOL;",
             ],
             cwd=generated,
@@ -1408,7 +1408,7 @@ class Runner:
         )
         fixture_paths = [
             (ROOT / "plugins/fixture.delivery-record", generated / "plugins/fixture.delivery-record"),
-            (ROOT / "server/app/Modules/Fixture/DeliveryRecord", generated / "server/app/Modules/Fixture/DeliveryRecord"),
+            (ROOT / "server/app/modules/fixture/delivery_record", generated / "server/app/modules/fixture/delivery_record"),
             (ROOT / "web/src/modules/fixture-delivery-record", generated / "web/src/modules/fixture-delivery-record"),
         ]
         runner_source = ROOT / "server/fixtures/plugin-module-lifecycle/run.php"

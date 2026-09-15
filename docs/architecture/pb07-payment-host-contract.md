@@ -48,7 +48,7 @@
 
 ## 6. 精确写集
 
-Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php`、`server/app/command/RefundReconcile.php`，以及删除旧 `server/app/common/service/RefundGatewayService.php`。Web 只删除 `web/src/api/app.ts` 的未消费支付 facade。
+Runtime 白名单为 `server/app/common/service/payment/**`、退款调用方 `server/app/modules/official/payment/services/RechargeAdministrationService.php`、`server/app/command/RefundReconcile.php`，以及删除旧 `server/app/common/service/RefundGatewayService.php`。Web 只删除 `web/src/api/app.ts` 的未消费支付 facade。
 
 证据/状态白名单为 `server/tests/Productization/PaymentHostTest.php`、CI、本合同、产品化计划、能力图、应用发布契约、`AGENTS.md` 及支付相关用户/开发/部署文档。禁止修改订单/余额 schema、路由、页面、核心仓、依赖目录、封存 S01/F02 证据或其他领域。
 

@@ -5,7 +5,7 @@ namespace app\common\tenancy;
 
 use app\common\model\TenantOwnedModel;
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\runtime\OperationalLog;
+use app\common\infrastructure\runtime\OperationalLog;
 use think\db\BaseQuery;
 
 /** The only application-owned path allowed to bypass Tenant model scope. */

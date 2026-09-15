@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace app\adminapi\http\middleware;
 
 use app\common\execution\CurrentExecutionContext;
-use app\adminapi\service\AdminTokenService;
+use app\adminapi\http\AdminTokenExtractor;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
-use app\common\service\authorization\AdminAuthorizationService;
-use app\common\service\JsonService;
+use app\common\services\authorization\AdminAuthorizationService;
+use app\common\http\JsonResponseFactory;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
@@ -27,7 +27,7 @@ final class LoginMiddleware
 
     public function handle($request, \Closure $next)
     {
-        $token = AdminTokenService::tokenFromRequest($request);
+        $token = AdminTokenExtractor::tokenFromRequest($request);
         if ($token === '') {
             throw \app\common\http\ApiProblem::fromEnvelope('请求缺少 token', null, 40100);
         }

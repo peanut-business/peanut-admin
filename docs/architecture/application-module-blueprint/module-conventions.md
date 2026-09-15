@@ -18,10 +18,9 @@ Module 只回答三个问题：
 
 目录矩阵以[核心代码规范与认知模型统一指南](coding-standards.md)为唯一入口：Module 根为
 `server/app/modules/<vendor>/<module>/`，namespace 为 `app\\modules\\<vendor>\\<module>`，前端为
-`web/src/modules/<module-slug>/`。目标根保留 `module.json`、`ModuleProvider.php`、`composer.json`，使用
+`web/src/modules/<module-slug>/`。Module 根保留 `module.json`、`ModuleProvider.php`、`composer.json`，使用
 `controller/`、`validate/`、`route/app.php`、`services/`、`contracts/`、`model/`、`infrastructure/`、
-`database/migrations/` 和 `resources/`。现行源码和工具仍使用旧 PascalCase 根及 `Http/` 布局，属于
-S2 影响映射与 S3 同批切换范围。
+`database/migrations/` 和 `resources/`。源码、生成器和运行工具使用这套统一布局。
 
 ## 3. 哪些目录必须有，哪些按需增加
 
@@ -63,8 +62,8 @@ adminapi/
 └── middleware.php
 ```
 
-业务 Module（如 `article`、`payment`）的 Controller 目标归属 Module 自身；S3 完成后
-`adminapi/controller/` 仅保留核心鉴权、基础宿主配置等 Host 功能。当前存量是否已经归位须以 S2 映射为准。
+业务 Module（如 `article`、`payment`）的 Controller 归属 Module 自身；
+`adminapi/controller/` 仅保留核心鉴权、基础宿主配置等 Host 功能。
 
 `adminapi/services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的目标入口由
 Module 的 `controller/` 接管；Host 编排不得接管 owner Module 的业务事务。
@@ -313,7 +312,7 @@ Attempt 新建 `SystemExecutionContext`，提交者只保留为 causation，完�
 
 目标 Module 生成器只生成最低骨架：manifest、可执行 `route/app.php` 模板、基础 `controller/`、
 `validate/`、`services/`、`model/`、`database/migrations/`、`resources/`、web 前端脚手架，并保留
-`ModuleProvider.php` 与 `composer.json`。现行生成器仍属 S3 待切换对象。
+`ModuleProvider.php` 与 `composer.json`。现行生成器使用这套最低骨架。
 
 目标生成器必须遵循新版架构规范（即 Controller 与路由全栈回到 Module 目录中，并接入认证、Module、RBAC 中间件）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑收敛在 `services/` 目录下。真实需求出现后再增加其它。
 

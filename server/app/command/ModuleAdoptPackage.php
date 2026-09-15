@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\execution\ContextualCommand;
-use app\platform\service\plugin\PluginPackageAdoptionService;
-use app\platform\service\plugin\PluginPackageException;
-use app\platform\service\plugin\PluginLifecycleException;
+use app\platform\services\plugin\PluginPackageAdoptionService;
+use app\platform\exception\plugin\PluginPackageException;
+use app\platform\exception\plugin\PluginLifecycleException;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;

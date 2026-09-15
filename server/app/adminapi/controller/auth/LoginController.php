@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\adminapi\controller\auth;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\auth\LoginApplicationService;
+use app\adminapi\services\auth\LoginApplicationService;
 use app\common\contract\authorization\AdminAuthorizationQuery;
 use app\common\dto\authorization\AdminPrincipal;
-use app\adminapi\service\AdminTokenService;
+use app\adminapi\http\AdminTokenExtractor;
 use app\adminapi\validate\auth\LoginValidate;
-use app\common\service\DemoAccountPolicy;
-use app\common\application\BusinessException;
+use app\common\policy\DemoAccountPolicy;
+use app\common\exception\BusinessException;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
@@ -71,7 +71,7 @@ class LoginController extends BaseAdminController
 
     public function logout()
     {
-        $token = AdminTokenService::tokenFromRequest($this->request);
+        $token = AdminTokenExtractor::tokenFromRequest($this->request);
         if ($token !== '') {
             $this->loginApplication->logout($token);
         }

@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\scaffold;
+namespace app\common\infrastructure\scaffold;
 
+use app\common\validation\scaffold\ScaffoldPathGuard;
+use app\common\value\scaffold\ScaffoldManifest;
 use RuntimeException;
 
 final class EditionUpgradePackage
@@ -19,21 +21,21 @@ final class EditionUpgradePackage
         'server/app/common/persistence/AdvisoryLockUnavailable.php',
         'server/app/common/persistence/TenantPersistenceConfiguration.php',
         'server/app/platform/service/module/ThinkPhpModuleGovernanceProvider.php',
-        'server/app/platform/service/module/DeployedTenantModuleRegistry.php',
-        'server/app/platform/service/module/ModuleQualificationQueryService.php',
-        'server/app/platform/service/module/OpisManifestSchemaValidator.php',
-        'server/app/platform/service/module/ReflectionContractInspector.php',
-        'server/app/platform/service/module/StrictVersionConstraintMatcher.php',
-        'server/app/platform/service/plugin/PluginLifecycleService.php',
-        'server/app/platform/service/plugin/PluginLifecycleException.php',
-        'server/app/platform/service/plugin/PluginDescriptor.php',
-        'server/app/platform/service/plugin/PluginLockResolver.php',
-        'server/app/platform/service/plugin/PluginModuleRegistryFactory.php',
-        'server/app/platform/service/plugin/ModuleDefinitionRegistryFactory.php',
-        'server/app/platform/service/plugin/ModuleLifecyclePolicy.php',
-        'server/app/platform/service/plugin/ModuleCatalogApplier.php',
-        'server/app/platform/service/plugin/ScopedMenuCatalogRepository.php',
-        'server/app/platform/service/plugin/ModuleCatalogMutationRepository.php',
+        'server/app/platform/infrastructure/module/DeployedTenantModuleRegistry.php',
+        'server/app/platform/services/module/ModuleQualificationQueryService.php',
+        'server/app/platform/validation/module/OpisManifestSchemaValidator.php',
+        'server/app/platform/validation/module/ReflectionContractInspector.php',
+        'server/app/platform/validation/module/StrictVersionConstraintMatcher.php',
+        'server/app/platform/services/plugin/PluginLifecycleService.php',
+        'server/app/platform/exception/plugin/PluginLifecycleException.php',
+        'server/app/platform/value/plugin/PluginDescriptor.php',
+        'server/app/platform/infrastructure/plugin/PluginLockResolver.php',
+        'server/app/platform/composition/plugin/PluginModuleRegistryFactory.php',
+        'server/app/platform/composition/plugin/ModuleDefinitionRegistryFactory.php',
+        'server/app/platform/policy/plugin/ModuleLifecyclePolicy.php',
+        'server/app/platform/infrastructure/plugin/ModuleCatalogApplier.php',
+        'server/app/platform/infrastructure/plugin/ScopedMenuCatalogRepository.php',
+        'server/app/platform/infrastructure/plugin/ModuleCatalogMutationRepository.php',
     ];
 
     /** @return array{from_manifest:string,to_manifest:string,package:array<string,mixed>} */

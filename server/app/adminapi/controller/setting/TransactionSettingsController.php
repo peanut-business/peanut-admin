@@ -7,8 +7,8 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\setting\TransactionSettingsApplicationService;
-use app\common\application\BusinessException;
+use app\adminapi\services\setting\TransactionSettingsApplicationService;
+use app\common\exception\BusinessException;
 
 /**
  * 交易设置

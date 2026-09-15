@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\common\http;
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\JsonService;
-use app\common\service\runtime\OperationalLog;
+use app\common\http\JsonResponseFactory;
+use app\common\infrastructure\runtime\OperationalLog;
 use think\App;
 use think\Response;
 
@@ -48,7 +48,7 @@ final readonly class HostApiProblemRenderer
             'request_id' => $requestId,
         ]);
 
-        return JsonService::response(
+        return JsonResponseFactory::response(
             $problem->apiCode(),
             $problem->getMessage(),
             $problem->data(),

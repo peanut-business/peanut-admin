@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\platform\invitation;
 
-use app\common\service\audit\AuditContractHost;
-use app\platform\service\ApplicationTenantBootstrapService;
+use app\common\services\audit\AuditContractHost;
+use app\platform\services\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;

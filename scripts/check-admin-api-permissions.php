@@ -17,8 +17,8 @@ function adminApiMatrix(string $repositoryRoot, array $inventory, array $accessC
     $sqlFiles = array_merge(
         $sqlFiles,
         glob($repositoryRoot . '/server/database/migrations/*.sql') ?: [],
-        glob($repositoryRoot . '/server/app/Modules/*/*/Database/Migrations/*.sql') ?: [],
-        glob($repositoryRoot . '/server/app/Modules/*/Database/Migrations/*.sql') ?: [],
+        glob($repositoryRoot . '/server/app/modules/*/*/database/migrations/*.sql') ?: [],
+        glob($repositoryRoot . '/server/app/modules/*/database/migrations/*.sql') ?: [],
     );
     foreach ($sqlFiles as $sqlFile) {
         $sql = (string)file_get_contents($sqlFile);

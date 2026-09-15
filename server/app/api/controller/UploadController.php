@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\Modules\Official\File\Contracts\FileUploads;
-use app\Modules\Official\File\Contracts\Dto\UploadFile;
+use app\modules\official\file\contracts\FileUploads;
+use app\modules\official\file\contracts\dto\UploadFile;
 use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use think\file\UploadedFile;
-use app\common\application\BusinessException;
+use app\common\exception\BusinessException;
 use think\App;
 
 /**

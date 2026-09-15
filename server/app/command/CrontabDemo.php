@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\command;
 
 use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
-use app\common\service\runtime\OperationalLog;
+use app\common\infrastructure\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use app\common\execution\ContextualCommand;
 use think\console\Input;

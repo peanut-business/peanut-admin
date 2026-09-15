@@ -7,9 +7,9 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\system\SystemApplicationService;
-use app\common\service\instance\InstanceToolAccessGuard;
-use app\common\service\JsonService;
+use app\adminapi\services\system\SystemApplicationService;
+use app\common\validation\instance\InstanceToolAccessGuard;
+use app\common\http\JsonResponseFactory;
 use think\response\Json;
 
 /**

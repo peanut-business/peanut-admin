@@ -56,9 +56,8 @@ php think module:create acme.inventory --vendor=Acme
 php think module:check acme.inventory
 ```
 
-当前命令仍按旧 `server/app/Modules/`、PascalCase namespace 和 `Http/` 布局工作。S3 将生成器、检查器、
-autoload、manifest、加载和打包路径同批切换前，不要手工创建第二棵小写目录；当前命令输出也不能作为目标
-结构已经落地的证据。
+当前命令按 `server/app/modules/`、逐段小写或 `snake_case` namespace 和 `route/app.php` 布局工作。
+不要手工创建第二棵 Module 根或增加兼容 autoload；命令输出仍须经过实际检查后才能作为交付证据。
 
 完成生成的 backend、frontend、manifest、权限、菜单、migration 和 Tenant 安全骨架后，按适用开发检查策略核对；发布前须满足实际质量门槛。检查只读且不连接数据库；
 详细结构见 [Module 开发教程](/guide/module-development)。

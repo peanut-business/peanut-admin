@@ -116,7 +116,7 @@
         "PA-NATIVE-001"
       ],
       "paths": [
-        "server/app/common/service/installation/InstallationPreflightHost.php",
+        "server/app/common/services/installation/InstallationPreflightHost.php",
         "server/database/install.php",
         "server/tests/Productization/InstallerBootstrapTest.php",
         "scaffold/application-template-inventory.json"
@@ -162,7 +162,7 @@
         "PA-PLUGIN-001"
       ],
       "paths": [
-        "server/app/common/service/installation/InstallationExecutionHost.php",
+        "server/app/common/services/installation/InstallationExecutionHost.php",
         "server/app/common/http/middleware/InstallationStateMiddleware.php",
         "server/app/installation/controller/InstallationController.php",
         "web/src/views/installation/index.vue",
@@ -202,7 +202,7 @@
         "PA-MODULE-002"
       ],
       "paths": [
-        "server/app/common/service/readiness/FirstRunReadinessHost.php",
+        "server/app/common/services/readiness/FirstRunReadinessHost.php",
         "server/app/adminapi/controller/config/ReadinessController.php",
         "server/database/migrations/20260827-first-run-readiness.sql",
         "web/src/views/app-setting/readiness/index.vue",
@@ -251,7 +251,7 @@
       ],
       "paths": [
         "server/app/platform/controller/PlatformOpsController.php",
-        "server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php",
+        "server/app/platform/infrastructure/ops/ApplicationRuntimeStatusProvider.php",
         "server/app/platform/service/ops/PdoMaintenanceWindowStore.php",
         "server/app/common/http/middleware/MaintenanceWriteGateMiddleware.php",
         "platform/src/App.vue",
@@ -289,8 +289,8 @@
         "PA-OPS-002"
       ],
       "paths": [
-        "server/app/platform/service/ops/PlatformDiagnosticBundleService.php",
-        "server/app/platform/service/ops/PlatformAuditRuntimeLogProvider.php",
+        "server/app/platform/services/ops/PlatformDiagnosticBundleService.php",
+        "server/app/platform/infrastructure/ops/PlatformAuditRuntimeLogProvider.php",
         "server/app/platform/controller/PlatformOpsController.php",
         "platform/src/api/platform.ts",
         "docs/peanut-admin-user-manual.md"
@@ -351,13 +351,13 @@
         "PA-OPS-002"
       ],
       "paths": [
-        "server/app/platform/service/ops/PairedBackupProvider.php",
-        "server/app/platform/service/ops/PairedBackupManifest.php",
+        "server/app/platform/infrastructure/ops/PairedBackupProvider.php",
+        "server/app/platform/value/ops/PairedBackupManifest.php",
         "server/app/platform/service/ops/PdoOpsTaskDispatcher.php",
         "server/app/platform/service/ops/PdoBackupTaskExecutionService.php",
         "server/app/platform/service/ops/PdoRestoreTaskExecutionService.php",
-        "server/app/platform/service/ops/RestoreVerificationEvidence.php",
-        "server/app/platform/service/ops/PlatformBackupCenterService.php",
+        "server/app/platform/value/ops/RestoreVerificationEvidence.php",
+        "server/app/platform/services/ops/PlatformBackupCenterService.php",
         "server/app/AppService.php",
         "server/database/migrations/20260827-create-ops-backup-evidence.sql",
         "server/database/migrations/20260827-create-ops-restore-evidence.sql",
@@ -423,9 +423,9 @@
         "PA-SCAFFOLD-004"
       ],
       "paths": [
-        "server/app/platform/service/ops/PlatformUpgradeReadinessService.php",
-        "server/app/platform/service/ops/PlatformUpgradeTarget.php",
-        "server/app/platform/service/ops/PlatformUpgradeExecutionService.php",
+        "server/app/platform/services/ops/PlatformUpgradeReadinessService.php",
+        "server/app/platform/value/ops/PlatformUpgradeTarget.php",
+        "server/app/platform/services/ops/PlatformUpgradeExecutionService.php",
         "server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php",
         "scripts/scaffold-runtime/ScaffoldUpgradeRunner.php",
         "scripts/ops-upgrade-worker",
@@ -475,13 +475,13 @@
         "PA-TENANCY-001"
       ],
       "paths": [
-        "server/app/platform/service/provider/PlatformProviderQualificationService.php",
-        "server/app/platform/service/provider/ProviderQualificationContributor.php",
+        "server/app/platform/services/provider/PlatformProviderQualificationService.php",
+        "server/app/platform/contract/provider/ProviderQualificationContributor.php",
         "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
-        "server/app/platform/service/provider/NotificationQualificationContributor.php",
-        "server/app/platform/service/provider/PaymentQualificationContributor.php",
-        "server/app/platform/service/provider/OauthQualificationContributor.php",
-        "server/app/platform/service/provider/StorageQualificationContributor.php",
+        "server/app/platform/infrastructure/provider/NotificationQualificationContributor.php",
+        "server/app/platform/infrastructure/provider/PaymentQualificationContributor.php",
+        "server/app/platform/infrastructure/provider/OauthQualificationContributor.php",
+        "server/app/platform/infrastructure/provider/StorageQualificationContributor.php",
         "server/database/migrations/20260828-provider-qualification-evidence.sql",
         "platform/src/components/ProviderQualificationCard.vue",
         "docs/architecture/product-closure-provider-qualification.md"
@@ -524,11 +524,11 @@
         "PA-TENANCY-001"
       ],
       "paths": [
-        "server/app/Modules/Official/ImportExport/Application/ConfigurationTransferApplicationService.php",
-        "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/ConfigurationPackageCodec.php",
-        "server/app/Modules/Official/ImportExport/Infrastructure/Configuration/SecretReferenceCodec.php",
-        "server/app/Modules/Official/ImportExport/Http/Controller/ConfigurationTransferController.php",
-        "server/app/Modules/Official/ImportExport/Resources/configuration-package.schema.json",
+        "server/app/modules/official/import_export/services/ConfigurationTransferApplicationService.php",
+        "server/app/modules/official/import_export/infrastructure/configuration/ConfigurationPackageCodec.php",
+        "server/app/modules/official/import_export/infrastructure/configuration/SecretReferenceCodec.php",
+        "server/app/modules/official/import_export/controller/ConfigurationTransferController.php",
+        "server/app/modules/official/import_export/resources/configuration-package.schema.json",
         "web/src/modules/official-import-export/views/index.vue",
         "docs/api/openapi.yaml"
       ]
@@ -676,10 +676,10 @@
         }
       ],
       "paths": [
-        "server/app/platform/service/plugin/PluginLifecycleService.php",
-        "server/app/platform/service/plugin/PluginLockResolver.php",
-        "server/app/platform/service/plugin/PluginArtifactWriter.php",
-        "server/app/platform/service/plugin/PluginPackageArchiveService.php",
+        "server/app/platform/services/plugin/PluginLifecycleService.php",
+        "server/app/platform/infrastructure/plugin/PluginLockResolver.php",
+        "server/app/platform/infrastructure/plugin/PluginArtifactWriter.php",
+        "server/app/platform/services/plugin/PluginPackageArchiveService.php",
         "server/resources/schemas/plugin.schema.json",
         "plugins.lock",
         "docs/plugin-module-development.md"
@@ -1110,7 +1110,7 @@
         "PA-NATIVE-001"
       ],
       "paths": [
-        "server/app/common/service/module/ModuleExecutionBoundary.php",
+        "server/app/common/infrastructure/module/ModuleExecutionBoundary.php",
         "docs/architecture/module-execution-context-contract.md",
         "docs-site/guide/module-development.md",
         "docs-site/guide/data-permissions-tenancy.md",
@@ -1158,9 +1158,9 @@
         "PA-MODULE-002"
       ],
       "paths": [
-        "server/app/common/service/module/ModuleScaffoldGenerator.php",
+        "server/app/common/infrastructure/module/ModuleScaffoldGenerator.php",
         "server/app/command/ModuleCheck.php",
-        "server/app/platform/service/plugin/ModuleAuthorCheckHost.php",
+        "server/app/platform/services/plugin/ModuleAuthorCheckHost.php",
         "server/resources/module-scaffold/backend/Contracts/ModuleCommands.php.stub",
         "server/resources/module-scaffold/backend/Database/Migrations/README.md.stub",
         "server/resources/module-scaffold/tests/TenantSecurityDriver.php.stub",
@@ -1211,9 +1211,9 @@
         "server/app/command/ModuleUpdatePackage.php",
         "server/app/command/ModuleDisablePackage.php",
         "server/app/command/ModuleUninstallPackage.php",
-        "server/app/platform/service/plugin/PluginPackageInstaller.php",
-        "server/app/platform/service/plugin/PluginLifecycleService.php",
-        "server/app/platform/service/ops/DeploymentModuleRequestService.php",
+        "server/app/platform/infrastructure/plugin/PluginPackageInstaller.php",
+        "server/app/platform/services/plugin/PluginLifecycleService.php",
+        "server/app/platform/services/ops/DeploymentModuleRequestService.php",
         "server/app/platform/service/ops/PdoModuleOperationTaskExecutionService.php",
         "scripts/ops-module-worker",
         "scripts/consumer-module-reference-chain",
@@ -1267,7 +1267,7 @@
         "server/app/common/execution",
         "server/app/common/model/TenantOwnedModel.php",
         "server/app/common/tenancy",
-        "server/app/common/service/module/ModuleExecutionBoundary.php",
+        "server/app/common/infrastructure/module/ModuleExecutionBoundary.php",
         "server/app/common/http/PageResult.php",
         "server/app/common/http/ApiProblemMapper.php",
         "server/app/AppService.php",
@@ -1458,7 +1458,7 @@
         "deploy/docker/production.Dockerfile",
         "scripts/build-demo-site-patch",
         "scripts/deploy-release",
-        "server/app/common/service/installation/InstallationPreflightHost.php",
+        "server/app/common/services/installation/InstallationPreflightHost.php",
         "server/tests/Productization/DemoSitePatchContractTest.php",
         "server/tests/Productization/InstallerBootstrapTest.php",
         "scaffold/releases/v3.0.12",

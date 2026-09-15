@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\instance\InstanceToolAccessGuard;
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginRuntimeGovernanceService;
+use app\common\validation\instance\InstanceToolAccessGuard;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\services\plugin\PluginRuntimeGovernanceService;
 use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

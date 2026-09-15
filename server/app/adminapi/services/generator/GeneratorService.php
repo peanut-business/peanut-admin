@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\adminapi\services\generator;
 
-use app\adminapi\service\generator\GeneratorArchiveService;
-use app\adminapi\service\generator\GeneratorImportPersistence;
+use app\adminapi\services\generator\GeneratorArchiveService;
+use app\adminapi\infrastructure\generator\GeneratorImportPersistence;
 use app\adminapi\infrastructure\generator\ThinkPhpGeneratorMetadata;
-use app\adminapi\service\generator\GeneratorRenderService;
+use app\adminapi\services\generator\GeneratorRenderService;
 use app\common\http\PageResult;
 use think\facade\Db;
 use app\common\support\PaginationInput;

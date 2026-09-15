@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\common\infrastructure\notice\sms;
 
 use app\common\contract\notice\sms\SmsDriver;
-use app\common\service\http\OutboundHttpRequest;
-use app\common\service\http\OutboundHttpTransport;
+use app\common\value\http\OutboundHttpRequest;
+use app\common\contract\http\OutboundHttpTransport;
 use app\common\value\notice\sms\SmsDriverResult;
 
 /**

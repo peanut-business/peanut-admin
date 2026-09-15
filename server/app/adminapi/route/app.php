@@ -9,16 +9,16 @@ require $serverRoot . '/route/tenant.php';
 require $serverRoot . '/route/admin.php';
 
 foreach ([
-    'official_article.php',
-    'official_file.php',
-    'official_notification.php',
-    'official_oauth.php',
-    'official_payment.php',
-    'official_member.php',
-    'official_task.php',
-    'official_import_export.php',
+    'app/modules/official/article/route/app.php',
+    'app/modules/official/file/route/app.php',
+    'app/modules/official/notification/route/app.php',
+    'app/modules/official/oauth/route/app.php',
+    'app/modules/official/payment/route/app.php',
+    'app/modules/official/member/route/app.php',
+    'app/modules/official/task/route/app.php',
+    'app/modules/official/import_export/route/app.php',
 ] as $moduleRoute) {
-    require $serverRoot . '/route/' . $moduleRoute;
+    require $serverRoot . '/' . $moduleRoute;
 }
 
 unset($peanutRouteApplication, $serverRoot, $moduleRoute);

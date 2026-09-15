@@ -205,17 +205,9 @@ function peanut_route_registry_source(string $serverRoot): string
         'tenant.php',
         'admin.php',
         'public_api.php',
-        'official_article.php',
-        'official_file.php',
-        'official_notification.php',
-        'official_oauth.php',
-        'official_payment.php',
-        'official_member.php',
-        'official_task.php',
-        'official_import_export.php',
     ];
 
-    foreach (glob($serverRoot . '/app/Modules/*/*/Http/routes.php') ?: [] as $moduleRoute) {
+    foreach (glob($serverRoot . '/app/modules/*/*/route/app.php') ?: [] as $moduleRoute) {
         $files[] = '../' . substr($moduleRoute, strlen($serverRoot) + 1);
     }
 
@@ -254,7 +246,7 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
 
     $moduleNamespaces = [];
     $moduleSources = [];
-    foreach (glob($resolvedRoot . '/app/Modules/*/*/module.json') ?: [] as $manifestPath) {
+    foreach (glob($resolvedRoot . '/app/modules/*/*/module.json') ?: [] as $manifestPath) {
         $manifest = json_decode((string)file_get_contents($manifestPath), true, 32, JSON_THROW_ON_ERROR);
         $moduleKey = $manifest['key'] ?? null;
         $provider = $manifest['backend']['provider'] ?? null;
@@ -263,9 +255,9 @@ function peanut_route_endpoint_inventory(string $serverRoot): array
             throw new RuntimeException('Route inventory Module manifest is invalid: ' . $manifestPath);
         }
 
-        $relative = substr(dirname($manifestPath), strlen($resolvedRoot . '/app/Modules/'));
-        $moduleNamespaces['app\\Modules\\' . str_replace('/', '\\', $relative) . '\\'] = $moduleKey;
-        $moduleSources['server/app/Modules/' . $relative . '/'] = $moduleKey;
+        $relative = substr(dirname($manifestPath), strlen($resolvedRoot . '/app/modules/'));
+        $moduleNamespaces['app\\modules\\' . str_replace('/', '\\', $relative) . '\\'] = $moduleKey;
+        $moduleSources['server/app/modules/' . $relative . '/'] = $moduleKey;
         if (!class_exists($provider, false)) {
             $separator = strrpos($provider, '\\');
             $namespace = substr($provider, 0, $separator);

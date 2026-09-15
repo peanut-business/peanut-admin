@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\http\middleware;
 
-use app\common\service\installation\InstallationExecutionHost;
+use app\common\services\installation\InstallationExecutionHost;
 use think\facade\Config;
 
 /** Keeps every business API closed while a guided fresh installation is incomplete. */

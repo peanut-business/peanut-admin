@@ -114,8 +114,8 @@ public/index.php
 
 `server/app/AppService.php` 不是某个业务的 App Service。它是整个根应用的容器启动服务，集中绑定 Context、
 审计、授权、Module Contracts、组织 Runtime、外部 HTTP 等大量对象。与此同时，很多调用点又绕过容器，临时
-`new MemberModuleProvider()`、`new ArticleModuleProvider()`。Module 当前还使用 `Http/routes.php` 和
-`Http/Controller/`；目标在同批结构切换后使用 `route/app.php` 与 `controller/`。
+`new MemberModuleProvider()`、`new ArticleModuleProvider()`。Module 已统一使用 `route/app.php` 与
+`controller/`；直接构造 Provider 的剩余调用仍应按组合根收敛。
 
 因此路径无法回答：当前究竟属于哪个 ThinkPHP Application，Provider 是否是单例，Tenant Context 从哪来，
 同一业务为何既有 API Application Service 又有 Module Application。目标架构不会再用一份根路由和一份大型

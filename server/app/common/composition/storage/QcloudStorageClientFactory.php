@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\composition\storage;
 
 use app\common\execution\CurrentExecutionContext;
-use app\common\service\http\OutboundHttpAttemptObservation;
+use app\common\value\http\OutboundHttpAttemptObservation;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\Create;
 use Psr\Http\Message\RequestInterface;

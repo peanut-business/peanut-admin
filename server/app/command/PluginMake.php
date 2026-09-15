@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\plugin\PluginArtifactToolException;
-use app\platform\service\plugin\PluginArtifactWriter;
+use app\platform\exception\plugin\PluginArtifactToolException;
+use app\platform\infrastructure\plugin\PluginArtifactWriter;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

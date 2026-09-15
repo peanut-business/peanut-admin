@@ -1,6 +1,6 @@
 <?php
 
-use app\common\service\runtime\RuntimeNamespace;
+use app\common\value\runtime\RuntimeNamespace;
 
 $runtimeNamespace = RuntimeNamespace::fromEnvironment();
 

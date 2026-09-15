@@ -8,8 +8,8 @@ use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
 use app\common\http\PageResult;
-use app\adminapi\application\log\OperationLogApplicationService;
-use app\common\service\module\ModuleExecutionBoundary;
+use app\adminapi\services\log\OperationLogApplicationService;
+use app\common\infrastructure\module\ModuleExecutionBoundary;
 
 class OperationLogController extends BaseAdminController
 {

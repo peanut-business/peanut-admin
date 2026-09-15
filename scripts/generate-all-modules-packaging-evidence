@@ -2,8 +2,8 @@
 <?php
 declare(strict_types=1);
 
-use app\platform\service\plugin\ModulePackagePreflight;
-use app\platform\service\plugin\PluginPackageArchiveService;
+use app\platform\validation\plugin\ModulePackagePreflight;
+use app\platform\services\plugin\PluginPackageArchiveService;
 
 $root = dirname(__DIR__);
 require $root . '/server/vendor/autoload.php';

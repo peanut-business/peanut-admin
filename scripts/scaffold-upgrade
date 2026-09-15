@@ -2,16 +2,16 @@
 <?php
 declare(strict_types=1);
 
-use app\common\service\scaffold\ScaffoldUpgradeRunner;
-use app\common\service\scaffold\EditionUpgradePackage;
+use app\common\infrastructure\scaffold\ScaffoldUpgradeRunner;
+use app\common\infrastructure\scaffold\EditionUpgradePackage;
 
 $root = dirname(__DIR__);
 require $root . '/scripts/scaffold-runtime/ScaffoldPathGuard.php';
 require $root . '/scripts/scaffold-runtime/ScaffoldManifest.php';
 require $root . '/scripts/scaffold-runtime/ScaffoldUpgradeLedger.php';
-require $root . '/server/app/platform/service/plugin/PluginLifecycleException.php';
-require $root . '/server/app/platform/service/plugin/PluginDescriptor.php';
-require $root . '/server/app/platform/service/plugin/PluginLockResolver.php';
+require $root . '/server/app/platform/exception/plugin/PluginLifecycleException.php';
+require $root . '/server/app/platform/value/plugin/PluginDescriptor.php';
+require $root . '/server/app/platform/infrastructure/plugin/PluginLockResolver.php';
 require $root . '/scripts/scaffold-runtime/ScaffoldUpgradeRunner.php';
 require $root . '/scripts/scaffold-runtime/EditionUpgradePackage.php';
 

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\plugin\PluginPackageArchiveService;
+use app\platform\services\plugin\PluginPackageArchiveService;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;

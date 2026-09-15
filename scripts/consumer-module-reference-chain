@@ -309,11 +309,11 @@ def create_application(
         return
     source_builder = r'''
 $root=$argv[1];
-require $root.'/server/app/common/service/scaffold/ScaffoldPathGuard.php';
-require $root.'/server/app/common/service/scaffold/ScaffoldManifest.php';
-require $root.'/server/app/common/service/scaffold/VersionContract.php';
-require $root.'/server/app/common/service/scaffold/ApplicationCreator.php';
-$manifest=(new app\common\service\scaffold\ApplicationCreator(
+require $root.'/server/app/common/validation/scaffold/ScaffoldPathGuard.php';
+require $root.'/server/app/common/value/scaffold/ScaffoldManifest.php';
+require $root.'/server/app/common/value/scaffold/VersionContract.php';
+require $root.'/server/app/common/infrastructure/scaffold/ApplicationCreator.php';
+$manifest=(new app\common\infrastructure\scaffold\ApplicationCreator(
     $root,
     $root.'/scaffold/application-template-inventory.json',
     ['commit'=>$argv[2],'tree'=>$argv[3]],
@@ -364,20 +364,20 @@ def run_think(project: Path, env: dict[str, str], arguments: list[str], log: Pat
 
 
 def author_module_v1(author: Path) -> tuple[Path, Path]:
-    backend = author / "server/app/Modules/Acme/ReferenceChain"
+    backend = author / "server/app/modules/acme/reference_chain"
     frontend = author / "web/src/modules/acme-reference-chain"
     manifest_path = backend / "module.json"
     manifest = read_json(manifest_path)
     manifest["description"] = "CR21 independent consumer reference chain"
     manifest["database"]["owned_tables"] = ["pa_acme_reference_chain_record"]
     write_json(manifest_path, manifest)
-    write_json(backend / "Resources/permissions.json", [{
+    write_json(backend / "resources/permissions.json", [{
         "key": "acme.reference-chain.write",
         "type": "action",
         "name": "Write reference records",
         "risk_level": "sensitive",
     }])
-    write_json(backend / "Resources/menus.json", [{
+    write_json(backend / "resources/menus.json", [{
         "key": "acme.reference-chain.page",
         "scope": "tenant",
         "parent_key": None,
@@ -391,7 +391,7 @@ def author_module_v1(author: Path) -> tuple[Path, Path]:
         "sort_order": 900,
         "client_keys": ["admin-web"],
     }])
-    migration = backend / "Database/Migrations/20260828010101_create_reference_chain.sql"
+    migration = backend / "database/migrations/20260828010101_create_reference_chain.sql"
     migration.write_text(
         "CREATE TABLE `pa_acme_reference_chain_record` (\n"
         "  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n"
@@ -412,7 +412,7 @@ def author_module_v2(backend: Path, frontend: Path) -> None:
         document = read_json(path)
         document["version"] = "2.0.0"
         write_json(path, document)
-    (backend / "Database/Migrations/20260828010201_add_revision_note.sql").write_text(
+    (backend / "database/migrations/20260828010201_add_revision_note.sql").write_text(
         "ALTER TABLE `pa_acme_reference_chain_record` ADD COLUMN `revision_note` VARCHAR(160) NULL AFTER `reference`;\n",
         encoding="utf-8",
     )

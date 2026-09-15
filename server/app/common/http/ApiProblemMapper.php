@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 namespace app\common\http;
 
-use app\common\application\BusinessException;
-use app\common\service\module\ModuleScaffoldException;
-use app\common\service\installation\InstallationExecutionException;
-use app\common\service\http\OutboundHttpException;
+use app\common\exception\BusinessException;
+use app\common\exception\module\ModuleScaffoldException;
+use app\common\exception\installation\InstallationExecutionException;
+use app\common\exception\http\OutboundHttpException;
 use app\common\exception\storage\StorageProviderException;
 use app\platform\invitation\TenantOwnerInvitationException;
-use app\platform\service\PlatformRefreshCredentialException;
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginPackageException;
+use app\platform\exception\PlatformRefreshCredentialException;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\exception\plugin\PluginPackageException;
 use PeanutAdmin\Kernel\Auth\AuthException;
 use PeanutAdmin\Kernel\Auth\PlatformRefreshCookie;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\plugin\PluginLifecycleException;
-use app\platform\service\plugin\PluginLockResolver;
+use app\platform\exception\plugin\PluginLifecycleException;
+use app\platform\infrastructure\plugin\PluginLockResolver;
 use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Option;
@@ -94,7 +94,7 @@ final class PluginReconcile extends ModuleContextualCommand
     /**
      * Release replacement reconciles active packages, preserves fully disabled packages, and rejects transitions.
      *
-     * @param array<string,\app\platform\service\plugin\PluginDescriptor> $locked
+     * @param array<string,\app\platform\value\plugin\PluginDescriptor> $locked
      * @param list<string> $officialKeys
      * @return array{reconcile:list<string>,preserved_disabled:list<string>}
      */

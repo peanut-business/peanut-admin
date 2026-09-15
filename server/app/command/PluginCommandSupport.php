@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
-use app\platform\service\plugin\PluginLifecycleException;
+use app\platform\infrastructure\module\ThinkPhpModuleGovernanceProvider;
+use app\platform\exception\plugin\PluginLifecycleException;
 use think\console\Output;
 use think\facade\Config;
 

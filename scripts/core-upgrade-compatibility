@@ -219,8 +219,8 @@ if ($mode === 'current-app-owned') {
 } elseif ($mode === 'legacy-host') {
     $paths = [
         'server/app/common/contract/AdminPermissionPolicy.php',
-        'server/app/common/service/CoreServiceOverrides.php',
-        'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
+        'server/app/common/composition/CoreServiceOverrides.php',
+        'server/app/common/policy/permission/RegisteredAdminPermissionPolicy.php',
         'server/tests/Productization/AdminPermissionHostTest.php',
     ];
 } elseif ($mode === 'empty-overlay') {

@@ -121,8 +121,8 @@ flowchart TB
 这只关闭该字段的采用前置，不证明目标多应用装载已经完成。
 
 但目标架构**尚未整体落地**：当前 Composer 未登记 `topthink/think-multi-app`，`server/route/app.php` 仍统一加载
-Admin、API、Platform、Tenant 和旧 Module 路由，Module 源码仍在 `server/app/Modules/` 并使用 `Http/` 布局，运行时也仍有多处手工
-`new ModuleProvider()`。因此本文只能作为后续实现的唯一目标，不得据此宣称架构改造已经完成。
+Admin、API、Platform、Tenant 和 Module 路由，运行时也仍有多处手工 `new ModuleProvider()`。Module 的物理目录、
+namespace、路由布局和工具链已经统一；这不代表其余运行时装配改造已经完成。
 
 正式可消费源码、Tag、Release 与登记的多租户 Demo 已更新到 `v3.0.14`；Demo 使用正式基础源码加独立记录的
 seed-only overlay。蓝图目标架构仍未整体落地，版本发布不能作为这些迁移项已交付的证据。

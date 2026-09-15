@@ -1,9 +1,8 @@
 # Application 与 Module 代码规范
 
 本文是 Application 与 Module 目录和代码职责的唯一规范入口，遵循最新有效用户决定及
-`AGENT_EXECUTION_RULES.md` §6 的适用架构要求。本文先冻结目标；现行 `ModuleHostLayout`、
-`module:create`、源码、manifest、autoload、加载与打包工具仍反映旧结构，须在 S2 完成影响映射后由
-S3 同批切换，不能把未完成迁移写成已落地事实。
+`AGENT_EXECUTION_RULES.md` §6 的适用架构要求。`ModuleHostLayout`、`module:create`、源码、manifest、
+autoload、加载与打包工具已经使用本文的统一结构。
 
 ## 1. 目录、namespace 与 key
 
@@ -14,8 +13,8 @@ S3 同批切换，不能把未完成迁移写成已落地事实。
 - Module key 使用小写命名空间，如 `official.rich-text`。
 
 PHP 业务目录统一小写，多词目录使用 `snake_case`；类文件名仍按类名大小写。Module key 必须经唯一规范实现
-派生目录、namespace 与前端 slug。S3 必须同时更新 Core 与 App 的派生、autoload、manifest、发现、加载、
-预检、打包和路径拒绝规则，不保留 `Modules/` 与 `modules/` 双根，也不新增第二套 App 路径算法。
+派生目录、namespace 与前端 slug。Core 与 App 的派生、autoload、manifest、发现、加载、
+预检、打包和路径拒绝规则必须同步，不保留双根，也不新增第二套 App 路径算法。
 `web/src/modules/<module-slug>/` 与插件 `<key>` 继续遵循各自现有语言和身份规则。
 
 ## 2. ThinkPHP 原生应用层
@@ -44,8 +43,8 @@ PHP 业务目录统一小写，多词目录使用 `snake_case`；类文件名仍
 
 ## 4. 路由与前端贡献
 
-Module 的目标路由入口是 `route/app.php`，它是可执行 ThinkPHP 路由，不是纯数组描述。当前源码仍使用
-`Http/routes.php` 和 `Http/Controller/`；这属于 S2 映射、S3 同批切换范围，不是目标结构的例外。
+Module 的路由入口是 `route/app.php`，它是可执行 ThinkPHP 路由，不是纯数组描述。Controller 位于
+`controller/`，旧 `Http/` 布局不得重新引入。
 路由可使用点分业务动作，例如 `/adminapi/official.article.list`；路径不要求与 Controller 的物理目录逐段同名。
 受保护路由仍须经过登录、TenantModule 生命周期和 RBAC 链。前端由
 `contribution.ts` 声明路由和权限，并由 `module.json.frontend.entry` 固定其 key 派生路径。
@@ -57,7 +56,7 @@ Module 的目标路由入口是 `route/app.php`，它是可执行 ThinkPHP 路�
 生成器改好不等于存量迁移完成，旧业务目录剩余项沿用现有问题登记，不建立第二套总账。Peanut 本仓开发期间只做直接必要的语法/类型/构建/启动与实际操作；
 自动测试须用户明确授权后运行，未授权不等于普通开发 blocked。发布资格测试和人工 Gate 仍保留。
 
-当前 `module:check` 仍按旧目录实现，S3 应随生成、加载与打包合同切换；它只负责作者静态预检。真实行为、Tenant/RBAC、migration、浏览器和外部 Provider 仍由
+`module:check` 按统一目录实现，只负责作者静态预检。真实行为、Tenant/RBAC、migration、浏览器和外部 Provider 仍由
 对应聚焦测试负责。开发期自动测试仅在用户明确授权后运行；已存在或已授权的测试不得用输出 `PASSED`
 后提前退出的占位实现冒充通过。Module 交付制品、状态和门禁见
 [Module 发布与制品合同](../module-publication-contract.md)。

@@ -3,7 +3,7 @@ namespace app;
 
 use app\common\http\ApiProblem;
 use app\common\http\HostApiProblemRenderer;
-use app\common\application\BusinessException;
+use app\common\exception\BusinessException;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
 use think\exception\Handle;

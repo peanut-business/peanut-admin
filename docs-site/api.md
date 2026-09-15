@@ -206,7 +206,7 @@ create-app 生成的是空 `plugins.lock`：
 
 ```text
 plugins/fixture.delivery-record/plugin.json
-server/app/Modules/Fixture/DeliveryRecord/
+server/app/modules/fixture/delivery_record/
   module.json
   ModuleProvider.php
   Contracts/DeliveryRecordCommands.php

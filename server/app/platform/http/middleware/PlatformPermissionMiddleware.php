@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\platform\http\middleware;
 
-use app\common\service\JsonService;
-use app\common\service\DemoAccountPolicy;
+use app\common\http\JsonResponseFactory;
+use app\common\policy\DemoAccountPolicy;
 use app\common\execution\CurrentExecutionContext;
 use app\platform\context\PlatformOperatorContext;
-use app\platform\service\PlatformOperatorSessionService;
+use app\platform\services\PlatformOperatorSessionService;
 use PeanutAdmin\Kernel\Authorization\AuthorizationException;
 
 final class PlatformPermissionMiddleware

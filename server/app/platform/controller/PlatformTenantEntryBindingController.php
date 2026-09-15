@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\platform\controller;
 
 use app\common\execution\CurrentExecutionContext;
-use app\platform\service\TenantEntryBindingAdminService;
+use app\platform\services\TenantEntryBindingAdminService;
 use app\platform\validate\TenantEntryBindingValidate;
 use think\App;
 

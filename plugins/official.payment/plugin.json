@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "8ab7c520db2ae1583a6c9478350b004820b03e699c9cd9c012b8dc04915c4693"
+        "sha256": "98fe2777707e2198c9692a1353fa4ada777231e2c1b4fc32eec34856e09cb54c"
     },
     "trust": {
         "channel": "bundled",
@@ -52,7 +52,7 @@
                         }
                     ],
                     "permissions": {
-                        "path": "Resources/permissions.json",
+                        "path": "resources/permissions.json",
                         "sha256": "aa6abbc566274b212710800ce6175e3da2d4837574c4d3b45247eed7dee67c3a"
                     },
                     "migrations": {
@@ -72,7 +72,7 @@
         {
             "name": "peanut-business/official-payment",
             "version": "1.0.0",
-            "sha256": "9c8cd3e1af4d36a146fd3e3f38241718fc704c2840a06871a9d8f881cae779b9"
+            "sha256": "92cf9890b3f08285056bd608e8aad318b0137a6ccade503a63d78d630a71e070"
         }
     ],
     "npm": [
@@ -94,7 +94,7 @@
     "modules": [
         {
             "key": "official.payment",
-            "root": "server/app/Modules/Official/Payment"
+            "root": "server/app/modules/official/payment"
         }
     ]
 }

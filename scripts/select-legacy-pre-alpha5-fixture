@@ -70,12 +70,12 @@ if (count($allowed) !== 10) exit(1);
 
 $requiredHostFiles = [
     'server/app/common/contract/AdminPermissionPolicy.php',
-    'server/app/common/service/CoreServiceOverrides.php',
-    'server/app/common/service/permission/RegisteredAdminPermissionPolicy.php',
+    'server/app/common/composition/CoreServiceOverrides.php',
+    'server/app/common/policy/permission/RegisteredAdminPermissionPolicy.php',
     'server/tests/Productization/AdminPermissionHostTest.php',
 ];
 foreach ($requiredHostFiles as $path) if (!is_file($root . '/' . $path)) exit(1);
-$host = (string) file_get_contents($root . '/server/app/common/service/CoreServiceOverrides.php');
+$host = (string) file_get_contents($root . '/server/app/common/composition/CoreServiceOverrides.php');
 $probe = (string) file_get_contents($root . '/server/tests/Productization/AdminPermissionHostTest.php');
 if (!str_contains($host, 'PeanutAdmin\\Kernel\\Override\\ServiceOverrideRegistry')
     || !str_contains($probe, 'CoreServiceOverrides::registry()')) exit(1);

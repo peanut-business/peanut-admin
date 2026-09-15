@@ -6,7 +6,7 @@ namespace app\common\infrastructure\async;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\common\execution\SystemExecutionMetadata;
-use app\common\service\module\ModuleExecutionBoundary;
+use app\common\infrastructure\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\TaskJob\Execution\JobExecution;

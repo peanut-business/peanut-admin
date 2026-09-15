@@ -14,10 +14,10 @@
   },
   "backend": {
     "provider": ${BACKEND_PROVIDER_JSON},
-    "migrations": "Database/Migrations",
-    "menus": "Resources/menus.json",
-    "permissions": "Resources/permissions.json",
-    "setting_definitions": "Resources/setting-definitions.json"
+    "migrations": "database/migrations",
+    "menus": "resources/menus.json",
+    "permissions": "resources/permissions.json",
+    "setting_definitions": "resources/setting-definitions.json"
   },
   "frontend": {
     "entry": ${FRONTEND_ENTRY_JSON}

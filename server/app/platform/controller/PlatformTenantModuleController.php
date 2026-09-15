@@ -5,7 +5,7 @@ namespace app\platform\controller;
 
 use app\common\execution\CurrentExecutionContext;
 use app\platform\http\PlatformRequest;
-use app\platform\service\module\PlatformTenantModuleService;
+use app\platform\services\module\PlatformTenantModuleService;
 use app\platform\validate\PlatformTenantModuleValidate;
 use DateTimeImmutable;
 use think\App;

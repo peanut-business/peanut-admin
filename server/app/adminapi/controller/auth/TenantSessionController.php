@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\controller\auth;
 
-use app\adminapi\application\auth\TenantSessionApplicationService;
+use app\adminapi\services\auth\TenantSessionApplicationService;
 use app\BaseController;
 use PeanutAdmin\Kernel\Http\TenantAuthResponse;
 use think\App;

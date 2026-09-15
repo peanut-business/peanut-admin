@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\service\audit\AuditContractHost;
-use app\platform\service\module\ProductTenantModuleProfileService;
-use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
+use app\common\services\audit\AuditContractHost;
+use app\platform\services\module\ProductTenantModuleProfileService;
+use app\platform\infrastructure\module\ThinkPhpModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use app\common\execution\ModuleContextualCommand;

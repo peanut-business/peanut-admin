@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\adminapi\http\middleware;
 
-use app\adminapi\service\OperationLogService;
+use app\adminapi\services\OperationLogService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\ApiProblemMapper;
-use app\common\service\runtime\OperationalLog;
+use app\common\infrastructure\runtime\OperationalLog;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\OpsConsole\Logs\TenantDiagnosticAttributes;
 

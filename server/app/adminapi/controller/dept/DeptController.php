@@ -6,7 +6,7 @@ namespace app\adminapi\controller\dept;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\dept\DeptApplicationService;
+use app\adminapi\services\dept\DeptApplicationService;
 use app\common\traits\CrudTrait;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use think\response\Json;

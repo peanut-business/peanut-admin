@@ -8,7 +8,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
-use app\Modules\Official\Task\Contracts\TaskScheduler;
+use app\modules\official\task\contracts\TaskScheduler;
 use think\console\Input;
 use think\console\Output;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;

@@ -3,17 +3,17 @@ declare(strict_types=1);
 
 namespace app\api\controller;
 
-use app\Modules\Official\Oauth\Contracts\OAuthCommands;
-use app\Modules\Official\Oauth\Contracts\Dto\OAuthLoginResult;
-use app\api\service\UserTokenService;
+use app\modules\official\oauth\contracts\OAuthCommands;
+use app\modules\official\oauth\contracts\dto\OAuthLoginResult;
+use app\api\services\UserTokenService;
 use app\common\services\FileService;
 use app\api\validate\OAuthValidate;
-use app\common\service\oauth\OAuthBrowserCallbackService;
+use app\common\services\oauth\OAuthBrowserCallbackService;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
-use app\common\service\module\ModuleExecutionBoundary;
+use app\common\infrastructure\module\ModuleExecutionBoundary;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
-use app\common\application\BusinessException;
+use app\common\exception\BusinessException;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 

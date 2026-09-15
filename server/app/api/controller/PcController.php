@@ -5,9 +5,9 @@ namespace app\api\controller;
 
 use think\App;
 use app\common\execution\CurrentExecutionContext;
-use app\api\application\IndexApplicationService;
-use app\api\application\PcApplicationService;
-use app\Modules\Official\Article\Contracts\PublicArticleQueries;
+use app\api\services\IndexApplicationService;
+use app\api\services\PcApplicationService;
+use app\modules\official\article\contracts\PublicArticleQueries;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
 
 /**

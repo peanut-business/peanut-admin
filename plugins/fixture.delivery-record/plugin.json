@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "6e84da5ce638100df9b46e537059ed684a145dabca0accccaa505b746bd59277"
+        "sha256": "6a32174214e2d31be1d7f27b7a00c1d0acbd21a2e177818e0f373d77e255a943"
     },
     "trust": {
         "channel": "bundled",
@@ -43,7 +43,7 @@
                     "kernel_constraint": "^1.0",
                     "dependencies": [],
                     "permissions": {
-                        "path": "Resources/permissions.json",
+                        "path": "resources/permissions.json",
                         "sha256": "b182a0e7a16b5afd72afb1700551818252f26e1cdb7ae4f6f0fe93231025adfe"
                     },
                     "migrations": {
@@ -63,7 +63,7 @@
         {
             "name": "peanut-business/fixture-delivery-record",
             "version": "1.0.0",
-            "sha256": "d919cce5ae82e5ba9faef8a41f61be883e0fcb1ce7465ba8ec91aa2dd42ee5b6"
+            "sha256": "484952f9f5156ef1131b82c71ec124e9ca529a948025c4f62de9bbb3c6fd258a"
         }
     ],
     "npm": [
@@ -85,7 +85,7 @@
     "modules": [
         {
             "key": "fixture.delivery-record",
-            "root": "server/app/Modules/Fixture/DeliveryRecord"
+            "root": "server/app/modules/fixture/delivery_record"
         }
     ]
 }

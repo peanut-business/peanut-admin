@@ -7,7 +7,7 @@ use think\App;
 use app\common\execution\CurrentExecutionContext;
 
 use app\adminapi\controller\BaseAdminController;
-use app\adminapi\application\decoration\DecorationTabbarApplicationService;
+use app\adminapi\services\decoration\DecorationTabbarApplicationService;
 use app\adminapi\validate\decoration\DecorationTabbarValidate;
 
 class DecorationTabbarController extends BaseAdminController

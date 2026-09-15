@@ -7,13 +7,13 @@ $serverRoot = dirname(__DIR__, 3);
 require $serverRoot . '/route/public_api.php';
 
 foreach ([
-    'official_file.php',
-    'official_notification.php',
-    'official_oauth.php',
-    'official_payment.php',
-    'official_member.php',
+    'app/modules/official/file/route/app.php',
+    'app/modules/official/notification/route/app.php',
+    'app/modules/official/oauth/route/app.php',
+    'app/modules/official/payment/route/app.php',
+    'app/modules/official/member/route/app.php',
 ] as $moduleRoute) {
-    require $serverRoot . '/route/' . $moduleRoute;
+    require $serverRoot . '/' . $moduleRoute;
 }
 
 unset($peanutRouteApplication, $serverRoot, $moduleRoute);

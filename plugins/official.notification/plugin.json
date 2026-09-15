@@ -5,7 +5,7 @@
     "source": {
         "type": "canonical-contents",
         "reference": "canonical-plugin-contents-v1",
-        "sha256": "682e6826d53c21e7e9d2ba47b4fc127e58f6111c122e7dd3d241f149e58dbcfa"
+        "sha256": "c997b98854c694db9ec8452046041f7ec3862869686d810ccb20d17839b0fcae"
     },
     "trust": {
         "channel": "bundled",
@@ -43,7 +43,7 @@
                     "kernel_constraint": "^1.0",
                     "dependencies": [],
                     "permissions": {
-                        "path": "Resources/permissions.json",
+                        "path": "resources/permissions.json",
                         "sha256": "efe0fb68acdf0a8efee4520f6a91ed0ce111c1a0aa1a6f8b4dd8a0fb5bb285d7"
                     },
                     "migrations": {
@@ -63,7 +63,7 @@
         {
             "name": "peanut-business/official-notification",
             "version": "1.0.0",
-            "sha256": "dfe55491a8e52c9784d23d054af1cee2f0897a7621e2231885a7fafb31434345"
+            "sha256": "935a073ada3bfce4de53e7a257d20b49d763af566f2e9ec2b19fd792fc862234"
         }
     ],
     "npm": [
@@ -85,7 +85,7 @@
     "modules": [
         {
             "key": "official.notification",
-            "root": "server/app/Modules/Official/Notification"
+            "root": "server/app/modules/official/notification"
         }
     ]
 }

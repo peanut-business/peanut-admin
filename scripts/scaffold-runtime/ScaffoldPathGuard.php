@@ -1,8 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace app\common\service\scaffold;
+namespace app\common\validation\scaffold;
 
+use app\common\value\scaffold\ScaffoldManifest;
 use RuntimeException;
 
 final class ScaffoldPathGuard

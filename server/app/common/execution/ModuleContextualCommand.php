@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\execution;
 
-use app\platform\service\plugin\ModuleCatalogApplier;
+use app\platform\infrastructure\plugin\ModuleCatalogApplier;
 
 /** Supplies Module catalog coordination without leaking a database connection into commands. */
 abstract class ModuleContextualCommand extends ContextualCommand

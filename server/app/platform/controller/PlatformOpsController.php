@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\platform\controller;
 
-use app\common\service\JsonService;
+use app\common\http\JsonResponseFactory;
 use app\common\execution\CurrentExecutionContext;
-use app\platform\service\ops\PlatformOpsApplicationService;
+use app\platform\services\ops\PlatformOpsApplicationService;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use think\App;
 use think\Response;
@@ -188,7 +188,7 @@ final class PlatformOpsController extends BasePlatformController
 
     private function run(callable $operation): Json
     {
-        return JsonService::data($operation())->header([
+        return JsonResponseFactory::data($operation())->header([
             'Cache-Control' => 'no-store',
             'X-Request-Id' => $this->requestId(),
         ]);

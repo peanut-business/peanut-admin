@@ -70,10 +70,10 @@
 Runtime 白名单：
 
 - `server/app/common/service/MemberBalanceService.php`；
-- `server/app/Modules/Official/Member/Application/MemberAdministrationService.php`；
+- `server/app/modules/official/member/services/MemberAdministrationService.php`；
 - `server/database/migrations/20260820-member-balance-idempotency.sql`；
-- `server/app/api/application/RechargeApplicationService.php`；
-- `server/app/Modules/Official/Payment/Application/RechargeAdministrationService.php`。
+- `server/app/api/services/RechargeApplicationService.php`；
+- `server/app/modules/official/payment/services/RechargeAdministrationService.php`。
 
 证据与状态白名单：
 

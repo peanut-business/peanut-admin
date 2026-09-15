@@ -8,7 +8,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\infrastructure\storage\ObservedStorageDriver;
 use app\common\infrastructure\storage\QiniuStorageHttpTransport;
 use app\common\infrastructure\storage\StorageAccess;
-use app\common\service\runtime\OperationalLog;
+use app\common\infrastructure\runtime\OperationalLog;
 use PeanutAdmin\FileMedia\Storage\Driver\AliyunStorageDriver;
 use PeanutAdmin\FileMedia\Storage\Driver\LocalStorageDriver;
 use PeanutAdmin\FileMedia\Storage\Driver\QcloudStorageDriver;

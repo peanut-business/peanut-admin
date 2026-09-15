@@ -6,13 +6,13 @@ namespace app\api\controller;
 use think\App;
 use app\common\execution\CurrentExecutionContext;
 
-use app\Modules\Official\Payment\Contracts\PaymentMethod;
-use app\Modules\Official\Payment\Contracts\RechargeCommands;
-use app\common\service\payment\dto\CallbackRequest;
+use app\modules\official\payment\contracts\PaymentMethod;
+use app\modules\official\payment\contracts\RechargeCommands;
+use app\common\dto\payment\CallbackRequest;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use app\common\execution\ExecutionContextStore;
 use app\common\http\RequestTrace;
-use app\common\service\module\ModuleExecutionBoundary;
+use app\common\infrastructure\module\ModuleExecutionBoundary;
 
 /** 渠道匿名回调入口：仅验签后的标准事件可进入充值状态机。 */
 class PaymentNotifyController extends BaseApiController

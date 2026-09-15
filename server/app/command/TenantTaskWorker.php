@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
+use app\modules\official\import_export\contracts\ImportExportWorkerRuntime;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\runtime\OperationalLog;
+use app\common\infrastructure\runtime\OperationalLog;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
