@@ -18,7 +18,6 @@ use app\modules\official\article\contracts\PublicArticleQueries;
 use app\common\composition\ModuleComposition;
 use app\common\contract\AdminPermissionPolicy;
 use app\common\contract\authorization\AdminAuthorizationQuery;
-use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\contract\module\ModuleQualificationQuery;
 use app\common\services\audit\AuditContractHost;
@@ -41,9 +40,7 @@ use app\common\policy\DemoAccountPolicy;
 use app\common\services\FileService;
 use app\common\services\ProductAssetReferenceService;
 use app\common\services\authorization\MenuPermissionUsageQuery;
-use app\common\infrastructure\authorization\NativeAdminPrincipalRepository;
 use app\common\runtime\authorization\RoleAdministrationRuntime;
-use app\common\infrastructure\authorization\ThinkPhpAdminMenuPersistence;
 use app\common\services\org\AdminDirectoryQuery;
 use app\common\runtime\org\DepartmentAdministrationRuntime;
 use app\common\runtime\org\TenantAdminRuntime;
@@ -268,26 +265,21 @@ class AppService extends Service
     {
         $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
             CoreServiceOverrides::adminPermissionPolicy());
-        $this->app->bind(AdminMenuPersistence::class, ThinkPhpAdminMenuPersistence::class);
         $this->app->bind(\PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository::class, ThinkPhpTenantAuthorizationRepository::class);
         $this->app->bind(\PeanutAdmin\Kernel\Menu\MenuCatalogRepository::class, ThinkPhpMenuCatalogRepository::class);
         $this->app->bind(AdminAuthorizationService::class, fn(): AdminAuthorizationService => new AdminAuthorizationService(
-            new NativeAdminPrincipalRepository(),
             $this->app->make(CoreTenantModuleAdminBridge::class),
-            $this->app->make(AdminMenuPersistence::class),
             $this->app->make(AdminPermissionPolicy::class),
         ));
         $this->app->bind(AdminAuthorizationQuery::class, fn(): AdminAuthorizationQuery => $this->app->make(AdminAuthorizationService::class));
         $this->app->bind(CoreTenantModuleAdminBridge::class, fn(): CoreTenantModuleAdminBridge => new CoreTenantModuleAdminBridge(
             $this->app->make(ThinkPhpModuleGovernanceProvider::class),
-            $this->app->make(AdminMenuPersistence::class),
             $this->app->make(\PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository::class),
             $this->app->make(\PeanutAdmin\Kernel\Menu\MenuCatalogRepository::class),
         ));
         $this->app->bind(RoleAdministrationRuntime::class, fn(): RoleAdministrationRuntime => new RoleAdministrationRuntime(
             new RoleAdminService($this->app->make(AuditService::class)),
             $this->app->make(AdminAuthorizationService::class),
-            $this->app->make(AdminMenuPersistence::class),
         ));
         $this->app->bind(AdminDirectoryQuery::class, fn(): AdminDirectoryQuery => new AdminDirectoryQuery(
             $this->app->make(CurrentExecutionContext::class),

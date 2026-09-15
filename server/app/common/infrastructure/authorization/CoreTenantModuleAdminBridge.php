@@ -3,14 +3,16 @@ declare(strict_types=1);
 
 namespace app\common\infrastructure\authorization;
 
-use app\common\contract\authorization\AdminMenuPersistence;
+use app\common\model\auth\SystemMenu;
 use app\platform\infrastructure\module\ThinkPhpModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository;
 use PeanutAdmin\Kernel\Menu\MenuDefinition;
 use PeanutAdmin\Kernel\Menu\MenuCatalogRepository;
 use PeanutAdmin\Kernel\Menu\MenuRegistry;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\Model\MemberRole;
+use PeanutAdmin\Kernel\Persistence\Model\Permission;
+use PeanutAdmin\Kernel\Persistence\Model\Tenant;
 
 /**
  * Adapts the Core Module/TenantModule catalog to the Admin Shell menu payload.
@@ -43,7 +45,6 @@ final readonly class CoreTenantModuleAdminBridge
 
     public function __construct(
         private ThinkPhpModuleGovernanceProvider $moduleGovernance,
-        private AdminMenuPersistence $menus,
         private TenantAuthorizationRepository $authorization,
         private MenuCatalogRepository $menuCatalog,
     ) {
@@ -131,7 +132,7 @@ final readonly class CoreTenantModuleAdminBridge
                 static fn(string $moduleKey): bool => isset($installed[$moduleKey])
             ),
         ]));
-        return array_values(array_map('strval', Db::name('permission')->where('status', 'active')
+        return array_values(array_map('strval', Permission::where('status', 'active')
             ->whereIn('module_key', $active)->distinct(true)->order('key')->column('key')));
     }
 
@@ -154,7 +155,13 @@ final readonly class CoreTenantModuleAdminBridge
             ),
         ])), true);
         $permissions = [];
-        foreach ($this->menus->systemMenuPermissionRows() as $row) {
+        $rows = SystemMenu::alias('menu')
+            ->join('permission permission', 'permission.`key`=menu.perms', 'LEFT')
+            ->where('menu.is_disable', 0)
+            ->where('menu.perms', '<>', '')
+            ->field(['menu.perms', 'permission.module_key', 'permission.status' => 'permission_status'])
+            ->distinct(true)->select()->toArray();
+        foreach ($rows as $row) {
             $moduleKey = $row['module_key'] ?? null;
             if ($moduleKey !== null && $moduleKey !== '') {
                 if (($row['permission_status'] ?? null) !== 'active' || !isset($active[$moduleKey])) {
@@ -170,7 +177,7 @@ final readonly class CoreTenantModuleAdminBridge
     /** @return list<string> */
     private function applicationPermissions(TenantContext $context): array
     {
-        return array_values(array_map('strval', Db::name('tenant')->alias('tenant')
+        return array_values(array_map('strval', Tenant::alias('tenant')
             ->join('tenant_member member', "member.tenant_id=tenant.id AND member.status='active'")
             ->join('member_role membership', 'membership.tenant_id=tenant.id AND membership.tenant_member_id=member.id')
             ->join('role role', "role.tenant_id=tenant.id AND role.id=membership.role_id AND role.status='active'")
@@ -227,7 +234,7 @@ final readonly class CoreTenantModuleAdminBridge
 
     private function isTenantOwner(TenantContext $context): bool
     {
-        return Db::name('member_role')->alias('membership')
+        return MemberRole::alias('membership')
             ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
             ->where('membership.tenant_id', $context->tenantId)
             ->where('membership.tenant_member_id', $context->memberId)

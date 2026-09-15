@@ -7,7 +7,7 @@ use app\common\services\authorization\AdminAuthorizationService;
 use app\common\infrastructure\authorization\CoreTenantModuleAdminBridge;
 use app\common\services\authorization\MenuPermissionUsageQuery;
 use app\common\exception\BusinessException;
-use app\common\contract\authorization\AdminMenuPersistence;
+use app\common\model\auth\SystemMenu;
 use think\facade\Db;
 use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -17,7 +17,6 @@ class MenuApplicationService
     public function __construct(
         private readonly AdminAuthorizationService $authorization,
         private readonly MenuPermissionUsageQuery $permissionUsage,
-        private readonly AdminMenuPersistence $menus,
     ) {}
 
     public function getMenuByAdminId(mixed $tenantContext, int $adminId): array
@@ -27,33 +26,27 @@ class MenuApplicationService
 
     public function getAll(): array
     {
-        $menus = $this->menus->administrationRecords(
-            false,
-            InstanceControlPlanePolicy::tenantAdminPermissions(),
-            [
+        $menus = SystemMenu::whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', [
                 '/article',
                 '/article/cate',
                 '/article/list',
                 ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
-            ],
-            false,
-        );
+            ])->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         return linear_to_tree($menus);
     }
 
     public function getAllSimple(TenantContext $context): array
     {
-        $data = $this->menus->administrationRecords(
-            true,
-            InstanceControlPlanePolicy::tenantAdminPermissions(),
-            [
+        $data = SystemMenu::where('is_disable', 0)
+            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', [
                 '/article',
                 '/article/cate',
                 '/article/list',
                 ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
-            ],
-            true,
-        );
+            ])->field(['id', 'pid', 'name'])
+            ->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray();
         $moduleMenus = array_map(
             static fn(array $menu): array => [
                 'id' => (int)$menu['id'],
@@ -69,14 +62,15 @@ class MenuApplicationService
 
     public function detail(int $id): array
     {
-        return $this->menus->record($id) ?? [];
+        $menu = SystemMenu::where('id', $id)->findOrEmpty();
+        return $menu->isEmpty() ? [] : $menu->toArray();
     }
 
     public function add(array $params): bool
     {
         return (bool) Db::transaction(function () use ($params): bool {
                 $this->assertParent((int)($params['pid'] ?? 0));
-                $this->menus->create([
+                SystemMenu::create([
                     'pid' => $params['pid'] ?? 0, 'type' => $params['type'] ?? 'C',
                     'name' => $params['name'], 'icon' => $params['icon'] ?? '',
                     'sort' => $params['sort'] ?? 0, 'perms' => $params['perms'] ?? '',
@@ -92,9 +86,9 @@ class MenuApplicationService
     {
         return (bool) Db::transaction(function () use ($params): bool {
                 $id = (int)$params['id'];
-                if ($this->menus->record($id, true) === null) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
+                if (SystemMenu::where('id', $id)->lock(true)->findOrEmpty()->isEmpty()) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
                 $this->assertParent((int)($params['pid'] ?? 0), $id);
-                $this->menus->update($id, [
+                SystemMenu::where('id', $id)->update([
                     'pid' => $params['pid'] ?? 0,
                     'type' => $params['type'] ?? 'C', 'name' => $params['name'],
                     'icon' => $params['icon'] ?? '', 'sort' => $params['sort'] ?? 0,
@@ -110,12 +104,13 @@ class MenuApplicationService
     public function delete(int $id): bool
     {
         return (bool) Db::transaction(function () use ($id): bool {
-                $menu = $this->menus->record($id, true);
-                if ($menu === null) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
-                if ($this->menus->hasChildren($id)) throw BusinessException::conflict('ADMIN_MENU_HAS_CHILDREN', '已关联下级菜单，暂不可删除');
+                $menuModel = SystemMenu::where('id', $id)->lock(true)->findOrEmpty();
+                if ($menuModel->isEmpty()) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
+                $menu = $menuModel->toArray();
+                if (SystemMenu::where('pid', $id)->count() > 0) throw BusinessException::conflict('ADMIN_MENU_HAS_CHILDREN', '已关联下级菜单，暂不可删除');
                 $permission = trim((string)($menu['perms'] ?? ''));
                 if ($permission !== '' && $this->permissionUsage->assigned($permission)) throw BusinessException::conflict('ADMIN_MENU_IN_USE', '菜单已被角色使用，暂不可删除');
-                $this->menus->delete($id);
+                SystemMenu::where('id', $id)->delete();
                 return true;
         });
     }
@@ -123,8 +118,8 @@ class MenuApplicationService
     public function updateStatus(int $id, int $isDisable): bool
     {
         return (bool) Db::transaction(function () use ($id, $isDisable): bool {
-                if ($this->menus->record($id, true) === null) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
-                $this->menus->update($id, ['is_disable' => $isDisable]);
+                if (SystemMenu::where('id', $id)->lock(true)->findOrEmpty()->isEmpty()) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
+                SystemMenu::where('id', $id)->update(['is_disable' => $isDisable]);
                 return true;
         });
     }
@@ -138,7 +133,7 @@ class MenuApplicationService
             throw BusinessException::invalid('ADMIN_MENU_PARENT_INVALID', '上级菜单不可是当前菜单');
         }
 
-        $parents = $this->menus->hierarchyRecords();
+        $parents = SystemMenu::lock(true)->column(['id', 'pid', 'type'], 'id');
         $visited = [];
         while ($parentId > 0) {
             if ($parentId === $menuId) {

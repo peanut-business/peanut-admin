@@ -4,35 +4,76 @@ declare(strict_types=1);
 namespace app\common\services\authorization;
 
 use app\common\infrastructure\authorization\CoreTenantModuleAdminBridge;
-use app\common\infrastructure\authorization\NativeAdminPrincipalRepository;
 use app\common\contract\authorization\AdminAuthorizationQuery;
-use app\common\contract\authorization\AdminMenuPersistence;
 use app\common\contract\authorization\AuthorizedOperationFactory;
 use app\common\contract\AdminPermissionPolicy;
 use app\common\dto\authorization\AdminAccessData;
 use app\common\dto\authorization\AdminPrincipal;
 use app\common\dto\authorization\PermissionDecision;
+use app\common\model\auth\SystemMenu;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthorizationDecision;
 use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Context\RequestedTargetSet;
+use PeanutAdmin\Kernel\Persistence\Model\MemberRole;
+use PeanutAdmin\Kernel\Persistence\Model\TenantMember;
 use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 
 /** Tenant Admin identity, RBAC and access projection service. */
 final class AdminAuthorizationService implements AdminAuthorizationQuery, AuthorizedOperationFactory
 {
     public function __construct(
-        private readonly NativeAdminPrincipalRepository $principals,
         private readonly CoreTenantModuleAdminBridge $moduleAdmin,
-        private readonly AdminMenuPersistence $menus,
         private readonly AdminPermissionPolicy $permissionPolicy,
     ) {
     }
 
     public function principal(TenantContext $tenantContext): AdminPrincipal
     {
-        return $this->principals->require($tenantContext);
+        $row = TenantMember::alias('member')
+            ->join('tenant tenant', "tenant.id=member.tenant_id AND tenant.status='active'")
+            ->join('account account', "account.id=member.account_id AND account.status='active'")
+            ->join('credential credential', "credential.account_id=account.id AND credential.kind='email_password' AND credential.identifier_type='email' AND credential.status='active'")
+            ->where('member.tenant_id', $tenantContext->tenantId)
+            ->where('member.id', $tenantContext->memberId)
+            ->where('member.account_id', $tenantContext->accountId)
+            ->where('member.status', 'active')
+            ->field('member.id,member.tenant_id,member.account_id,member.display_name,member.primary_department_id,member.status,member.authorization_revision')
+            ->field('tenant.name AS tenant_name,account.avatar_uri,account.last_login_at,credential.identifier_normalized AS username')
+            ->find();
+        if ($row === null) {
+            throw new \DomainException('TENANT_ADMIN_PRINCIPAL_UNAVAILABLE');
+        }
+
+        $roles = $this->roles($tenantContext->tenantId, $tenantContext->memberId);
+        $switchableTenantCount = TenantMember::alias('member')
+            ->join('tenant tenant', "tenant.id=member.tenant_id AND tenant.status='active'")
+            ->where('member.account_id', $tenantContext->accountId)
+            ->where('member.status', 'active')
+            ->count();
+        $root = false;
+        foreach ($roles as $role) {
+            $root = $root || ($role['key'] === 'core.tenant-owner' && $role['is_builtin']);
+        }
+
+        return new AdminPrincipal(
+            id: (int)$row['id'],
+            tenantId: (int)$row['tenant_id'],
+            accountId: (int)$row['account_id'],
+            tenantName: (string)$row['tenant_name'],
+            username: (string)$row['username'],
+            nickname: (string)($row['display_name'] ?: $row['username']),
+            name: (string)($row['display_name'] ?: $row['username']),
+            avatar: (string)($row['avatar_uri'] ?? ''),
+            root: $root,
+            switchableTenantCount: (int)$switchableTenantCount,
+            roles: $roles,
+            roleName: implode('/', array_column($roles, 'name')),
+            authorizationRevision: (int)$row['authorization_revision'],
+            primaryDepartmentId: $row['primary_department_id'] === null ? null : (int)$row['primary_department_id'],
+            lastLoginAt: $row['last_login_at'],
+        );
     }
 
     public function accessData(TenantContext $tenantContext, AdminPrincipal $admin): AdminAccessData
@@ -198,17 +239,21 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
         $visiblePermissions = $admin->root
             ? $registered
             : array_values(array_intersect($permissions, $registered));
-        return linear_to_tree($this->menus->compatibilityRecords(
-            InstanceControlPlanePolicy::tenantAdminPermissions(),
-            [
+        $query = SystemMenu::where('type', 'in', ['M', 'C'])
+            ->where('is_disable', 0)
+            ->whereNotIn('perms', InstanceControlPlanePolicy::tenantAdminPermissions())
+            ->whereNotIn('paths', [
                 ...InstanceControlPlanePolicy::tenantAdminPaths(),
                 '/article',
                 '/article/cate',
                 '/article/list',
                 ...CoreTenantModuleAdminBridge::officialModuleMenuPaths(),
-            ],
-            $visiblePermissions,
-        ));
+            ])
+            ->where(static function ($query) use ($visiblePermissions): void {
+                $query->where('perms', '')->whereOr('perms', 'in', $visiblePermissions ?: ['__none__']);
+            });
+
+        return linear_to_tree($query->order(['sort' => 'desc', 'id' => 'asc'])->select()->toArray());
     }
 
     private function validContext(?TenantContext $context, AdminPrincipal $admin): bool
@@ -243,5 +288,23 @@ final class AdminAuthorizationService implements AdminAuthorizationQuery, Author
             && $current->authorizationRevision === $context->authorizationRevision
             ? $current
             : null;
+    }
+
+    /** @return list<array{id:int,key:string,name:string,is_builtin:bool}> */
+    private function roles(int $tenantId, int $memberId): array
+    {
+        $rows = MemberRole::alias('membership')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.status='active'")
+            ->where('membership.tenant_id', $tenantId)
+            ->where('membership.tenant_member_id', $memberId)
+            ->field('role.id,role.key,role.name,role.is_builtin')
+            ->order('role.key')->order('role.id')->select()->toArray();
+
+        return array_map(static fn(array $row): array => [
+            'id' => (int)$row['id'],
+            'key' => (string)$row['key'],
+            'name' => (string)$row['name'],
+            'is_builtin' => (int)$row['is_builtin'] === 1,
+        ], $rows);
     }
 }

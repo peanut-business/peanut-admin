@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace app\common\runtime\authorization;
 
 use app\common\services\authorization\AdminAuthorizationService;
-use app\common\contract\authorization\AdminMenuPersistence;
+use app\common\model\auth\SystemMenu;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\Model\MemberRole;
 
 /** Container-owned assembly and read projections for native Tenant roles. */
 final readonly class RoleAdministrationRuntime
@@ -15,7 +15,6 @@ final readonly class RoleAdministrationRuntime
     public function __construct(
         private RoleAdminService $roles,
         private AdminAuthorizationService $authorization,
-        private AdminMenuPersistence $menus,
     ) {
     }
 
@@ -30,7 +29,8 @@ final readonly class RoleAdministrationRuntime
         if ($permissionKeys === []) {
             return [];
         }
-        $ids = $this->menus->enabledMenuIds($permissionKeys);
+        $ids = array_map('intval', SystemMenu::where('is_disable', 0)
+            ->whereIn('perms', $permissionKeys)->order('id')->column('id'));
         foreach ($this->authorization->assignableMenuRecords($context) as $menu) {
             if (in_array((string)$menu['required_permission'], $permissionKeys, true)) {
                 $ids[] = (int)$menu['id'];
@@ -41,7 +41,7 @@ final readonly class RoleAdministrationRuntime
 
     public function memberCount(int $tenantId, int $roleId): int
     {
-        return Db::name('member_role')->where('tenant_id', $tenantId)->where('role_id', $roleId)->count();
+        return MemberRole::where('tenant_id', $tenantId)->where('role_id', $roleId)->count();
     }
 
     /** @param list<int> $menuIds @return list<string> */
@@ -50,7 +50,14 @@ final readonly class RoleAdministrationRuntime
         if ($menuIds === []) {
             return [];
         }
-        $keys = $this->menus->activePermissionKeys($menuIds);
+        $keys = array_values(array_unique(array_map('strval', SystemMenu::alias('menu')
+            ->join('permission permission', 'permission.`key`=menu.perms')
+            ->where('menu.is_disable', 0)
+            ->whereIn('menu.id', $menuIds)
+            ->where('menu.perms', '<>', '')
+            ->where('permission.status', 'active')
+            ->order('permission.key')
+            ->column('permission.key'))));
         $selected = array_fill_keys($menuIds, true);
         foreach ($this->authorization->assignableMenuRecordsForTenant($tenantId) as $menu) {
             if (isset($selected[(int)$menu['id']]) && trim((string)$menu['required_permission']) !== '') {

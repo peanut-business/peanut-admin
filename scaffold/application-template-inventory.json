@@ -4127,7 +4127,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "472834efa9a87fa7d03f97bf01d6c0896195a1092c801885218203461a5e0814"
+            "source_sha256": "5373521cad5d04394b50a3b4929ca3259dce4e6f0e33529184f7176b67c10324"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -4830,7 +4830,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0046a74d7465900768196c183696b4c10a4d6e52414dcfbfcdf0451b9be50766"
+            "source_sha256": "ea9a37cc16d1512fbc263f729af7f826fc325e0eae642d72876bfd9cf12f5a59"
         },
         {
             "path": "server/app/BaseController.php",
@@ -5376,7 +5376,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "f4480ccbc18224bb5a0726faac06571fcd09c91272caea991fb034954548fe86"
+            "source_sha256": "76d47c5944eb79e231cd4022a8f6dcf9b4bc39a667a3abdb78e240b9fe08cb71"
         },
         {
             "path": "server/app/adminapi/services/auth/RoleApplicationService.php",
@@ -6878,20 +6878,6 @@
             "source_sha256": "0137c03f19ed26fe8a5288e9586df29f0b6472bb20ab43f146def9068ee2d1fc"
         },
         {
-            "path": "server/app/common/contract/authorization/AdminMenuPersistence.php",
-            "target": "server/app/common/contract/authorization/AdminMenuPersistence.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "bbee77f33e41e6866fcf85ecaf2eeef8fcf732dbbbf700409054fa7413daafd8"
-        },
-        {
             "path": "server/app/common/contract/authorization/AuthorizedOperationFactory.php",
             "target": "server/app/common/contract/authorization/AuthorizedOperationFactory.php",
             "classification": "app-owned",
@@ -7940,35 +7926,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "af11fc70429db94dda56e5724edb95699943f42945c91a2b0dd5989bdcb4f325"
-        },
-        {
-            "path": "server/app/common/infrastructure/authorization/NativeAdminPrincipalRepository.php",
-            "target": "server/app/common/infrastructure/authorization/NativeAdminPrincipalRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "a93ca824ae8595be0def297668a6ac9152b0f498cc691891221aa6508e105cd7"
-        },
-        {
-            "path": "server/app/common/infrastructure/authorization/ThinkPhpAdminMenuPersistence.php",
-            "target": "server/app/common/infrastructure/authorization/ThinkPhpAdminMenuPersistence.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "fb5543b79886db4db5b9190e6310b1591748a385b47dbb97a8d08d6a09994e0f"
+            "source_sha256": "6b3c2d108616d15fba17e410027eaad407b9120b9bdbc61193e5adaa39027296"
         },
         {
             "path": "server/app/common/infrastructure/config/BrandDefaults.php",
@@ -8959,7 +8917,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1753a49e755cdb2185bf055a22fe13f0f417b00781d057b46600d75537446085"
+            "source_sha256": "852faf1ffd886e73be8c57dcff2f2d18e9b1f78885a89c05b93421efb8e17359"
         },
         {
             "path": "server/app/common/runtime/dict/DictionaryRuntime.php",
@@ -8987,7 +8945,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "e6263ea1b4c6c7a5cf85848696d34f30382816be657bd6543d7ce8ebf11cfdc6"
+            "source_sha256": "5bd01d5c825662a67aafae680534c23188f98b89229b6943cd901037f1f9a36e"
         },
         {
             "path": "server/app/common/runtime/org/TenantAdminRuntime.php",
@@ -9127,7 +9085,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "b7c077153ea5aebd6a0be441c44ffc894c19a67634be140eb21c5bec3b7a6455"
+            "source_sha256": "5997432e31533decd0047d6cc133531aaa94a2cd5baf169e2b8801a34314e7ea"
         },
         {
             "path": "server/app/common/services/authorization/MenuPermissionUsageQuery.php",
@@ -9141,7 +9099,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "5b3eed43a4269e9e7fbd40cdbdc1611afd81832a44dead63e5cc65ad3cebf637"
+            "source_sha256": "49671d7cd8d77af13ee761e9bee08677f963fb8de3155fcd043b50d68029e041"
         },
         {
             "path": "server/app/common/services/config/TenantApplicationSettingService.php",
@@ -9284,7 +9242,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "55937b2c8ada2cda7239d26f61a18746411f66230395828c2976056b20210156"
+            "source_sha256": "1627206bec5d48b79c8034c2ba232700ad17cc8c724586cb5d45ea06701f5dd3"
         },
         {
             "path": "server/app/common/services/readiness/FirstRunReadinessHost.php",

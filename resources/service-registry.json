@@ -135,7 +135,9 @@
       "current_implementation": [
         "server/app/common/services/authorization/AdminAuthorizationService.php",
         "server/app/common/infrastructure/authorization/CoreTenantModuleAdminBridge.php",
-        "server/app/common/infrastructure/authorization/NativeAdminPrincipalRepository.php"
+        "server/app/common/runtime/authorization/RoleAdministrationRuntime.php",
+        "server/app/common/services/org/AdminDirectoryQuery.php",
+        "server/app/adminapi/services/auth/MenuApplicationService.php"
       ],
       "actual_callers": [
         "Admin 登录",
@@ -154,7 +156,7 @@
           "pa_role_permission"
         ],
         "shared_or_read_only_tables": ["pa_system_menu"],
-        "policy": "原生身份和 RBAC 为权威；菜单只是授权投影和兼容 Host"
+        "policy": "Core 原生身份/RBAC Model 与服务为权威；Application 业务服务直接使用原生 Model/Query，菜单只是授权投影和兼容 Host，不保留单实现 persistence interface/repository"
       },
       "dependencies": ["TenantContext", "Module registry"],
       "recommended_boundary": "AdminAuthorizationQuery、PermissionDecision 和 AuthorizedOperationFactory；保留 Platform 与业务会员的独立 audience"    },

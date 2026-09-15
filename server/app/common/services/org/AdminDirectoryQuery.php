@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\common\services\org;
 
 use app\common\execution\CurrentExecutionContext;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\Model\TenantMember;
 
 /** Non-ORM read boundary for the native Account/TenantMember directory. */
 final readonly class AdminDirectoryQuery
@@ -18,7 +18,7 @@ final readonly class AdminDirectoryQuery
     public function rows(array $filters): array
     {
         $context = $this->execution->tenantAdmin();
-        $query = Db::name('tenant_member')->alias('member')
+        $query = TenantMember::alias('member')
             ->join('account account', 'account.id = member.account_id')
             ->join('credential credential', "credential.account_id = account.id AND credential.identifier_type = 'email'")
             ->leftJoin('department department', 'department.tenant_id = member.tenant_id AND department.id = member.primary_department_id')
@@ -53,7 +53,7 @@ final readonly class AdminDirectoryQuery
     /** @return null|array{id:int,account_id:int,authorization_revision:int} */
     public function activeTenantOwner(int $tenantId, ?int $memberId, ?int $accountId): ?array
     {
-        $query = Db::name('tenant_member')->alias('member')
+        $query = TenantMember::alias('member')
             ->join('account account', "account.id = member.account_id AND account.status = 'active'")
             ->join('member_role membership', 'membership.tenant_id = member.tenant_id AND membership.tenant_member_id = member.id')
             ->join('role role', "role.tenant_id = membership.tenant_id AND role.id = membership.role_id AND role.`key` = 'core.tenant-owner' AND role.is_builtin = 1 AND role.status = 'active'")

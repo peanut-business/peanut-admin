@@ -42,7 +42,7 @@ Peanut Admin Application 的 `server/composer.json` 已直接声明 `topthink/fr
 
 ### 2.2 Application 原生 ThinkPHP 连接边界的现状
 
-`server/app/AppService.php` 已不再导出 `PDO::class` 或装配 `PdoTransactionManager`。HTTP、CLI 与 Worker 的业务服务由 ThinkPHP 容器注入，Tenant-owned 数据通过 `TenantOwnedModel` 全局 Scope 和写入 Hook 访问，领域原子边界直接使用 `Db::transaction()`。File/Storage 已删除单实现 `StorageRepository`：`pa_file_object` 使用 `FileObject` Tenant Model，Account/Space/Route 使用 Instance Model；外部 Driver factory 仍因本地、Aliyun、Qcloud、Qiniu 四个真实实现而保留。
+`server/app/AppService.php` 已不再导出 `PDO::class` 或装配 `PdoTransactionManager`。HTTP、CLI 与 Worker 的业务服务由 ThinkPHP 容器注入，Tenant-owned 数据通过 `TenantOwnedModel` 全局 Scope 和写入 Hook 访问，领域原子边界直接使用 `Db::transaction()`。File/Storage 已删除单实现 `StorageRepository`：`pa_file_object` 使用 `FileObject` Tenant Model，Account/Space/Route 使用 Instance Model；外部 Driver factory 仍因本地、Aliyun、Qcloud、Qiniu 四个真实实现而保留。Admin Authorization 同样删除 `NativeAdminPrincipalRepository` 与单实现 `AdminMenuPersistence`，由授权、菜单、角色和目录业务服务直接使用 Core 身份/RBAC Model 及 Application `SystemMenu` Model；`TenantAuthorizationRepository`、`RoleAdminService` 和模块菜单桥继续承载跨能力授权、审计和 Module 生命周期语义，不因持久化收敛而删除。
 
 当前业务调用链是：
 

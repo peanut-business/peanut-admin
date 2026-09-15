@@ -5,6 +5,8 @@ namespace app\common\runtime\org;
 
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Organization\Application\DepartmentAdminService;
+use PeanutAdmin\Kernel\Persistence\Model\Department;
+use PeanutAdmin\Kernel\Persistence\Model\Tenant;
 use think\facade\Db;
 
 /** Owns the Department service assembly and the legacy active/disabled transition. */
@@ -34,7 +36,7 @@ final readonly class DepartmentAdministrationRuntime
         }
 
         Db::transaction(function () use ($context, $department, $target): void {
-            $updated = Db::name('department')->where('tenant_id', $context->tenantId)
+            $updated = Department::where('tenant_id', $context->tenantId)
                 ->where('id', (int)($department['id'] ?? 0))
                 ->where('revision', (int)($department['revision'] ?? 0))
                 ->update([
@@ -45,7 +47,7 @@ final readonly class DepartmentAdministrationRuntime
             if ($updated !== 1) {
                 throw new \RuntimeException('部门状态已被并发修改');
             }
-            Db::name('tenant')->where('id', $context->tenantId)->update([
+            Tenant::where('id', $context->tenantId)->update([
                 'authorization_revision' => Db::raw('authorization_revision + 1'),
                 'updated_at' => Db::raw('CURRENT_TIMESTAMP(3)'),
             ]);
