@@ -53,7 +53,8 @@
     {"model": "app\\common\\model\\generator\\GeneratorTable", "table": "pa_generator_table", "owner": "instance"},
     {"model": "app\\common\\model\\storage\\StorageAccount", "table": "pa_storage_account", "owner": "instance"},
     {"model": "app\\common\\model\\storage\\StorageSpace", "table": "pa_storage_space", "owner": "instance"},
-    {"model": "app\\common\\model\\storage\\StorageRoute", "table": "pa_storage_route", "owner": "instance"}
+    {"model": "app\\common\\model\\storage\\StorageRoute", "table": "pa_storage_route", "owner": "instance"},
+    {"model": "app\\common\\model\\provider\\ProviderQualificationEvidence", "table": "pa_provider_qualification_evidence", "owner": "instance"}
   ],
   "tenant_tables": [
     {"table": "pa_operation_log", "owner": "tenant-orm", "access_entry": "app\\common\\model\\log\\OperationLog"},
@@ -102,13 +103,13 @@
     {"table": "pa_refund_log", "owner": "tenant-orm", "access_entry": "app\\modules\\official\\payment\\model\\RefundLog"},
     {"table": "pa_oauth_completion_ticket", "owner": "tenant-orm", "access_entry": "app\\modules\\official\\oauth\\model\\OAuthCompletionTicket"},
     {"table": "pa_payment_tenant_channel_grant", "owner": "tenant-orm", "access_entry": "app\\modules\\official\\payment\\model\\PaymentTenantChannelGrant"},
-    {"table": "pa_provider_qualification_evidence", "owner": "tenant-gateway", "access_entry": "app\\platform\\infrastructure\\provider\\ThinkPhpProviderQualificationEvidenceRepository"},
+    {"table": "pa_provider_qualification_evidence", "owner": "tenant-gateway", "access_entry": "app\\common\\model\\provider\\ProviderQualificationEvidence"},
     {"table": "pa_fixture_delivery_record", "owner": "tenant-orm", "access_entry": "app\\modules\\fixture\\delivery_record\\model\\DeliveryRecord"}
   ],
   "counts": {
-    "concrete_models": 41,
+    "concrete_models": 42,
     "tenant_models": 33,
-    "non_tenant_models": 8,
+    "non_tenant_models": 9,
     "tenant_tables": 48,
     "tenant_tables_without_model": 15
   }

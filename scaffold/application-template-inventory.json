@@ -4830,7 +4830,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ea9a37cc16d1512fbc263f729af7f826fc325e0eae642d72876bfd9cf12f5a59"
+            "source_sha256": "fa9f436ba089db78c63f19766517dccec96cc4df2b3614a8d391a1f3a2a58e2f"
         },
         {
             "path": "server/app/BaseController.php",
@@ -8721,6 +8721,20 @@
                 "full"
             ],
             "source_sha256": "b7c34f114610fd76c28a70e8b8087d4ae1663fd01ef5760140c46e1fe7453d52"
+        },
+        {
+            "path": "server/app/common/model/provider/ProviderQualificationEvidence.php",
+            "target": "server/app/common/model/provider/ProviderQualificationEvidence.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "cfd0671a3b27575cde7c2147ef9b495e953cc098c8fe2aaa722354efcc798da1"
         },
         {
             "path": "server/app/common/model/setting/HotSearch.php",
@@ -13585,18 +13599,6 @@
             "source_sha256": "717c7a58c075527b90dc29eb9aec8d97b44070e636efec4cc4fbfe6d35817140"
         },
         {
-            "path": "server/app/platform/contract/provider/ProviderQualificationEvidenceRepository.php",
-            "target": "server/app/platform/contract/provider/ProviderQualificationEvidenceRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "219011f6f20acc47bb664d4ae1575e715b4326cab5b022d3a140590a97024b7d"
-        },
-        {
             "path": "server/app/platform/controller/BasePlatformController.php",
             "target": "server/app/platform/controller/BasePlatformController.php",
             "classification": "app-owned",
@@ -14281,18 +14283,6 @@
             "source_sha256": "4c1afad8490f9a3adbc599a759aabb21134d652282c4f433b1185bd71fb181ab"
         },
         {
-            "path": "server/app/platform/infrastructure/provider/ThinkPhpProviderQualificationEvidenceRepository.php",
-            "target": "server/app/platform/infrastructure/provider/ThinkPhpProviderQualificationEvidenceRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "full"
-            ],
-            "source_sha256": "f9f99f07425e90ab50e7eacfa7a039a9779abec2bbf34c3119011a74b08f82d3"
-        },
-        {
             "path": "server/app/platform/invitation/OneTimeInvitationToken.php",
             "target": "server/app/platform/invitation/OneTimeInvitationToken.php",
             "classification": "app-owned",
@@ -14734,7 +14724,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "a569d405f946f920c9913d21a3db3fcdd2aa8429c2917f67de3f94e42d9fc997"
+            "source_sha256": "f8aa243ffc2c88ae4f602f0e04a4e0075b8d1967095b7d39c4da19ce17d7681b"
         },
         {
             "path": "server/app/platform/validate/PlatformAccessValidate.php",

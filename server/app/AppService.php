@@ -98,7 +98,6 @@ use app\platform\services\plugin\PluginRuntimeGovernanceService;
 use app\platform\infrastructure\provider\NotificationQualificationContributor;
 use app\platform\infrastructure\provider\OauthQualificationContributor;
 use app\platform\infrastructure\provider\PaymentQualificationContributor;
-use app\platform\infrastructure\provider\ThinkPhpProviderQualificationEvidenceRepository;
 use app\platform\services\provider\PlatformProviderQualificationService;
 use app\platform\infrastructure\provider\StorageQualificationContributor;
 use think\Service;
@@ -477,7 +476,6 @@ class AppService extends Service
         $this->app->bind(PlatformProviderQualificationService::class, fn(): PlatformProviderQualificationService =>
             new PlatformProviderQualificationService(
                 $this->app->make(PlatformPermissionChecker::class),
-                new ThinkPhpProviderQualificationEvidenceRepository(),
                 [
                     new PaymentQualificationContributor($this->platformIdentifierHmacKey()),
                     new NotificationQualificationContributor($this->platformIdentifierHmacKey()),

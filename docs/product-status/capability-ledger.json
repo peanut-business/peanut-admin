@@ -442,8 +442,8 @@
       "id": "PA-PROVIDER-001",
       "name": "外部 Provider 生产资格可见性",
       "area": "operations",
-      "status": "verified",
-      "summary": "PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。PC70 pc70q14 已完成固定派生应用 P0-E 7/7 组合资格。",
+      "status": "implemented",
+      "summary": "PC60 已由 PR #313 合入 dev：通知、支付、OAuth 和 Storage contributor 以 Platform-only 只读安全投影区分 configured、connectivity、callback、credential rotation、recent failure 和 evidence freshness；通用面板不外呼、不发送消息、不扣款，真实平台资格仍由各 Provider owner 按授权目标独立执行。历史 PC70 pc70q14 曾完成固定派生应用 P0-E 7/7；S4 已把 production evidence 读取切换为原生 Model 并删除单实现 persistence interface，当前自动化与双 Edition 资格未获授权重跑，因此本条回到 implemented。",
       "acceptance": [
         "每个 Provider subject 独立展示配置、连通、回调、凭据轮换、最近失败和 evidence 新鲜度，不把 configured 冒充 production ready",
         "append-only evidence 只保存稳定状态、时间、来源和安全摘要，不保存凭据、token、回调 payload 或个人数据",
@@ -477,7 +477,7 @@
       "paths": [
         "server/app/platform/services/provider/PlatformProviderQualificationService.php",
         "server/app/platform/contract/provider/ProviderQualificationContributor.php",
-        "server/app/platform/service/provider/PdoProviderQualificationEvidenceRepository.php",
+        "server/app/common/model/provider/ProviderQualificationEvidence.php",
         "server/app/platform/infrastructure/provider/NotificationQualificationContributor.php",
         "server/app/platform/infrastructure/provider/PaymentQualificationContributor.php",
         "server/app/platform/infrastructure/provider/OauthQualificationContributor.php",

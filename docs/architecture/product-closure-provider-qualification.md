@@ -60,7 +60,9 @@ Platform 页面只呈现这份投影，并明确刷新不会执行 probe。真�
 
 ## 5. 验证边界
 
-最低合同验证使用纯 fake contributor、permission checker 和 evidence repository，证明：
+既有最低合同验证曾使用纯 fake contributor、permission checker 和 evidence repository。S4 已让生产
+服务直接读取部署级 `ProviderQualificationEvidence` Model，并删除唯一 persistence interface；旧测试
+等待用户启动整体测试阶段后按最终设计评估。本合同仍要求后续验证证明：
 
 - 配置 digest 变化和 TTL 过期会撤销既有资格；
 - Tenant A evidence 不会提升 Tenant B；

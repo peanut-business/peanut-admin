@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\platform\services\provider;
 
 use app\platform\contract\provider\ProviderQualificationContributor;
-use app\platform\contract\provider\ProviderQualificationEvidenceRepository;
+use app\common\model\provider\ProviderQualificationEvidence;
 use app\platform\value\provider\ProviderQualificationSubject;
 use DateTimeImmutable;
 use PeanutAdmin\Kernel\Context\PlatformContext;
@@ -25,7 +25,6 @@ final class PlatformProviderQualificationService
      */
     public function __construct(
         private readonly PlatformPermissionChecker $permissions,
-        private readonly ProviderQualificationEvidenceRepository $evidence,
         array $contributors,
         private readonly string $scopeDigestKey,
         ?callable $clock = null,
@@ -60,7 +59,7 @@ final class PlatformProviderQualificationService
             }
         }
         $subjects = array_values($subjects);
-        $rows = $this->evidence->evidenceFor($subjects);
+        $rows = $this->evidenceFor($subjects);
         $now = ($this->clock)();
         $providers = array_map(
             fn(ProviderQualificationSubject $subject): array => $this->project($subject, $rows, $now),
@@ -158,5 +157,21 @@ final class PlatformProviderQualificationService
     {
         return (new DateTimeImmutable($value))->setTimezone(new \DateTimeZone('UTC'))
             ->format('Y-m-d\TH:i:s\Z');
+    }
+
+    /** @param list<ProviderQualificationSubject> $subjects @return list<array<string,mixed>> */
+    private function evidenceFor(array $subjects): array
+    {
+        if ($subjects === []) {
+            return [];
+        }
+        $providerKeys = array_values(array_unique(array_map(
+            static fn(ProviderQualificationSubject $subject): string => $subject->providerKey,
+            $subjects,
+        )));
+
+        return ProviderQualificationEvidence::whereIn('provider_key', $providerKeys)
+            ->field('evidence_key,provider_key,scope_type,tenant_id,scope_reference,evidence_type,outcome,config_digest,status_code,observed_at,expires_at')
+            ->order('observed_at', 'desc')->order('id', 'desc')->select()->toArray();
     }
 }
