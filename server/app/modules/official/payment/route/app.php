@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\payment\ModuleProvider;
 use app\modules\official\payment\controller\PayConfigController;
 use app\modules\official\payment\controller\RechargeSettingController;
 use app\modules\official\payment\controller\RechargeController;
@@ -28,7 +27,7 @@ Route::group(function (): void {
     Route::get('official.payment.refund.list', [RefundController::class, 'record']);
     Route::get('official.payment.refund.log', [RefundController::class, 'log']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.payment', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
 }
@@ -47,4 +46,4 @@ Route::group(function (): void {
     Route::get('recharge/detail', [ApiRechargeController::class, 'detail']);
     Route::get('recharge/lists', [ApiRechargeController::class, 'lists']);
 })->middleware(CheckTokenMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member');
+    ->middleware(OfficialModuleMiddleware::class, 'official.payment', 'http.member');

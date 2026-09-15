@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\task\ModuleProvider;
 use app\modules\official\task\controller\CrontabController;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
@@ -22,6 +21,6 @@ Route::group(function (): void {
     Route::post('official.task.delete', [CrontabController::class, 'delete']);
     Route::post('official.task.operate', [CrontabController::class, 'operate']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.task', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);

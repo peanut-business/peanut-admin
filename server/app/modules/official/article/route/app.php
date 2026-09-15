@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\article\ModuleProvider;
 use app\modules\official\article\controller\ArticleCateController;
 use app\modules\official\article\controller\ArticleController;
 use app\adminapi\http\middleware\AuthMiddleware;
@@ -30,7 +29,7 @@ Route::group(function (): void {
     Route::post('official.article.update-status', [ArticleController::class, 'updateStatus']);
 })->middleware([
     LoginMiddleware::class,
-    [OfficialModuleMiddleware::class, [(new ModuleProvider())->moduleKey(), 'http.admin']],
+    [OfficialModuleMiddleware::class, ['official.article', 'http.admin']],
     AuthMiddleware::class,
     OperationLogMiddleware::class,
 ]);

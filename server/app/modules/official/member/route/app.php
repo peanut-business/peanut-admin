@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\member\ModuleProvider;
 use app\modules\official\member\controller\MemberController;
 use app\modules\official\member\controller\MemberTagController;
 use app\modules\official\member\controller\AccountLogController;
@@ -31,7 +30,7 @@ Route::group(function (): void {
     Route::get('official.member.account-log.list', [AccountLogController::class, 'lists']);
     Route::get('official.member.account-log.change-types', [AccountLogController::class, 'getUmChangeType']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.member', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
 }
@@ -41,16 +40,16 @@ if (($peanutRouteApplication ?? null) !== 'api') {
 }
 
 Route::post('login/register', [ApiLoginController::class, 'register'])
-    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.register');
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', 'official.member', 'member.register');
 Route::post('login/account', [ApiLoginController::class, 'account'])
-    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', (new ModuleProvider())->moduleKey(), 'member.login');
+    ->middleware(PublicTenantModuleMiddleware::class, 'peanut.member.public-auth', 'official.member', 'member.login');
 foreach ([
     ['login/mobile', 'mobile', 'notice.verification.verify', 'http.mobile-login'],
     ['login/resetPassword', 'resetPassword', 'notice.verification.verify', 'http.reset-password'],
 ] as [$path, $action, $noticeOperation, $memberOperation]) {
     Route::post($path, [ApiLoginController::class, $action])
         ->middleware(PublicTenantModuleMiddleware::class, 'peanut.notice.verification', 'official.notification', $noticeOperation)
-        ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), $memberOperation);
+        ->middleware(OfficialModuleMiddleware::class, 'official.member', $memberOperation);
 }
 
 Route::group(function (): void {
@@ -61,4 +60,4 @@ Route::group(function (): void {
     Route::post('user/bindMobile', [ApiUserController::class, 'bindMobile']);
     Route::get('account_log/lists', [ApiAccountLogController::class, 'lists']);
 })->middleware(CheckTokenMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member');
+    ->middleware(OfficialModuleMiddleware::class, 'official.member', 'http.member');

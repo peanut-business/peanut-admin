@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use app\modules\official\file\ModuleProvider;
 use app\modules\official\file\controller\fileController;
 use app\modules\official\file\controller\UploadController;
 use app\api\controller\UploadController as ApiUploadController;
@@ -26,7 +25,7 @@ Route::group(function (): void {
     Route::post('official.file.category.edit', [FileController::class, 'editCate']);
     Route::post('official.file.category.delete', [FileController::class, 'delCate']);
 })->middleware(LoginMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.admin')
+    ->middleware(OfficialModuleMiddleware::class, 'official.file', 'http.admin')
     ->middleware(AuthMiddleware::class)
     ->middleware(OperationLogMiddleware::class);
 }
@@ -34,5 +33,5 @@ Route::group(function (): void {
 if (($peanutRouteApplication ?? null) === 'api') {
 Route::post('upload/image', [ApiUploadController::class, 'image'])
     ->middleware(CheckTokenMiddleware::class)
-    ->middleware(OfficialModuleMiddleware::class, (new ModuleProvider())->moduleKey(), 'http.member-upload');
+    ->middleware(OfficialModuleMiddleware::class, 'official.file', 'http.member-upload');
 }

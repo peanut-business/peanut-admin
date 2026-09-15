@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use app\modules\official\rich_text\controller\RichTextDocumentController;
-use app\modules\official\rich_text\ModuleProvider;
 use app\adminapi\http\middleware\AuthMiddleware;
 use app\adminapi\http\middleware\LoginMiddleware;
 use app\adminapi\http\middleware\OperationLogMiddleware;
@@ -22,7 +21,7 @@ Route::group(function (): void {
     Route::get('official.rich-text.document.collaboration', [RichTextDocumentController::class, 'collaboration']);
 })->middleware([
     LoginMiddleware::class,
-    [OfficialModuleMiddleware::class, [(new ModuleProvider())->moduleKey(), 'http.admin']],
+    [OfficialModuleMiddleware::class, ['official.rich-text', 'http.admin']],
     AuthMiddleware::class,
     OperationLogMiddleware::class,
 ]);
