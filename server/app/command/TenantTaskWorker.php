@@ -15,9 +15,9 @@ use think\console\input\Argument;
 final class TenantTaskWorker extends ContextualCommand
 {
     public function __construct(
-        ExecutionContextStore $contexts,
-        CurrentExecutionContext $executionContext,
-        private readonly ImportExportWorkerRuntime $runtime,
+        ?ExecutionContextStore $contexts = null,
+        ?CurrentExecutionContext $executionContext = null,
+        private readonly ?ImportExportWorkerRuntime $runtime = null,
     ) {
         parent::__construct($contexts, $executionContext);
     }
@@ -37,7 +37,7 @@ final class TenantTaskWorker extends ContextualCommand
             return 1;
         }
         try {
-            $processed = $this->runtime->runTenant(
+            $processed = $this->runtime()->runTenant(
                 (int)$raw,
                 'tenant-worker-' . getmypid() . '-' . bin2hex(random_bytes(6)),
             );
@@ -63,5 +63,11 @@ final class TenantTaskWorker extends ContextualCommand
             'TASK_JOB_INVALID',
             'TASK_WORKER_DEFINITION_REQUIRED',
         ], true) ? $exception->getMessage() : 'TENANT_TASK_WORKER_STARTUP_FAILED';
+    }
+
+    private function runtime(): ImportExportWorkerRuntime
+    {
+        return $this->runtime
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
     }
 }

@@ -21,10 +21,10 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
 class Crontab extends ContextualCommand
 {
     public function __construct(
-        ExecutionContextStore $contexts,
-        CurrentExecutionContext $executionContext,
-        private readonly TaskScheduler $taskScheduler,
-        private readonly AdvisoryLockExecution $locks,
+        ?ExecutionContextStore $contexts = null,
+        ?CurrentExecutionContext $executionContext = null,
+        private readonly ?TaskScheduler $taskScheduler = null,
+        private readonly ?AdvisoryLockExecution $locks = null,
     ) {
         parent::__construct($contexts, $executionContext);
     }
@@ -37,7 +37,7 @@ class Crontab extends ContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $this->locks->run(
+            $this->locks()->run(
                 'peanut:crontab:scheduler',
                 0,
                 fn() => $this->scheduler()->runDue(time()),
@@ -57,6 +57,13 @@ class Crontab extends ContextualCommand
 
     private function scheduler(): TaskScheduler
     {
-        return $this->taskScheduler;
+        return $this->taskScheduler
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
+    }
+
+    private function locks(): AdvisoryLockExecution
+    {
+        return $this->locks
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
     }
 }

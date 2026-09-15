@@ -11,14 +11,17 @@ use think\console\Output;
 abstract class ContextualCommand extends Command
 {
     public function __construct(
-        private readonly ExecutionContextStore $contexts,
-        private readonly CurrentExecutionContext $executionContext,
+        private readonly ?ExecutionContextStore $contexts = null,
+        private readonly ?CurrentExecutionContext $executionContext = null,
     ) {
         parent::__construct();
     }
 
     final protected function execute(Input $input, Output $output): int
     {
+        if ($this->contexts === null || $this->executionContext === null) {
+            throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
+        }
         if ($this->contexts->current() !== null) {
             return $this->handle($input, $output);
         }
@@ -40,7 +43,8 @@ abstract class ContextualCommand extends Command
 
     final protected function executionContext(): CurrentExecutionContext
     {
-        return $this->executionContext;
+        return $this->executionContext
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
     }
 
     abstract protected function handle(Input $input, Output $output): int;

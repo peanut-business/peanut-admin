@@ -17,9 +17,9 @@ use Throwable;
 final class OpsUpgradeTask extends ContextualCommand
 {
     public function __construct(
-        ExecutionContextStore $contexts,
-        CurrentExecutionContext $executionContext,
-        private readonly ThinkPhpUpgradeTaskExecutionService $service,
+        ?ExecutionContextStore $contexts = null,
+        ?CurrentExecutionContext $executionContext = null,
+        private readonly ?ThinkPhpUpgradeTaskExecutionService $service = null,
     ) {
         parent::__construct($contexts, $executionContext);
     }
@@ -39,11 +39,11 @@ final class OpsUpgradeTask extends ContextualCommand
         try {
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
-                'claim' => $this->service->claim(),
-                'advance' => $this->service->advance($this->taskKey($input), $this->revision($input)),
-                'heartbeat' => $this->service->heartbeat($this->taskKey($input), $this->revision($input)),
-                'succeed' => $this->service->succeed($this->taskKey($input), $this->revision($input)),
-                'fail' => $this->service->fail(
+                'claim' => $this->service()->claim(),
+                'advance' => $this->service()->advance($this->taskKey($input), $this->revision($input)),
+                'heartbeat' => $this->service()->heartbeat($this->taskKey($input), $this->revision($input)),
+                'succeed' => $this->service()->succeed($this->taskKey($input), $this->revision($input)),
+                'fail' => $this->service()->fail(
                     $this->taskKey($input),
                     $this->revision($input),
                     trim((string)$input->getOption('error-code')),
@@ -62,6 +62,12 @@ final class OpsUpgradeTask extends ContextualCommand
             $output->writeln(json_encode(['ok' => false, 'error_code' => $code], JSON_THROW_ON_ERROR));
             return 1;
         }
+    }
+
+    private function service(): ThinkPhpUpgradeTaskExecutionService
+    {
+        return $this->service
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
     }
 
     private function taskKey(Input $input): string

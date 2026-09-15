@@ -16,9 +16,9 @@ use think\console\Output;
 class RefundReconcile extends ContextualCommand
 {
     public function __construct(
-        ExecutionContextStore $contexts,
-        CurrentExecutionContext $executionContext,
-        private readonly RefundReconciliationCommands $refunds,
+        ?ExecutionContextStore $contexts = null,
+        ?CurrentExecutionContext $executionContext = null,
+        private readonly ?RefundReconciliationCommands $refunds = null,
     ) {
         parent::__construct($contexts, $executionContext);
     }
@@ -32,7 +32,7 @@ class RefundReconcile extends ContextualCommand
     {
         $scope = PaymentScheduledTenantContext::require();
         $diagnostics = PaymentTenantDiagnostics::fromScope($scope);
-        $result = $this->refunds->reconcile($scope, $diagnostics);
+        $result = $this->refunds()->reconcile($scope, $diagnostics);
 
         $output->writeln(sprintf(
             '[refund:reconcile] checked=%d settled=%d',
@@ -40,6 +40,12 @@ class RefundReconcile extends ContextualCommand
             $result['settled']
         ));
         return 0;
+    }
+
+    private function refunds(): RefundReconciliationCommands
+    {
+        return $this->refunds
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
     }
 
 }

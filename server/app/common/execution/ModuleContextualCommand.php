@@ -9,15 +9,16 @@ use app\platform\infrastructure\plugin\ModuleCatalogApplier;
 abstract class ModuleContextualCommand extends ContextualCommand
 {
     public function __construct(
-        ExecutionContextStore $contexts,
-        CurrentExecutionContext $executionContext,
-        private readonly ModuleCatalogApplier $catalogs,
+        ?ExecutionContextStore $contexts = null,
+        ?CurrentExecutionContext $executionContext = null,
+        private readonly ?ModuleCatalogApplier $catalogs = null,
     ) {
         parent::__construct($contexts, $executionContext);
     }
 
     final protected function moduleCatalogs(): ModuleCatalogApplier
     {
-        return $this->catalogs;
+        return $this->catalogs
+            ?? throw new \LogicException('COMMAND_DEPENDENCIES_NOT_INJECTED');
     }
 }

@@ -6216,7 +6216,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1e0021888d80190ea219932c97b19b548c18dd11e519325de75ec485b493b658"
+            "source_sha256": "c239d1732d9a455650b58dc03873527dc294350e5a57813516c7dab90ad142fe"
         },
         {
             "path": "server/app/command/CrontabDemo.php",
@@ -6440,7 +6440,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "879f46169f59e81816c7cfecc2c72b281fe86c6c4b5325ef676faead82e9a2ad"
+            "source_sha256": "4aa354a731e575a23948c311dfebb298ac533be50e27d09a0748a5997622ddc7"
         },
         {
             "path": "server/app/command/OpsRestoreTask.php",
@@ -6468,7 +6468,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8d8b98f585d540698393666eef878d604a13efc84e898bc0b50d0b3810a48740"
+            "source_sha256": "b37e0e31bed732f256a3831b2f5aed2b950488f797bafd0dba20054b52f9160c"
         },
         {
             "path": "server/app/command/PluginCommandSupport.php",
@@ -6608,7 +6608,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "1b29cd15dc9fa242f3288b2bf5dccf0df8ff7c38bba047fc9a3872c822e0dd45"
+            "source_sha256": "57dd50cda49d9fc563990de16bde710b1712916e8ab5839ab7002e67c895f7c8"
         },
         {
             "path": "server/app/command/TenantModuleEnableLockedPrivate.php",
@@ -6650,7 +6650,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "0adc8fda48cbc96599b5fde2427918670a94fd46b8ae1d48e4899c7fc89de364"
+            "source_sha256": "14bd85b86966015c9a7ed539db9da1132ae595b2d66ab9b43068f539276948f4"
         },
         {
             "path": "server/app/common.php",
@@ -7646,7 +7646,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "46875a69b26074dd09fac00216d513540888b4c054570ada260f7f33c5d4ec2c"
+            "source_sha256": "eb749beb343f2d8f6fd47313a43dd4c8ea7cccde1c6ae0d9aba7b8e668f12538"
         },
         {
             "path": "server/app/common/execution/CurrentExecutionContext.php",
@@ -7744,7 +7744,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "8e7adc8b0fcb599500602ea9aa15a52bb43ad248f3337c5f804623417f37db31"
+            "source_sha256": "fd0ed91ec37c757c870d5d59be0fd931d39157ddc253c6752f0893cc3c6d6ecd"
         },
         {
             "path": "server/app/common/execution/PlatformExecutionContext.php",
