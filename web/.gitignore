@@ -3,3 +3,13 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+# Versioned public build defaults, not local secrets.
+!.env.development
+!.env.production
+.pnpm-store/
+.eslintcache
+*.tsbuildinfo
+coverage/

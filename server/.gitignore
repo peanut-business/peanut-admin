@@ -1,11 +1,25 @@
 *.log
 .env
+.env.*
+!.env.example
 composer.phar
 .DS_Store
 Thumbs.db
 /.idea
 /.vscode
-/vendor
+/vendor/
+/runtime/*
+!/runtime/.gitkeep
+/public/uploads/
+/public/storage/*
+!/public/storage/.gitkeep
+/private/storage/*
+!/private/storage/.gitkeep
+# Test sources remain versioned; only their generated caches/reports are ignored.
+/.phpunit.cache/
+/.phpunit.result.cache
+/.phpstan-cache/
+/coverage/
 /.settings
 /.buildpath
 /.project
