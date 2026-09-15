@@ -77,6 +77,26 @@ final class ThinkPhpExternalTenantBindingRepository implements ExternalTenantBin
         return $this->oauthCallbacks->locateTicket($ticketHash);
     }
 
+    public function ensureUnconfiguredBinding(int $tenantId, string $tenantCode, string $provider): void
+    {
+        Db::transaction(function () use ($tenantId, $tenantCode, $provider): void {
+            if ($this->lockedBinding($tenantId, $provider) !== null) {
+                return;
+            }
+            Db::name('external_channel_binding')->insert([
+                'tenant_id' => $tenantId,
+                'provider' => $provider,
+                'callback_key' => bin2hex(random_bytes(32)),
+                'identity_hash' => hash('sha256', "unconfigured:{$tenantCode}:{$provider}"),
+                'identity_hint' => '',
+                'config_json' => '{}',
+                'status' => 0,
+                'create_time' => 0,
+                'update_time' => 0,
+            ]);
+        });
+    }
+
     public function tenantIsActive(int $tenantId): bool
     {
         return (string)Db::name('tenant')->where('id', $tenantId)->value('status') === 'active';

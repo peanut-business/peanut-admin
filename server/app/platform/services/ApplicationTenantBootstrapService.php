@@ -3,15 +3,24 @@ declare(strict_types=1);
 
 namespace app\platform\services;
 
-use app\platform\contract\TenantApplicationBootstrapPersistence;
 use app\modules\official\notification\contracts\NotificationBootstrapCommands;
 use app\modules\official\task\contracts\TaskBootstrapCommands;
+use app\common\contract\external\ExternalChannelBindingStore;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\common\infrastructure\config\BrandDefaults;
+use app\common\model\decoration\DecoratePage;
+use app\common\model\decoration\DecorateTabbar;
+use app\common\model\decoration\DecorationTabbarSetting;
+use app\common\model\setting\TransactionSetting;
+use app\common\model\setting\CustomerServiceSetting;
 use app\common\services\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use think\facade\Db;
+use PeanutAdmin\Kernel\Persistence\Model\Permission;
+use PeanutAdmin\Kernel\Persistence\Model\RolePermission;
+use think\DbManager;
+use think\db\PDOConnection;
+use think\db\Raw;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
 final readonly class ApplicationTenantBootstrapService
@@ -35,7 +44,8 @@ final readonly class ApplicationTenantBootstrapService
         private TaskBootstrapCommands $tasks,
         private ExecutionContextStore $executionContexts,
         private TenantSettingService $tenantSettings,
-        private TenantApplicationBootstrapPersistence $persistence,
+        private ExternalChannelBindingStore $externalBindings,
+        private DbManager $database,
     ) {
     }
 
@@ -74,10 +84,15 @@ final readonly class ApplicationTenantBootstrapService
 
     private function applicationSchemaPresent(): bool
     {
-        $tables = Db::table('information_schema.TABLES')
-            ->where('TABLE_SCHEMA', Db::raw('DATABASE()'))
-            ->whereIn('TABLE_NAME', self::REQUIRED_TABLES)
-            ->column('TABLE_NAME');
+        $connection = $this->database->connect();
+        if (!$connection instanceof PDOConnection) {
+            throw new \DomainException('TENANT_APPLICATION_SCHEMA_DRIVER_UNSUPPORTED');
+        }
+        $available = array_fill_keys($connection->getTables(), true);
+        $tables = array_values(array_filter(
+            self::REQUIRED_TABLES,
+            static fn(string $table): bool => isset($available[$table]),
+        ));
         if ($tables === []) {
             // Core package tests intentionally exercise this adapter without the application schema.
             return false;
@@ -93,19 +108,19 @@ final readonly class ApplicationTenantBootstrapService
 
     private function grantOwnerPermissions(int $tenantId, int $ownerMemberId, int $ownerRoleId): void
     {
-        $permissionIds = array_map('intval', Db::name('permission')
-            ->where('module_key', 'peanut.admin')->where('status', 'active')->column('id'));
-        $existing = $permissionIds === [] ? [] : array_map('intval', Db::name('role_permission')
-            ->where('tenant_id', $tenantId)->where('role_id', $ownerRoleId)
+        $permissionIds = array_map('intval', Permission::where('module_key', 'peanut.admin')
+            ->where('status', 'active')->column('id'));
+        $existing = $permissionIds === [] ? [] : array_map('intval', RolePermission::where('tenant_id', $tenantId)
+            ->where('role_id', $ownerRoleId)
             ->whereIn('permission_id', $permissionIds)->column('permission_id'));
         $missing = array_values(array_diff($permissionIds, $existing));
         if ($missing !== []) {
-            Db::name('role_permission')->insertAll(array_map(static fn(int $permissionId): array => [
+            (new RolePermission())->saveAll(array_map(static fn(int $permissionId): array => [
                 'tenant_id' => $tenantId,
                 'role_id' => $ownerRoleId,
                 'permission_id' => $permissionId,
                 'granted_by_member_id' => $ownerMemberId,
-                'granted_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'granted_at' => new Raw('UTC_TIMESTAMP(3)'),
             ], $missing));
         }
     }
@@ -168,7 +183,42 @@ final readonly class ApplicationTenantBootstrapService
             [1, '资讯', '{"target_type":"shop","target":"news"}'],
             [2, '我的', '{"target_type":"shop","target":"profile"}'],
         ];
-        $this->persistence->seedDecoration($pages, $tabbars);
+        $existingPageTypes = array_fill_keys(array_map(
+            'intval',
+            DecoratePage::whereIn('type', array_column($pages, 0))->column('type'),
+        ), true);
+        $missingPages = [];
+        foreach ($pages as [$type, $name, $data, $meta]) {
+            if (!isset($existingPageTypes[$type])) {
+                $missingPages[] = compact('type', 'name', 'data', 'meta') + [
+                    'create_time' => 0,
+                    'update_time' => 0,
+                ];
+            }
+        }
+        if ($missingPages !== []) {
+            (new DecoratePage())->saveAll($missingPages);
+        }
+
+        $existingPositions = array_fill_keys(array_map(
+            'intval',
+            DecorateTabbar::whereIn('position', array_column($tabbars, 0))->column('position'),
+        ), true);
+        $missingTabbars = [];
+        foreach ($tabbars as [$position, $name, $link]) {
+            if (!isset($existingPositions[$position])) {
+                $missingTabbars[] = compact('position', 'name', 'link') + [
+                    'selected' => '',
+                    'unselected' => '',
+                    'is_show' => 1,
+                    'create_time' => 0,
+                    'update_time' => 0,
+                ];
+            }
+        }
+        if ($missingTabbars !== []) {
+            (new DecorateTabbar())->saveAll($missingTabbars);
+        }
     }
 
     private function seedSettings(TenantSystemContext $context): void
@@ -199,9 +249,8 @@ final readonly class ApplicationTenantBootstrapService
                 $this->tenantSettings->replace($context, $namespace, $document);
             }
         }
-        if (Db::name('customer_service_setting')->where('tenant_id', $context->tenantId)->value('tenant_id') === null) {
-            Db::name('customer_service_setting')->insert([
-                'tenant_id' => $context->tenantId,
+        if (CustomerServiceSetting::where([])->find() === null) {
+            CustomerServiceSetting::create([
                 'qr_file_id' => null,
                 'wechat' => '',
                 'phone' => '',
@@ -210,21 +259,23 @@ final readonly class ApplicationTenantBootstrapService
                 'update_time' => 0,
             ]);
         }
-        $this->persistence->ensureSettings(
-            [
+        if (DecorationTabbarSetting::where([])->find() === null) {
+            DecorationTabbarSetting::create([
                 'style' => '{"default_color":"#666666","selected_color":"#2F80ED"}',
                 'create_time' => 0,
                 'update_time' => 0,
-            ],
-            [
+            ]);
+        }
+        if (TransactionSetting::where([])->find() === null) {
+            TransactionSetting::create([
                 'cancel_unpaid_orders' => 1,
                 'cancel_unpaid_orders_times' => 30,
                 'verification_orders' => 1,
                 'verification_orders_times' => 24,
                 'create_time' => 0,
                 'update_time' => 0,
-            ],
-        );
+            ]);
+        }
     }
 
     private function seedExternalBindings(int $tenantId, string $tenantCode): void
@@ -237,19 +288,7 @@ final readonly class ApplicationTenantBootstrapService
             'oauth.wechat.mini-program',
             'oauth.wechat.open-pc',
         ] as $provider) {
-            if (Db::name('external_channel_binding')->where('tenant_id', $tenantId)->where('provider', $provider)->value('id') === null) {
-                Db::name('external_channel_binding')->insert([
-                    'tenant_id' => $tenantId,
-                    'provider' => $provider,
-                    'callback_key' => bin2hex(random_bytes(32)),
-                    'identity_hash' => hash('sha256', "unconfigured:{$tenantCode}:{$provider}"),
-                    'identity_hint' => '',
-                    'config_json' => '{}',
-                    'status' => 0,
-                    'create_time' => 0,
-                    'update_time' => 0,
-                ]);
-            }
+            $this->externalBindings->ensureUnconfiguredBinding($tenantId, $tenantCode, $provider);
         }
     }
 }

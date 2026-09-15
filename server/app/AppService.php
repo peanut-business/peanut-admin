@@ -66,9 +66,7 @@ use app\platform\services\ApplicationTenantBootstrapService;
 use app\platform\services\CoreTenantOwnerAdminProvisioner;
 use app\platform\services\PlatformOperatorSessionService;
 use app\platform\services\TenantGovernanceService;
-use app\platform\contract\TenantApplicationBootstrapPersistence;
 use app\platform\contract\TenantOwnerAdminProvisioner;
-use app\platform\infrastructure\ThinkPhpTenantApplicationBootstrapPersistence;
 use app\platform\infrastructure\module\DeployedTenantModuleRegistry;
 use app\platform\validation\module\OpisTenantModuleConfigValidator;
 use app\platform\services\module\PlatformTenantModuleService;
@@ -335,10 +333,6 @@ class AppService extends Service
 
     private function registerPlatform(): void
     {
-        $this->app->bind(
-            TenantApplicationBootstrapPersistence::class,
-            ThinkPhpTenantApplicationBootstrapPersistence::class,
-        );
         $this->app->bind(OwnerInvitationDeliveryPort::class, UnavailableOwnerInvitationDeliveryPort::class);
         $this->app->bind(OwnerInvitationRuntimePolicy::class, fn(): OwnerInvitationRuntimePolicy =>
             OwnerInvitationRuntimePolicy::fromEnvironment(

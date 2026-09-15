@@ -5,6 +5,8 @@ namespace app\common\contract\external;
 
 interface ExternalChannelBindingStore
 {
+    public function ensureUnconfiguredBinding(int $tenantId, string $tenantCode, string $provider): void;
+
     public function tenantIsActive(int $tenantId): bool;
 
     /** @param array<string, mixed> $config */

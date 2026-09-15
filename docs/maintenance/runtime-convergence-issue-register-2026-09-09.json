@@ -72,14 +72,15 @@
         "server/app/common/infrastructure/storage/StorageRepository.php removed with no production references",
         "server/app/common/services/authorization/AdminAuthorizationService.php directly uses Core identity/RBAC Models",
         "server/app/common/contract/authorization/AdminMenuPersistence.php and both single implementations removed",
-        "server/app/common/model/provider/ProviderQualificationEvidence.php replaces the single evidence persistence interface"
+        "server/app/common/model/provider/ProviderQualificationEvidence.php replaces the single evidence persistence interface",
+        "server/app/platform/services/ApplicationTenantBootstrapService.php directly owns Decoration/Settings/Core Permission Model seeding, reuses ExternalChannelBindingStore, and removes the single TenantApplicationBootstrapPersistence boundary"
       ],
       "impact": "long-lived duplicate persistence graph",
       "owner": "application-runtime",
       "historical_status": "open",
       "historical_verification": "not re-executed by this continuation",
       "historical_ruling": "migrate one domain at a time and delete its PDO path",
-      "current_status": "file-storage-admin-authorization-and-provider-evidence-native-persistence-implemented-other-domains-pending",
+      "current_status": "four-application-native-persistence-cards-implemented-other-domains-pending",
       "classification": "current-partial-implementation",
       "effective_requirement": "领域迁移同时替换调用者并删除旧 PDO 路径，不长期双实现、兼容桥或双写。",
       "pending_decision": null,
@@ -87,8 +88,8 @@
         "RUNTIME-APP-001",
         "BOOTSTRAP-001"
       ],
-      "next_current_source_check": "Select the next current domain from production callers; File/Storage, Application Admin Authorization and Provider evidence projection no longer have single-implementation persistence repositories to revisit.",
-      "source_limit": "2026-09-15 已读取 File/Storage、Admin Authorization 与 Provider evidence 的完整生产调用者、AppService 装配、Core/Application Models 与业务合同；未运行自动化测试、真实 Provider 探测或双 Edition 资格。",
+      "next_current_source_check": "Select the next current domain from production callers; File/Storage, Admin Authorization, Provider evidence and Tenant Application bootstrap no longer have single-implementation persistence repositories to revisit.",
+      "source_limit": "2026-09-15 已读取四张 Application persistence 卡的完整生产调用者、AppService 装配、Core/Application Models、Context 与业务合同；未运行自动化测试、真实 Provider 探测或双 Edition 资格。",
       "decision_refs": [
         "DEC-01",
         "DEC-02"
@@ -99,7 +100,7 @@
       "knowledge_refs": [
         "KNOW-02"
       ],
-      "stage2_disposition": "File/Storage 已以 Tenant-owned FileObject Model 和 Instance-owned Account/Space/Route Models 替代单实现 StorageRepository；Admin Authorization 已由业务服务直接使用 Core 身份/RBAC Model 与 Application SystemMenu Model；Provider evidence 投影直接使用部署级 Model。上述单实现 persistence 边界已删除，Driver、多能力 RBAC/审计、Module 生命周期、可信 Context 与真实 Provider 资格语义保留；其他领域继续按真实调用逐域核对。",
+      "stage2_disposition": "File/Storage、Admin Authorization、Provider evidence 与 Tenant Application bootstrap 已由各业务 owner 直接使用原生 Models，删除对应单实现 persistence 边界。Driver、多能力 RBAC/审计、Module 生命周期、Notification/Task/TenantSettings、可信 Context 与真实 Provider 资格语义保留；其他领域继续按真实调用逐域核对。",
       "proposed_write_set": [
         "next selected domain implementation",
         "its actual callers and provider",
@@ -720,7 +721,8 @@
         "NotificationApplicationService join includes id and tenant_id",
         "ThinkPhpPaymentChannelGrantCommands checks provider/tenant/binding through PlatformTenantDataGateway",
         "R38旧默认Tenant初始化表与Core原生身份初始化冲突诊断及fixture建议；当前是否仍存在待查。",
-        "AdminAuthorizationService、RoleAdministrationRuntime、AdminDirectoryQuery 与 CoreTenantModuleAdminBridge 直接使用 Core Account/TenantMember/Role/Permission Model；可信 TenantContext 校验、authorization revision、Tenant owner 与 Module gate 均保留"
+        "AdminAuthorizationService、RoleAdministrationRuntime、AdminDirectoryQuery 与 CoreTenantModuleAdminBridge 直接使用 Core Account/TenantMember/Role/Permission Model；可信 TenantContext 校验、authorization revision、Tenant owner 与 Module gate 均保留",
+        "ApplicationTenantBootstrapService 在 ExecutionContextStore::run 建立并 finally 清理 SystemExecutionContext 后直接写入 Tenant-owned Decoration/Settings Models"
       ],
       "impact": "Historical findings must not be reopened from old summaries",
       "owner": "application-security",

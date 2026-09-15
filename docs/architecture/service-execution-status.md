@@ -43,6 +43,7 @@
 - `PB04-FILE-MEDIA-HOST-001`：通过；上传、删除和 public/private 用途仍由统一 `StorageService`、Tenant-owned `FileObject` Model 和对象账本负责；单实现 `StorageRepository` 已退出。
 - `PB04-ADMIN-RBAC-CRUD-001`：开发实现已切换为 Core 身份/RBAC Model 与 Application `SystemMenu` Model 直连业务服务；`NativeAdminPrincipalRepository`、`AdminMenuPersistence` 及其单实现已退出。自动化隔离/事务测试与双 Edition 资格尚未获授权运行，因此不宣称候选资格。
 - `PC60-PROVIDER-QUALIFICATION-001`：production evidence 只读投影已直接使用部署级 `ProviderQualificationEvidence` Model，唯一 persistence interface/实现已退出；真实 Provider 探测、传输和资格不在本卡执行，自动化与双 Edition 资格未重跑。
+- `TENANT-APPLICATION-BOOTSTRAP-001`：Tenant 默认 Decoration/Settings 与 owner Permission 已并回 `ApplicationTenantBootstrapService` 的 `SystemExecutionContext` 内原生 Model 操作，外部渠道默认值复用 `ExternalChannelBindingStore`，schema 完整性只读取 ORM 连接元数据；单实现 bootstrap persistence interface/实现已退出。Notification、Task、TenantSettings 合同保留。动态新 Tenant 初始化与两 Edition 资格未重跑。
 - `PB07-OAUTH-CHANNEL-HOST-001` 与 `OAuthTenantIsolationTest.php`：通过；state/ticket、Provider 绑定和 Tenant 隔离未因存储合入改变。
 - `TaskImportExportTenantIsolationTest.php`：通过；在登记 P0-E 隔离库上应用存储迁移并设置测试 JWT 密钥后，CSV 结果对象进入 `ready`，私有 URL 可生成，跨 Tenant 下载被拒绝。原子失败注入不再依赖 `SUPER`/`CREATE TRIGGER` 权限：测试使用临时 CHECK 约束确定性触发失败，验证事务回滚后删除约束，不允许 privilege-based skip。
 - `MemberUploadTenantWiringTest.php`：已正式重写为现行 `ConsumerExecutionContext` 与容器 Controller 路径，校验 Local Driver、Tenant/Member owner、`pa_file.file_key`、`pa_file_object=ready` 及私有路由；`scripts/p0e-runtime-qualification` 在新建的精确 Plugin lifecycle 数据库中执行它，不再使用旧路由、旧字段或未登记 root 账号。
