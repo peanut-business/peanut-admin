@@ -74,6 +74,11 @@ Context、授权、Tenant/DataScope、事务、审计和客户端/OpenAPI 在同
 S3 与 S4 可以在同一业务切片相邻提交，但审查边界必须分清：先证明路径、namespace 和工具链完整切换，再证明
 业务语义变更。S5 的 Edition 设计可在 S2 预先映射影响，实际切换必须等结构和核心业务边界稳定。
 
+当前开发事实：S4 源码出口已固定在 Application `2ef59dade5f6af06b70867940347fe75893d947e` 与 Core
+`dcdf8c6a3b09499447c57a685114150d84e4d647`；普通业务 PDO Repository/Runtime、请求期 ModuleProvider
+实例化、旧业务目录和 `backend.routes` 已退出。该结论仅表示 development source complete；自动化测试、动态数据库、
+Standalone/Multi-tenant、候选资格、版本/lock 对齐、发布和部署均未在本轮执行，S5 不得继承为已通过。
+
 ## 5. 五个实施工作包
 
 ### WP0：合同与框架资格

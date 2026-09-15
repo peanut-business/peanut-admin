@@ -2,7 +2,7 @@
 
 Document ID: `pa-docs-architecture-core-thinkphp-runtime-direction-adr`
 
-Status: `current`（方向已接受；本页只登记架构决策，不代表 Runtime 已迁移）
+Status: `current`（方向已接受；本页登记架构决策，当前实现状态另由现行事实与固定提交证明）
 
 Date: 2026-09-09
 
@@ -14,7 +14,7 @@ Source snapshot: Application `ea9bc3a1dfaa844a8481b01d0341aa1ad749faa9`; Core `6
 
 本 ADR 同时约束 Peanut Admin Application 与 Peanut Admin Core 的 PHP 运行时边界。两仓正式技术栈都是 ThinkPHP 8；Core 不再以“框架中立”作为目标，也不再为不存在的非 ThinkPHP 生产消费者长期维护 PDO Repository、`PdoTransactionManager`、重复 RuntimeFactory、CLI 专用 PDO 实现或大规模手工容器装配。
 
-这是一项方向性文档变更。当前源码仍含 PDO 路径，本 ADR 不授权运行时代码、SQL、迁移、前端、发布或部署变更。历史证据和未接受的计划保留其原有身份；本页只把后续实现的最终方向和停止线固定下来。
+这是一项方向性文档变更。这里的源码描述固定在上列 Source snapshot；后续 S4 开发源码已退出普通业务 PDO Repository/Runtime 路径，但该事实不等于动态资格、双 Edition、发布或部署完成。本 ADR 本身不授权运行时代码、SQL、迁移、前端、发布或部署变更。历史证据和未接受的计划保留其原有身份；本页只把最终方向和停止线固定下来。
 
 正式决定如下：
 
