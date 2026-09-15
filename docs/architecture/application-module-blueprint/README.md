@@ -27,7 +27,7 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 - 根路由、Application 路由和 Module 路由；
 - `controller`、`application`、`service`、`common/service` 和 Module `Application`；
 - 全局 `AppService` 的容器绑定和各处临时 `new ModuleProvider()`；
-- `adminapi`、`api` 与 Module 自己的 `Http/Controller`。
+- `adminapi`、`api` 与 Module 自己的 `controller/`。
 
 开发者无法只凭路径判断“这段代码服务谁、由谁授权、谁拥有事务、谁能改数据”。蓝图的目标不是增加更多层，
 而是让路径本身回答这四个问题。
@@ -38,7 +38,7 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 2. Application 拥有最终路由、Controller、输入验证、身份链、Tenant 获取规则、入口授权和协议错误映射。
 3. Module 按业务、数据 owner 和业务不变量划分，拥有用例、自有表、迁移、菜单/权限声明和公开能力。
 4. 鉴权、Tenant 提取、限流、安全边界检查，全部由宿主 Application 在路由挂载时通过中间件（Middleware 和 Context Pipeline）强制注入；不能向后流转给 union Context 和任意 `attributes`。
-5. Module 包含全栈自闭环的 HTTP Controller 和声明式路由（`routes.php`），但**绝不自带鉴权逻辑**；安全防腐层始终由宿主控制。同一 owner 依然可以被其他 Module、CLI 或 Job 调用。
+5. Module 包含全栈自闭环的 HTTP Controller 和可执行路由（`route/app.php`），但**绝不自带鉴权逻辑**；安全防腐层始终由宿主控制。同一 owner 依然可以被其他 Module、CLI 或 Job 调用。
 6. 每个顶层 HTTP 请求、CLI 操作、Worker Attempt、Provider callback 或未来 WS message 恰好有一个强类型权威
    Context；tenant-scoped 端口恰好有一个 current Tenant，认证、instance-public 与 Platform Context 明确
    tenantless。`TargetTenantId` 只是授权后的 Command 目标。内部调用不得重建不同 actor、audience 或 Tenant 的
@@ -53,8 +53,8 @@ ThinkPHP Application：管理端必须经过管理身份、Tenant、RBAC 和数�
 11. Job 是提交意图，Attempt 只在成功 claim 时创建；Consumer、Provider、System 都不得冒充 Admin。
 12. 关键 `AuditEvent` 与业务结果原子提交；入口日志和诊断束只是可丢失、可重建的脱敏投影。
 13. 一个部署进程只有一份 Composer/npm 依赖图和 lock；冲突在安装或构建期拒绝，不加载第二份 vendor。
-14. 本蓝图明确排除通用 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层（彻底废除 `application/` 目录，收敛为 `service/`）；未来真实需求只能通过新的架构决定显式取代本合同。
-15. 迁移按业务域硬切，最终验收将全面转向基于 `modules/*/server/routes.php` 的标准模块路由注册机制，废弃原有散落各处的零散入口。
+14. 本蓝图明确排除通用 AOP、Event Bus、Outbox、微服务、独立队列和空 WS/Repository/Domain 层；目录命名与 Module 结构以 [核心代码规范与认知模型统一指南](coding-standards.md) 为准，未来真实需求只能通过新的架构决定显式取代本合同。
+15. 迁移按业务域硬切，最终验收将全面转向基于 Module `route/app.php` 的标准模块路由注册机制，废弃原有散落各处的零散入口。
 
 ## 目标知识图谱
 
@@ -84,7 +84,7 @@ flowchart TB
     ProviderPort --> UseCase
     MessagePort --> UseCase
     ModulePort --> UseCase
-    UseCase --> Domain[Domain 规则]
+    UseCase --> Domain[业务规则]
     UseCase --> Persistence[自有 Model / 表]
 
     Core[Core：无产品业务语义的通用底层合同] -.-> AdminContext
@@ -100,7 +100,7 @@ flowchart TB
 | `app/adminapi` | 管理员怎样安全访问系统？ | 管理会话、Tenant 选择、RBAC、数据范围、仅含宿主核心 Controller（如登录/系统配置） |
 | `app/api` | 会员或匿名用户怎样访问业务？ | 会员会话、消费端 Tenant 解析、限流中间件 |
 | `app/platform` | 平台运营者怎样管理实例和 Tenant？ | Platform 身份、平台权限、跨 Tenant 控制面操作 |
-| `modules/.../article` | Article 业务本身怎样工作？ | 文章前后端全栈（Controller/service/model/web）、声明式路由、自有表、迁移 |
+| `app/modules/<vendor>/<module>` | 这项业务本身怎样工作？ | Module 后端（`controller`、`services`、`model`）与对应前端贡献、可执行路由、自有表、迁移 |
 | `app/common` | 是否真的是所有入口都通用？ | 无业务 owner 的底层适配、值对象和少量共享合同 |
 | `app/command` / worker | 非 HTTP 操作怎样进入业务？ | 解析命令/Job、建立 Context、调用 Module，不复制业务规则 |
 
@@ -121,7 +121,7 @@ flowchart TB
 这只关闭该字段的采用前置，不证明目标多应用装载已经完成。
 
 但目标架构**尚未整体落地**：当前 Composer 未登记 `topthink/think-multi-app`，`server/route/app.php` 仍统一加载
-Admin、API、Platform、Tenant 和 Module 路由，Module 仍包含 HTTP Controller/route，运行时也仍有多处手工
+Admin、API、Platform、Tenant 和旧 Module 路由，Module 源码仍在 `server/app/Modules/` 并使用 `Http/` 布局，运行时也仍有多处手工
 `new ModuleProvider()`。因此本文只能作为后续实现的唯一目标，不得据此宣称架构改造已经完成。
 
 正式可消费源码、Tag、Release 与登记的多租户 Demo 已更新到 `v3.0.14`；Demo 使用正式基础源码加独立记录的
@@ -135,7 +135,7 @@ seed-only overlay。蓝图目标架构仍未整体落地，版本发布不能作
 
 1. 代码是否只负责某种入口的身份、协议或响应？放对应 Application。
 2. 代码是否表达某项具体业务（包含其 API、前后端页面与业务规则）？放对应 Module。
-3. 代码是否协调多个 Module 完成一个跨模块专属流程？放调用方 Application 或公共设施的 `service/`，但不得接管 owner Module 的业务事务。
+3. 代码是否协调多个 Module 完成一个跨模块专属流程？放调用方 Application 或公共设施的 `services/`，但不得接管 owner Module 的业务事务。
 4. 代码是否被多个入口复用但仍有产品业务含义？明确一个 owner Module，并为不同受众提供不同窄端口和 DTO。
 5. 代码是否被多个 Module 复用但仍有产品业务含义？明确一个 owner Module，其他模块调用其公开能力。
 6. 只有完全不含产品语义、确实被多处复用的能力，才进入 `common` 或 Core。

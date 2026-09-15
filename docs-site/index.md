@@ -29,7 +29,7 @@ features:
   - title: 先完成任务
     details: 每条核心路径都给出前置条件、目标、步骤、验证与下一步。
   - title: 理解边界
-    details: 区分 Application、Core、Module、Tenant 与部署 Host 的责任。
+    details: 区分 Application、Core、Module、Tenant 与部署 Host 的责任，并让官方、私有与第三方 Module 使用同一结构。
   - title: 回到事实
     details: 命令、配置与合同指向仓库上游；生成页标明来源和再生成方式。
 ---

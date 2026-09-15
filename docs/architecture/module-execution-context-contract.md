@@ -1,5 +1,9 @@
 # Module 执行上下文合同
 
+本合同同时适用于官方、应用私有和第三方 Module。目录及 namespace 以
+[`application-module-blueprint/coding-standards.md`](application-module-blueprint/coding-standards.md) 为唯一规范；
+结构迁移不改变 TenantModule、RBAC 和可信 Context 的执行顺序。
+
 ## 结论
 
 Module 不重新认证账号，也不从请求参数推断租户。应用入口先建立可信的 Tenant、会员或系统

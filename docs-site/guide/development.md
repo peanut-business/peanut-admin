@@ -18,12 +18,15 @@ description: Peanut Admin Application、Core、Module 与各客户端的开发�
 | 变化 | 首选位置 | 不应放置 |
 | --- | --- | --- |
 | 可复用身份、权限、Tenant、Module Runtime 合同 | 固定版本的 Core 公共包 | Application 里的并行基础设施 |
-| Peanut Admin 产品能力 | `server/app/Modules/` 或 Application Host | Core 的产品中性包 |
+| Peanut Admin 产品能力 | 目标 `server/app/modules/` 或 Application Host | Core 的产品中性包 |
 | 管理端交互 | `web/`；平台控制面在 `platform/` | 后端 DTO 中的 UI 状态 |
 | PC / H5 / 小程序 | `pc/`、`uniapp/` | 复制一套不一致的后端规则 |
 | 数据 owner | 对应 Module manifest、Schema/迁移与服务合同 | 跨 Module 直接写对方表 |
 
 Application 只消费公开的 Core 包边界。不要修改 `vendor/` 或 `node_modules/`；需要 Core 变更时，在 Core 仓独立提交并让 Application 固定采用已接受身份。
+
+Module 目标根、namespace 和 PHP 业务目录均为小写，业务用例统一进入 `services/`。当前源码和工具仍使用
+旧 `server/app/Modules/` 与 `Http/` 布局；在生成、检查、autoload、加载和打包同批切换前，不维护双根。
 
 Platform 运行维护采用同一原则：Core 提供维护窗口合同，Application Host 提供持久化、
 HTTP transport 和全局写入门禁。窗口生效时，不能以页面隐藏替代后端拒绝；只有明确受

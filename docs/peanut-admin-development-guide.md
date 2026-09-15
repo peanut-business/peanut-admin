@@ -26,7 +26,7 @@ server/app/adminapi/       管理 API 与 Tenant 会话 Application
 server/app/api/            业务会员和公开 API Host
 server/app/platform/       PlatformOperator 与实例内 Tenant 治理
 server/app/common/         应用公共模型、服务和横切适配
-server/app/Modules/        应用 Module 后端
+server/app/modules/        应用 Module 后端目标根；当前源码仍在旧 `Modules/`，待 S3 同批切换
 server/database/           canonical Schema、安装器和追加 migration
 server/route/app.php       HTTP 路由入口
 web/                       Vue 管理端
@@ -50,7 +50,7 @@ Module 的不可变交付制品，不等于 Tenant 开通或成员授权。
 部署后运行 `php server/think plugin:reconcile --release-locked`。后者同时处理 official 与既有
 installed private，身份不变且全部 Module 为正常 maintenance 禁用态时返回
 `preserved_disabled` 并保持禁用。三个入口都不能把在线上传 tar、通用生产 worker 或热更新推断为
-已经具备。private Module 的 `Http/routes.php` 也不会由安装命令自动注册；应用 owner 必须在
+已经具备。目标 private Module 的 `route/app.php` 也不会由安装命令自动注册；应用 owner 必须在
 app-owned 路由装配中显式引入它并沿用认证、Module 与权限 middleware，退役时由同一 owner 去除
 接线，不复制业务 handler 或新增在线动态 loader。
 
@@ -189,15 +189,24 @@ commit/tree；worker 把两者成对交给 `deploy-release`，后者先核对远
 
 ## 开发最小路径
 
-1. 在 `server/app/Modules/<Vendor>/<Module>/` 定义 `Domain`、`Application`、`Contracts`、
-   `Infrastructure`、`Database/Migrations`、`Resources` 和 `Tests`。
-2. Module 表必须有明确 Tenant owner；SQL、唯一键、关联、缓存、文件和任务都保留 Tenant
-   维度。请求参数不得覆盖可信 TenantContext。
-3. 对外只公开命令接口和只读 DTO。调用方依赖 `Contracts`，由 Host/Provider 绑定实现。
+目录与服务职责统一按 [Application 与 Module 代码规范](architecture/application-module-blueprint/coding-standards.md)
+执行；本节只列开发步骤，不另设目录合同。规范说明的目标不等于现有源码已经全部迁移。
+
+1. 目标 Module 位于 `server/app/modules/<vendor>/<module>/`，业务用例进入 `services/`，按职责使用
+   `controller/`、`model/`、`contracts/`、`infrastructure/`、`database/migrations/` 和 `resources/`；
+   不为目录对称创建空层。路由使用可执行的 `route/app.php` 并接入宿主认证、Module 与权限中间件，
+   `ModuleProvider.php` 负责真实启动装配。当前 `module:create` 仍输出旧结构，须等 S3 将生成、检查、
+   加载、打包和 autoload 同批切换后再按目标合同使用，期间不手工维护双根。
+2. Module 表必须有明确 Tenant owner；Tenant-owned Model 使用全局 TenantScope，禁止由业务代码
+   手写租户过滤或绕过 Scope。唯一键、关联、缓存、文件和任务也须保留适用的 Tenant 维度，
+   请求参数不得覆盖可信 TenantContext。
+3. 只有确有跨 Module 消费者时才在 `contracts/` 公开稳定命令、查询和只读 DTO；不为内部 Service
+   镜像接口。真实接口由 Host/Provider 绑定，普通具体类采用构造函数注入。
 4. 管理端 contribution 放在 `web/src/modules/<module>/`，菜单和权限由 Module Resources
    声明；Plugin 安装、TenantModule 开通、成员 RBAC 是三道独立 Gate。
-5. 最低测试覆盖 Tenant A 正常读写、Tenant B 读取/写入同一 ID 被拒绝、Tenant 暂停、
-   Module 未开通和伪造资源 ID。
+5. 实现必须保证 Tenant A 正常读写、Tenant B 访问同一资源 ID 被隔离，并拒绝 Tenant 暂停、
+   Module 未开通和伪造资源 ID 等不合格请求。本仓维护的开发检查执行上述规范中的开发期策略；
+   自动化测试按明确授权的范围开展，未运行不记为通过，发布资格及人工 Gate 仍须满足。
 
 完整纵向示例、目录树、跨 Module 商品入库流程和常见错误见公开文档的
 [Module 开发教程](https://peanut-admin-doc.007345.xyz/guide/module-development)。API 响应、

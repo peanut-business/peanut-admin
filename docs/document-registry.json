@@ -1246,7 +1246,7 @@
         "server/app/platform/service/plugin/ModulePackagePreflight.php",
         "server/resources/schemas/plugin.schema.json",
         "plugins.lock",
-        "server/app/Modules/",
+        "docs/architecture/application-module-blueprint/coding-standards.md",
         "web/src/modules/"
       ],
       "owner": "release-engineering",
@@ -1611,6 +1611,7 @@
       "content_type": "public-projection",
       "authority": "projection",
       "canonical_sources": [
+        "docs/architecture/application-module-blueprint/coding-standards.md",
         "scripts/create-app",
         "release-versions.json",
         "server/composer.lock",
@@ -1666,7 +1667,7 @@
       "authority": "projection",
       "canonical_sources": [
         "docs/plugin-module-development.md",
-        "server/app/Modules/Fixture/DeliveryRecord/module.json",
+        "docs/architecture/application-module-blueprint/coding-standards.md",
         "plugins/fixture.delivery-record/plugin.json",
         "repo://peanut-admin-core/packages/php/kernel/resources/schemas/module-manifest.schema.json"
       ],
@@ -2011,10 +2012,8 @@
       "content_type": "index",
       "authority": "accepted-target",
       "canonical_sources": [
-        "server/composer.json",
-        "server/route/app.php",
-        "server/app/AppService.php",
-        "server/app/Modules/",
+        "docs/architecture/application-module-blueprint/coding-standards.md",
+        "docs/architecture/core-application-technical-boundary.md",
         "resources/service-registry.json"
       ],
       "owner": "architecture",
@@ -2076,10 +2075,7 @@
       "authority": "accepted-target",
       "canonical_sources": [
         "AGENT_EXECUTION_RULES.md",
-        "server/app/common/service/module/ModuleScaffoldGenerator.php",
-        "server/app/Modules/",
-        "server/route/",
-        "web/src/modules/"
+        "docs/architecture/core-application-technical-boundary.md"
       ],
       "owner": "architecture",
       "status": "current",
@@ -2111,11 +2107,8 @@
       "content_type": "decision",
       "authority": "accepted-target",
       "canonical_sources": [
-        "server/composer.json",
-        "server/config/app.php",
-        "server/route/",
-        "server/app/AppService.php",
-        "server/app/Modules/",
+        "docs/architecture/application-module-blueprint/coding-standards.md",
+        "docs/architecture/core-application-technical-boundary.md",
         "resources/service-registry.json"
       ],
       "owner": "architecture",
@@ -2146,9 +2139,8 @@
       "content_type": "decision",
       "authority": "accepted-target",
       "canonical_sources": [
-        "server/app/Modules/",
-        "server/app/AppService.php",
-        "server/composer.json",
+        "docs/architecture/application-module-blueprint/coding-standards.md",
+        "docs/architecture/core-application-technical-boundary.md",
         "resources/service-registry.json"
       ],
       "owner": "architecture",
@@ -2179,12 +2171,9 @@
       "content_type": "plan",
       "authority": "accepted-target-plan",
       "canonical_sources": [
-        "server/composer.json",
-        "server/config/app.php",
-        "server/route/",
-        "server/app/AppService.php",
-        "server/app/Modules/",
-        "docs/document-impact-map.json"
+        "docs/architecture/application-module-blueprint/coding-standards.md",
+        "docs/document-impact-map.json",
+        "docs/maintenance/runtime-convergence-issue-register-2026-09-09.json"
       ],
       "owner": "architecture",
       "status": "planned",
@@ -4212,6 +4201,7 @@
       "content_type": "reference",
       "authority": "interpretation",
       "canonical_sources": [
+        "docs/architecture/application-module-blueprint/coding-standards.md",
         "server/database/init.sql",
         "server/database/install.php",
         "server/database/migrations/",
@@ -4504,7 +4494,7 @@
       "content_type": "reference",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/Modules/",
+        "docs/architecture/application-module-blueprint/coding-standards.md",
         "plugins.lock",
         "server/route/app.php",
         "web/src/modules/"
