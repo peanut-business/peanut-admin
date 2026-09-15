@@ -16,7 +16,6 @@ use app\common\services\CrontabCommandService;
 use Closure;
 use PeanutAdmin\Kernel\Async\JobHandlerAdapter;
 use PeanutAdmin\Kernel\Async\TrustedEnvelopeCodec;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\TaskJob\Application\TaskJobService;
 use PeanutAdmin\TaskJob\Execution\LocalWorker;
 use PeanutAdmin\TaskJob\Execution\TaskHandlerRegistry;
@@ -30,7 +29,6 @@ final readonly class ThinkPhpTaskJobRuntime implements TaskJobRuntime
 {
     public function __construct(
         private TaskJobStore $repository,
-        private TransactionManager $transactions,
         private string $signingKey,
         private ExecutionContextStore $executionContexts,
         private CurrentExecutionContext $currentExecution,
@@ -49,7 +47,6 @@ final readonly class ThinkPhpTaskJobRuntime implements TaskJobRuntime
     {
         return new TrustedJobPublisher(
             $this->repository,
-            $this->transactions,
             new TaskSubmissionRegistry($providers),
             $this->envelopes(),
         );
@@ -57,7 +54,7 @@ final readonly class ThinkPhpTaskJobRuntime implements TaskJobRuntime
 
     public function jobs(): TaskJobService
     {
-        return new TaskJobService($this->repository, $this->transactions);
+        return new TaskJobService($this->repository);
     }
 
     public function enqueueCrontab(TenantScope $scope, int $scheduleId, string $contextIdentity): void
@@ -91,7 +88,6 @@ final readonly class ThinkPhpTaskJobRuntime implements TaskJobRuntime
             $tenantId,
             $workerId,
             $this->repository,
-            $this->transactions,
             new TaskHandlerRegistry($handlers),
             new JobHandlerAdapter($this->envelopes(), new TaskAuthorizationRouter($definitions)),
         );

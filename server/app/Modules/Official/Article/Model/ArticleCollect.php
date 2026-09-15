@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\Modules\Official\Article\Model;
 
 use app\common\model\TenantOwnedModel;
-use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use think\model\concern\SoftDelete;
 
 class ArticleCollect extends TenantOwnedModel
@@ -18,7 +17,7 @@ class ArticleCollect extends TenantOwnedModel
     public static function isCollected(int $memberId, int $articleId): bool
     {
         if (!$memberId) return false;
-        return ArticleTenantRepository::collections()->where('member_id', $memberId)
+        return self::where('member_id', $memberId)
             ->where('article_id', $articleId)
             ->where('status', 1)
             ->count() > 0;

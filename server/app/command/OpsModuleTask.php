@@ -5,7 +5,7 @@ namespace app\command;
 
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
-use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\ThinkPhpModuleOperationTaskExecutionService;
 use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
@@ -19,7 +19,7 @@ final class OpsModuleTask extends ContextualCommand
     public function __construct(
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
-        private readonly PdoModuleOperationTaskExecutionService $service,
+        private readonly ThinkPhpModuleOperationTaskExecutionService $service,
     ) {
         parent::__construct($contexts, $executionContext);
     }

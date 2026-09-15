@@ -6,19 +6,19 @@ namespace app\platform\service\plugin;
 use app\common\contract\module\PluginLifecycleCommands;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
-use PDO;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
+use think\facade\Db;
 
 /** Deployment-scoped Plugin lifecycle. It deliberately never mutates pa_tenant_module. */
 final readonly class PluginLifecycleService implements PluginLifecycleCommands
 {
     /** @param array<string,mixed> $moduleConfig */
     public function __construct(
-        private PDO $pdo,
         private PluginLockResolver $resolver,
         private PluginModuleRegistryFactory $registries,
         private array $moduleConfig,
         private ModuleCatalogApplier $catalogs,
+        private ModuleMigrationSqlExecutor $migrationSql,
     ) {
     }
 
@@ -66,7 +66,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
             return $operation();
         }
         try {
-            return (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, $operation);
+            return (new AdvisoryLockExecution())->run($lockName, 0, $operation);
         } catch (AdvisoryLockUnavailable) {
             throw new PluginLifecycleException('MODULE_LIFECYCLE_BUSY', 'Module lifecycle is busy.');
         }
@@ -127,13 +127,7 @@ final readonly class PluginLifecycleService implements PluginLifecycleCommands
         if (!is_array($current)) {
             throw new PluginLifecycleException('PLUGIN_NOT_INSTALLED', 'Plugin is not installed.');
         }
-        $migrations = $this->pdo->prepare(<<<'SQL'
-SELECT module_key,migration_key,module_version,checksum,status
-FROM pa_module_migration
-WHERE module_key IN (SELECT module_key FROM pa_plugin_module WHERE plugin_key=:plugin_key)
-ORDER BY id DESC
-SQL);
-        $migrations->execute(['plugin_key' => $pluginKey]);
+        $moduleKeys = Db::name('plugin_module')->where('plugin_key', $pluginKey)->column('module_key');
         return [
             'plugin_key' => $pluginKey,
             'installed_version' => (string)$current['installed_version'],
@@ -145,7 +139,9 @@ SQL);
                 'restore a verified database backup when an applied migration is irreversible',
                 'run plugin:upgrade with the restored immutable identity',
             ],
-            'applied_migrations' => $migrations->fetchAll(PDO::FETCH_ASSOC),
+            'applied_migrations' => $moduleKeys === [] ? [] : Db::name('module_migration')
+                ->whereIn('module_key', $moduleKeys)->field('module_key,migration_key,module_version,checksum,status')
+                ->order('id', 'desc')->select()->toArray(),
         ];
     }
 
@@ -160,53 +156,33 @@ SQL);
         $manifests = $this->pluginManifests($plugin);
         ModuleLifecyclePolicy::assertMutable($manifests);
         ModuleLifecyclePolicy::assertNoActiveBusinessDependents(
-            $this->pdo,
             $this->resolver,
             array_keys($manifests),
         );
-        $enabled = $this->pdo->prepare(<<<'SQL'
-SELECT COUNT(*) FROM pa_tenant_module
-WHERE module_key IN (SELECT module_key FROM pa_plugin_module WHERE plugin_key=:plugin_key)
-  AND status='enabled'
-SQL);
-        $enabled->execute(['plugin_key' => $pluginKey]);
-        if ((int)$enabled->fetchColumn() !== 0) {
+        $ownedModuleKeys = Db::name('plugin_module')->where('plugin_key', $pluginKey)->column('module_key');
+        if ($ownedModuleKeys !== [] && Db::name('tenant_module')->whereIn('module_key', $ownedModuleKeys)->where('status', 'enabled')->count() !== 0) {
             throw new PluginLifecycleException('PLUGIN_TENANT_MODULE_ACTIVE', 'Disable every TenantModule before uninstall.');
         }
         $modules = $this->pluginModuleRows($pluginKey);
         $now = $this->now();
-        $this->pdo->beginTransaction();
-        try {
+        Db::transaction(function () use ($pluginKey, $modules, $now): void {
             $this->catalogs->retire(array_map(
                 static fn(array $row): string => (string)$row['module_key'],
                 $modules,
             ));
-            $module = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_module_installation
-SET status='maintenance',revision=revision+1,updated_at=:updated_at
-WHERE module_key=:module_key
-SQL);
             foreach ($modules as $row) {
-                $module->execute(['module_key' => $row['module_key'], 'updated_at' => $now]);
+                Db::name('module_installation')->where('module_key', $row['module_key'])->update([
+                    'status' => 'maintenance', 'revision' => Db::raw('revision+1'), 'updated_at' => $now,
+                ]);
             }
-            $plugin = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_plugin_installation
-SET status='uninstalled',revision=revision+1,uninstalled_at=:uninstalled_at,
-    last_error_code=NULL,updated_at=:updated_at
-WHERE plugin_key=:plugin_key
-SQL);
-            $plugin->execute([
-                'plugin_key' => $pluginKey,
+            Db::name('plugin_installation')->where('plugin_key', $pluginKey)->update([
+                'status' => 'uninstalled',
+                'revision' => Db::raw('revision+1'),
                 'uninstalled_at' => $now,
+                'last_error_code' => null,
                 'updated_at' => $now,
             ]);
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        });
         return [
             'plugin_key' => $pluginKey,
             'operation' => 'uninstall',
@@ -237,58 +213,46 @@ SQL);
     private function beginLifecycle(PluginDescriptor $plugin, array $manifests, bool $upgrade): void
     {
         $now = $this->now();
-        $this->pdo->beginTransaction();
-        try {
-            $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_plugin_installation (
- plugin_key,installed_version,source,artifact_sha256,lock_digest,
- composer_identity_json,npm_identity_json,frontend_identity_json,status,revision,
- installed_at,created_at,updated_at
-) VALUES (
- :plugin_key,:version,:source,:artifact_sha256,:lock_digest,
- :composer,:npm,:frontend,'installing',1,:installed_at,:created_at,:updated_at
-)
-ON DUPLICATE KEY UPDATE
- installed_version=VALUES(installed_version),source=VALUES(source),
- artifact_sha256=VALUES(artifact_sha256),lock_digest=VALUES(lock_digest),
- composer_identity_json=VALUES(composer_identity_json),npm_identity_json=VALUES(npm_identity_json),
- frontend_identity_json=VALUES(frontend_identity_json),status=VALUES(status),
- revision=revision+1,last_error_code=NULL,updated_at=VALUES(updated_at)
-SQL);
-            $statement->execute($this->pluginParameters($plugin) + [
-                'installed_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-            $module = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_module_installation (
- module_key,installed_version,manifest_schema_version,manifest_digest,status,revision,
- installed_at,created_at,updated_at
- ) VALUES (:module_key,:version,:schema,:digest,:status,1,:installed_at,:created_at,:updated_at)
-ON DUPLICATE KEY UPDATE
- installed_version=VALUES(installed_version),manifest_schema_version=VALUES(manifest_schema_version),
- manifest_digest=VALUES(manifest_digest),status=VALUES(status),revision=revision+1,
- last_error_code=NULL,updated_at=VALUES(updated_at)
-SQL);
-            foreach ($manifests as $manifest) {
-                $module->execute([
-                    'module_key' => $manifest->data['key'],
-                    'version' => $manifest->data['version'],
-                    'schema' => $manifest->data['schema_version'],
-                    'digest' => $manifest->digest,
-                    'status' => $upgrade ? 'upgrading' : 'installing',
-                    'installed_at' => $now,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+        Db::transaction(function () use ($plugin, $manifests, $upgrade, $now): void {
+            $parameters = $this->pluginParameters($plugin);
+            $values = [
+                'installed_version' => $parameters['version'], 'source' => $parameters['source'],
+                'artifact_sha256' => $parameters['artifact_sha256'], 'lock_digest' => $parameters['lock_digest'],
+                'composer_identity_json' => $parameters['composer'], 'npm_identity_json' => $parameters['npm'],
+                'frontend_identity_json' => $parameters['frontend'], 'status' => 'installing',
+                'last_error_code' => null, 'updated_at' => $now,
+            ];
+            $existing = Db::name('plugin_installation')->where('plugin_key', $plugin->key)->lock(true)->value('plugin_key');
+            if ($existing === null) {
+                Db::name('plugin_installation')->insert([
+                    'plugin_key' => $plugin->key, ...$values, 'revision' => 1,
+                    'installed_at' => $now, 'created_at' => $now,
                 ]);
+            } else {
+                Db::name('plugin_installation')->where('plugin_key', $plugin->key)
+                    ->update([...$values, 'revision' => Db::raw('revision+1')]);
             }
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
+            foreach ($manifests as $manifest) {
+                $moduleKey = (string)$manifest->data['key'];
+                $moduleValues = [
+                    'installed_version' => $manifest->data['version'],
+                    'manifest_schema_version' => $manifest->data['schema_version'],
+                    'manifest_digest' => $manifest->digest,
+                    'status' => $upgrade ? 'upgrading' : 'installing',
+                    'last_error_code' => null, 'updated_at' => $now,
+                ];
+                $moduleExists = Db::name('module_installation')->where('module_key', $moduleKey)->lock(true)->value('module_key');
+                if ($moduleExists === null) {
+                    Db::name('module_installation')->insert([
+                        'module_key' => $moduleKey, ...$moduleValues, 'revision' => 1,
+                        'installed_at' => $now, 'created_at' => $now,
+                    ]);
+                } else {
+                    Db::name('module_installation')->where('module_key', $moduleKey)
+                        ->update([...$moduleValues, 'revision' => Db::raw('revision+1')]);
+                }
             }
-            throw $exception;
-        }
+        });
     }
 
     /** @param array<string,ManifestDocument> $manifests */
@@ -297,10 +261,8 @@ SQL);
         array $manifests,
         bool $upgrade
     ): void {
-        $owner = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE module_key=:module_key');
         foreach ($manifests as $moduleKey => $_manifest) {
-            $owner->execute(['module_key' => $moduleKey]);
-            $existing = $owner->fetchColumn();
+            $existing = Db::name('plugin_module')->where('module_key', $moduleKey)->value('plugin_key');
             if (is_string($existing) && $existing !== $plugin->key) {
                 throw new PluginLifecycleException('PLUGIN_MODULE_CONFLICT', "Module has another Plugin owner: {$moduleKey}");
             }
@@ -313,9 +275,7 @@ SQL);
     /** @param array<string,ManifestDocument> $manifests */
     private function applyMigrations(PluginDescriptor $plugin, array $manifests): void
     {
-        $batchQuery = $this->pdo->query('SELECT COALESCE(MAX(batch_no),0)+1 FROM pa_module_migration');
-        $batch = (int)$batchQuery->fetchColumn();
-        $batchQuery->closeCursor();
+        $batch = (int)Db::name('module_migration')->max('batch_no') + 1;
         foreach ($manifests as $moduleKey => $manifest) {
             $files = $this->migrationFiles($plugin->moduleRoots[$moduleKey], $manifest);
             $repairs = $this->migrationRepairMap($moduleKey, $files);
@@ -324,14 +284,9 @@ SQL);
                 if (!is_string($checksum)) {
                     throw new PluginLifecycleException('MODULE_MIGRATION_INVALID', "Migration is unreadable: {$path}");
                 }
-                $existing = $this->pdo->prepare(<<<'SQL'
-SELECT checksum,status FROM pa_module_migration
-WHERE module_key=:module_key AND migration_key=:migration_key
-SQL);
-                $existing->execute(['module_key' => $moduleKey, 'migration_key' => $migrationKey]);
-                $row = $existing->fetch(PDO::FETCH_ASSOC);
-                $existing->closeCursor();
-                if (is_array($row)) {
+                $row = Db::name('module_migration')->where('module_key', $moduleKey)
+                    ->where('migration_key', $migrationKey)->field('checksum,status')->find();
+                if ($row !== null) {
                     if (!hash_equals((string)$row['checksum'], $checksum)) {
                         throw new PluginLifecycleException(
                             'MODULE_MIGRATION_CHECKSUM_MISMATCH',
@@ -350,89 +305,43 @@ SQL);
                     continue;
                 }
                 $now = $this->now();
-                $insert = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_module_migration (
- module_key,migration_key,module_version,checksum,batch_no,status,started_at
-) VALUES (:module_key,:migration_key,:module_version,:checksum,:batch_no,'applying',:started_at)
-SQL);
-                $this->pdo->beginTransaction();
-                try {
-                    $insert->execute([
+                Db::transaction(function () use ($moduleKey, $migrationKey, $manifest, $checksum, $batch, $now): void {
+                    Db::name('module_migration')->insert([
                         'module_key' => $moduleKey,
                         'migration_key' => $migrationKey,
                         'module_version' => $manifest->data['version'],
                         'checksum' => $checksum,
                         'batch_no' => $batch,
+                        'status' => 'applying',
                         'started_at' => $now,
                     ]);
-                    $this->pdo->commit();
-                } catch (\Throwable $exception) {
-                    if ($this->pdo->inTransaction()) {
-                        $this->pdo->rollBack();
-                    }
-                    throw $exception;
-                }
+                });
                 try {
                     $sql = trim((string)file_get_contents($path));
                     if ($sql === '') {
                         throw new PluginLifecycleException('MODULE_MIGRATION_INVALID', "Migration is empty: {$migrationKey}");
                     }
                     // MySQL DDL commits implicitly. Keep the durable migration ledger outside the DDL boundary.
-                    $this->executeMigrationSql($sql);
-                    $this->pdo->beginTransaction();
-                    $finish = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_module_migration SET status='applied',finished_at=:finished_at,error_code=NULL
-WHERE module_key=:module_key AND migration_key=:migration_key
-SQL);
-                    $finish->execute([
-                        'finished_at' => $this->now(),
-                        'module_key' => $moduleKey,
-                        'migration_key' => $migrationKey,
-                    ]);
-                    $this->pdo->commit();
+                    $this->migrationSql->execute($sql);
+                    Db::transaction(function () use ($moduleKey, $migrationKey): void {
+                        Db::name('module_migration')->where('module_key', $moduleKey)
+                            ->where('migration_key', $migrationKey)->update([
+                            'status' => 'applied',
+                            'finished_at' => $this->now(),
+                            'error_code' => null,
+                        ]);
+                    });
                 } catch (\Throwable $exception) {
-                    if ($this->pdo->inTransaction()) {
-                        $this->pdo->rollBack();
-                    }
-                    $failed = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_module_migration
-SET status='failed',finished_at=:finished_at,error_code=:error_code
-WHERE module_key=:module_key AND migration_key=:migration_key AND status='applying'
-SQL);
-                    $failed->execute([
+                    Db::name('module_migration')->where('module_key', $moduleKey)
+                        ->where('migration_key', $migrationKey)->where('status', 'applying')->update([
+                        'status' => 'failed',
                         'finished_at' => $this->now(),
                         'error_code' => $exception instanceof PluginLifecycleException
                             ? $exception->errorCode
                             : 'MODULE_MIGRATION_FAILED',
-                        'module_key' => $moduleKey,
-                        'migration_key' => $migrationKey,
                     ]);
                     throw $exception;
                 }
-            }
-        }
-    }
-
-    private function executeMigrationSql(string $sql): void
-    {
-        $emulatedPrepares = (bool)$this->pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES);
-        if (!$emulatedPrepares) {
-            $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
-        }
-        try {
-            $statement = $this->pdo->query($sql);
-            try {
-                do {
-                    if ($statement->columnCount() > 0) {
-                        $statement->fetchAll(PDO::FETCH_ASSOC);
-                    }
-                } while ($statement->nextRowset());
-            } finally {
-                $statement->closeCursor();
-            }
-        } finally {
-            if (!$emulatedPrepares) {
-                $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             }
         }
     }
@@ -441,70 +350,57 @@ SQL);
     private function registerCatalog(PluginDescriptor $plugin, array $manifests, bool $upgrade): void
     {
         $now = $this->now();
-        $this->pdo->beginTransaction();
-        try {
+        Db::transaction(function () use ($plugin, $manifests, $upgrade, $now): void {
             $compiled = $this->registries
                 ->fromPluginLock($this->resolver, $this->moduleConfig)
                 ->compiled();
             $this->catalogs->apply($compiled, array_keys($manifests));
-            $owner = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE module_key=:module_key FOR UPDATE');
-            $catalog = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_plugin_module (plugin_key,module_key,module_version,manifest_digest,created_at,updated_at)
-VALUES (:plugin_key,:module_key,:module_version,:manifest_digest,:created_at,:updated_at)
-ON DUPLICATE KEY UPDATE
- module_version=VALUES(module_version),manifest_digest=VALUES(manifest_digest),updated_at=VALUES(updated_at)
-SQL);
-            $module = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_module_installation
-SET installed_version=:version,manifest_schema_version=:schema,manifest_digest=:digest,
- status='active',revision=revision+1,activated_at=COALESCE(activated_at,:activated_at),
- upgraded_at=:upgraded_at,last_error_code=NULL,updated_at=:updated_at
-WHERE module_key=:module_key
-SQL);
             foreach ($manifests as $moduleKey => $manifest) {
-                $owner->execute(['module_key' => $moduleKey]);
-                $existingOwner = $owner->fetchColumn();
+                $ownership = Db::name('plugin_module')->where('module_key', $moduleKey)
+                    ->field('plugin_key,created_at')->lock(true)->find();
+                $existingOwner = $ownership['plugin_key'] ?? null;
                 if (is_string($existingOwner) && $existingOwner !== $plugin->key) {
                     throw new PluginLifecycleException('PLUGIN_MODULE_CONFLICT', "Module has another Plugin owner: {$moduleKey}");
                 }
-                $catalog->execute([
+                $catalogValues = [
                     'plugin_key' => $plugin->key,
                     'module_key' => $moduleKey,
                     'module_version' => $manifest->data['version'],
                     'manifest_digest' => $manifest->digest,
-                    'created_at' => $now,
                     'updated_at' => $now,
-                ]);
-                $module->execute([
-                    'module_key' => $moduleKey,
-                    'version' => $manifest->data['version'],
-                    'schema' => $manifest->data['schema_version'],
-                    'digest' => $manifest->digest,
+                ];
+                if ($ownership === null) {
+                    Db::name('plugin_module')->insert([...$catalogValues, 'created_at' => $now]);
+                } else {
+                    Db::name('plugin_module')->where('module_key', $moduleKey)->update($catalogValues);
+                }
+                $activatedAt = Db::name('module_installation')->where('module_key', $moduleKey)
+                    ->lock(true)->value('activated_at');
+                Db::name('module_installation')->where('module_key', $moduleKey)->update([
+                    'installed_version' => $manifest->data['version'],
+                    'manifest_schema_version' => $manifest->data['schema_version'],
+                    'manifest_digest' => $manifest->digest,
+                    'status' => 'active',
+                    'revision' => Db::raw('revision+1'),
+                    'activated_at' => $activatedAt ?? $now,
                     'upgraded_at' => $upgrade ? $now : null,
-                    'activated_at' => $now,
+                    'last_error_code' => null,
                     'updated_at' => $now,
                 ]);
             }
-            $pluginUpdate = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_plugin_installation SET
- installed_version=:version,source=:source,artifact_sha256=:artifact_sha256,lock_digest=:lock_digest,
- composer_identity_json=:composer,npm_identity_json=:npm,frontend_identity_json=:frontend,
- status='active',revision=revision+1,activated_at=COALESCE(activated_at,:activated_at),
- upgraded_at=:upgraded_at,uninstalled_at=NULL,last_error_code=NULL,updated_at=:updated_at
-WHERE plugin_key=:plugin_key
-SQL);
-            $pluginUpdate->execute($this->pluginParameters($plugin) + [
-                'activated_at' => $now,
+            $parameters = $this->pluginParameters($plugin);
+            $activatedAt = Db::name('plugin_installation')->where('plugin_key', $plugin->key)
+                ->lock(true)->value('activated_at');
+            Db::name('plugin_installation')->where('plugin_key', $plugin->key)->update([
+                'installed_version' => $parameters['version'], 'source' => $parameters['source'],
+                'artifact_sha256' => $parameters['artifact_sha256'], 'lock_digest' => $parameters['lock_digest'],
+                'composer_identity_json' => $parameters['composer'], 'npm_identity_json' => $parameters['npm'],
+                'frontend_identity_json' => $parameters['frontend'], 'status' => 'active',
+                'revision' => Db::raw('revision+1'), 'activated_at' => $activatedAt ?? $now,
                 'upgraded_at' => $upgrade ? $now : null,
-                'updated_at' => $now,
+                'uninstalled_at' => null, 'last_error_code' => null, 'updated_at' => $now,
             ]);
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        });
     }
 
     /** @param array<string,ManifestDocument> $manifests */
@@ -512,25 +408,17 @@ SQL);
     {
         try {
             $now = $this->now();
-            $this->pdo->beginTransaction();
-            $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_plugin_installation
-SET status='failed',revision=revision+1,last_error_code=:error_code,updated_at=:now
-WHERE plugin_key=:plugin_key
-SQL);
-            $statement->execute(['plugin_key' => $plugin->key, 'error_code' => $errorCode, 'now' => $now]);
-            $module = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_module_installation SET status='failed',revision=revision+1,last_error_code=:error_code,updated_at=:now
-WHERE module_key=:module_key
-SQL);
-            foreach ($manifests as $moduleKey => $_manifest) {
-                $module->execute(['module_key' => $moduleKey, 'error_code' => $errorCode, 'now' => $now]);
-            }
-            $this->pdo->commit();
+            Db::transaction(function () use ($plugin, $manifests, $errorCode, $now): void {
+                Db::name('plugin_installation')->where('plugin_key', $plugin->key)->update([
+                    'status' => 'failed', 'revision' => Db::raw('revision+1'),
+                    'last_error_code' => $errorCode, 'updated_at' => $now,
+                ]);
+                Db::name('module_installation')->whereIn('module_key', array_keys($manifests))->update([
+                    'status' => 'failed', 'revision' => Db::raw('revision+1'),
+                    'last_error_code' => $errorCode, 'updated_at' => $now,
+                ]);
+            });
         } catch (\Throwable) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
         }
     }
 
@@ -572,16 +460,13 @@ SQL);
         $pending = [];
         foreach ($manifests as $moduleKey => $manifest) {
             foreach ($this->migrationFiles($plugin->moduleRoots[$moduleKey], $manifest) as $key => $path) {
-                $statement = $this->pdo->prepare(<<<'SQL'
-SELECT checksum,status FROM pa_module_migration WHERE module_key=:module_key AND migration_key=:migration_key
-SQL);
-                $statement->execute(['module_key' => $moduleKey, 'migration_key' => $key]);
-                $row = $statement->fetch(PDO::FETCH_ASSOC);
+                $row = Db::name('module_migration')->where('module_key', $moduleKey)
+                    ->where('migration_key', $key)->field('checksum,status')->find();
                 $checksum = (string)hash_file('sha256', $path);
-                if (is_array($row) && !hash_equals((string)$row['checksum'], $checksum)) {
+                if ($row !== null && !hash_equals((string)$row['checksum'], $checksum)) {
                     throw new PluginLifecycleException('MODULE_MIGRATION_CHECKSUM_MISMATCH', "Migration changed: {$key}");
                 }
-                if (!is_array($row) || $row['status'] !== 'applied') {
+                if ($row === null || $row['status'] !== 'applied') {
                     $pending[] = ['module_key' => $moduleKey, 'migration_key' => $key, 'sha256' => $checksum];
                 }
             }
@@ -675,32 +560,25 @@ SQL);
     /** @return array<string,mixed>|false */
     private function pluginInstallation(string $pluginKey, bool $lock): array|false
     {
-        $sql = 'SELECT * FROM pa_plugin_installation WHERE plugin_key=:plugin_key' . ($lock ? ' FOR UPDATE' : '');
-        $statement = $this->pdo->prepare($sql);
-        $statement->execute(['plugin_key' => $pluginKey]);
-        return $statement->fetch(PDO::FETCH_ASSOC);
+        $query = Db::name('plugin_installation')->where('plugin_key', $pluginKey);
+        if ($lock) {
+            $query->lock(true);
+        }
+        return $query->find() ?? false;
     }
 
     /** @return list<array<string,mixed>> */
     private function pluginModuleRows(string $pluginKey): array
     {
-        $statement = $this->pdo->prepare('SELECT * FROM pa_plugin_module WHERE plugin_key=:plugin_key ORDER BY module_key');
-        $statement->execute(['plugin_key' => $pluginKey]);
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        return Db::name('plugin_module')->where('plugin_key', $pluginKey)->order('module_key')->select()->toArray();
     }
 
     private function allPluginModulesActive(string $pluginKey): bool
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT COUNT(*) total,
-       SUM(CASE WHEN mi.status='active' THEN 1 ELSE 0 END) active_count
-FROM pa_plugin_module pm
-LEFT JOIN pa_module_installation mi ON mi.module_key=pm.module_key
-WHERE pm.plugin_key=:plugin_key
-SQL);
-        $statement->execute(['plugin_key' => $pluginKey]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        return is_array($row) && (int)$row['total'] > 0 && (int)$row['total'] === (int)$row['active_count'];
+        $moduleKeys = Db::name('plugin_module')->where('plugin_key', $pluginKey)->column('module_key');
+        return $moduleKeys !== []
+            && Db::name('module_installation')->whereIn('module_key', $moduleKeys)->where('status', 'active')->count()
+                === count($moduleKeys);
     }
 
     /** @param array<string,mixed> $current */

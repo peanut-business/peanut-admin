@@ -2,14 +2,19 @@
 declare(strict_types=1);
 
 use app\Modules\Official\File\Contracts\FileAdministration;
+use app\Modules\Official\File\Contracts\FileUploads;
+use app\Modules\Official\File\Contracts\Dto\UploadFile;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\value\storage\StoragePath;
-use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
+use app\Modules\Official\File\Model\File;
+use app\Modules\Official\File\Model\FileCate;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require_once dirname(__DIR__, 2) . '/database/install.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
 
 function expectFileTenant(bool $condition, string $message): void
@@ -33,46 +38,13 @@ function fileTenantContext(int $tenantId, int $memberId, string $requestId): Ten
     ), $requestId);
 }
 
-function createFileTenantSchema(PDO $pdo): void
+function createFileTenantSchema(PDO $pdo, string $serverRoot): void
 {
-    $pdo->exec(<<<'SQL'
-CREATE TABLE pa_tenant (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  status VARCHAR(32) NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE TABLE pa_file_cate (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  pid INT UNSIGNED NOT NULL DEFAULT 0,
-  type TINYINT NOT NULL DEFAULT 10,
-  name VARCHAR(64) NOT NULL DEFAULT '',
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL DEFAULT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), KEY idx_type (type), UNIQUE KEY uk_file_cate_tenant_id (tenant_id, id),
-  KEY idx_file_cate_tenant_type_parent (tenant_id, type, pid, id),
-  CONSTRAINT fk_file_cate_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-CREATE TABLE pa_file (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  cid INT UNSIGNED NOT NULL DEFAULT 0,
-  source_id INT UNSIGNED NOT NULL DEFAULT 0,
-  source TINYINT NOT NULL DEFAULT 0,
-  type TINYINT NOT NULL DEFAULT 10,
-  name VARCHAR(255) NOT NULL DEFAULT '',
-  uri VARCHAR(255) NOT NULL DEFAULT '',
-  storage VARCHAR(20) NOT NULL DEFAULT 'local',
-  create_time INT UNSIGNED NOT NULL DEFAULT 0,
-  update_time INT UNSIGNED NOT NULL DEFAULT 0,
-  delete_time INT UNSIGNED NULL DEFAULT NULL,
-  tenant_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY (id), KEY idx_cid (cid), KEY idx_type (type),
-  KEY idx_type_cid_source (type, cid, source), UNIQUE KEY uk_file_tenant_id (tenant_id, id),
-  KEY idx_file_tenant_type_cid_source (tenant_id, type, cid, source, id),
-  CONSTRAINT fk_file_tenant FOREIGN KEY (tenant_id) REFERENCES pa_tenant (id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-SQL);
+    foreach (KernelSchema::tableNames() as $table) {
+        $pdo->exec(KernelSchema::createSql($table));
+    }
+    executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
+    executeSqlFiles($pdo, applicationMigrationFiles($serverRoot . '/database'));
 }
 
 $serverRoot = dirname(__DIR__, 2);
@@ -90,12 +62,15 @@ $admin = new PDO(
 );
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-$storageRoot = $serverRoot . '/public/storage/tenants/v1';
-$alphaDirectory = $storageRoot . '/101/uploads/images';
-$betaDirectory = $storageRoot . '/202/uploads/images';
-$objectName = 'same-object-' . $runId . '.png';
-$alphaObject = $alphaDirectory . '/' . $objectName;
-$betaObject = $betaDirectory . '/' . $objectName;
+$alphaObject = '';
+$betaObject = '';
+$alphaSource = tempnam(sys_get_temp_dir(), 'pa-file-alpha-');
+$betaSource = tempnam(sys_get_temp_dir(), 'pa-file-beta-');
+if (!is_string($alphaSource) || !is_string($betaSource)) {
+    throw new RuntimeException('file upload fixtures could not be created');
+}
+file_put_contents($alphaSource, 'alpha');
+file_put_contents($betaSource, 'beta');
 
 try {
     $pdo = new PDO(
@@ -104,14 +79,16 @@ try {
         $password,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false, PDO::MYSQL_ATTR_MULTI_STATEMENTS => true]
     );
-    createFileTenantSchema($pdo);
-    $pdo->exec("INSERT INTO pa_tenant (id, status) VALUES (101, 'active'), (202, 'active')");
+    createFileTenantSchema($pdo, $serverRoot);
+    $pdo->exec("INSERT INTO pa_account (id,display_name,status,security_revision,created_at,updated_at) VALUES (10501,'Alpha','active',1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),(10502,'Beta','active',1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
+    $pdo->exec("INSERT INTO pa_tenant (id,code,name,display_name,status,locale,timezone,security_revision,authorization_revision,revision,activated_at,created_at,updated_at) VALUES (101,'alpha','Alpha','Alpha','active','zh-CN','Asia/Shanghai',1,1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),(202,'beta','Beta','Beta','active','zh-CN','Asia/Shanghai',1,1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
+    $pdo->exec("INSERT INTO pa_tenant_member (id,tenant_id,account_id,member_no,display_name,member_type,status,security_revision,authorization_revision,joined_at,created_at,updated_at) VALUES (501,101,10501,'alpha-501','Alpha','internal','active',1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)),(502,202,10502,'beta-502','Beta','internal','active',1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
     $pdo->exec("INSERT INTO pa_file_cate (id, tenant_id, pid, type, name) VALUES (11, 101, 0, 10, 'Alpha seed')");
-    $pdo->exec("INSERT INTO pa_file (id, tenant_id, cid, source_id, source, type, name, uri, storage) VALUES (21, 101, 11, 1, 0, 10, 'alpha-seed.png', 'storage/tenants/v1/101/uploads/images/alpha-seed.png', 'local')");
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App();
     $app->initialize();
     $files = app(FileAdministration::class);
+    $uploads = app(FileUploads::class);
 
     $alpha = fileTenantContext(101, 501, 'mt03-file-alpha-' . $runId);
     $beta = fileTenantContext(202, 502, 'mt03-file-beta-' . $runId);
@@ -143,11 +120,11 @@ try {
     );
     $alphaCategory = (int)app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.file.category.query.alpha'),
-        fn() => FileTenantRepository::categories()->where('name', 'Same category')->value('id'),
+        fn() => FileCate::where([])->where('name', 'Same category')->value('id'),
     );
     $betaCategory = (int)app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($beta, 'test.file.category.query.beta'),
-        fn() => FileTenantRepository::categories()->where('name', 'Same category')->value('id'),
+        fn() => FileCate::where([])->where('name', 'Same category')->value('id'),
     );
     expectFileTenant($alphaCategory > 0 && $betaCategory > 0, 'same-name Tenant categories were not created');
     expectFileTenant(
@@ -155,33 +132,32 @@ try {
         'request payload forged category Tenant ownership'
     );
 
-    mkdir($alphaDirectory, 0777, true);
-    mkdir($betaDirectory, 0777, true);
-    file_put_contents($alphaObject, 'alpha');
-    file_put_contents($betaObject, 'beta');
-    app(ExecutionContextStore::class)->run(
+    $alphaUpload = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.file.create.alpha'),
-        fn() => FileTenantRepository::createFile([
-            'tenant_id' => 202, 'cid' => $alphaCategory, 'source_id' => 501, 'source' => 0,
-            'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/101/uploads/images/' . $objectName, 'storage' => 'local',
-        ]),
+        fn() => $uploads->image(
+            $alpha,
+            new UploadFile($alphaSource, 'same.png', 5, 'image/png', 'png'),
+            $alphaCategory,
+            501,
+        ),
     );
-    app(ExecutionContextStore::class)->run(
+    $betaUpload = app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($beta, 'test.file.create.beta'),
-        fn() => FileTenantRepository::createFile([
-            'tenant_id' => 101, 'cid' => $betaCategory, 'source_id' => 502, 'source' => 0,
-            'type' => 10, 'name' => 'same.png', 'uri' => 'storage/tenants/v1/202/uploads/images/' . $objectName, 'storage' => 'local',
-        ]),
+        fn() => $uploads->image(
+            $beta,
+            new UploadFile($betaSource, 'same.png', 4, 'image/png', 'png'),
+            $betaCategory,
+            502,
+        ),
     );
-    $alphaFile = (int)app(ExecutionContextStore::class)->run(
-        new \app\common\execution\AdminExecutionContext($alpha, 'test.file.query.alpha'),
-        fn() => FileTenantRepository::files()->where('name', 'same.png')->value('id'),
-    );
-    $betaFile = (int)app(ExecutionContextStore::class)->run(
-        new \app\common\execution\AdminExecutionContext($beta, 'test.file.query.beta'),
-        fn() => FileTenantRepository::files()->where('name', 'same.png')->value('id'),
-    );
+    $alphaFile = (int)$alphaUpload['id'];
+    $betaFile = (int)$betaUpload['id'];
+    $alphaObjectKey = (string)$pdo->query("SELECT object_key FROM pa_file_object WHERE file_key=" . $pdo->quote((string)$alphaUpload['file_key']))->fetchColumn();
+    $betaObjectKey = (string)$pdo->query("SELECT object_key FROM pa_file_object WHERE file_key=" . $pdo->quote((string)$betaUpload['file_key']))->fetchColumn();
+    $alphaObject = $serverRoot . '/public/storage/' . $alphaObjectKey;
+    $betaObject = $serverRoot . '/public/storage/' . $betaObjectKey;
     expectFileTenant($alphaFile > 0 && $betaFile > 0, 'same-name Tenant files were not created');
+    expectFileTenant(is_file($alphaObject) && is_file($betaObject), 'canonical storage driver did not persist both Tenant objects');
 
     expectFileTenant(
         count(app(ExecutionContextStore::class)->run(
@@ -235,16 +211,10 @@ try {
         }
     }
     try {
-        app(ExecutionContextStore::class)->run(
-            new \app\common\execution\AdminExecutionContext($alpha, 'test.file.create.foreign-namespace'),
-            fn() => FileTenantRepository::createFile([
-                'tenant_id' => 101, 'cid' => 0, 'source_id' => 501, 'source' => 0, 'type' => 10,
-                'name' => 'forged.png', 'uri' => 'storage/tenants/v1/202/uploads/images/forged.png', 'storage' => 'local',
-            ]),
-        );
-        throw new RuntimeException('foreign object namespace unexpectedly succeeded');
-    } catch (RuntimeException $exception) {
-        expectFileTenant($exception->getMessage() === '素材对象不属于当前租户', 'object namespace denial changed');
+        StoragePath::objectKey(101, 'image.upload', 'forged', 'png');
+        throw new RuntimeException('invalid file identity unexpectedly produced an object key');
+    } catch (InvalidArgumentException $exception) {
+        expectFileTenant($exception->getMessage() === '文件身份无效', 'object identity denial changed');
     }
 
     $result = app(ExecutionContextStore::class)->run(
@@ -257,14 +227,14 @@ try {
     expectFileTenant(
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($beta, 'test.file.category.query.beta'),
-            fn() => FileTenantRepository::findCategory($betaCategory) !== null,
+            fn() => FileCate::where([])->where('id', $betaCategory)->find() !== null,
         ),
         'Alpha cleanup deleted Beta category',
     );
     expectFileTenant(
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($beta, 'test.file.query.beta'),
-            fn() => FileTenantRepository::findFile($betaFile) !== null,
+            fn() => File::where([])->where('id', $betaFile)->find() !== null,
         ),
         'Alpha cleanup deleted Beta file row',
     );
@@ -272,16 +242,23 @@ try {
 
     echo "MT03-FILE-TENANT-OWNERSHIP-001 passed\n";
 } finally {
-    if (file_exists($alphaObject)) {
+    if ($alphaObject !== '' && file_exists($alphaObject)) {
         unlink($alphaObject);
     }
-    if (file_exists($betaObject)) {
+    if ($betaObject !== '' && file_exists($betaObject)) {
         unlink($betaObject);
     }
-    foreach ([$alphaDirectory, $betaDirectory] as $directory) {
-        @rmdir($directory);
-        @rmdir(dirname($directory));
-        @rmdir(dirname($directory, 2));
+    foreach ([$alphaObject, $betaObject] as $path) {
+        if ($path !== '') {
+            @rmdir(dirname($path));
+            @rmdir(dirname($path, 2));
+            @rmdir(dirname($path, 3));
+        }
+    }
+    foreach ([$alphaSource, $betaSource] as $source) {
+        if (is_file($source)) {
+            unlink($source);
+        }
     }
     $admin->exec("DROP DATABASE IF EXISTS `{$database}`");
 }

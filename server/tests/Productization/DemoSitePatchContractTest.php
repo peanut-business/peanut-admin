@@ -50,7 +50,7 @@ $expect(
         && str_contains($bootstrap, '->provisionTenantDefaults(')
         && !str_contains($bootstrap, 'INSERT INTO pa_notice_scene')
         && str_contains($notificationCommands, 'provisionTenantDefaults')
-        && str_contains($notificationApplication, 'NoticeTenantRepository::provisionDefaultScenes'),
+        && str_contains($notificationApplication, 'NoticeScene::provisionDefaults('),
     'new Tenant notification defaults bypass the Notification owner command'
 );
 $provisioner = $read($root . '/server/app/platform/service/CoreTenantOwnerAdminProvisioner.php');
@@ -84,13 +84,13 @@ $expect(
     'shared Admin demo Host must leave admin-web unbound so account-driven Tenant selection is exercised'
 );
 $expect(
-    str_contains($seed, 'PdoNotificationBootstrapService')
-        && str_contains($seed, 'PdoTaskBootstrapService')
-        && str_contains($seed, 'PdoTenantApplicationBootstrapPersistence')
-        && !str_contains($seed, 'new NotificationBootstrapService()')
-        && !str_contains($seed, 'new TaskBootstrapService()')
-        && !str_contains($seed, 'new ThinkPhpTenantApplicationBootstrapPersistence()'),
-    'framework-free demo seed must not call ThinkPHP Model bootstrap adapters before the application is booted'
+    str_contains($seed, '(new App($serverDir))->initialize()')
+        && str_contains($seed, 'new NotificationBootstrapService()')
+        && str_contains($seed, 'new TaskBootstrapService()')
+        && str_contains($seed, 'new ThinkPhpTenantApplicationBootstrapPersistence()')
+        && !str_contains($seed, 'PdoNotificationBootstrapService')
+        && !str_contains($seed, 'PdoTaskBootstrapService'),
+    'demo seed must boot ThinkPHP before consuming native Model bootstrap services'
 );
 $expect(
     str_contains($seed, "'tenant-a'")
@@ -121,9 +121,8 @@ $overlayFiles = [
     'plugins/official.task/plugin.json',
     'server/app/Modules/Official/Notification/Application/NotificationBootstrapDefaults.php',
     'server/app/Modules/Official/Notification/Application/NotificationBootstrapService.php',
-    'server/app/Modules/Official/Notification/Infrastructure/Persistence/PdoNotificationBootstrapService.php',
-    'server/app/Modules/Official/Task/Infrastructure/Persistence/PdoTaskBootstrapService.php',
-    'server/app/platform/infrastructure/PdoTenantApplicationBootstrapPersistence.php',
+    'server/app/Modules/Official/Task/Application/TaskBootstrapService.php',
+    'server/app/platform/infrastructure/ThinkPhpTenantApplicationBootstrapPersistence.php',
     'server/app/platform/service/ops/ApplicationRuntimeStatusProvider.php',
     'server/database/seed-multi-tenant-demo.php',
 ];
@@ -285,7 +284,7 @@ $expect(
         && str_contains($upgradeWorker, '--expected-commit "$target_commit" --expected-tree "$target_tree"'),
     'upgrade worker does not fence deployment with the task-bound commit/tree'
 );
-$upgradeExecution = $read($root . '/server/app/platform/service/ops/PdoUpgradeTaskExecutionService.php');
+$upgradeExecution = $read($root . '/server/app/platform/service/ops/ThinkPhpUpgradeTaskExecutionService.php');
 $claimStart = strpos($upgradeExecution, 'public function claim()');
 $advanceStart = strpos($upgradeExecution, 'public function advance(');
 $succeedStart = strpos($upgradeExecution, 'public function succeed(');

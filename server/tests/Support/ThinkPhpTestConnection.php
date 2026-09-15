@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
+use think\Container;
 use think\DbManager;
+use think\db\ConnectionInterface;
 use think\db\PDOConnection;
 use think\db\builder\Mysql as MysqlBuilder;
 use think\db\builder\Sqlite as SqliteBuilder;
@@ -17,24 +19,38 @@ final class ThinkPhpTestConnection
 
     public static function fromPdo(PDO $pdo): PDOConnection
     {
-        return match ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)) {
+        $connection = match ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             'mysql' => new SharedPdoMysqlConnection($pdo),
             'sqlite' => new SharedPdoSqliteConnection($pdo),
             default => throw new RuntimeException('TEST_DATABASE_DRIVER_UNSUPPORTED'),
         };
+        $manager = new SharedPdoDbManager($connection);
+        $connection->setDb($manager);
+        Container::getInstance()->instance(DbManager::class, $manager);
+
+        return $connection;
     }
 
     public static function moduleCatalogs(PDO $pdo): \app\platform\service\plugin\ModuleCatalogApplier
     {
         $connection = self::fromPdo($pdo);
         return new \app\platform\service\plugin\ModuleCatalogApplier(
-            $connection,
-            new \PeanutAdmin\Settings\Persistence\SettingStore(
-                $connection,
-                \PeanutAdmin\Kernel\Persistence\Tenancy\TenantPersistenceMode::TenantScoped,
-                null,
-            ),
+            new \PeanutAdmin\Settings\Definition\SettingDefinitionSynchronizer(),
         );
+    }
+}
+
+/** Registers the exact fixture connection as ThinkPHP's default database manager. */
+final class SharedPdoDbManager extends DbManager
+{
+    public function __construct(private readonly ConnectionInterface $connection)
+    {
+        parent::__construct();
+    }
+
+    protected function instance(string|array|null $name = null, bool $force = false): ConnectionInterface
+    {
+        return $this->connection;
     }
 }
 
@@ -47,7 +63,6 @@ final class SharedPdoMysqlConnection extends Mysql
             'builder' => MysqlBuilder::class,
             'prefix' => 'pa_',
         ]);
-        $this->setDb(new DbManager());
     }
 
     protected function createPdo($dsn, $username, $password, $params): PDO
@@ -65,7 +80,6 @@ final class SharedPdoSqliteConnection extends Sqlite
             'builder' => SqliteBuilder::class,
             'prefix' => 'pa_',
         ]);
-        $this->setDb(new DbManager());
     }
 
     protected function createPdo($dsn, $username, $password, $params): PDO

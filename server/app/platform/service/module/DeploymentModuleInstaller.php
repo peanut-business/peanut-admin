@@ -4,15 +4,14 @@ declare(strict_types=1);
 namespace app\platform\service\module;
 
 use app\platform\service\plugin\ModuleCatalogApplier;
-use PDO;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ModuleException;
+use think\facade\Db;
 
 /** Registers one explicitly deployed Module manifest in the deployment ledger. */
 final readonly class DeploymentModuleInstaller
 {
     public function __construct(
-        private PDO $pdo,
         private string $serverRoot,
         private ModuleCatalogApplier $catalogs,
     ) {
@@ -38,19 +37,8 @@ final readonly class DeploymentModuleInstaller
 
         $identity = $this->identity($manifest);
         $now = gmdate('Y-m-d H:i:s.v');
-        $this->pdo->beginTransaction();
-        try {
-            $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_module_installation (
-    module_key, installed_version, manifest_schema_version, manifest_digest,
-    status, revision, installed_at, activated_at, created_at, updated_at
-) VALUES (
-    :module_key, :installed_version, :manifest_schema_version, :manifest_digest,
-    'active', 1, :installed_at, :activated_at, :created_at, :updated_at
-)
-ON DUPLICATE KEY UPDATE module_key = VALUES(module_key)
-SQL);
-            $statement->execute([
+        return Db::transaction(function () use ($identity, $registry, $moduleKey, $now): array {
+            Db::name('module_installation')->duplicate(['module_key'])->insert([
                 'module_key' => $identity['key'],
                 'installed_version' => $identity['version'],
                 'manifest_schema_version' => $identity['schema'],
@@ -60,13 +48,9 @@ SQL);
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
-            $statement = $this->pdo->prepare(<<<'SQL'
-SELECT installed_version, manifest_schema_version, manifest_digest, status
-FROM pa_module_installation WHERE module_key = :module_key FOR UPDATE
-SQL);
-            $statement->execute(['module_key' => $identity['key']]);
-            $current = $statement->fetch(PDO::FETCH_ASSOC);
-            if (!is_array($current)) {
+            $current = Db::name('module_installation')->where('module_key', $identity['key'])
+                ->field('installed_version,manifest_schema_version,manifest_digest,status')->lock(true)->find();
+            if ($current === null) {
                 throw new ModuleException(
                     'MODULE_INSTALLATION_FAILED',
                     "Module installation record was not created: {$identity['key']}"
@@ -74,21 +58,14 @@ SQL);
             }
             $this->assertSameIdentity($identity, $current);
             $this->catalogs->apply($registry->compiled(), [$moduleKey]);
-            $this->pdo->commit();
             return $identity;
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        });
     }
 
     /** @param array<string,mixed> $deploymentConfig */
     private function registry(array $deploymentConfig): DeployedTenantModuleRegistry
     {
-        return (new PdoModuleGovernanceProvider(
-            $this->pdo,
+        return (new ThinkPhpModuleGovernanceProvider(
             $this->serverRoot,
             $deploymentConfig,
             $this->catalogs,

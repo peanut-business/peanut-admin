@@ -2,9 +2,8 @@
 declare(strict_types=1);
 
 use app\common\service\authorization\AdminAuthorizationService;
-use app\Modules\Official\ImportExport\Application\TaskImportExportRuntime;
+use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
 use app\Modules\Official\ImportExport\Infrastructure\Authorization\AdminAsyncAuthorization;
-use app\Modules\Official\Task\ModuleProvider as TaskModuleProvider;
 use app\Modules\Official\ImportExport\Contracts\Dto\CsvExportOperation;
 use app\common\services\storage\StorageService;
 use PeanutAdmin\ImportExport\Application\ImportExportService;
@@ -14,7 +13,6 @@ use PeanutAdmin\Kernel\Context\AuthorizedOperationContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
-use think\db\PDOConnection;
 use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -41,7 +39,7 @@ function asyncTenantContext(int $tenantId, int $accountId, int $memberId, string
     ), $requestId);
 }
 
-function submitOperationLogExport(TaskImportExportRuntime $runtime, AuthorizedOperationContext $context, string $idempotencyKey): object
+function submitOperationLogExport(ImportExportWorkerRuntime $runtime, AuthorizedOperationContext $context, string $idempotencyKey): object
 {
     return $runtime->commands()->submitCsvExport(
         $context,
@@ -179,9 +177,6 @@ SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
-    $connection = Db::connect();
-    expectAsyncTenant($connection instanceof PDOConnection, 'Task Runtime requires the registered ThinkPHP PDO connection');
-
     $alphaTenant = asyncTenantContext(101, 1001, 501, 'fresh-async-alpha-' . $runId);
     $betaTenant = asyncTenantContext(202, 1002, 502, 'fresh-async-beta-' . $runId);
     $noExportTenant = asyncTenantContext(101, 1003, 503, 'fresh-async-no-export-' . $runId);
@@ -222,20 +217,7 @@ SQL);
         }
     }
 
-    $runtime = new TaskImportExportRuntime(
-        $pdo,
-        (new TaskModuleProvider())->jobs(
-            $connection,
-            $signingKey,
-            app(\app\common\execution\ExecutionContextStore::class),
-            app(\app\common\execution\CurrentExecutionContext::class),
-            app(\app\common\service\org\AdminDirectoryQuery::class),
-            app(\app\common\service\module\ModuleExecutionBoundary::class),
-            app(\app\common\services\CrontabCommandService::class),
-            static fn(string $command, array $params): never => throw new LogicException('unexpected crontab dispatch'),
-            25,
-        ),
-    );
+    $runtime = $app->make(ImportExportWorkerRuntime::class);
     $taskDisabled = submitOperationLogExport($runtime, $alpha, 'task-disabled-' . $runId);
     $pdo->exec("UPDATE pa_tenant_module SET status = 'disabled', disabled_at = UTC_TIMESTAMP(3) WHERE tenant_id = 101 AND module_key = 'official.task'");
     expectAsyncTenant($runtime->runTenant(101, 'fresh-task-disabled-' . $runId) === 1, 'disabled Task Module job was not examined');
@@ -307,7 +289,7 @@ SQL);
     expectAsyncTenant(isset($download['url']) && is_string($download['url']) && str_contains($download['url'], '/api/storage/delivery?'), 'Tenant-gated CSV URL is missing');
     expectAsyncTenant(!str_contains((string)$download['url'], '/public/'), 'CSV was exposed below public/');
     parse_str((string)parse_url((string)$download['url'], PHP_URL_QUERY), $deliveryQuery);
-    $storage = StorageService::fromDefaultConnection();
+    $storage = $app->make(StorageService::class);
     $activeDelivery = $storage->authorizedDownload(
         (int)($deliveryQuery['tenant_id'] ?? 0),
         (string)($deliveryQuery['file_key'] ?? ''),

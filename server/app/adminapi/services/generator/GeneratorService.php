@@ -8,14 +8,13 @@ use app\adminapi\service\generator\GeneratorImportPersistence;
 use app\adminapi\infrastructure\generator\ThinkPhpGeneratorMetadata;
 use app\adminapi\service\generator\GeneratorRenderService;
 use app\common\http\PageResult;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
 use app\common\support\PaginationInput;
 
 class GeneratorService
 {
     public function __construct(
         private readonly GeneratorImportPersistence $imports,
-        private readonly TransactionalExecution $transactions,
         private readonly ThinkPhpGeneratorMetadata $metadata,
         private readonly string $databasePrefix,
     ) {}
@@ -74,7 +73,7 @@ class GeneratorService
 
     public function sync(int $adminId, int $id): bool
     {
-        $this->transactions->run(function () use ($adminId, $id): void {
+        Db::transaction(function () use ($adminId, $id): void {
                 $table = $this->ownedTableModel($adminId, $id, true);
                 $metadata = $this->metadata->columns((string) $table->table_name);
                 $existing = [];
@@ -113,7 +112,7 @@ class GeneratorService
 
     public function update(int $adminId, array $params): bool
     {
-        $this->transactions->run(function () use ($adminId, $params): void {
+        Db::transaction(function () use ($adminId, $params): void {
                 $id = (int) $params['id'];
                 $table = $this->ownedTableModel($adminId, $id, true);
                 $module = trim((string) $params['module_name']);
@@ -180,7 +179,7 @@ class GeneratorService
     public function delete(int $adminId, array $ids): bool
     {
         $ids = array_values(array_unique(array_map('intval', $ids)));
-        $this->transactions->run(function () use ($adminId, $ids): void {
+        Db::transaction(function () use ($adminId, $ids): void {
                 foreach ($this->imports->tables($adminId)->whereNotIn('id', $ids)->select() as $table) {
                     foreach ((array)$table->relations as $relation) {
                         if (in_array((int)($relation['target_table_id'] ?? 0), $ids, true)) {
@@ -239,7 +238,7 @@ class GeneratorService
 
     public function consumeDownload(int $adminId, string $token): array
     {
-        return $this->transactions->run(function () use ($adminId, $token): array {
+        return Db::transaction(function () use ($adminId, $token): array {
             $row = $this->imports->downloads($adminId)->where([
                 'token_hash' => hash('sha256', $token),
                 'used_time' => 0,
@@ -359,7 +358,7 @@ class GeneratorService
     private function snapshotTables(int $adminId, array $ids): array
     {
         sort($ids);
-        return $this->transactions->run(function () use ($adminId, $ids): array {
+        return Db::transaction(function () use ($adminId, $ids): array {
             $models = $this->imports->tables($adminId)
                 ->whereIn('id', $ids)->order('id', 'asc')->lock(true)->select();
             if ($models->count() !== count($ids)) {

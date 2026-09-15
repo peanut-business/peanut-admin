@@ -6,14 +6,14 @@ namespace app\command;
 use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 
-final class ModuleUninstallPackage extends DatabaseContextualCommand
+final class ModuleUninstallPackage extends ModuleContextualCommand
 {
     protected function configure()
     {
@@ -27,16 +27,14 @@ final class ModuleUninstallPackage extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'
+            if (strtolower(trim((string)Config::get('peanut.environment', ''))) !== 'development'
                 || !app()->isDebug()
                 || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
                 throw new PluginLifecycleException('MODULE_RUNTIME_MUTATION_DISABLED', 'Runtime Module mutation is disabled.');
             }
-            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
             $service = new PluginRuntimeGovernanceService(
-                $pdo,
                 dirname(__DIR__, 2),
                 $config,
                 $this->moduleCatalogs(),

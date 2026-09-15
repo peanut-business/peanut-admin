@@ -2,14 +2,10 @@
 declare(strict_types=1);
 
 use app\common\service\installation\ApplicationReleaseVersions;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
+use think\App;
+use think\Container;
 
 $installerArguments = $_SERVER['argv'] ?? [];
 $installerIsDirect = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__;
@@ -228,6 +224,16 @@ function loadCoreRuntime(string $serverDir): void
     require_once $autoload;
 }
 
+function ensureThinkPhpApplication(string $serverDir): App
+{
+    $container = Container::getInstance();
+    if ($container instanceof App) {
+        return $container;
+    }
+
+    return (new App($serverDir))->initialize();
+}
+
 function expectedTables(array $files): array
 {
     $tables = array_fill_keys(KernelSchema::tableNames(), true);
@@ -301,13 +307,7 @@ function initializeCoreIdentity(
     $pdo->exec(KernelSchema::addTenantMemberDepartmentForeignKeySql());
 
     $service = new BootstrapService(
-        new PdoTransactionManager($pdo),
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        \app\common\service\ApplicationPasswordPolicy::hasher()
+        passwords: \app\common\service\ApplicationPasswordPolicy::hasher(),
     );
     $separatePlatformOperator = $platformCredentials !== null;
     $demoBootstrapPassword = $demoAccounts->enabled()
@@ -351,6 +351,29 @@ function initializeCoreIdentity(
         'member_id' => $owner->memberId,
         'operator_id' => $platform->operatorId,
     ];
+}
+
+/** @param list<string> $emails */
+function replaceInstalledDemoCredentialHashes(PDO $pdo, array $emails, string $hash): void
+{
+    $statement = $pdo->prepare(<<<'SQL'
+UPDATE pa_credential
+SET secret_hash = :secret_hash,
+    failed_attempts = 0,
+    locked_until = NULL,
+    secret_changed_at = UTC_TIMESTAMP(3),
+    revision = revision + 1,
+    updated_at = UTC_TIMESTAMP(3)
+WHERE identifier_type = 'email'
+  AND kind = 'email_password'
+  AND status = 'active'
+  AND identifier_normalized = :email
+SQL);
+    foreach (array_values(array_unique(array_map('strtolower', $emails))) as $email) {
+        if (trim($email) !== '') {
+            $statement->execute(['secret_hash' => $hash, 'email' => trim($email)]);
+        }
+    }
 }
 
 /**
@@ -679,6 +702,7 @@ function installFreshDatabase(string $serverDir, array $input): array
 {
     $databaseDir = $serverDir . '/database';
     loadCoreRuntime($serverDir);
+    ensureThinkPhpApplication($serverDir);
     $credentials = normalizeInstallationCredentials($input);
     $config = loadConfig($serverDir);
     $database = $config['DB_NAME'];
@@ -724,7 +748,6 @@ function installFreshDatabase(string $serverDir, array $input): array
         $adminPassword = $credentials['admin_password'];
         $platformCredentials = $credentials['platform_credentials'];
         $demoAccounts = new \app\common\service\DemoAccountPolicy(
-            $pdo,
             getenv('PEANUT_DEMO_MODE') === 'enabled',
             array_values(array_filter([
                 $adminEmail,
@@ -739,10 +762,10 @@ function installFreshDatabase(string $serverDir, array $input): array
             $demoAccounts,
         );
         if ($demoAccounts->enabled()) {
-            $demoAccounts->replaceCredentialHashes([
+            replaceInstalledDemoCredentialHashes($pdo, [
                 $adminEmail,
                 $platformCredentials['email'] ?? '',
-            ]);
+            ], $demoAccounts->credentialHash());
         }
         executeSqlFiles($pdo, $files);
         seedBrandDefaults($pdo, brandWebsiteDefaults($serverDir));
@@ -792,7 +815,8 @@ if ($installerIsDirect) {
             echo json_encode(migrateDatabase(dirname(__DIR__), $migration[0], $migration[1]), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
             exit(0);
         }
-        $host = new \app\common\service\installation\InstallationExecutionHost(dirname(__DIR__));
+        $application = ensureThinkPhpApplication(dirname(__DIR__));
+        $host = $application->make(\app\common\service\installation\InstallationExecutionHost::class);
         if (in_array('--status', $_SERVER['argv'] ?? [], true)) {
             $status = $host->status();
             echo json_encode($status, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), PHP_EOL;

@@ -18,7 +18,6 @@ class GeneratorRenderService
 
         return [
             self::file($context['modelPath'], 'php', self::renderModel($context)),
-            self::file($context['repositoryPath'], 'php', self::renderRepository($context)),
             self::file($context['servicePath'], 'php', self::renderService($context)),
             self::file($context['controllerPath'], 'php', self::renderController($context)),
             self::file($context['validatePath'], 'php', self::renderValidate($context)),
@@ -100,7 +99,6 @@ class GeneratorRenderService
         ];
         return $base + [
             'modelPath' => "server/app/common/model/{$module}/{$entity}.php",
-            'repositoryPath' => "server/app/common/repository/{$module}/{$entity}Repository.php",
             'servicePath' => "server/app/adminapi/services/{$module}/{$entity}Service.php",
             'controllerPath' => "server/app/adminapi/controller/{$module}/{$entity}Controller.php",
             'validatePath' => "server/app/adminapi/validate/{$module}/{$entity}Validate.php",
@@ -298,46 +296,6 @@ PHP, $c + [
         ]);
     }
 
-    private static function renderRepository(array $c): string
-    {
-        return self::replace(<<<'PHP'
-<?php
-declare(strict_types=1);
-
-namespace app\common\repository\{{module}};
-
-use app\common\model\{{module}}\{{entity}};
-use think\db\BaseQuery;
-
-final readonly class {{entity}}Repository
-{
-    public function query(): BaseQuery
-    {
-        return {{entity}}::where([]);
-    }
-
-    /** @param array<string,mixed> $attributes */
-    public function create(array $attributes): {{entity}}
-    {
-        return {{entity}}::create($attributes);
-    }
-
-    public function find(int|string $id, bool $lock = false): {{entity}}
-    {
-        $query = $this->query()->where('{{primary}}', $id);
-        if ($lock) {
-            $query->lock(true);
-        }
-        $model = $query->findOrEmpty();
-        if ($model->isEmpty()) {
-            throw new \DomainException('{{title}}不存在');
-        }
-        return $model;
-    }
-}
-PHP, $c);
-    }
-
     private static function renderController(array $c): string
     {
         $listResponse = $c['tree'] !== []
@@ -433,7 +391,7 @@ PHP, $c + ['listResponse' => $listResponse]);
         if ($c['tree'] !== []) {
             $listBody = "        \$rows = \$query{$withCode}->order(['{$c['primary']}' => 'desc'])->select()->toArray();\n"
                 . "        return linear_to_tree(\$rows, 'children', '{$c['primary']}', '{$c['tree']['parent']}');";
-            $childGuard = "            if (\$this->records->query()->where('{$c['tree']['parent']}', \$id)->count() > 0) {\n"
+            $childGuard = "            if ({$c['entity']}::where('{$c['tree']['parent']}', \$id)->count() > 0) {\n"
                 . "                throw new \\RuntimeException('请先删除下级节点');\n            }\n";
         } else {
             $listBody = "        \$page = PaginationInput::from(\$params)->result(\$query{$withCode}->order(['{$c['primary']}' => 'desc']));\n"
@@ -448,8 +406,7 @@ namespace app\adminapi\services\{{module}};
 
 use app\common\http\PageResult;
 use app\common\model\{{module}}\{{entity}};
-use app\common\persistence\TransactionalExecution;
-use app\common\repository\{{module}}\{{entity}}Repository;
+use think\facade\Db;
 use app\common\support\PaginationInput;
 
 final readonly class {{entity}}Service
@@ -457,25 +414,20 @@ final readonly class {{entity}}Service
     private const INSERT_FIELDS = {{insertFields}};
     private const UPDATE_FIELDS = {{updateFields}};
 
-    public function __construct(
-        private {{entity}}Repository $records,
-        private TransactionalExecution $transactions,
-    ) {}
-
     public function lists(array $params): array|PageResult
     {
-        $query = $this->records->query();
+        $query = {{entity}}::where([]);
 {{queryCode}}{{listBody}}
     }
 
     public function detail(int|string $id): array
     {
-        return $this->records->find($id)->toArray();
+        return $this->find($id)->toArray();
     }
 
     public function add(array $params): void
     {
-        $this->records->create(array_intersect_key($params, array_flip(self::INSERT_FIELDS)));
+        {{entity}}::create(array_intersect_key($params, array_flip(self::INSERT_FIELDS)));
     }
 
     public function edit(array $params): void
@@ -494,9 +446,22 @@ final readonly class {{entity}}Service
 
     private function mutate(int|string $id, callable $callback): void
     {
-        $this->transactions->run(function () use ($id, $callback): void {
-            $callback($this->records->find($id, true));
+        Db::transaction(function () use ($id, $callback): void {
+            $callback($this->find($id, true));
         });
+    }
+
+    private function find(int|string $id, bool $lock = false): {{entity}}
+    {
+        $query = {{entity}}::where('{{primary}}', $id);
+        if ($lock) {
+            $query->lock(true);
+        }
+        $model = $query->findOrEmpty();
+        if ($model->isEmpty()) {
+            throw new \DomainException('{{title}}不存在');
+        }
+        return $model;
     }
 }
 PHP, $c + [

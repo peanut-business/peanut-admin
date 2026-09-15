@@ -37,12 +37,12 @@ initializeCoreIdentity(
     'module-catalog@example.test',
     'module-catalog-test-password',
     null,
-    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+    new \app\common\service\DemoAccountPolicy(false, []),
 );
 executeSqlFiles($pdo, [dirname(__DIR__, 2) . '/database/init.sql']);
 
 $serverRoot = dirname(__DIR__, 2);
-$registry = (new PluginModuleRegistryFactory($pdo, $serverRoot))->fromDeploymentConfig([
+$registry = (new PluginModuleRegistryFactory($serverRoot))->fromDeploymentConfig([
     'roots' => ['app/Modules/Fixture/DeliveryRecord'],
     'kernel_version' => '1.0.0',
     'registered_client_keys' => ['admin-web', 'platform-web'],

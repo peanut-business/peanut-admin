@@ -14,16 +14,17 @@ final readonly class IdempotencyResult
 
     private function __construct(
         private IdempotencyRecord $record,
+        private int $tenantId,
         public string $state,
     ) {}
 
-    public static function fromRecord(IdempotencyRecord $record): self
+    public static function fromRecord(IdempotencyRecord $record, int $tenantId): self
     {
         $state = $record->acquiredForExecution()
             ? self::EXECUTION
             : ($record->replayable() ? self::REPLAY : self::PROCESSING);
 
-        return new self($record, $state);
+        return new self($record, $tenantId, $state);
     }
 
     public function isExecutionOwner(): bool
@@ -39,6 +40,11 @@ final readonly class IdempotencyResult
     public function id(): int
     {
         return $this->record->id;
+    }
+
+    public function tenantId(): int
+    {
+        return $this->tenantId;
     }
 
     /** @return array<string, mixed> */

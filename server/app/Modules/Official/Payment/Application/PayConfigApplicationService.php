@@ -7,7 +7,7 @@ use app\common\application\BusinessException;
 use app\common\service\external\ExternalChannelBindingService;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 use app\Modules\Official\Payment\Contracts\PaymentChannelGrantCommands;
 
 /**
@@ -21,7 +21,6 @@ class PayConfigApplicationService
     protected const CONFIG_TYPE = 'pay';
 
     public function __construct(
-        private readonly TransactionManager $transactions,
         private readonly PaymentChannelGrantCommands $channelGrants,
         private readonly ExternalChannelBindingService $bindings,
     ) {
@@ -89,7 +88,7 @@ class PayConfigApplicationService
                 }
             }
         self::assertUsable($data);
-        $this->transactions->run(function () use ($context, $data): void {
+        Db::transaction(function () use ($context, $data): void {
                 $this->bindings->update(
                     $context,
                     ExternalTenantResolver::WECHAT_PAYMENT,

@@ -6,15 +6,15 @@ namespace app\adminapi\application\decoration;
 use app\common\application\BusinessException;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
-use app\common\service\decoration\DecorationTabbarTenantRepository;
-use app\common\persistence\TransactionalExecution;
+use app\common\model\decoration\DecorateTabbar;
+use app\common\model\decoration\DecorationTabbarSetting;
+use think\facade\Db;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 class DecorationTabbarApplicationService
 {
     public function __construct(
-        private readonly TransactionalExecution $transactions,
         private readonly ArticleQueries $articles,
         private readonly DecorationReadService $decoration,
         private readonly DecorationSchemaService $schema,
@@ -32,13 +32,34 @@ class DecorationTabbarApplicationService
         } catch (\RuntimeException $exception) {
             throw BusinessException::invalid('DECORATION_TABBAR_INVALID', $exception->getMessage());
         }
-        $this->transactions->run(function () use ($context, $style, $items): void {
-                DecorationTabbarTenantRepository::replace($style, array_map(
-                    function (array $item) use ($context): array {
-                        return $this->schema->resourcesForStorage($item, $context);
-                    },
-                    $items
-                ));
+        Db::transaction(function () use ($context, $style, $items): void {
+            $setting = DecorationTabbarSetting::where([])->lock(true)->findOrEmpty();
+            $storedStyle = json_encode(
+                $style,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+            );
+            if ($setting->isEmpty()) {
+                DecorationTabbarSetting::create(['style' => $storedStyle]);
+            } else {
+                $setting->style = $storedStyle;
+                $setting->save();
+            }
+            DecorateTabbar::where([])->delete();
+            $rows = [];
+            foreach ($items as $position => $item) {
+                $item = $this->schema->resourcesForStorage($item, $context);
+                $rows[] = [
+                    'position' => $position,
+                    'name' => trim((string)$item['name']),
+                    'selected' => (string)$item['selected'],
+                    'unselected' => (string)$item['unselected'],
+                    'link' => json_encode($item['link'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+                    'is_show' => (int)$item['is_show'],
+                ];
+            }
+            if ($rows !== []) {
+                (new DecorateTabbar())->saveAll($rows);
+            }
         });
         return true;
     }

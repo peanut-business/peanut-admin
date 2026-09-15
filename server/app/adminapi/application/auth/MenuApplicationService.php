@@ -8,7 +8,7 @@ use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\authorization\MenuPermissionUsageQuery;
 use app\common\application\BusinessException;
 use app\common\contract\authorization\AdminMenuPersistence;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
 use PeanutAdmin\Kernel\Platform\InstanceControlPlanePolicy;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
@@ -17,7 +17,6 @@ class MenuApplicationService
     public function __construct(
         private readonly AdminAuthorizationService $authorization,
         private readonly MenuPermissionUsageQuery $permissionUsage,
-        private readonly TransactionalExecution $transactions,
         private readonly AdminMenuPersistence $menus,
     ) {}
 
@@ -75,7 +74,7 @@ class MenuApplicationService
 
     public function add(array $params): bool
     {
-        return (bool) $this->transactions->run(function () use ($params): bool {
+        return (bool) Db::transaction(function () use ($params): bool {
                 $this->assertParent((int)($params['pid'] ?? 0));
                 $this->menus->create([
                     'pid' => $params['pid'] ?? 0, 'type' => $params['type'] ?? 'C',
@@ -91,7 +90,7 @@ class MenuApplicationService
 
     public function edit(array $params): bool
     {
-        return (bool) $this->transactions->run(function () use ($params): bool {
+        return (bool) Db::transaction(function () use ($params): bool {
                 $id = (int)$params['id'];
                 if ($this->menus->record($id, true) === null) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
                 $this->assertParent((int)($params['pid'] ?? 0), $id);
@@ -110,7 +109,7 @@ class MenuApplicationService
 
     public function delete(int $id): bool
     {
-        return (bool) $this->transactions->run(function () use ($id): bool {
+        return (bool) Db::transaction(function () use ($id): bool {
                 $menu = $this->menus->record($id, true);
                 if ($menu === null) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
                 if ($this->menus->hasChildren($id)) throw BusinessException::conflict('ADMIN_MENU_HAS_CHILDREN', '已关联下级菜单，暂不可删除');
@@ -123,7 +122,7 @@ class MenuApplicationService
 
     public function updateStatus(int $id, int $isDisable): bool
     {
-        return (bool) $this->transactions->run(function () use ($id, $isDisable): bool {
+        return (bool) Db::transaction(function () use ($id, $isDisable): bool {
                 if ($this->menus->record($id, true) === null) throw BusinessException::notFound('ADMIN_MENU_NOT_FOUND', '菜单不存在');
                 $this->menus->update($id, ['is_disable' => $isDisable]);
                 return true;

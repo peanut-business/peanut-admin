@@ -3,33 +3,38 @@ declare(strict_types=1);
 
 namespace app\common\service\idempotency;
 
-use LogicException;
 use app\common\contract\idempotency\IdempotentCommandExecutor;
 use app\common\contract\idempotency\IdempotencyCommand;
 use app\common\contract\idempotency\IdempotencyReceipt;
 use app\common\contract\idempotency\IdempotencyResult;
-use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
+use LogicException;
+use PeanutAdmin\Kernel\Idempotency\IdempotencyService;
+use PeanutAdmin\Kernel\Tenancy\TenantScope;
 
-final class PdoIdempotentCommandExecutor implements IdempotentCommandExecutor
+final readonly class ThinkPhpIdempotentCommandExecutor implements IdempotentCommandExecutor
 {
-    public function __construct(private readonly PdoIdempotencyRepository $repository) {}
+    public function __construct(private IdempotencyService $idempotency) {}
 
     public function begin(IdempotencyCommand $command): IdempotencyResult
     {
-        return IdempotencyResult::fromRecord($this->repository->beginTenant(
+        return IdempotencyResult::fromRecord(
+            $this->idempotency->beginTenant(
+                $this->scope($command->context->tenantId),
+                $command->context->memberId,
+                $command->operationKey,
+                $command->key,
+                $command->requestHash,
+                $command->expiresAt,
+            ),
             $command->context->tenantId,
-            $command->context->memberId,
-            $command->operationKey,
-            $command->key,
-            $command->requestHash,
-            $command->expiresAt,
-        ));
+        );
     }
 
     public function complete(IdempotencyResult $execution, IdempotencyReceipt $receipt): void
     {
         $this->assertExecutionOwner($execution);
-        $this->repository->completeTenant(
+        $this->idempotency->completeTenant(
+            $this->scope($execution->tenantId()),
             $execution->id(),
             $receipt->status,
             $receipt->body,
@@ -41,7 +46,8 @@ final class PdoIdempotentCommandExecutor implements IdempotentCommandExecutor
     public function fail(IdempotencyResult $execution, IdempotencyReceipt $receipt): void
     {
         $this->assertExecutionOwner($execution);
-        $this->repository->failTenant(
+        $this->idempotency->failTenant(
+            $this->scope($execution->tenantId()),
             $execution->id(),
             $receipt->status,
             $receipt->body,
@@ -55,5 +61,10 @@ final class PdoIdempotentCommandExecutor implements IdempotentCommandExecutor
         if (!$execution->isExecutionOwner()) {
             throw new LogicException('Only the idempotency execution owner may finalize a command.');
         }
+    }
+
+    private function scope(int $tenantId): TenantScope
+    {
+        return TenantScope::fromTrustedContext($tenantId, 'application-idempotency');
     }
 }

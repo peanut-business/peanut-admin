@@ -5,17 +5,16 @@ namespace app\command;
 
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\module\ProductTenantModuleProfileService;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
-use app\common\execution\DatabaseContextualCommand;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 
-final class TenantModuleProfile extends DatabaseContextualCommand
+final class TenantModuleProfile extends ModuleContextualCommand
 {
     protected function configure()
     {
@@ -27,22 +26,18 @@ final class TenantModuleProfile extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) {
                 throw new \RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
             }
             $result = (new ProductTenantModuleProfileService(
-                $pdo,
-                new PdoTransactionManager($pdo),
-                new PdoModuleRuntimeRepository($pdo, true),
-                new PdoModuleGovernanceProvider(
-                    $pdo,
+                new ThinkPhpModuleRuntimeRepository(true),
+                new ThinkPhpModuleGovernanceProvider(
                     dirname(__DIR__, 2),
                     $config,
                     $this->moduleCatalogs(),
                 ),
-                AuditContractHost::fromPdo($pdo),
+                app(AuditContractHost::class),
             ))->apply(trim((string)$input->getArgument('profile')));
             $output->writeln((string)json_encode(
                 $result,

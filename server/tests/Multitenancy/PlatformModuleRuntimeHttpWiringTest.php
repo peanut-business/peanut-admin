@@ -9,10 +9,10 @@ use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Authorization\AuthorizationException;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalog;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalogSynchronizer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
+use PeanutAdmin\Kernel\Authorization\Persistence\ThinkPhpAuthorizationCatalogRepository;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Context\PlatformContext;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -93,7 +93,7 @@ platformModuleHttpExpect(
     'instance package lifecycle crossed into Tenant Admin authorization',
 );
 platformModuleHttpExpect(
-    str_contains($middlewareSource, "env('APP_ENV', '')")
+    str_contains($middlewareSource, "Config::get('peanut.environment', '')")
         && str_contains($middlewareSource, "!== 'development'")
         && str_contains($middlewareSource, '!app()->isDebug()')
         && str_contains($middlewareSource, 'InstanceToolAccessGuard::fromConfiguredValue')
@@ -166,10 +166,10 @@ try {
         'module-http-owner@example.test',
         'ModuleHttpOwnerPassword2026',
         null,
-        new \app\common\service\DemoAccountPolicy($pdo, false, []),
+        new \app\common\service\DemoAccountPolicy(false, []),
     );
     executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
-    (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
+    (new CorePermissionCatalogSynchronizer(new ThinkPhpAuthorizationCatalogRepository()))->synchronize();
 
     $catalogKeys = CorePermissionCatalog::PLATFORM;
     sort($catalogKeys, SORT_STRING);
@@ -188,7 +188,7 @@ try {
     $pdo->exec("INSERT INTO pa_platform_operator (account_id,display_name,status,created_at,updated_at) VALUES ({$scopedAccountId},'Module HTTP Scoped','active','{$now}','{$now}')");
     $scopedOperatorId = (int)$pdo->lastInsertId();
     $scopedContext = platformModuleHttpContext($scopedOperatorId, $scopedAccountId, 'module-http-scoped');
-    $repository = new PdoPlatformAuthorizationRepository($pdo);
+    $repository = new ThinkPhpPlatformAuthorizationRepository();
     $evaluator = new PlatformAuthorizationEvaluator($repository, new RevisionPermissionCache());
     foreach ($permissionKeys as $permission) platformModuleHttpDenied($evaluator, $scopedContext, $permission);
 

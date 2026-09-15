@@ -10,10 +10,10 @@ use app\Modules\Official\ImportExport\Infrastructure\Configuration\Configuration
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\ConfigurationTransferValue;
 use app\Modules\Official\ImportExport\Infrastructure\Configuration\SecretReferenceCodec;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use PeanutAdmin\Kernel\Audit\AuditRepository;
+use app\common\service\audit\AuditContractHost;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 
 /**
  * Application-owned configuration transfer facade.
@@ -38,10 +38,9 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
      * @param list<ConfigurationTransferAdapter> $adapters
      */
     public function __construct(
-        private readonly TransactionManager $transactions,
         array $adapters,
         private readonly ConfigurationPackageCodec $codec,
-        private readonly AuditRepository $audit,
+        private readonly AuditContractHost $audit,
     ) {
         foreach ($adapters as $adapter) {
             if (!$adapter instanceof ConfigurationTransferAdapter) {
@@ -119,7 +118,7 @@ final class ConfigurationTransferApplicationService implements ConfigurationTran
         // The package is a single logical change. Keep every adapter write and
         // the success audit in one unit of work so a later adapter or the
         // audit projection cannot leave a partially-applied package behind.
-        return $this->transactions->run(function () use (
+        return Db::transaction(function () use (
             $context,
             $scope,
             $secretBindings,

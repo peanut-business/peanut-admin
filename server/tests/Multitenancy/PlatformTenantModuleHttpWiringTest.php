@@ -66,14 +66,14 @@ $serverMenuMapper = (string)file_get_contents(
 pm01ModuleHttpExpect(
     str_contains($composition, "'MODULE_REGISTRY_UNAVAILABLE'")
         && !str_contains($composition, 'PlatformRuntimeFactory')
-        && str_contains($composition, 'PdoModuleGovernanceProvider')
+        && str_contains($composition, 'ThinkPhpModuleGovernanceProvider')
         && str_contains($registryFactory, 'ModuleBoundaryChecker')
         && str_contains($composition, 'VerifiedTenantModuleRepository'),
     'production Module runtime lost fail-closed deployment verification'
 );
 pm01ModuleHttpExpect(
-    str_contains($adminBridge, 'PdoMenuCatalogRepository')
-        && str_contains($adminBridge, 'PdoTenantAuthorizationRepository')
+    str_contains($adminBridge, 'ThinkPhpMenuCatalogRepository')
+        && str_contains($adminBridge, 'ThinkPhpTenantAuthorizationRepository')
         && str_contains($adminBridge, 'MenuRegistry')
         && str_contains($adminBridge, "'module_key' => \$definition->moduleKey")
         && str_contains($adminBridge, "'required_permission' => \$definition->requiredPermission")

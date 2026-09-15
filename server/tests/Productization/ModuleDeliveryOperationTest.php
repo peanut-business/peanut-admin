@@ -7,9 +7,9 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\ops\DeploymentModuleRequestService;
 use app\common\service\audit\AuditContractHost;
-use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
-use app\platform\service\ops\PdoMaintenanceWindowStore;
-use app\platform\service\ops\PdoOpsTaskDispatcher;
+use app\platform\service\ops\ThinkPhpModuleOperationTaskExecutionService;
+use app\platform\service\ops\ThinkPhpMaintenanceWindowStore;
+use app\platform\service\ops\ThinkPhpOpsTaskDispatcher;
 use app\platform\service\ops\PairedBackupProvider;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use app\platform\service\ops\PlatformModuleOperationExecutionService;
@@ -20,7 +20,7 @@ use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Context\PlatformContext;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -127,7 +127,7 @@ $identity = initializeCoreIdentity(
     'module-delivery@example.test',
     'module-delivery-password',
     null,
-    new \app\common\service\DemoAccountPolicy($pdo, false, []),
+    new \app\common\service\DemoAccountPolicy(false, []),
 );
 $serverRoot = dirname(__DIR__, 2);
 executeSqlFiles($pdo, [$serverRoot . '/database/init.sql']);
@@ -188,7 +188,7 @@ try {
     $archive = new PluginPackageArchiveService($source . '/server');
     $v1Path = $temporary . '/v1.tar';
     $v1 = $archive->packBundle('official-content-bundle', '1.0.0', ['official.article', 'official.file'], $v1Path);
-    $installed = (new PluginPackageInstaller($pdo, $target . '/server', $config, [], $catalogs))
+    $installed = (new PluginPackageInstaller($target . '/server', $config, [], $catalogs))
         ->install($v1Path, $v1['sha256'], null);
     moduleDeliveryExpect(($installed['operation'] ?? null) === 'installed', 'fixture v1 install failed');
 
@@ -200,11 +200,10 @@ try {
     rename($v2Temporary, $v2Path);
 
     $requests = new DeploymentModuleRequestService(
-        $pdo,
         $target,
         $config,
         [],
-        new PluginRuntimeGovernanceService($pdo, $target . '/server', $config, $catalogs),
+        new PluginRuntimeGovernanceService($target . '/server', $config, $catalogs),
         $catalogs,
         $registryPath,
     );
@@ -234,24 +233,22 @@ try {
         'health' => 'healthy',
         'repository_clean' => true,
     ];
-    $audit = AuditContractHost::fromPdo($pdo);
-    $tasks = new PdoOpsTaskDispatcher($pdo, $audit);
-    $maintenance = new PdoMaintenanceWindowStore($pdo, $audit);
+    $audit = new AuditContractHost(null);
+    $tasks = new ThinkPhpOpsTaskDispatcher($audit);
+    $maintenance = new ThinkPhpMaintenanceWindowStore($audit);
     $platform = new PlatformModuleOperationExecutionService(
-        $pdo,
         $tasks,
         $requests,
         $runtime,
         new PlatformOpsPermissionChecker(new PlatformAuthorizationEvaluator(
-            new PdoPlatformAuthorizationRepository($pdo),
+            new ThinkPhpPlatformAuthorizationRepository(),
             new RevisionPermissionCache(),
         )),
     );
     $submitted = $platform->submit($context, (string)$prepared['request_key'], 'module-delivery-idempotency');
     moduleDeliveryExpect(($submitted['status'] ?? null) === 'queued', 'Module operation was not queued');
 
-    $executor = new PdoModuleOperationTaskExecutionService(
-        $pdo,
+    $executor = new ThinkPhpModuleOperationTaskExecutionService(
         $audit,
         $tasks,
         $maintenance,

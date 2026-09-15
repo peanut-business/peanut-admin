@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\system;
 
-use app\common\service\runtime\ApplicationCache;
+use think\facade\Cache;
 
 /**
  * 系统维护逻辑
@@ -66,7 +66,7 @@ class SystemApplicationService
      */
     public function clearCache(): bool
     {
-        ApplicationCache::clear();
+        Cache::tag('application:v1')->clear();
         del_target_dir(root_path() . 'runtime/file', true);
         return true;
     }

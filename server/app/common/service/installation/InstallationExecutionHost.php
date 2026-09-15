@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace app\common\service\installation;
 
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use app\platform\service\module\ProductTenantModuleProfileService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\ModuleCatalogApplier;
 use PDO;
 use RuntimeException;
+use think\db\PDOConnection;
+use think\facade\Config;
+use think\facade\Db;
 use Throwable;
 
 /** The only application-owned fresh installation execution runtime. */
@@ -105,7 +108,7 @@ final class InstallationExecutionHost
                 403,
             );
         }
-        $expected = (string)(getenv('PEANUT_INSTALLATION_SETUP_TOKEN') ?: '');
+        $expected = (string)Config::get('peanut.installation.setup_token', '');
         if (preg_match('/^[A-Za-z0-9_-]{32,128}$/D', $expected) !== 1
             || $token === ''
             || !hash_equals($expected, $token)) {
@@ -281,10 +284,8 @@ final class InstallationExecutionHost
     /** @param list<string> $moduleKeys @return array<string,mixed> */
     private function installModules(array $moduleKeys): array
     {
-        $pdo = $this->pdo();
         $config = $this->moduleConfig();
-        $lifecycle = (new PdoModuleGovernanceProvider(
-            $pdo,
+        $lifecycle = (new ThinkPhpModuleGovernanceProvider(
             $this->serverRoot,
             $config,
             $this->catalogs,
@@ -298,11 +299,9 @@ final class InstallationExecutionHost
             ];
         }
         $profile = (new ProductTenantModuleProfileService(
-            $pdo,
-            new \PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager($pdo),
-            new \PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository($pdo, true),
-            new PdoModuleGovernanceProvider($pdo, $this->serverRoot, $config, $this->catalogs),
-            \app\common\service\audit\AuditContractHost::fromPdo($pdo),
+            new \PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository(true),
+            new ThinkPhpModuleGovernanceProvider($this->serverRoot, $config, $this->catalogs),
+            app(\app\common\service\audit\AuditContractHost::class),
         ))->applyInstallationSelection($moduleKeys);
         return ['operations' => $operations, 'profile' => $profile];
     }
@@ -336,33 +335,34 @@ final class InstallationExecutionHost
 
     private function pdo(): PDO
     {
-        $hostLeaseProof = getenv('P0E_HOST_LEASE_PROOF');
-        $config = \guardedDatabaseConfig(
-            $hostLeaseProof === false || trim($hostLeaseProof) === '' ? null : $hostLeaseProof
-        );
-        return \guardedConnection($config);
+        $connection = Db::connect();
+        if (!$connection instanceof PDOConnection) {
+            throw new RuntimeException('INSTALL_DATABASE_DRIVER_UNAVAILABLE');
+        }
+        $pdo = $connection->getPdo();
+        if (!$pdo instanceof PDO) {
+            throw new RuntimeException('INSTALL_DATABASE_CONNECTION_UNAVAILABLE');
+        }
+
+        return $pdo;
     }
 
     /** @return array<string,mixed> */
     private function moduleConfig(): array
     {
-        $roots = array_values(array_filter(array_map(
-            'trim',
-            explode(',', (string)(getenv('PEANUT_MODULE_ROOTS') ?: '')),
-        )));
-        return [
-            'roots' => $roots,
-            'plugin_lock' => (string)(getenv('PEANUT_PLUGIN_LOCK') ?: '../plugins.lock'),
-            'kernel_version' => (string)(getenv('PEANUT_MODULE_KERNEL_VERSION') ?: '1.0.0'),
-            'registered_client_keys' => ['admin-web', 'platform-web'],
-        ];
+        $config = Config::get('modules', []);
+        if (!is_array($config)) {
+            throw new RuntimeException('MODULE_REGISTRY_UNAVAILABLE');
+        }
+
+        return $config;
     }
 
     private function lockResolver(): PluginLockResolver
     {
         return new PluginLockResolver(
             $this->serverRoot,
-            (string)(getenv('PEANUT_PLUGIN_LOCK') ?: '../plugins.lock'),
+            (string)Config::get('modules.plugin_lock', '../plugins.lock'),
         );
     }
 
@@ -375,7 +375,7 @@ final class InstallationExecutionHost
 
     private function mode(): string
     {
-        $mode = trim((string)(getenv('PEANUT_INSTALLATION_MODE') ?: 'automatic'));
+        $mode = trim((string)Config::get('peanut.installation.mode', 'automatic'));
         if (!in_array($mode, self::MODES, true)) {
             throw new RuntimeException('PEANUT_INSTALLATION_MODE must be guided or automatic.');
         }
@@ -384,7 +384,7 @@ final class InstallationExecutionHost
 
     private function deploymentMode(): string
     {
-        $mode = trim((string)(getenv('DEPLOYMENT_MODE') ?: ''));
+        $mode = trim((string)Config::get('deployment.mode', ''));
         if ($mode !== 'standalone' && $mode !== 'multi-tenant') {
             throw new RuntimeException('DEPLOYMENT_MODE must be standalone or multi-tenant.');
         }

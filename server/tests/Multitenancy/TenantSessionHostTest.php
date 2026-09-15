@@ -5,7 +5,7 @@ require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
-use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpTenantAuthRepository;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TenantAuthentication;
@@ -13,17 +13,12 @@ use PeanutAdmin\Kernel\Auth\TenantSelectionRequired;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function tenantHostExpect(bool $condition, string $message): void
 {
@@ -76,17 +71,9 @@ ALTER TABLE `pa_login_challenge`
     CHECK (REGEXP_LIKE(`client_key`, '^[a-z][a-z0-9-]{0,63}$', 'c'))
 SQL);
 
-    $transactions = new PdoTransactionManager($pdo);
     $passwords = new PasswordHasher();
-    $bootstrap = new BootstrapService(
-        $transactions,
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        $passwords
-    );
+    ThinkPhpTestConnection::fromPdo($pdo);
+    $bootstrap = new BootstrapService(passwords: $passwords);
     $platform = $bootstrap->bootstrapPlatformOwner(
         'multi-owner@example.test',
         'MultiTenantPassword2026',
@@ -105,8 +92,7 @@ SQL);
     $bootstrap->activateTenant($platform->operatorId, $beta->tenantId, 'mt04-beta-active');
 
     $auth = new TenantAuthService(
-        $transactions,
-        new PdoTenantAuthRepository($pdo),
+        new ThinkPhpTenantAuthRepository(),
         $passwords,
         new SystemClock(),
         new TokenIssuer(),

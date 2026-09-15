@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace app\Modules\Official\Member\Model;
 
 use app\common\model\TenantOwnedModel;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use think\model\concern\SoftDelete;
@@ -21,7 +20,7 @@ class MemberBalanceLog extends TenantOwnedModel
     {
         do {
             $sn = date('YmdHis') . str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        } while (MemberTenantRepository::balanceLogs($context)->withTrashed()->where('sn', $sn)->count() > 0);
+        } while (MemberBalanceLog::where([])->withTrashed()->where('sn', $sn)->count() > 0);
 
         return $sn;
     }

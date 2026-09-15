@@ -4,17 +4,17 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\instance\DeploymentMode;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use Composer\InstalledVersions;
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogQuery;
 use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Status\OpsStatusService;
+use think\facade\Db;
 
 /** Creates a fixed-schema JSON artifact without reading arbitrary files or raw log messages. */
 final readonly class PlatformDiagnosticBundleService
@@ -23,11 +23,10 @@ final readonly class PlatformDiagnosticBundleService
     private const MAX_BYTES = 1048576;
 
     public function __construct(
-        private PDO $pdo,
         private PlatformOpsPermissionChecker $permissions,
         private Closure $runtimeLogs,
         private OpsStatusService $status,
-        private PdoModuleGovernanceProvider $moduleGovernance,
+        private ThinkPhpModuleGovernanceProvider $moduleGovernance,
         private string $deploymentMode,
         private bool $debugEnabled,
     ) {
@@ -145,19 +144,11 @@ final readonly class PlatformDiagnosticBundleService
         if (!in_array($table, ['pa_ops_task', 'pa_task_job'], true)) {
             throw new \LogicException('OPS_DIAGNOSTIC_TASK_SOURCE_INVALID');
         }
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT task_type, status, COALESCE(last_error_code, 'TASK_ERROR_UNSPECIFIED') AS error_code,
-       COUNT(*) AS occurrences, MAX(updated_at) AS last_seen_at
-FROM {$table}
-WHERE status = 'dead' AND updated_at >= :since
-GROUP BY task_type, status, last_error_code
-ORDER BY last_seen_at DESC, task_type ASC
-LIMIT 100
-SQL);
-        $statement->execute(['since' => $this->databaseInstant($since)]);
-
         $groups = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $rows = Db::table($table)->where('status', 'dead')->where('updated_at', '>=', $this->databaseInstant($since))
+            ->field('task_type,status')->fieldRaw("COALESCE(last_error_code, 'TASK_ERROR_UNSPECIFIED') AS error_code,COUNT(*) AS occurrences,MAX(updated_at) AS last_seen_at")
+            ->group('task_type,status,last_error_code')->order('last_seen_at', 'desc')->order('task_type')->limit(100)->select()->toArray();
+        foreach ($rows as $row) {
             $taskType = (string)($row['task_type'] ?? '');
             $errorCode = (string)($row['error_code'] ?? '');
             $groups[] = [
@@ -181,16 +172,10 @@ SQL);
     /** @return list<array{tenant_id:int,request_id:string,operation_id:?string,operation:string,outcome:string,reason_code:?string,route:string,occurred_at:string}> */
     private function operationLogEvidence(DateTimeImmutable $since): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT tenant_id, request_id, operation_id, action, outcome, reason_code,
-       target_resource_id, occurred_at
-FROM pa_tenant_audit_event
-WHERE event_type = 'admin.operation' AND occurred_at >= :since
-ORDER BY occurred_at DESC, id DESC
-LIMIT 100
-SQL);
-        $statement->execute(['since' => $this->databaseInstant($since)]);
-
+        $rows = Db::name('tenant_audit_event')->where('event_type', 'admin.operation')
+            ->where('occurred_at', '>=', $this->databaseInstant($since))
+            ->field('tenant_id,request_id,operation_id,action,outcome,reason_code,target_resource_id,occurred_at')
+            ->order('occurred_at', 'desc')->order('id', 'desc')->limit(100)->select()->toArray();
         return array_map(fn(array $row): array => [
             'tenant_id' => (int)$row['tenant_id'],
             'request_id' => (string)$row['request_id'],
@@ -203,7 +188,7 @@ SQL);
                 $this->databaseValue((string)$row['occurred_at']),
                 new DateTimeZone('UTC'),
             )),
-        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+        ], $rows);
     }
 
     private function instant(DateTimeImmutable $value): string

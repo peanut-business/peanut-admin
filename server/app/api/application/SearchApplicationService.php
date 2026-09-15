@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace app\api\application;
 
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\hot_search\HotSearchTenantRepository;
+use app\common\model\setting\HotSearch;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -17,7 +17,7 @@ class SearchApplicationService
     /** 热门搜索列表 */
     public function hotLists(TenantContext|TenantSystemContext $context): array
     {
-        $data = HotSearchTenantRepository::terms()
+        $data = HotSearch::where([])
             ->field(['name', 'sort'])
             ->order(['sort' => 'desc', 'id' => 'desc'])
             ->select()

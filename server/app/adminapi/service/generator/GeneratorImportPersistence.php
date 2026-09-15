@@ -6,17 +6,13 @@ namespace app\adminapi\service\generator;
 use app\common\model\generator\GeneratorColumn;
 use app\common\model\generator\GeneratorTable;
 use app\common\model\generator\GeneratorDownload;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
 use app\common\persistence\ConvertsModelPage;
 
 /** Instance-owned persistence for generator metadata and download tokens. */
 final readonly class GeneratorImportPersistence
 {
     use ConvertsModelPage;
-
-    public function __construct(private TransactionalExecution $transactions)
-    {
-    }
 
     /**
      * @param list<array{table_name:string,table_comment:string,entity_name:string,columns:list<array<string,mixed>>}> $definitions
@@ -27,7 +23,7 @@ final readonly class GeneratorImportPersistence
             throw new \InvalidArgumentException('生成器导入参数无效');
         }
 
-        $this->transactions->run(function () use ($adminId, $definitions): void {
+        Db::transaction(function () use ($adminId, $definitions): void {
             $tableNames = array_column($definitions, 'table_name');
             $existing = GeneratorTable::where('admin_id', $adminId)
                 ->whereIn('table_name', $tableNames)

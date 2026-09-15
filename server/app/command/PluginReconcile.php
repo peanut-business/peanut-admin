@@ -5,15 +5,15 @@ namespace app\command;
 
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLockResolver;
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use PDO;
+use think\facade\Db;
 
 /** Reconciles either the canonical official set or the full release replacement set. */
-final class PluginReconcile extends DatabaseContextualCommand
+final class PluginReconcile extends ModuleContextualCommand
 {
     use PluginCommandSupport;
 
@@ -100,21 +100,15 @@ final class PluginReconcile extends DatabaseContextualCommand
      */
     private function releasePluginSelection(array $locked, array $officialKeys): array
     {
-        $statement = $this->database()->query(<<<'SQL'
-SELECT pi.plugin_key,pi.status,
-       COUNT(pm.module_key) member_count,
-       SUM(CASE WHEN mi.status='active' AND mi.last_error_code IS NULL THEN 1 ELSE 0 END) active_count,
-       SUM(CASE WHEN mi.status='maintenance' AND mi.last_error_code IS NULL THEN 1 ELSE 0 END) disabled_count
-FROM pa_plugin_installation pi
-LEFT JOIN pa_plugin_module pm ON pm.plugin_key=pi.plugin_key
-LEFT JOIN pa_module_installation mi ON mi.module_key=pm.module_key
-WHERE pi.status <> 'uninstalled'
-GROUP BY pi.plugin_key,pi.status
-ORDER BY pi.plugin_key ASC
-SQL);
         $keys = array_fill_keys($officialKeys, true);
         $preserved = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $rows = Db::name('plugin_installation')->alias('pi')
+            ->leftJoin('plugin_module pm', 'pm.plugin_key=pi.plugin_key')
+            ->leftJoin('module_installation mi', 'mi.module_key=pm.module_key')
+            ->where('pi.status', '<>', 'uninstalled')->field('pi.plugin_key,pi.status')
+            ->fieldRaw("COUNT(pm.module_key) member_count,SUM(CASE WHEN mi.status='active' AND mi.last_error_code IS NULL THEN 1 ELSE 0 END) active_count,SUM(CASE WHEN mi.status='maintenance' AND mi.last_error_code IS NULL THEN 1 ELSE 0 END) disabled_count")
+            ->group('pi.plugin_key,pi.status')->order('pi.plugin_key')->select()->toArray();
+        foreach ($rows as $row) {
             $key = (string)($row['plugin_key'] ?? '');
             $members = (int)($row['member_count'] ?? 0);
             if ((string)($row['status'] ?? '') !== 'active' || $members < 1 || !isset($locked[$key])) {

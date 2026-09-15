@@ -9,14 +9,14 @@ use app\common\execution\ConsumerExecutionContext;
 use app\common\execution\SystemExecutionContext;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Module\ModuleExecutionContext;
 use PeanutAdmin\Kernel\Module\ModuleGuard;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\ModuleRuntimeRepository;
+use think\facade\Db;
 
 /**
  * Single execution boundary for every Module-aware entry point.
@@ -30,10 +30,10 @@ final readonly class ModuleExecutionBoundary
     private ModuleGuard $guard;
 
     public function __construct(
-        private PDO $pdo,
         private CurrentExecutionContext $execution,
+        ModuleRuntimeRepository $modules,
     ) {
-        $this->guard = new ModuleGuard(new PdoModuleRuntimeRepository($this->pdo));
+        $this->guard = new ModuleGuard($modules);
     }
 
     public function assertHttp(string $moduleKey, ?string $operation = null): void
@@ -95,9 +95,7 @@ final readonly class ModuleExecutionBoundary
     private function assertBackgroundTenant(ModuleExecutionContext $context): void
     {
         if (in_array($context->moduleKey, ['core', 'platform'], true)) {
-            $statement = $this->pdo->prepare('SELECT status FROM pa_tenant WHERE id = :tenant_id LIMIT 1');
-            $statement->execute(['tenant_id' => $context->tenantId]);
-            if ($statement->fetchColumn() !== 'active') {
+            if (Db::name('tenant')->where('id', $context->tenantId)->value('status') !== 'active') {
                 throw new ModuleException('CONTEXT_TENANT_REQUIRED', 'Tenant is not active.');
             }
             return;

@@ -8,13 +8,13 @@ use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginCatalogSyncService;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 
-final class ModuleDisablePackage extends DatabaseContextualCommand
+final class ModuleDisablePackage extends ModuleContextualCommand
 {
     protected function configure()
     {
@@ -26,12 +26,11 @@ final class ModuleDisablePackage extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'
+            if (strtolower(trim((string)Config::get('peanut.environment', ''))) !== 'development'
                 || !app()->isDebug()
                 || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
                 throw new PluginLifecycleException('MODULE_RUNTIME_MUTATION_DISABLED', 'Runtime Module mutation is disabled.');
             }
-            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) {
                 throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module registry is unavailable.');
@@ -40,12 +39,11 @@ final class ModuleDisablePackage extends DatabaseContextualCommand
             $serverRoot = dirname(__DIR__, 2);
             $catalogs = $this->moduleCatalogs();
             $result = (new PlatformModuleRuntimeService(
-                $pdo,
                 $serverRoot,
                 $config,
                 [],
-                new PluginRuntimeGovernanceService($pdo, $serverRoot, $config, $catalogs),
-                new PluginCatalogSyncService($pdo, $serverRoot, $config, $catalogs),
+                new PluginRuntimeGovernanceService($serverRoot, $config, $catalogs),
+                new PluginCatalogSyncService($serverRoot, $config, $catalogs),
                 $catalogs,
             ))
                 ->disable($moduleKey);

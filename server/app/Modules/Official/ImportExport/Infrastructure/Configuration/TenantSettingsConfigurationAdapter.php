@@ -2,19 +2,13 @@
 declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
+use think\facade\Db;
 
 /** Transfers the application-owned tenant_setting documents. */
-final readonly class TenantSettingsConfigurationAdapter implements ConfigurationTransferAdapter
+final class TenantSettingsConfigurationAdapter implements ConfigurationTransferAdapter
 {
-    private const TABLE = 'p' . 'a_tenant_setting';
-
-    public function __construct(private PDO $pdo)
-    {
-    }
-
     public function key(): string
     {
         return ConfigurationPackageCodec::ADAPTER_TENANT_SETTINGS;
@@ -28,17 +22,9 @@ final readonly class TenantSettingsConfigurationAdapter implements Configuration
     public function export(TenantContext|PlatformContext $context): array
     {
         $tenantId = $this->tenantId($context);
-        $table = self::TABLE;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT namespace, config_json
-FROM {$table}
-WHERE tenant_id = :tenant_id
-ORDER BY namespace ASC
-SQL);
-        $statement->execute(['tenant_id' => $tenantId]);
-
         $entries = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        foreach (Db::name('tenant_setting')->where('tenant_id', $tenantId)
+            ->field('namespace,config_json')->order('namespace')->select()->toArray() as $row) {
             $namespace = (string)($row['namespace'] ?? '');
             $document = $this->decodeDocument($row['config_json'] ?? null);
             $entries[] = ConfigurationTransferValue::entry($this->key(), $namespace, $document);
@@ -50,15 +36,8 @@ SQL);
     {
         $tenantId = $this->tenantId($context);
         $this->assertNamespace($key);
-        $table = self::TABLE;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT config_json, revision
-FROM {$table}
-WHERE tenant_id = :tenant_id AND namespace = :namespace
-LIMIT 1
-SQL);
-        $statement->execute(['tenant_id' => $tenantId, 'namespace' => $key]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('tenant_setting')->where('tenant_id', $tenantId)->where('namespace', $key)
+            ->field('config_json,revision')->find();
         if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
         }
@@ -88,67 +67,37 @@ SQL);
             throw new \RuntimeException('TRANSFER_TENANT_SETTING_INVALID');
         }
 
-        $started = false;
-        if (!$this->pdo->inTransaction()) {
-            $this->pdo->beginTransaction();
-            $started = true;
-        }
-        try {
-            $table = self::TABLE;
-            $statement = $this->pdo->prepare(<<<SQL
-SELECT id, revision, create_time
-FROM {$table}
-WHERE tenant_id = :tenant_id AND namespace = :namespace
-FOR UPDATE
-SQL);
-            $statement->execute(['tenant_id' => $tenantId, 'namespace' => $key]);
-            $row = $statement->fetch(PDO::FETCH_ASSOC);
+        Db::transaction(function () use ($tenantId, $key, $encoded, $revision): void {
+            $row = Db::name('tenant_setting')->where('tenant_id', $tenantId)->where('namespace', $key)
+                ->field('id,revision,create_time')->lock(true)->find();
             $now = time();
             if (!is_array($row)) {
                 if ($revision !== null) {
                     throw new \RuntimeException('TRANSFER_CONFLICT');
                 }
-                $insert = $this->pdo->prepare(<<<SQL
-INSERT INTO {$table}
-    (tenant_id, namespace, config_json, revision, create_time, update_time)
-VALUES (:tenant_id, :namespace, :config_json, 1, :now, :now)
-SQL);
-                $insert->execute([
+                Db::name('tenant_setting')->insert([
                     'tenant_id' => $tenantId,
                     'namespace' => $key,
                     'config_json' => $encoded,
-                    'now' => $now,
+                    'revision' => 1,
+                    'create_time' => $now,
+                    'update_time' => $now,
                 ]);
             } else {
                 if ($revision === null || (int)$row['revision'] !== $revision) {
                     throw new \RuntimeException('TRANSFER_CONFLICT');
                 }
-                $update = $this->pdo->prepare(<<<SQL
-UPDATE {$table}
-SET config_json = :config_json, revision = revision + 1, update_time = :now
-WHERE id = :id AND tenant_id = :tenant_id AND namespace = :namespace AND revision = :revision
-SQL);
-                $update->execute([
+                $updated = Db::name('tenant_setting')->where('id', (int)$row['id'])
+                    ->where('tenant_id', $tenantId)->where('namespace', $key)->where('revision', $revision)->update([
                     'config_json' => $encoded,
-                    'now' => $now,
-                    'id' => (int)$row['id'],
-                    'tenant_id' => $tenantId,
-                    'namespace' => $key,
-                    'revision' => $revision,
+                    'revision' => Db::raw('revision + 1'),
+                    'update_time' => $now,
                 ]);
-                if ($update->rowCount() !== 1) {
+                if ($updated !== 1) {
                     throw new \RuntimeException('TRANSFER_CONFLICT');
                 }
             }
-            if ($started) {
-                $this->pdo->commit();
-            }
-        } catch (\Throwable $exception) {
-            if ($started && $this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        });
     }
 
     private function tenantId(TenantContext|PlatformContext $context): int

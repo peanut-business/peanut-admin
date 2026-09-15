@@ -141,7 +141,7 @@ expectOutboundHttp(
     'timeout was not classified before retry success',
 );
 
-$qcloud = (new QcloudStorageClientFactory())->make([
+$qcloud = (new QcloudStorageClientFactory(new CurrentExecutionContext($contexts)))->make([
     'resolved_credentials' => ['access_key' => 'test-access-key', 'secret_key' => 'test-secret-key'],
 ], ['region' => 'ap-shanghai']);
 $qcloudHandler = $qcloud->httpClient->getConfig('handler');

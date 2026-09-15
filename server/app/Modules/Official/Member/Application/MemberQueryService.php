@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
+use app\Modules\Official\Member\Model\Member;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
+use app\Modules\Official\Member\Model\MemberTag;
 use app\Modules\Official\Member\Contracts\Dto\MemberBalanceSnapshot;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberQueries;
@@ -10,7 +13,6 @@ use app\common\http\PageResult;
 use app\common\execution\CurrentExecutionContext;
 use app\common\service\Money;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use app\common\support\PaginationInput;
@@ -40,7 +42,7 @@ final class MemberQueryService implements MemberQueries
         int $memberId,
         array $fields,
     ): array {
-        $member = MemberTenantRepository::members($context)
+        $member = Member::where([])
             ->field($fields)->findOrEmpty($memberId);
         if ($member->isEmpty()) {
             return [];
@@ -54,14 +56,14 @@ final class MemberQueryService implements MemberQueries
 
     public function tags(TenantContext|TenantSystemContext $context): array
     {
-        return MemberTenantRepository::tags($context)->order('id', 'desc')->select()->toArray();
+        return MemberTag::where([])->order('id', 'desc')->select()->toArray();
     }
 
     public function balanceSnapshot(
         AuthenticatedMemberContext|TenantContext|TenantSystemContext $context,
         int $memberId,
     ): ?MemberBalanceSnapshot {
-        $member = MemberTenantRepository::members($context)->findOrEmpty($memberId);
+        $member = Member::where([])->findOrEmpty($memberId);
         if ($member->isEmpty()) {
             return null;
         }
@@ -79,13 +81,15 @@ final class MemberQueryService implements MemberQueries
         $memberId = $context->memberId;
         $page = max(1, $page);
         $pageSize = max(1, $pageSize);
-        $query = MemberTenantRepository::balanceLogs($context)->where('member_id', $memberId);
+        $query = MemberBalanceLog::where([])->where('member_id', $memberId);
         $pageResult = PaginationInput::from([
             'page_no' => $page,
             'page_size' => $pageSize,
         ])->result($query->order('id', 'desc'));
 
-        return MemberTenantRepository::arrayPage($pageResult);
+        return $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
     }
 
     private function identitySnapshot(
@@ -93,7 +97,7 @@ final class MemberQueryService implements MemberQueries
         int $memberId,
         bool $lock,
     ): ?MemberIdentitySnapshot {
-        $query = MemberTenantRepository::members($context)->where('id', $memberId);
+        $query = Member::where([])->where('id', $memberId);
         if ($lock) {
             $query->lock(true);
         }

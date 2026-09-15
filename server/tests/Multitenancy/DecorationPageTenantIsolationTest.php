@@ -6,7 +6,7 @@ use app\common\enum\decoration\DecorationEnum;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\decoration\DecorationReadService;
-use app\common\service\decoration\DecorationTenantRepository;
+use app\common\model\decoration\DecoratePage;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -166,6 +166,7 @@ SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
+    $decorationReads = app(DecorationReadService::class);
 
     $alpha = decorationTenantContext(101, 501, 'fresh-decoration-alpha');
     $beta = decorationTenantContext(202, 502, 'fresh-decoration-beta');
@@ -299,19 +300,19 @@ SQL);
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
             \app\common\execution\ConsumerExecutionContext::publicTenant($publicAlpha),
-            fn() => DecorationReadService::pageByType($publicAlpha, DecorationEnum::PC_HOME, 'decoration.pc-page'),
+            fn() => $decorationReads->pageByType($publicAlpha, DecorationEnum::PC_HOME, 'decoration.pc-page'),
         )['name'] === 'Alpha PC',
         'public Alpha read selected another Tenant page'
     );
     expectDecorationTenant(
         app(ExecutionContextStore::class)->run(
             \app\common\execution\ConsumerExecutionContext::publicTenant($publicBeta),
-            fn() => DecorationReadService::pageByType($publicBeta, DecorationEnum::PC_HOME, 'decoration.pc-page'),
+            fn() => $decorationReads->pageByType($publicBeta, DecorationEnum::PC_HOME, 'decoration.pc-page'),
         )['name'] === 'Beta PC',
         'public Beta read selected another Tenant page'
     );
     try {
-        DecorationTenantRepository::pages()->count();
+        DecoratePage::where([])->count();
         throw new RuntimeException('untrusted public decoration context unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectDecorationTenant($exception->getMessage() !== '', 'untrusted context denial lost its shape');

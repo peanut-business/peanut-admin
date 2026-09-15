@@ -6,7 +6,6 @@ namespace app\platform\service\ops;
 use app\common\service\audit\AuditContractHost;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Context\PlatformContext;
@@ -15,11 +14,11 @@ use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\OpsAuditEvent;
 use PeanutAdmin\OpsConsole\Task\OpsTaskSubmission;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
-use Throwable;
 use Closure;
+use think\facade\Db;
 
 /** Trusted state machine for one registry-bound Module delivery request. */
-final readonly class PdoModuleOperationTaskExecutionService
+final readonly class ThinkPhpModuleOperationTaskExecutionService
 {
     private const FAILURE_CODES = [
         'OPS_MODULE_PREFLIGHT_FAILED',
@@ -34,10 +33,9 @@ final readonly class PdoModuleOperationTaskExecutionService
     ];
 
     public function __construct(
-        private PDO $pdo,
         private AuditContractHost $audit,
-        private PdoOpsTaskDispatcher $tasks,
-        private PdoMaintenanceWindowStore $maintenance,
+        private ThinkPhpOpsTaskDispatcher $tasks,
+        private ThinkPhpMaintenanceWindowStore $maintenance,
         private DeploymentModuleRequestService $requests,
         private BackupRestoreProviderRegistry $backupProviders,
         private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
@@ -49,37 +47,27 @@ final readonly class PdoModuleOperationTaskExecutionService
     {
         return $this->transaction(function (): ?array {
             $this->failStaleRunningTasks();
-            $task = $this->one(<<<'SQL'
-SELECT task.*, operator.account_id
-FROM pa_ops_task task
-JOIN pa_platform_operator operator ON operator.id=task.submitted_by_operator_id
-WHERE task.task_type=:task_type AND task.handler_key=:handler_key
-  AND task.status='queued' AND task.available_at<=UTC_TIMESTAMP(3)
-ORDER BY task.id LIMIT 1 FOR UPDATE
-SQL, [
-                'task_type' => PlatformModuleOperationExecutionService::TASK_TYPE,
-                'handler_key' => PlatformModuleOperationExecutionService::HANDLER_KEY,
-            ]);
+            $task = Db::name('ops_task')->alias('task')->join('platform_operator operator', 'operator.id=task.submitted_by_operator_id')
+                ->where('task.task_type', PlatformModuleOperationExecutionService::TASK_TYPE)
+                ->where('task.handler_key', PlatformModuleOperationExecutionService::HANDLER_KEY)
+                ->where('task.status', 'queued')->where('task.available_at', '<=', Db::raw('UTC_TIMESTAMP(3)'))
+                ->field('task.*,operator.account_id')->order('task.id')->lock(true)->find();
             if ($task === null) {
                 return null;
             }
             $payload = $this->payload($task);
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status='running', attempt_count=attempt_count+1, revision=revision+1,
-    updated_at=UTC_TIMESTAMP(3)
-WHERE id=:id AND status='queued' AND revision=:revision
-SQL);
-            $update->execute(['id' => $task['id'], 'revision' => $task['revision']]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_task')->where('id', $task['id'])->where('status', 'queued')
+                ->where('revision', $task['revision'])->update([
+                    'status' => 'running', 'attempt_count' => Db::raw('attempt_count+1'),
+                    'revision' => Db::raw('revision+1'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_CLAIM_CONFLICT');
             }
             $revision = (int)$task['revision'] + 1;
-            $insert = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_ops_module_execution (task_key,request_key,current_step)
-VALUES (:task_key,:request_key,'preflight')
-SQL);
-            $insert->execute(['task_key' => $task['task_key'], 'request_key' => $payload['request_key']]);
+            Db::name('ops_module_execution')->insert([
+                'task_key' => $task['task_key'], 'request_key' => $payload['request_key'], 'current_step' => 'preflight',
+            ]);
             $this->audit($task, 'platform.ops.module.claimed', 'module.claim', [
                 'task_key' => $task['task_key'],
                 'request_key' => $payload['request_key'],
@@ -139,14 +127,10 @@ SQL);
         $sha = hash('sha256', $json);
         $this->transaction(function () use ($taskKey, $revision, $json, $sha): void {
             $this->lockedRunningTask($taskKey, $revision);
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET current_step='smoke', operation_result_json=:result_json,
-    operation_result_sha256=:result_sha, updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND current_step='execution'
-SQL);
-            $update->execute(['result_json' => $json, 'result_sha' => $sha, 'task_key' => $taskKey]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_module_execution')->where('task_key', $taskKey)->where('current_step', 'execution')
+                ->update(['current_step' => 'smoke', 'operation_result_json' => $json,
+                    'operation_result_sha256' => $sha, 'updated_at' => Db::raw('UTC_TIMESTAMP(3)')]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_STEP_CONFLICT');
             }
         });
@@ -166,7 +150,7 @@ SQL);
         if (!is_array($result) || !$this->smoke($payload, $result)) {
             throw new \RuntimeException('OPS_MODULE_SMOKE_FAILED');
         }
-        return $this->transaction(function () use ($task, $payload, $execution): array {
+        return $this->transaction(function () use ($task, $payload): array {
             $locked = $this->lockedRunningTask((string)$task['task_key'], (int)$task['revision']);
             $current = $this->execution((string)$task['task_key'], true);
             if ((string)$current['current_step'] !== 'smoke') {
@@ -189,26 +173,18 @@ SQL);
                     'revision' => $maintenanceRevision,
                 ]),
             );
-            $executionUpdate = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET current_step='completed', recovery_pointer_json=:pointer_json,
-    recovery_pointer_sha256=:pointer_sha, completed_at=UTC_TIMESTAMP(3),
-    updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND current_step='smoke'
-SQL);
-            $executionUpdate->execute([
-                'pointer_json' => $pointerJson,
-                'pointer_sha' => $pointerSha,
-                'task_key' => $task['task_key'],
-            ]);
-            $taskUpdate = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status='succeeded', revision=revision+1, last_error_code=NULL,
-    completed_at=UTC_TIMESTAMP(3), updated_at=UTC_TIMESTAMP(3)
-WHERE id=:id AND status='running' AND revision=:revision
-SQL);
-            $taskUpdate->execute(['id' => $locked['id'], 'revision' => $locked['revision']]);
-            if ($executionUpdate->rowCount() !== 1 || $taskUpdate->rowCount() !== 1) {
+            $executionUpdated = Db::name('ops_module_execution')->where('task_key', $task['task_key'])
+                ->where('current_step', 'smoke')->update([
+                    'current_step' => 'completed', 'recovery_pointer_json' => $pointerJson,
+                    'recovery_pointer_sha256' => $pointerSha, 'completed_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            $taskUpdated = Db::name('ops_task')->where('id', $locked['id'])->where('status', 'running')
+                ->where('revision', $locked['revision'])->update([
+                    'status' => 'succeeded', 'revision' => Db::raw('revision+1'), 'last_error_code' => null,
+                    'completed_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($executionUpdated !== 1 || $taskUpdated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_FINALIZE_CONFLICT');
             }
             $this->audit($task, 'platform.ops.module.succeeded', 'module.succeed', [
@@ -248,22 +224,17 @@ SQL);
                 ];
                 $pointerJson = $this->canonicalJson($pointer);
                 $pointerSha = hash('sha256', $pointerJson);
-                $store = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET recovery_pointer_json=:pointer_json, recovery_pointer_sha256=:pointer_sha,
-    updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key
-SQL);
-                $store->execute(['pointer_json' => $pointerJson, 'pointer_sha' => $pointerSha, 'task_key' => $taskKey]);
+                Db::name('ops_module_execution')->where('task_key', $taskKey)->update([
+                    'recovery_pointer_json' => $pointerJson, 'recovery_pointer_sha256' => $pointerSha,
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
             }
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status='dead', revision=revision+1, last_error_code=:error_code,
-    completed_at=UTC_TIMESTAMP(3), updated_at=UTC_TIMESTAMP(3)
-WHERE id=:id AND status='running' AND revision=:revision
-SQL);
-            $update->execute(['error_code' => $errorCode, 'id' => $task['id'], 'revision' => $revision]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_task')->where('id', $task['id'])->where('status', 'running')
+                ->where('revision', $revision)->update([
+                    'status' => 'dead', 'revision' => Db::raw('revision+1'), 'last_error_code' => $errorCode,
+                    'completed_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_FINALIZE_CONFLICT');
             }
             $this->audit($task, 'platform.ops.module.failed', 'module.fail', [
@@ -289,16 +260,11 @@ SQL);
     /** @return array{task_key:string,status:string} */
     public function heartbeat(string $taskKey, int $revision): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task SET updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND task_type=:task_type AND status='running' AND revision=:revision
-SQL);
-        $statement->execute([
-            'task_key' => $taskKey,
-            'task_type' => PlatformModuleOperationExecutionService::TASK_TYPE,
-            'revision' => $revision,
-        ]);
-        if ($statement->rowCount() !== 1) {
+        $updated = Db::name('ops_task')->where('task_key', $taskKey)
+            ->where('task_type', PlatformModuleOperationExecutionService::TASK_TYPE)
+            ->where('status', 'running')->where('revision', $revision)
+            ->update(['updated_at' => Db::raw('UTC_TIMESTAMP(3)')]);
+        if ($updated !== 1) {
             throw new \RuntimeException('OPS_MODULE_EXECUTION_FENCED');
         }
         return ['task_key' => $taskKey, 'status' => 'running'];
@@ -343,13 +309,12 @@ SQL);
                 'platform.ops.backup.submitted',
                 'backup.submit',
             ));
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET current_step='backup', backup_task_key=:child, updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND current_step='preflight'
-SQL);
-            $update->execute(['child' => $child->taskKey, 'task_key' => $task['task_key']]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_module_execution')->where('task_key', $task['task_key'])
+                ->where('current_step', 'preflight')->update([
+                    'current_step' => 'backup', 'backup_task_key' => $child->taskKey,
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_STEP_CONFLICT');
             }
             return ['action' => 'run_backup', 'child_task_key' => $child->taskKey];
@@ -362,14 +327,14 @@ SQL);
         return $this->transaction(function () use ($task, $revision): array {
             $this->lockedRunningTask((string)$task['task_key'], $revision);
             $execution = $this->execution((string)$task['task_key'], true);
-            $child = $this->one('SELECT * FROM pa_ops_task WHERE task_key=:key FOR UPDATE', ['key' => $execution['backup_task_key']]);
+            $child = Db::name('ops_task')->where('task_key', $execution['backup_task_key'])->lock(true)->find();
             if ($child === null || (string)$child['status'] !== 'succeeded') {
                 if ($child !== null && in_array((string)$child['status'], ['queued', 'running'], true)) {
                     return ['action' => 'wait_backup', 'child_task_key' => (string)$child['task_key']];
                 }
                 throw new \RuntimeException('OPS_MODULE_BACKUP_FAILED');
             }
-            $evidence = $this->one('SELECT * FROM pa_ops_backup_evidence WHERE task_key=:key FOR UPDATE', ['key' => $child['task_key']]);
+            $evidence = Db::name('ops_backup_evidence')->where('task_key', $child['task_key'])->lock(true)->find();
             $payload = $this->payload($task);
             if ($evidence === null
                 || !hash_equals($payload['source_commit'], (string)$evidence['source_commit'])
@@ -392,18 +357,12 @@ SQL);
                 'platform.ops.restore.submitted',
                 'restore.submit',
             ));
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET current_step='restore_verification', backup_reference_key=:backup,
-    restore_task_key=:restore, updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND current_step='backup'
-SQL);
-            $update->execute([
-                'backup' => $evidence['backup_reference_key'],
-                'restore' => $restore->taskKey,
-                'task_key' => $task['task_key'],
-            ]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_module_execution')->where('task_key', $task['task_key'])
+                ->where('current_step', 'backup')->update([
+                    'current_step' => 'restore_verification', 'backup_reference_key' => $evidence['backup_reference_key'],
+                    'restore_task_key' => $restore->taskKey, 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_STEP_CONFLICT');
             }
             return ['action' => 'run_restore', 'child_task_key' => $restore->taskKey];
@@ -416,14 +375,14 @@ SQL);
         $result = $this->transaction(function () use ($task, $revision): array {
             $this->lockedRunningTask((string)$task['task_key'], $revision);
             $execution = $this->execution((string)$task['task_key'], true);
-            $child = $this->one('SELECT * FROM pa_ops_task WHERE task_key=:key FOR UPDATE', ['key' => $execution['restore_task_key']]);
+            $child = Db::name('ops_task')->where('task_key', $execution['restore_task_key'])->lock(true)->find();
             if ($child === null || (string)$child['status'] !== 'succeeded') {
                 if ($child !== null && in_array((string)$child['status'], ['queued', 'running'], true)) {
                     return ['action' => 'wait_restore', 'child_task_key' => (string)$child['task_key']];
                 }
                 throw new \RuntimeException('OPS_MODULE_RESTORE_FAILED');
             }
-            $evidence = $this->one('SELECT * FROM pa_ops_restore_evidence WHERE task_key=:key FOR UPDATE', ['key' => $child['task_key']]);
+            $evidence = Db::name('ops_restore_evidence')->where('task_key', $child['task_key'])->lock(true)->find();
             $payload = $this->payload($task);
             if ($evidence === null
                 || !hash_equals((string)$execution['backup_reference_key'], (string)$evidence['backup_reference_key'])
@@ -432,13 +391,12 @@ SQL);
             ) {
                 throw new \RuntimeException('OPS_MODULE_RESTORE_FAILED');
             }
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET current_step='maintenance', restore_evidence_sha256=:sha, updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND current_step='restore_verification'
-SQL);
-            $update->execute(['sha' => $evidence['evidence_sha256'], 'task_key' => $task['task_key']]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_module_execution')->where('task_key', $task['task_key'])
+                ->where('current_step', 'restore_verification')->update([
+                    'current_step' => 'maintenance', 'restore_evidence_sha256' => $evidence['evidence_sha256'],
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_STEP_CONFLICT');
             }
             return ['action' => 'begin_maintenance'];
@@ -484,18 +442,12 @@ SQL);
                     'request_digest' => $requestDigest,
                 ]),
             );
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_execution
-SET current_step='execution', maintenance_key=:key, maintenance_revision=:revision,
-    updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND current_step='maintenance'
-SQL);
-            $update->execute([
-                'key' => $created->maintenanceKey,
-                'revision' => $created->revision,
-                'task_key' => $task['task_key'],
-            ]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_module_execution')->where('task_key', $task['task_key'])
+                ->where('current_step', 'maintenance')->update([
+                    'current_step' => 'execution', 'maintenance_key' => $created->maintenanceKey,
+                    'maintenance_revision' => $created->revision, 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new \RuntimeException('OPS_MODULE_STEP_CONFLICT');
             }
             return ['action' => 'execute'];
@@ -508,11 +460,8 @@ SQL);
         if (!hash_equals($payload['package_key'], (string)($result['package_key'] ?? ''))) {
             return false;
         }
-        $statement = $this->pdo->prepare(
-            'SELECT status,installed_version,artifact_sha256,lock_digest FROM pa_plugin_installation WHERE plugin_key=?'
-        );
-        $statement->execute([$payload['package_key']]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('plugin_installation')->where('plugin_key', $payload['package_key'])
+            ->field('status,installed_version,artifact_sha256,lock_digest')->find();
         if ($payload['operation'] === 'update') {
             return is_array($row)
                 && (string)$row['status'] === 'active'
@@ -523,7 +472,7 @@ SQL);
         if ($payload['operation'] === 'retire') {
             return is_array($row) && (string)$row['status'] === 'uninstalled';
         }
-        if ($row !== false) {
+        if ($row !== null) {
             return false;
         }
         $modules = $result['affected_modules'] ?? [];
@@ -534,12 +483,7 @@ SQL);
         if (count($keys) !== count($modules)) {
             return false;
         }
-        $check = $this->pdo->prepare(
-            'SELECT COUNT(*) FROM pa_module_installation WHERE module_key IN ('
-            . implode(',', array_fill(0, count($keys), '?')) . ')'
-        );
-        $check->execute($keys);
-        return (int)$check->fetchColumn() === 0;
+        return Db::name('module_installation')->whereIn('module_key', $keys)->count() === 0;
     }
 
     /** @param array<string,string> $payload @param array<string,mixed> $execution @return array<string,mixed> */
@@ -550,10 +494,8 @@ SQL);
         ) {
             throw new \RuntimeException('OPS_MODULE_RECOVERY_POINTER_FAILED');
         }
-        $backup = $this->one(
-            'SELECT provider_key,manifest_sha256 FROM pa_ops_backup_evidence WHERE backup_reference_key=:reference',
-            ['reference' => $execution['backup_reference_key']],
-        );
+        $backup = Db::name('ops_backup_evidence')->where('backup_reference_key', $execution['backup_reference_key'])
+            ->field('provider_key,manifest_sha256')->find();
         if ($backup === null) {
             throw new \RuntimeException('OPS_MODULE_RECOVERY_POINTER_FAILED');
         }
@@ -600,22 +542,15 @@ SQL);
 
     private function failStaleRunningTasks(): void
     {
-        $statement = $this->pdo->query(<<<'SQL'
-SELECT task.task_key
-FROM pa_ops_task task
-JOIN pa_ops_module_execution execution ON execution.task_key=task.task_key
-WHERE task.task_type='ops.module.execute' AND task.status='running'
-  AND task.updated_at<UTC_TIMESTAMP(3)-INTERVAL 2 HOUR
-FOR UPDATE
-SQL);
-        while ($statement !== false && ($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status='dead', revision=revision+1, last_error_code='OPS_MODULE_WORKER_STALE',
-    completed_at=UTC_TIMESTAMP(3), updated_at=UTC_TIMESTAMP(3)
-WHERE task_key=:task_key AND status='running'
-SQL);
-            $update->execute(['task_key' => $row['task_key']]);
+        $rows = Db::name('ops_task')->alias('task')->join('ops_module_execution execution', 'execution.task_key=task.task_key')
+            ->where('task.task_type', PlatformModuleOperationExecutionService::TASK_TYPE)->where('task.status', 'running')
+            ->where('task.updated_at', '<', Db::raw('UTC_TIMESTAMP(3)-INTERVAL 2 HOUR'))
+            ->field('task.task_key')->lock(true)->select()->toArray();
+        foreach ($rows as $row) {
+            Db::name('ops_task')->where('task_key', $row['task_key'])->where('status', 'running')->update([
+                'status' => 'dead', 'revision' => Db::raw('revision+1'), 'last_error_code' => 'OPS_MODULE_WORKER_STALE',
+                'completed_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            ]);
         }
     }
 
@@ -698,12 +633,7 @@ SQL);
     /** @return array<string,mixed> */
     private function runningTask(string $taskKey, int $revision): array
     {
-        $task = $this->one(<<<'SQL'
-SELECT task.*,operator.account_id FROM pa_ops_task task
-JOIN pa_platform_operator operator ON operator.id=task.submitted_by_operator_id
-WHERE task.task_key=:task_key AND task.task_type=:task_type
-  AND task.status='running' AND task.revision=:revision
-SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionService::TASK_TYPE, 'revision' => $revision]);
+        $task = $this->taskQuery($taskKey, $revision)->find();
         if ($task === null) {
             throw new \RuntimeException('OPS_MODULE_EXECUTION_FENCED');
         }
@@ -713,12 +643,7 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
     /** @return array<string,mixed> */
     private function lockedRunningTask(string $taskKey, int $revision): array
     {
-        $task = $this->one(<<<'SQL'
-SELECT task.*,operator.account_id FROM pa_ops_task task
-JOIN pa_platform_operator operator ON operator.id=task.submitted_by_operator_id
-WHERE task.task_key=:task_key AND task.task_type=:task_type
-  AND task.status='running' AND task.revision=:revision FOR UPDATE
-SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionService::TASK_TYPE, 'revision' => $revision]);
+        $task = $this->taskQuery($taskKey, $revision)->lock(true)->find();
         if ($task === null) {
             throw new \RuntimeException('OPS_MODULE_EXECUTION_FENCED');
         }
@@ -728,10 +653,8 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
     /** @return array<string,mixed> */
     private function execution(string $taskKey, bool $forUpdate = false): array
     {
-        $row = $this->one(
-            'SELECT * FROM pa_ops_module_execution WHERE task_key=:task_key' . ($forUpdate ? ' FOR UPDATE' : ''),
-            ['task_key' => $taskKey],
-        );
+        $query = Db::name('ops_module_execution')->where('task_key', $taskKey);
+        $row = ($forUpdate ? $query->lock(true) : $query)->find();
         if ($row === null) {
             throw new \RuntimeException('OPS_MODULE_EXECUTION_UNAVAILABLE');
         }
@@ -760,13 +683,11 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
         );
     }
 
-    /** @param array<string,mixed> $parameters @return array<string,mixed>|null */
-    private function one(string $sql, array $parameters): ?array
+    private function taskQuery(string $taskKey, int $revision): \think\db\Query
     {
-        $statement = $this->pdo->prepare($sql);
-        $statement->execute($parameters);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        return is_array($row) ? $row : null;
+        return Db::name('ops_task')->alias('task')->join('platform_operator operator', 'operator.id=task.submitted_by_operator_id')
+            ->where('task.task_key', $taskKey)->where('task.task_type', PlatformModuleOperationExecutionService::TASK_TYPE)
+            ->where('task.status', 'running')->where('task.revision', $revision)->field('task.*,operator.account_id');
     }
 
     private function canonicalJson(array $value): string
@@ -782,15 +703,6 @@ SQL, ['task_key' => $taskKey, 'task_type' => PlatformModuleOperationExecutionSer
 
     private function transaction(callable $operation): mixed
     {
-        $owns = !$this->pdo->inTransaction();
-        if ($owns) $this->pdo->beginTransaction();
-        try {
-            $result = $operation();
-            if ($owns) $this->pdo->commit();
-            return $result;
-        } catch (Throwable $exception) {
-            if ($owns && $this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
-        }
+        return Db::transaction($operation);
     }
 }

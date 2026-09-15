@@ -8,8 +8,8 @@ use app\common\services\ProductAssetReferenceService;
 use app\Modules\Official\Article\Contracts\ArticleQueries;
 use app\common\service\decoration\DecorationReadService;
 use app\common\service\decoration\DecorationSchemaService;
-use app\common\service\decoration\DecorationTenantRepository;
-use app\common\persistence\TransactionalExecution;
+use app\common\model\decoration\DecoratePage;
+use think\facade\Db;
 use app\common\service\module\ModuleExecutionBoundary;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Module\ModuleException;
@@ -17,7 +17,6 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 class DecorationPageApplicationService
 {
     public function __construct(
-        private readonly TransactionalExecution $transactions,
         private readonly ArticleQueries $articles,
         private readonly DecorationReadService $decoration,
         private readonly DecorationSchemaService $schema,
@@ -27,14 +26,14 @@ class DecorationPageApplicationService
 
     public function lists(TenantContext $context, array $allowedTypes): array
     {
-        return DecorationTenantRepository::pages()
+        return DecoratePage::where([])
             ->field(['id', 'type', 'name', 'update_time'])
             ->whereIn('type', $allowedTypes)->order('type', 'asc')->select()->toArray();
     }
 
     public function detail(TenantContext $context, int $id, array $allowedTypes): array
     {
-        $page = DecorationTenantRepository::pages()->where('id', $id)->findOrEmpty();
+        $page = DecoratePage::where('id', $id)->findOrEmpty();
         if ($page->isEmpty() || !in_array((int)$page->type, $allowedTypes, true)) {
             throw BusinessException::notFound('DECORATION_PAGE_NOT_FOUND', '装修页面不存在或无权访问');
         }
@@ -59,8 +58,8 @@ class DecorationPageApplicationService
         } catch (\RuntimeException $exception) {
             throw BusinessException::invalid('DECORATION_PAGE_INVALID', $exception->getMessage());
         }
-        $this->transactions->run(function () use ($context, $params, $type, $data, $meta): void {
-                $page = DecorationTenantRepository::pages()
+        Db::transaction(function () use ($context, $params, $type, $data, $meta): void {
+                $page = DecoratePage::where([])
                     ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
                 if ($page->isEmpty()) {
                     throw BusinessException::notFound('DECORATION_PAGE_NOT_FOUND', '装修页面不存在');

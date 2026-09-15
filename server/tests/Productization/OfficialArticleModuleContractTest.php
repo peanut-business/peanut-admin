@@ -94,11 +94,14 @@ $legacyHostRoutes = implode('', array_map(
     static fn(string $file): string => (string)file_get_contents($serverRoot . '/route/' . $file),
     ['app.php', 'platform.php', 'tenant.php', 'admin.php', 'public_api.php'],
 ));
-$repository = (string)file_get_contents($moduleRoot . '/Infrastructure/Persistence/ArticleTenantRepository.php');
 $publicMiddleware = (string)file_get_contents($serverRoot . '/app/api/middleware/PublicTenantModuleMiddleware.php');
 $administration = (string)file_get_contents($moduleRoot . '/Application/ArticleAdministrationService.php');
 $publicArticles = (string)file_get_contents($moduleRoot . '/Application/PublicArticleService.php');
 $publicContract = (string)file_get_contents($moduleRoot . '/Contracts/PublicArticleQueries.php');
+$articlePersistence = $administration . $publicArticles
+    . (string)file_get_contents($moduleRoot . '/Model/Article.php')
+    . (string)file_get_contents($moduleRoot . '/Model/ArticleCate.php')
+    . (string)file_get_contents($moduleRoot . '/Model/ArticleCollect.php');
 $provider = (string)file_get_contents($moduleRoot . '/ModuleProvider.php');
 $categoryController = (string)file_get_contents($moduleRoot . '/Http/Controller/ArticleCateController.php');
 $menuLogic = (string)file_get_contents($serverRoot . '/app/adminapi/application/auth/MenuApplicationService.php');
@@ -173,7 +176,7 @@ officialArticleExpect(
 );
 officialArticleExpect(
     !is_file($serverRoot . '/app/api/application/ArticleApplicationService.php')
-        && substr_count($publicArticles, 'ArticleTenantRepository::collections(') >= 4
+        && substr_count($publicArticles, 'ArticleCollect::where([])') >= 4
         && str_contains($publicArticles, 'implements PublicArticleQueries')
         && str_contains($provider, 'PublicArticleQueries::class =>')
         && str_contains($articleController, 'private readonly PublicArticleQueries $articles')
@@ -204,11 +207,11 @@ officialArticleExpect(
 );
 
 officialArticleExpect(
-    !str_contains($repository, 'ModuleProvider')
-        && !str_contains($repository, 'assertAvailable')
-        && !str_contains($repository, "where('tenant_id'")
-        && !str_contains($repository, "['tenant_id' =>"),
-    'Article repository reintroduced per-query Module or Tenant enforcement',
+    !str_contains($articlePersistence, 'ModuleProvider')
+        && !str_contains($articlePersistence, 'assertAvailable')
+        && !str_contains($articlePersistence, "where('tenant_id'")
+        && !str_contains($articlePersistence, "['tenant_id' =>"),
+    'Article persistence reintroduced per-query Module or Tenant enforcement',
 );
 officialArticleExpect(
     str_contains($publicMiddleware, '$this->entryBindings->system(')

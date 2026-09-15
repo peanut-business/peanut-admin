@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\service\runtime;
 
-use PDO;
+use think\facade\Db;
+use think\facade\Config;
 
 /** Stable, non-secret namespace shared by every replica of one application instance. */
 final readonly class RuntimeNamespace
@@ -19,6 +20,15 @@ final readonly class RuntimeNamespace
     {
     }
 
+    public static function fromConfiguration(): self
+    {
+        return self::fromResourceId(
+            (string)Config::get('database.resource_id', ''),
+            (string)Config::get('peanut.environment', ''),
+        );
+    }
+
+    /** Config files call this before ThinkPHP's configuration repository is available. */
     public static function fromEnvironment(): self
     {
         return self::fromResourceId(
@@ -27,9 +37,9 @@ final readonly class RuntimeNamespace
         );
     }
 
-    public static function fromResourceId(string $resourceId, ?string $environment = null): self
+    public static function fromResourceId(string $resourceId, string $environment): self
     {
-        $environment = strtolower(trim($environment ?? (string)(getenv('APP_ENV') ?: '')));
+        $environment = strtolower(trim($environment));
         $resourceId = strtolower(trim($resourceId));
         if (preg_match(self::ENVIRONMENT_PATTERN, $environment) !== 1
             || preg_match(self::RESOURCE_PATTERN, $resourceId) !== 1) {
@@ -63,10 +73,9 @@ final readonly class RuntimeNamespace
         return $this->cachePrefix() . 'session:';
     }
 
-    public function advisoryLockName(PDO $pdo, string $logicalName): string
+    public function advisoryLockName(string $logicalName): string
     {
-        $statement = $pdo->query('SELECT DATABASE()');
-        $database = $statement === false ? false : $statement->fetchColumn();
+        $database = Db::query('SELECT DATABASE() AS database_name')[0]['database_name'] ?? null;
         if (!is_string($database) || trim($database) === '' || trim($logicalName) === '') {
             throw new \RuntimeException('RUNTIME_NAMESPACE_DATABASE_INVALID');
         }

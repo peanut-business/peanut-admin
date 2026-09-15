@@ -12,11 +12,12 @@ use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\TenantOwnerAdminProvisioner;
 use Opis\JsonSchema\Validator;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Audit\AuditService;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
+use PeanutAdmin\Kernel\Authorization\Persistence\ThinkPhpAuthorizationCatalogRepository;
 use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalogSynchronizer;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
@@ -29,24 +30,20 @@ use PeanutAdmin\Kernel\Module\ModuleException;
 use PeanutAdmin\Kernel\Module\ModuleHostLayout;
 use PeanutAdmin\Kernel\Module\ModuleProvider;
 use PeanutAdmin\Kernel\Module\ModuleRegistryCompiler;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
 use PeanutAdmin\Kernel\Module\VersionConstraintMatcher;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Application\TenantOwnerAdminService;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 require __DIR__ . '/../fixtures/PlatformTenantModule/Content/ModuleProvider.php';
 
 function pm01ModuleExpect(bool $condition, string $message): void
@@ -71,26 +68,17 @@ function pm01ModuleRejects(Closure $operation, string $expected): void
     throw new RuntimeException("expected rejection: {$expected}");
 }
 
-function pm01ModuleBootstrap(PDO $pdo): BootstrapService
+function pm01ModuleBootstrap(): BootstrapService
 {
-    return new BootstrapService(
-        new PdoTransactionManager($pdo),
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        new PasswordHasher()
-    );
+    return new BootstrapService(passwords: new PasswordHasher());
 }
 
-function pm01ModuleSessions(PDO $pdo): PlatformOperatorSessionService
+function pm01ModuleSessions(): PlatformOperatorSessionService
 {
-    $permissions = new PdoPlatformAuthorizationRepository($pdo);
+    $permissions = new ThinkPhpPlatformAuthorizationRepository();
     return new PlatformOperatorSessionService(
         new PlatformAuthService(
-            new PdoTransactionManager($pdo),
-            new PdoPlatformAuthRepository($pdo),
+            new ThinkPhpPlatformAuthRepository(),
             new PasswordHasher(),
             new SystemClock(),
             new TokenIssuer(),
@@ -180,16 +168,17 @@ try {
     foreach (AuthorizationSchema::tableNames() as $table) {
         $pdo->exec(AuthorizationSchema::createSql($table));
     }
-    (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
+    ThinkPhpTestConnection::fromPdo($pdo);
+    (new CorePermissionCatalogSynchronizer(new ThinkPhpAuthorizationCatalogRepository()))->synchronize();
 
-    $bootstrap = pm01ModuleBootstrap($pdo);
+    $bootstrap = pm01ModuleBootstrap();
     $platform = $bootstrap->bootstrapPlatformOwner(
         'module-owner@example.test',
         'ModuleOwnerPassword2026',
         'Module Owner',
         'pm01-module-platform-bootstrap'
     );
-    $sessions = pm01ModuleSessions($pdo);
+    $sessions = pm01ModuleSessions();
     $authentication = $sessions->login(
         'module-owner@example.test',
         'ModuleOwnerPassword2026',
@@ -202,23 +191,21 @@ try {
     $moduleRoot = realpath(__DIR__ . '/../fixtures/PlatformTenantModule/Content');
     $kernelRoot = dirname((new ReflectionClass(ModuleProvider::class))->getFileName(), 3);
     $registry = DeployedTenantModuleRegistry::compile(
-        $pdo,
         [$moduleRoot],
         pm01ModuleCompiler($kernelRoot . '/resources/schemas/module-manifest.schema.json')
     );
     $validator = new OpisTenantModuleConfigValidator();
     $repository = new VerifiedTenantModuleRepository(
-        new PdoModuleRuntimeRepository($pdo, true),
+        new ThinkPhpModuleRuntimeRepository(true),
         $registry
     );
     $governance = new TenantGovernanceService(
         new CorePlatformOperatorIdentityPort($sessions),
-        new PdoTransactionManager($pdo),
-        $bootstrap,
         new PlatformTenantAdminService(
-            $pdo,
-            new TenantModuleManager($registry->compiled(), $repository, $validator)
+            new TenantModuleManager($registry->compiled(), $repository, $validator),
+            new AuditService(),
         ),
+        new TenantOwnerAdminService(new AuditService()),
         new class implements TenantOwnerAdminProvisioner {
             public function provision(
                 int $tenantId,
@@ -236,7 +223,6 @@ try {
 
     pm01ModuleRejects(
         static fn() => new DeployedTenantModuleRegistry(
-            $pdo,
             new CompiledModuleRegistry([], [], [], [], hash('sha256', ''))
         ),
         'MODULE_REGISTRY_UNAVAILABLE'

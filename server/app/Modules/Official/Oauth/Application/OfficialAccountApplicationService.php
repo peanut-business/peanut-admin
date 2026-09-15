@@ -11,14 +11,13 @@ use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 use PeanutAdmin\IntegrationSecurity\Wechat\OfficialAccountService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 
 class OfficialAccountApplicationService implements OfficialAccountCallbacks
 {
     private const CONFIG_TYPE = 'oa_setting';
 
     public function __construct(
-        private readonly TransactionManager $transactions,
         private readonly ExternalChannelBindingService $bindings,
         private readonly FileService $files,
         private readonly OfficialAccountReplyApplicationService $replies,
@@ -91,7 +90,7 @@ class OfficialAccountApplicationService implements OfficialAccountCallbacks
             'app_secret' => $secret,
             'token' => trim((string)($params['token'] ?? '')),
         ];
-        $this->transactions->run(function () use ($context, $data): void {
+        Db::transaction(function () use ($context, $data): void {
             $this->bindings->update(
                 $context,
                 ExternalTenantResolver::WECHAT_OFFICIAL_CALLBACK,

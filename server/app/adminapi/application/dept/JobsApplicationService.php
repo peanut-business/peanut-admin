@@ -5,10 +5,10 @@ namespace app\adminapi\application\dept;
 
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
+use app\common\model\dept\Jobs;
 use app\common\services\XlsxExportService;
 use PeanutAdmin\Kernel\Context\TenantContextRequirement;
-use app\common\service\org\OrgTenantRepository;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -20,7 +20,6 @@ class JobsApplicationService
 
     public function __construct(
         private readonly XlsxExportService $xlsxExport,
-        private readonly TransactionalExecution $transactions,
     ) {}
 
     /** 将 Peanut 旧版 is_disable 请求转换为 LikeAdmin status 契约。 */
@@ -67,7 +66,9 @@ class JobsApplicationService
 
         $pagination = PaginationInput::from($params);
         $pageResult = $pagination->result(self::buildListQuery($context, $params));
-        $pageResult = OrgTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof Jobs
+            ? $item->toArray()
+            : (array)$item);
         $rows = $pageResult->items;
 
         return new PageResult(
@@ -100,10 +101,10 @@ class JobsApplicationService
     public function add(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
-        return $this->transactions->run(function () use ($context, $params): bool {
+        return Db::transaction(function () use ($context, $params): bool {
             self::assertUnique($context, (string)$params['name'], (string)$params['code']);
             $status = (int)$params['status'];
-            OrgTenantRepository::createJob([
+            Jobs::create([
                 'name'       => trim((string)$params['name']),
                 'code'       => trim((string)$params['code']),
                 'sort'       => (int)($params['sort'] ?? 0),
@@ -118,7 +119,7 @@ class JobsApplicationService
     public function edit(TenantContext $context, array $params): bool
     {
         $params = self::normalizeInput($params);
-        return $this->transactions->run(function () use ($context, $params): bool {
+        return Db::transaction(function () use ($context, $params): bool {
             $id = (int)$params['id'];
             $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
@@ -140,7 +141,7 @@ class JobsApplicationService
 
     public function delete(TenantContext $context, int $id): bool
     {
-        return $this->transactions->run(function () use ($context, $id): bool {
+        return Db::transaction(function () use ($context, $id): bool {
             $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
                 throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
@@ -152,7 +153,7 @@ class JobsApplicationService
 
     public function updateStatus(TenantContext $context, int $id, int $status): bool
     {
-        return $this->transactions->run(function () use ($context, $id, $status): bool {
+        return Db::transaction(function () use ($context, $id, $status): bool {
             $jobs = self::jobs($context)->where('id', $id)->lock(true)->findOrEmpty();
             if ($jobs->isEmpty()) {
                 throw BusinessException::notFound('ADMIN_JOB_NOT_FOUND', '岗位不存在');
@@ -269,7 +270,7 @@ class JobsApplicationService
 
     private static function jobs(TenantContext $context)
     {
-        return OrgTenantRepository::jobs();
+        return Jobs::where([]);
     }
 
     private static function formatTime($value): string

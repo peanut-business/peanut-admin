@@ -6,7 +6,7 @@ namespace app\Modules\Official\Payment\Validation;
 use app\Modules\Official\Payment\Application\RefundEnum;
 use app\common\validate\PageSizeRule;
 use app\Modules\Official\Payment\Model\RechargeOrder;
-use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\validate\TenantContextValidate;
 
 /** 充值列表、部分退款和失败重试参数验证。 */
@@ -71,7 +71,7 @@ class RechargeValidate extends TenantContextValidate
 
     protected function checkRecharge($value): bool|string
     {
-        $order = FinanceTenantRepository::orders($this->requireTenantContext())->findOrEmpty((int)$value);
+        $order = RechargeOrder::where([])->findOrEmpty((int)$value);
         if ($order->isEmpty()) {
             return '充值订单不存在';
         }
@@ -83,7 +83,7 @@ class RechargeValidate extends TenantContextValidate
 
     protected function checkRecord($value): bool|string
     {
-        $record = FinanceTenantRepository::records($this->requireTenantContext())->findOrEmpty((int)$value);
+        $record = RefundRecord::where([])->findOrEmpty((int)$value);
         if ($record->isEmpty()) {
             return '退款记录不存在';
         }

@@ -5,14 +5,14 @@ namespace app\command;
 
 use app\platform\service\module\DeploymentModuleInstaller;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\facade\Config;
 
 /** Registers a manifest from the explicit PEANUT_MODULE_ROOTS deployment registry. */
-final class ModuleInstall extends DatabaseContextualCommand
+final class ModuleInstall extends ModuleContextualCommand
 {
     protected function configure()
     {
@@ -24,13 +24,11 @@ final class ModuleInstall extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) {
                 throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
             }
             $identity = (new DeploymentModuleInstaller(
-                $pdo,
                 dirname(__DIR__, 2),
                 $this->moduleCatalogs(),
             ))->install(

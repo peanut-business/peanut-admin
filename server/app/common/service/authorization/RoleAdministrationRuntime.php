@@ -4,15 +4,14 @@ declare(strict_types=1);
 namespace app\common\service\authorization;
 
 use app\common\contract\authorization\AdminMenuPersistence;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
+use think\facade\Db;
 
 /** Container-owned assembly and read projections for native Tenant roles. */
 final readonly class RoleAdministrationRuntime
 {
     public function __construct(
-        private PDO $pdo,
         private RoleAdminService $roles,
         private AdminAuthorizationService $authorization,
         private AdminMenuPersistence $menus,
@@ -41,11 +40,7 @@ final readonly class RoleAdministrationRuntime
 
     public function memberCount(int $tenantId, int $roleId): int
     {
-        $statement = $this->pdo->prepare(
-            'SELECT COUNT(*) FROM pa_member_role WHERE tenant_id=? AND role_id=?'
-        );
-        $statement->execute([$tenantId, $roleId]);
-        return (int)$statement->fetchColumn();
+        return Db::name('member_role')->where('tenant_id', $tenantId)->where('role_id', $roleId)->count();
     }
 
     /** @param list<int> $menuIds @return list<string> */

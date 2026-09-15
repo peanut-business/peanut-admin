@@ -6,11 +6,11 @@ namespace app\Modules\Official\Task\Application;
 use app\common\enum\CrontabEnum;
 use app\common\application\BusinessException;
 use app\common\http\PageResult;
-use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
+use app\Modules\Official\Task\Model\Crontab;
 use Cron\CronExpression;
 use app\common\services\CrontabCommandService;
 use app\common\support\PaginationInput;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 
 /**
  * 定时任务逻辑层
@@ -18,7 +18,6 @@ use PeanutAdmin\Kernel\Persistence\TransactionManager;
 class CrontabApplicationService
 {
     public function __construct(
-        private readonly TransactionManager $transactions,
         private readonly CrontabCommandService $commands,
     )
     {
@@ -37,9 +36,9 @@ class CrontabApplicationService
 
         $pagination = PaginationInput::from($params);
 
-        $pageResult = $pagination->result(CrontabTenantRepository::schedules()->where($where)
+        $pageResult = $pagination->result(Crontab::where($where)
             ->order(['id' => 'desc']));
-        $pageResult = CrontabTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(Crontab $item): array => $item->toArray());
         $lists = $pageResult->items;
 
         return new PageResult(self::formatRows($lists), $pageResult->total, $pageResult->page, $pageResult->pageSize);
@@ -47,7 +46,7 @@ class CrontabApplicationService
 
     public function detail(int $id): array
     {
-        $row = CrontabTenantRepository::find($id)?->toArray() ?? [];
+        $row = Crontab::find($id)?->toArray() ?? [];
         if ($row === []) {
             throw BusinessException::notFound('TASK_CRONTAB_NOT_FOUND', '定时任务不存在');
         }
@@ -57,7 +56,7 @@ class CrontabApplicationService
     public function add(array $params): bool
     {
         $this->commands->assertAllowed(trim((string)$params['command']));
-        CrontabTenantRepository::create([
+        Crontab::create([
             'name'       => (string) $params['name'],
             'type'       => (int) $params['type'],
             'command'    => (string) $params['command'],
@@ -74,8 +73,8 @@ class CrontabApplicationService
     public function edit(array $params): bool
     {
         $this->commands->assertAllowed(trim((string)$params['command']));
-        $this->transactions->run(function () use ($params): void {
-            $crontab = CrontabTenantRepository::schedules()
+        Db::transaction(function () use ($params): void {
+            $crontab = Crontab::where([])
                 ->where('id', (int)$params['id'])->lock(true)->findOrEmpty();
             if ($crontab->isEmpty()) {
                 throw new \RuntimeException('定时任务不存在');
@@ -96,7 +95,7 @@ class CrontabApplicationService
 
     public function delete(int $id): bool
     {
-        $crontab = CrontabTenantRepository::find($id);
+        $crontab = Crontab::find($id);
         if ($crontab === null) {
             throw new \RuntimeException('定时任务不存在');
         }
@@ -107,7 +106,7 @@ class CrontabApplicationService
     /** 运行 / 停止 */
     public function operate(int $id, string $operate): bool
     {
-        $crontab = CrontabTenantRepository::find($id);
+        $crontab = Crontab::find($id);
         if ($crontab === null) {
             throw new \RuntimeException('定时任务不存在');
         }

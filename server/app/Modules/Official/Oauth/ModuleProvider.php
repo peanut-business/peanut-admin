@@ -49,7 +49,6 @@ final class ModuleProvider implements ModuleProviderContract
                 $app->make(\app\Modules\Official\Member\Contracts\MemberProfileCommands::class),
                 $app->make(\app\Modules\Official\Notification\Contracts\VerificationCodeCommands::class),
                 $app->make(\app\common\persistence\AdvisoryLockExecution::class),
-                $app->make(\app\common\persistence\TransactionalExecution::class),
                 $app->make(\app\common\service\config\TenantApplicationSettingService::class),
                 $app->make(ExternalTenantResolver::class),
                 $app->make(OAuthPersistence::class),

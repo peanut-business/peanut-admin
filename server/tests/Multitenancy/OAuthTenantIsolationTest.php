@@ -137,7 +137,6 @@ function oauthCommands(OAuthTransport $transport): OAuthCommandService
         app(\app\Modules\Official\Member\Contracts\MemberProfileCommands::class),
         app(\app\Modules\Official\Notification\Contracts\VerificationCodeCommands::class),
         app(\app\common\persistence\AdvisoryLockExecution::class),
-        app(\app\common\persistence\TransactionalExecution::class),
         app(\app\common\service\config\TenantApplicationSettingService::class),
         app(ExternalTenantResolver::class),
         app(OAuthPersistence::class),

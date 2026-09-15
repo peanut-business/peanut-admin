@@ -6,8 +6,8 @@ namespace app\common\http\middleware;
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\RequestTrace;
 use app\common\service\audit\AuditContractHost;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
+use think\facade\Db;
 
 /** Fails closed for every HTTP mutation while an active maintenance window is in effect. */
 final class MaintenanceWriteGateMiddleware
@@ -15,7 +15,6 @@ final class MaintenanceWriteGateMiddleware
     private const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
     public function __construct(
-        private readonly PDO $pdo,
         private readonly AuditContractHost $audit,
         private readonly CurrentExecutionContext $executionContext,
     ) {
@@ -31,7 +30,7 @@ final class MaintenanceWriteGateMiddleware
 
         $requestId = RequestTrace::id($this->executionContext, $request, 'maintenance');
         try {
-            $window = $this->activeWindow($this->pdo);
+            $window = $this->activeWindow();
             if ($window !== null) {
                 $this->audit->recordPlatform(
                     'platform.maintenance.write-blocked',
@@ -69,18 +68,12 @@ final class MaintenanceWriteGateMiddleware
     }
 
     /** @return array{maintenance_key:string,reason_key:string}|null */
-    private function activeWindow(PDO $pdo): ?array
+    private function activeWindow(): ?array
     {
-        $statement = $pdo->query(<<<'SQL'
-SELECT maintenance_key, reason_key
-FROM pa_ops_maintenance_window
-WHERE state IN ('scheduled', 'active')
-  AND starts_at <= UTC_TIMESTAMP(3)
-  AND ends_at > UTC_TIMESTAMP(3)
-ORDER BY id DESC
-LIMIT 1
-SQL);
-        $window = $statement === false ? false : $statement->fetch(PDO::FETCH_ASSOC);
+        $window = Db::name('ops_maintenance_window')->whereIn('state', ['scheduled', 'active'])
+            ->where('starts_at', '<=', Db::raw('UTC_TIMESTAMP(3)'))
+            ->where('ends_at', '>', Db::raw('UTC_TIMESTAMP(3)'))
+            ->field('maintenance_key,reason_key')->order('id', 'desc')->find();
         return is_array($window) ? $window : null;
     }
 

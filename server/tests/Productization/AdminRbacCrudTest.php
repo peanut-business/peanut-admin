@@ -6,14 +6,7 @@ use app\adminapi\application\auth\MenuApplicationService;
 use app\adminapi\application\auth\RoleApplicationService;
 use app\adminapi\application\dept\DeptApplicationService;
 use app\adminapi\application\dept\JobsApplicationService;
-use app\common\model\auth\Admin;
-use app\common\model\auth\AdminDept;
-use app\common\model\auth\AdminJobs;
-use app\common\model\auth\AdminRole;
 use app\common\model\auth\SystemMenu;
-use app\common\model\auth\SystemRole;
-use app\common\model\auth\SystemRoleMenu;
-use app\common\model\dept\Dept;
 use app\common\model\dept\Jobs;
 use think\facade\Db;
 
@@ -62,10 +55,10 @@ $ids = [
     'menu_child' => 0,
 ];
 
-$rootAdmin = Admin::where('root', 1)->where('disable', 0)->findOrEmpty();
-expectCrud(!$rootAdmin->isEmpty(), 'active root administrator is required');
-$rootDept = Dept::where('pid', 0)->where('status', 1)->findOrEmpty();
-expectCrud(!$rootDept->isEmpty(), 'active root department is required');
+$rootAdmin = Db::name('admin')->where('root', 1)->where('disable', 0)->find();
+expectCrud(is_array($rootAdmin), 'active root administrator is required');
+$rootDept = Db::name('dept')->where('pid', 0)->where('status', 1)->find();
+expectCrud(is_array($rootDept), 'active root department is required');
 
 try {
     expectCrud(app(MenuApplicationService::class)->add([
@@ -116,7 +109,7 @@ try {
         'sort' => 0,
         'menu_id' => [$ids['menu_child']],
     ]), app(RoleApplicationService::class)->getError());
-    $ids['role'] = (int)SystemRole::where('name', $names['role'])->value('id');
+    $ids['role'] = (int)Db::name('system_role')->where('name', $names['role'])->value('id');
     expectCrud($ids['role'] > 0, 'role was not created');
 
     expectCrudFailure(
@@ -126,14 +119,14 @@ try {
     );
 
     expectCrud(app(DeptApplicationService::class)->add([
-        'pid' => (int)$rootDept->id,
+        'pid' => (int)$rootDept['id'],
         'name' => $names['dept'],
         'leader' => '',
         'mobile' => '',
         'sort' => 0,
         'status' => 1,
     ]), app(DeptApplicationService::class)->getError());
-    $ids['dept'] = (int)Dept::where('name', $names['dept'])->value('id');
+    $ids['dept'] = (int)Db::name('dept')->where('name', $names['dept'])->value('id');
     expectCrud($ids['dept'] > 0, 'department was not created');
 
     expectCrud(app(JobsApplicationService::class)->add([
@@ -157,11 +150,11 @@ try {
         'dept_id' => [$ids['dept']],
         'jobs_id' => [$ids['jobs']],
     ]), app(AdminApplicationService::class)->getError());
-    $ids['admin'] = (int)Admin::where('username', $names['admin'])->value('id');
+    $ids['admin'] = (int)Db::name('admin')->where('username', $names['admin'])->value('id');
     expectCrud($ids['admin'] > 0, 'administrator was not created');
-    expectCrud(AdminRole::where(['admin_id' => $ids['admin'], 'role_id' => $ids['role']])->count() === 1, 'admin role relation missing');
-    expectCrud(AdminDept::where(['admin_id' => $ids['admin'], 'dept_id' => $ids['dept']])->count() === 1, 'admin department relation missing');
-    expectCrud(AdminJobs::where(['admin_id' => $ids['admin'], 'jobs_id' => $ids['jobs']])->count() === 1, 'admin job relation missing');
+    expectCrud(Db::name('admin_role')->where(['admin_id' => $ids['admin'], 'role_id' => $ids['role']])->count() === 1, 'admin role relation missing');
+    expectCrud(Db::name('admin_dept')->where(['admin_id' => $ids['admin'], 'dept_id' => $ids['dept']])->count() === 1, 'admin department relation missing');
+    expectCrud(Db::name('admin_jobs')->where(['admin_id' => $ids['admin'], 'jobs_id' => $ids['jobs']])->count() === 1, 'admin job relation missing');
 
     expectCrudFailure(
         app(AdminApplicationService::class)->delete($ids['admin'], $ids['admin']),
@@ -174,12 +167,12 @@ try {
         '不能操作当前登录的管理员'
     );
     expectCrudFailure(
-        app(AdminApplicationService::class)->delete((int)$rootAdmin->id),
+        app(AdminApplicationService::class)->delete((int)$rootAdmin['id']),
         app(AdminApplicationService::class)->getError(),
         '超级管理员不允许被删除'
     );
     expectCrudFailure(
-        app(AdminApplicationService::class)->updateStatus((int)$rootAdmin->id, 1),
+        app(AdminApplicationService::class)->updateStatus((int)$rootAdmin['id'], 1),
         app(AdminApplicationService::class)->getError(),
         '超级管理员不允许被禁用'
     );
@@ -187,7 +180,7 @@ try {
     expectCrudFailure(app(DeptApplicationService::class)->delete($ids['dept']), app(DeptApplicationService::class)->getError(), '已关联管理员');
     expectCrudFailure(app(JobsApplicationService::class)->delete($ids['jobs']), app(JobsApplicationService::class)->getError(), '已关联管理员');
 
-    expectCrud(app(AdminApplicationService::class)->delete($ids['admin'], (int)$rootAdmin->id), app(AdminApplicationService::class)->getError());
+    expectCrud(app(AdminApplicationService::class)->delete($ids['admin'], (int)$rootAdmin['id']), app(AdminApplicationService::class)->getError());
     expectCrud(app(RoleApplicationService::class)->delete($ids['role']), app(RoleApplicationService::class)->getError());
     expectCrud(app(MenuApplicationService::class)->delete($ids['menu_child']), app(MenuApplicationService::class)->getError());
     expectCrud(app(MenuApplicationService::class)->delete($ids['menu_parent']), app(MenuApplicationService::class)->getError());

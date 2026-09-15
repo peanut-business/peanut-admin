@@ -108,7 +108,7 @@ function classification(string $path): string
         'server/app/common/persistence/AdvisoryLockExecution.php',
         'server/app/common/persistence/AdvisoryLockUnavailable.php',
         'server/app/common/persistence/CoreTenantRepositoryFactory.php',
-        'server/app/platform/service/module/PdoModuleGovernanceProvider.php',
+        'server/app/platform/service/module/ThinkPhpModuleGovernanceProvider.php',
         'server/app/platform/service/module/DeployedTenantModuleRegistry.php',
         'server/app/platform/service/module/ModuleQualificationQueryService.php',
         'server/app/platform/service/module/OpisManifestSchemaValidator.php',

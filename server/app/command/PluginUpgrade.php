@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 
-final class PluginUpgrade extends DatabaseContextualCommand
+final class PluginUpgrade extends ModuleContextualCommand
 {
     use PluginCommandSupport;
 

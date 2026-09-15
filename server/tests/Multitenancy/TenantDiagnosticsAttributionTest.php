@@ -27,16 +27,20 @@ expectTenantDiagnostics(
 
 $serverRoot = dirname(__DIR__, 2);
 $refund = (string)file_get_contents($serverRoot . '/app/command/RefundReconcile.php');
+$refundService = (string)file_get_contents(
+    $serverRoot . '/app/Modules/Official/Payment/Infrastructure/ThinkPhpRefundReconciliationCommands.php'
+);
 $demo = (string)file_get_contents($serverRoot . '/app/command/CrontabDemo.php');
 expectTenantDiagnostics($refund !== '' && $demo !== '', 'Tenant-aware command source is unavailable');
 
 $refundRequire = strpos($refund, 'ScheduledTenantContext::require()');
-$refundAttributes = strpos($refund, 'TenantDiagnosticAttributes::fromScope($scope)');
-$refundQuery = strpos($refund, 'FinanceTenantRepository::records($scope)');
+$refundAttributes = strpos($refund, 'PaymentTenantDiagnostics::fromScope($scope)');
+$refundDispatch = strpos($refund, '$this->refunds->reconcile($scope, $diagnostics)');
 expectTenantDiagnostics(
-    $refundRequire !== false && $refundAttributes !== false && $refundQuery !== false
-        && $refundRequire < $refundAttributes && $refundAttributes < $refundQuery,
-    'refund reconciliation no longer refuses before diagnostics and business queries'
+    $refundRequire !== false && $refundAttributes !== false && $refundDispatch !== false
+        && $refundRequire < $refundAttributes && $refundAttributes < $refundDispatch
+        && str_contains($refundService, 'RefundRecord::where([])'),
+    'refund reconciliation no longer refuses before diagnostics and native business queries'
 );
 
 $events = [
@@ -45,20 +49,20 @@ $events = [
     'refund_reconcile_gateway_status_unknown',
     'refund_reconcile_persist_failed',
 ];
-expectTenantDiagnostics(substr_count($refund, 'Log::warning(') === count($events), 'refund warning event count changed');
+expectTenantDiagnostics(substr_count($refundService, '$this->warning(') === count($events), 'refund warning event count changed');
 foreach ($events as $event) {
     expectTenantDiagnostics(
-        str_contains($refund, "Log::warning('{$event}', \$diagnostics + ["),
+        str_contains($refundService, "\$this->warning('{$event}', \$diagnostics"),
         "{$event} lost structured Tenant attribution"
     );
 }
 expectTenantDiagnostics(
-    !str_contains($refund, '$e->getMessage()'),
+    !str_contains($refundService, '$e->getMessage()'),
     'refund diagnostics expose exception messages that may contain sensitive provider data'
 );
 expectTenantDiagnostics(
-    !str_contains($refund, "'receipt' =>") && !str_contains($refund, "'token' =>")
-        && !str_contains($refund, "'password' =>") && !str_contains($refund, "'secret' =>"),
+    !str_contains($refundService, "'receipt' =>") && !str_contains($refundService, "'token' =>")
+        && !str_contains($refundService, "'password' =>") && !str_contains($refundService, "'secret' =>"),
     'refund diagnostic attributes contain prohibited sensitive fields'
 );
 

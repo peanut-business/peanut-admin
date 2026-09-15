@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\common\infrastructure\storage;
 
+use think\facade\Config;
+
 final class StorageCredentialCipher
 {
     public const KEY_VERSION = 'aes-256-gcm-v1';
@@ -46,11 +48,8 @@ final class StorageCredentialCipher
 
     private static function key(): string
     {
-        $master = getenv('PEANUT_STORAGE_CREDENTIAL_MASTER_KEY');
-        if ((!is_string($master) || trim($master) === '') && isset($_ENV['PEANUT_STORAGE_CREDENTIAL_MASTER_KEY'])) {
-            $master = $_ENV['PEANUT_STORAGE_CREDENTIAL_MASTER_KEY'];
-        }
-        if (!is_string($master) || trim($master) === '') throw new \RuntimeException('存储凭据主密钥未配置');
+        $master = trim((string)Config::get('peanut.storage_credential_master_key', ''));
+        if ($master === '') throw new \RuntimeException('存储凭据主密钥未配置');
         if (strlen($master) < 32) throw new \RuntimeException('存储凭据主密钥长度不足');
         return hash('sha256', $master, true);
     }

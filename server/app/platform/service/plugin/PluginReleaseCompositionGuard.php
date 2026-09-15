@@ -3,15 +3,14 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
-use app\platform\service\module\PdoModuleGovernanceProvider;
-use PDO;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
+use think\facade\Db;
 
 /** Verifies that a full application release preserves or safely advances every installed Plugin. */
 final readonly class PluginReleaseCompositionGuard
 {
     /** @param array<string,mixed> $moduleConfig */
     public function __construct(
-        private PDO $pdo,
         private string $targetProjectRoot,
         private array $moduleConfig,
         private ModuleCatalogApplier $catalogs,
@@ -39,8 +38,7 @@ final readonly class PluginReleaseCompositionGuard
         $target = (new PluginLockResolver($targetRoot . '/server', $targetLock))->all();
         $targetConfig = $this->moduleConfig;
         $targetConfig['plugin_lock'] = $targetLock;
-        $lifecycle = (new PdoModuleGovernanceProvider(
-            $this->pdo,
+        $lifecycle = (new ThinkPhpModuleGovernanceProvider(
             $targetRoot . '/server',
             $targetConfig,
             $this->catalogs,
@@ -119,30 +117,20 @@ final readonly class PluginReleaseCompositionGuard
     /** @return list<array<string,mixed>> */
     private function installedPlugins(): array
     {
-        $statement = $this->pdo->query(<<<'SQL'
-SELECT plugin_key,installed_version,source,artifact_sha256,
-       composer_identity_json,npm_identity_json,frontend_identity_json,status
-FROM pa_plugin_installation
-WHERE status <> 'uninstalled'
-ORDER BY plugin_key ASC
-SQL);
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-        return is_array($rows) ? $rows : [];
+        return Db::name('plugin_installation')->where('status', '<>', 'uninstalled')
+            ->field('plugin_key,installed_version,source,artifact_sha256,composer_identity_json,npm_identity_json,frontend_identity_json,status')
+            ->order('plugin_key')->select()->toArray();
     }
 
     /** Package updates preserve their complete Bundle scope and the explicit active/disabled state. */
     private function memberState(string $pluginKey): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT pm.module_key,mi.status,mi.last_error_code
-FROM pa_plugin_module pm
-LEFT JOIN pa_module_installation mi ON mi.module_key=pm.module_key
-WHERE pm.plugin_key=:plugin_key
-ORDER BY pm.module_key ASC
-SQL);
-        $statement->execute(['plugin_key' => $pluginKey]);
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-        if (!is_array($rows) || $rows === []) {
+        $rows = Db::name('plugin_module')->alias('member')
+            ->leftJoin('module_installation installation', 'installation.module_key=member.module_key')
+            ->where('member.plugin_key', $pluginKey)
+            ->field('member.module_key,installation.status,installation.last_error_code')
+            ->order('member.module_key')->select()->toArray();
+        if ($rows === []) {
             throw new PluginLifecycleException(
                 'PLUGIN_RELEASE_PACKAGE_SCOPE_INVALID',
                 "Installed Plugin has no recorded Module members: {$pluginKey}"

@@ -8,15 +8,13 @@ use app\common\enum\CrontabEnum;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
-use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
+use app\Modules\Official\Task\Model\Crontab;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
-use think\db\PDOConnection;
-use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -137,9 +135,6 @@ SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
-    $connection = Db::connect();
-    expectCrontabTenant($connection instanceof PDOConnection, 'Task Runtime requires the registered ThinkPHP PDO connection');
-
     $alpha = crontabTenantContext(101, 1001, 501, 'crontab-alpha-' . $runId);
     $beta = crontabTenantContext(202, 1002, 502, 'crontab-beta-' . $runId);
     $task = [
@@ -164,11 +159,11 @@ SQL);
     }
     $alphaId = (int)app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($alpha, 'test.crontab.query.alpha'),
-        fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
+        fn() => Crontab::where([])->where('name', 'Same task')->value('id'),
     );
     $betaId = (int)app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($beta, 'test.crontab.query.beta'),
-        fn() => CrontabTenantRepository::schedules()->where('name', 'Same task')->value('id'),
+        fn() => Crontab::where([])->where('name', 'Same task')->value('id'),
     );
     expectCrontabTenant($alphaId > 0 && $betaId > 0 && $alphaId !== $betaId, 'Tenant schedules were not independently created');
     expectCrontabTenantThrows(
@@ -212,7 +207,7 @@ SQL);
     };
     $taskProvider = new TaskModuleProvider();
     $tasks = $taskProvider->jobs(
-        $connection,
+        app(\app\common\persistence\TenantPersistenceConfiguration::class),
         $signingKey,
         app(\app\common\execution\ExecutionContextStore::class),
         app(\app\common\execution\CurrentExecutionContext::class),

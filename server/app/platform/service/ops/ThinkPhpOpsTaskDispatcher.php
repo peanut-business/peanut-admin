@@ -4,20 +4,18 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Task\OpsTask;
 use PeanutAdmin\OpsConsole\Task\OpsTaskDispatcher;
 use PeanutAdmin\OpsConsole\Task\OpsTaskSubmission;
-use Throwable;
+use think\facade\Db;
 
 /** Application persistence adapter for Core operations tasks. */
-final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
+final readonly class ThinkPhpOpsTaskDispatcher implements OpsTaskDispatcher
 {
     public function __construct(
-        private PDO $pdo,
         private AuditContractHost $audit,
     ) {
     }
@@ -142,49 +140,25 @@ final readonly class PdoOpsTaskDispatcher implements OpsTaskDispatcher
         string $action,
         array $auditMetadata,
     ): array {
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-
-        try {
-            $existing = $this->one(
-                'SELECT * FROM pa_ops_task WHERE submitted_by_operator_id = :operator_id AND idempotency_digest = :digest FOR UPDATE',
-                ['operator_id' => $context->operatorId, 'digest' => $idempotencyDigest]
-            );
+        return Db::transaction(function () use ($context, $taskType, $handlerKey, $payload, $idempotencyDigest,
+            $requestDigest, $concurrencyKey, $maximumAttempts, $eventType, $action, $auditMetadata): array {
+            $existing = Db::name('ops_task')->where('submitted_by_operator_id', $context->operatorId)
+                ->where('idempotency_digest', $idempotencyDigest)->lock(true)->find();
             if ($existing !== null) {
                 if (!hash_equals((string)$existing['request_digest'], $requestDigest)) {
                     throw OpsConsoleException::idempotencyConflict();
                 }
-                if ($ownsTransaction) {
-                    $this->pdo->commit();
-                }
                 return $existing;
             }
 
-            $active = $this->one(
-                "SELECT id FROM pa_ops_task WHERE concurrency_key = :concurrency_key AND status IN ('queued', 'running') LIMIT 1 FOR UPDATE",
-                ['concurrency_key' => $concurrencyKey]
-            );
+            $active = Db::name('ops_task')->where('concurrency_key', $concurrencyKey)
+                ->whereIn('status', ['queued', 'running'])->field('id')->lock(true)->find();
             if ($active !== null) {
                 throw OpsConsoleException::operationInProgress();
             }
 
             $taskKey = 'job_' . bin2hex(random_bytes(16));
-            $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_ops_task (
-    task_key, task_type, handler_key, payload_json, status, attempt_count,
-    max_attempts, revision, last_error_code, idempotency_digest,
-    request_digest, concurrency_key, submitted_by_operator_id,
-    available_at, created_at, updated_at, completed_at
-) VALUES (
-    :task_key, :task_type, :handler_key, :payload_json, 'queued', 0,
-    :max_attempts, 1, NULL, :idempotency_digest,
-    :request_digest, :concurrency_key, :operator_id,
-    UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), UTC_TIMESTAMP(3), NULL
-)
-SQL);
-            $statement->execute([
+            Db::name('ops_task')->insert([
                 'task_key' => $taskKey,
                 'task_type' => $taskType,
                 'handler_key' => $handlerKey,
@@ -192,11 +166,19 @@ SQL);
                     $payload,
                     JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES
                 ),
+                'status' => 'queued',
+                'attempt_count' => 0,
                 'max_attempts' => $maximumAttempts,
+                'revision' => 1,
+                'last_error_code' => null,
                 'idempotency_digest' => $idempotencyDigest,
                 'request_digest' => $requestDigest,
                 'concurrency_key' => $concurrencyKey,
-                'operator_id' => $context->operatorId,
+                'submitted_by_operator_id' => $context->operatorId,
+                'available_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'created_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'completed_at' => null,
             ]);
 
             $this->audit->recordPlatform(
@@ -210,41 +192,21 @@ SQL);
                 null,
             );
 
-            $row = $this->one('SELECT * FROM pa_ops_task WHERE task_key = :task_key', ['task_key' => $taskKey]);
+            $row = Db::name('ops_task')->where('task_key', $taskKey)->find();
             if ($row === null) {
                 throw OpsConsoleException::taskUnavailable();
             }
-            if ($ownsTransaction) {
-                $this->pdo->commit();
-            }
             return $row;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        });
     }
 
     public function find(PlatformContext $context, string $taskKey): OpsTask
     {
-        $row = $this->one(
-            'SELECT * FROM pa_ops_task WHERE task_key = :task_key',
-            ['task_key' => $taskKey]
-        );
+        $row = Db::name('ops_task')->where('task_key', $taskKey)->find();
         if ($row === null) {
             throw OpsConsoleException::taskNotFound();
         }
         return $this->map($row);
-    }
-
-    /** @param array<string, mixed> $parameters @return array<string, mixed>|null */
-    private function one(string $sql, array $parameters): ?array
-    {
-        $statement = $this->pdo->prepare($sql);
-        $statement->execute($parameters);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        return is_array($row) ? $row : null;
     }
 
     /** @param array<string, mixed> $row */

@@ -14,42 +14,44 @@ function expectContentDecoration(bool $condition, string $message): void
 
 $serverRoot = dirname(__DIR__, 2);
 $repositoryRoot = dirname($serverRoot);
+$fileService = (new ReflectionClass(\app\common\services\FileService::class))->newInstanceWithoutConstructor();
+$assetReferences = new ProductAssetReferenceService($fileService, 'https://app.example');
 
 expectContentDecoration(
-    ProductAssetReferenceService::forStorage(
+    $assetReferences->forStorage(
         'https://app.example/storage/uploads/cover.png',
         'https://app.example'
     ) === 'storage/uploads/cover.png',
     'same-origin local storage URL must become a relative URI'
 );
 expectContentDecoration(
-    ProductAssetReferenceService::forStorage(
+    $assetReferences->forStorage(
         'https://cdn.example/uploads/cover.png',
         'https://app.example'
     ) === 'https://cdn.example/uploads/cover.png',
     'cloud/CDN provenance must remain absolute'
 );
 expectContentDecoration(
-    ProductAssetReferenceService::forStorage(
+    $assetReferences->forStorage(
         'https://app.example.evil/storage/cover.png',
         'https://app.example'
     ) === 'https://app.example.evil/storage/cover.png',
     'lookalike origin must not be stripped'
 );
 expectContentDecoration(
-    ProductAssetReferenceService::forStorage('/storage/uploads/cover.png', 'https://app.example')
+    $assetReferences->forStorage('/storage/uploads/cover.png', 'https://app.example')
         === 'storage/uploads/cover.png',
     'relative local resource normalization changed'
 );
 expectContentDecoration(
-    ProductAssetReferenceService::forStorage(
+    $assetReferences->forStorage(
         'https://app.example:8443/storage/uploads/cover.png',
         'https://app.example'
     ) === 'https://app.example:8443/storage/uploads/cover.png',
     'different effective ports must not be treated as the same origin'
 );
 expectContentDecoration(
-    ProductAssetReferenceService::forRead('HTTPS://cdn.example/uploads/cover.png')
+    $assetReferences->forRead('HTTPS://cdn.example/uploads/cover.png')
         === 'HTTPS://cdn.example/uploads/cover.png',
     'HTTP scheme casing must not turn an absolute resource into a relative URI'
 );
@@ -81,17 +83,17 @@ expectContentDecoration(
     'article category ownership validation is missing'
 );
 expectContentDecoration(
-    str_contains($articleValidate, 'ArticleTenantRepository::categories'),
+    str_contains($articleValidate, 'ArticleCate::where([])'),
     'article category existence bypasses Tenant-first ownership'
 );
 
 $articleAdministration = (string)file_get_contents(
     $serverRoot . '/app/Modules/Official/Article/Application/ArticleAdministrationService.php'
 );
-expectContentDecoration(str_contains($articleAdministration, 'ArticleTenantRepository::categories'), 'category delete bypasses Tenant-first ownership');
-expectContentDecoration(str_contains($articleAdministration, 'ArticleTenantRepository::articles'), 'occupied category check bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleAdministration, 'ArticleCate::where([])'), 'category delete bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleAdministration, 'Article::where([])'), 'occupied category check bypasses Tenant-first ownership');
 expectContentDecoration(str_contains($articleAdministration, 'lock(true)'), 'category delete must lock tenant-owned rows');
-expectContentDecoration(str_contains($articleAdministration, 'ArticleTenantRepository::createArticle'), 'article create bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($articleAdministration, 'Article::create('), 'article create bypasses Tenant-first ownership');
 
 $pageLogic = (string)file_get_contents(
     $serverRoot . '/app/adminapi/application/decoration/DecorationPageApplicationService.php'
@@ -101,7 +103,7 @@ $tabbarLogic = (string)file_get_contents(
 );
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::formatPage'), 'admin page detail bypasses shared read DTO');
 expectContentDecoration(str_contains($pageLogic, 'DecorationReadService::pageByType'), 'admin type detail bypasses shared read DTO');
-expectContentDecoration(str_contains($pageLogic, 'DecorationTenantRepository::pages'), 'admin decoration page bypasses Tenant-first ownership');
+expectContentDecoration(str_contains($pageLogic, 'DecoratePage::where([])'), 'admin decoration page bypasses Tenant-first ownership');
 expectContentDecoration(!str_contains($pageLogic, 'resourcesForRead'), 'admin page keeps duplicate resource formatting');
 expectContentDecoration(str_contains($tabbarLogic, 'DecorationReadService::tabbar('), 'admin tabbar bypasses shared read DTO');
 
@@ -121,7 +123,7 @@ $decorationRead = (string)file_get_contents(
     $serverRoot . '/app/common/service/decoration/DecorationReadService.php'
 );
 expectContentDecoration(
-    str_contains($decorationRead, 'DecorationTenantRepository::pages'),
+    str_contains($decorationRead, 'DecoratePage::where([])'),
     'shared decoration page read bypasses Tenant-first ownership'
 );
 

@@ -91,7 +91,8 @@ $resolver = new TenantEntryBindingResolver(
 $multiTenantScope = new MultiTenantDataScopePolicy(
     new CurrentExecutionContext(new ExecutionContextStore()),
 );
-$storage = new StorageRepository(ThinkPhpTestConnection::fromPdo($pdo), $multiTenantScope, new DefaultTenantContextResolver($pdo));
+ThinkPhpTestConnection::fromPdo($pdo);
+$storage = new StorageRepository($multiTenantScope, new DefaultTenantContextResolver());
 entryBindingExpect(
     $storage->deliverableObjectForTenant(101, 'file_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') !== null,
     'an active Tenant file was not deliverable',

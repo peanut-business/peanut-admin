@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\platform\service\module;
 
-use PDO;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
@@ -17,7 +16,6 @@ final readonly class DeployedTenantModuleRegistry
     private array $manifests;
 
     public function __construct(
-        private PDO $pdo,
         private CompiledModuleRegistry $compiled
     ) {
         if ($compiled->modules === []) {
@@ -56,7 +54,7 @@ final readonly class DeployedTenantModuleRegistry
      *
      * @param non-empty-list<string> $moduleRoots
      */
-    public static function compile(PDO $pdo, array $moduleRoots, ModuleRegistryCompiler $compiler): self
+    public static function compile(array $moduleRoots, ModuleRegistryCompiler $compiler): self
     {
         if ($moduleRoots === [] || !array_is_list($moduleRoots)) {
             throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Deployed Module roots are unavailable.');
@@ -70,7 +68,7 @@ final readonly class DeployedTenantModuleRegistry
             $documents[] = $loader->load($root);
         }
 
-        return new self($pdo, $compiler->compile($documents));
+        return new self($compiler->compile($documents));
     }
 
     public function compiled(): CompiledModuleRegistry
@@ -82,13 +80,9 @@ final readonly class DeployedTenantModuleRegistry
     {
         $manifest = $this->manifests[$moduleKey]
             ?? throw new ModuleException('MODULE_NOT_INSTALLED', "Unknown module: {$moduleKey}");
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT installed_version,manifest_schema_version,manifest_digest,status
-FROM pa_module_installation WHERE module_key=:module_key
-SQL);
-        $statement->execute(['module_key' => $moduleKey]);
-        $installation = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($installation)) {
+        $installation = \think\facade\Db::name('module_installation')->where('module_key', $moduleKey)
+            ->field('installed_version,manifest_schema_version,manifest_digest,status')->find();
+        if ($installation === null) {
             throw new ModuleException('MODULE_NOT_INSTALLED', "Module {$moduleKey} is not installed.");
         }
         if (($installation['status'] ?? null) !== 'active') {

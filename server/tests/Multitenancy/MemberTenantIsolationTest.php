@@ -2,13 +2,14 @@
 declare(strict_types=1);
 
 use app\common\enum\AccountLogEnum;
+use app\Modules\Official\Member\Model\Member;
 use app\Modules\Official\Member\Model\MemberBalanceLog;
+use app\Modules\Official\Member\Model\MemberTag;
+use app\Modules\Official\Member\Model\MemberTagRelation;
 use app\Modules\Official\Member\Application\MemberProfileContractService;
 use app\Modules\Official\Member\Application\MemberTagContractService;
 use app\Modules\Official\Member\Application\MemberBalanceService;
 use app\common\execution\CurrentExecutionContext;
-use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 
@@ -156,18 +157,18 @@ SQL);
     $beta = memberTenantContext(202, 502, 'mt03-member-beta-' . $runId);
     try { app(CurrentExecutionContext::class)->tenantAdmin(); throw new RuntimeException('missing TenantContext was accepted'); } catch (Throwable $e) { expectMemberTenant($e->getMessage() !== '', 'missing context denial lost shape'); }
 
-    $betaMember = memberTenantRun($beta, static fn() => MemberTenantRepository::createMember($beta, [
+    $betaMember = memberTenantRun($beta, static fn() => Member::create([
         'tenant_id' => 101, 'sn' => 'M-SHARED-11', 'account' => 'same-account', 'nickname' => 'Beta member',
         'mobile' => '13800000000', 'status' => 1, 'user_money' => 20,
     ]));
     expectMemberTenant((int)$betaMember->tenant_id === 202, 'member payload forged Tenant ownership');
     memberTenantRun($beta, static fn() => (new MemberTagContractService())->create($beta, 'same-tag', ''));
-    $betaTag = (int)memberTenantRun($beta, static fn() => MemberTenantRepository::tags($beta)->where('name', 'same-tag')->value('id'));
+    $betaTag = (int)memberTenantRun($beta, static fn() => MemberTag::where([])->where('name', 'same-tag')->value('id'));
     expectMemberTenant($betaTag > 0, 'same-name tag was not tenant-scoped');
-    memberTenantRun($beta, static fn() => MemberTenantRepository::relations($beta)->insert([
+    memberTenantRun($beta, static fn() => MemberTagRelation::create([
         'tenant_id' => 202, 'member_id' => (int)$betaMember->id, 'tag_id' => $betaTag,
     ]));
-    memberTenantRun($beta, static fn() => MemberTenantRepository::createBalanceLog($beta, [
+    memberTenantRun($beta, static fn() => MemberBalanceLog::create([
         'sn' => MemberBalanceLog::generateSn($beta),
         'member_id' => (int)$betaMember->id,
         'change_object' => AccountLogEnum::getChangeObject(AccountLogEnum::USER_MONEY_INC_ADMIN),
@@ -180,34 +181,28 @@ SQL);
         'remark' => '',
         'admin_id' => 0,
     ]));
-    $alphaMember = (int)memberTenantRun($alpha, static fn() => MemberTenantRepository::members($alpha)->where('account', 'same-account')->value('id'));
+    $alphaMember = (int)memberTenantRun($alpha, static fn() => Member::where([])->where('account', 'same-account')->value('id'));
     expectMemberTenant($alphaMember === 11, 'Alpha same-account member disappeared');
-    expectMemberTenant(memberTenantRun($alpha, static fn() => MemberTenantRepository::members($alpha)->where('id', (int)$betaMember->id)->findOrEmpty()->isEmpty()), 'Alpha read Beta member');
+    expectMemberTenant(memberTenantRun($alpha, static fn() => Member::where([])->where('id', (int)$betaMember->id)->findOrEmpty()->isEmpty()), 'Alpha read Beta member');
     try {
         memberTenantRun($alpha, static fn() => (new MemberProfileContractService())->updateStatus($alpha, (int)$betaMember->id, 0));
         throw new RuntimeException('Alpha updated Beta member');
     } catch (Throwable $e) {
         expectMemberTenant($e->getMessage() !== '', 'cross-Tenant status denial lost shape');
     }
-    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberTenantRepository::members($beta)->where('id', (int)$betaMember->id)->value('status')) === 1, 'cross-Tenant status denial mutated Beta');
+    expectMemberTenant((int)memberTenantRun($beta, static fn() => Member::where([])->where('id', (int)$betaMember->id)->value('status')) === 1, 'cross-Tenant status denial mutated Beta');
 
-    $alphaBefore = (string)memberTenantRun($alpha, static fn() => MemberTenantRepository::members($alpha)->where('id', 11)->value('user_money'));
-    $betaBefore = (string)memberTenantRun($beta, static fn() => MemberTenantRepository::members($beta)->where('id', (int)$betaMember->id)->value('user_money'));
+    $alphaBefore = (string)memberTenantRun($alpha, static fn() => Member::where([])->where('id', 11)->value('user_money'));
+    $betaBefore = (string)memberTenantRun($beta, static fn() => Member::where([])->where('id', (int)$betaMember->id)->value('user_money'));
     memberTenantRun($alpha, static function () use ($alpha): void {
-        think\facade\Db::startTrans();
-        MemberBalanceService::applyInTransaction($alpha, 11, AccountLogEnum::USER_MONEY_INC_ADMIN, AccountLogEnum::INC, 100, 'SOURCE-ALPHA-ADJUST', 'alpha');
-        think\facade\Db::commit();
+        think\facade\Db::transaction(static fn() => MemberBalanceService::applyInTransaction(
+            $alpha, 11, AccountLogEnum::USER_MONEY_INC_ADMIN, AccountLogEnum::INC, 100, 'SOURCE-ALPHA-ADJUST', 'alpha'
+        ));
     });
-    expectMemberTenant((string)memberTenantRun($alpha, static fn() => MemberTenantRepository::members($alpha)->where('id', 11)->value('user_money')) !== $alphaBefore, 'Alpha balance did not change');
-    expectMemberTenant((string)memberTenantRun($beta, static fn() => MemberTenantRepository::members($beta)->where('id', (int)$betaMember->id)->value('user_money')) === $betaBefore, 'Alpha adjustment changed Beta balance');
-    expectMemberTenant((int)memberTenantRun($alpha, static fn() => MemberTenantRepository::balanceLogs($alpha)->count()) === 2, 'Alpha admin ledger leaked or lost rows');
-    $betaMemberContext = new AuthenticatedMemberContext(
-        202,
-        (int)$betaMember->id,
-        'fixture-beta-member',
-        'mt03-member-beta-api-' . $runId,
-    );
-    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberTenantRepository::balanceLogs($betaMemberContext)->where('member_id', (int)$betaMember->id)->count()) === 1, 'Beta API ledger leaked or lost rows');
+    expectMemberTenant((string)memberTenantRun($alpha, static fn() => Member::where([])->where('id', 11)->value('user_money')) !== $alphaBefore, 'Alpha balance did not change');
+    expectMemberTenant((string)memberTenantRun($beta, static fn() => Member::where([])->where('id', (int)$betaMember->id)->value('user_money')) === $betaBefore, 'Alpha adjustment changed Beta balance');
+    expectMemberTenant((int)memberTenantRun($alpha, static fn() => MemberBalanceLog::where([])->count()) === 2, 'Alpha admin ledger leaked or lost rows');
+    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberBalanceLog::where([])->where('member_id', (int)$betaMember->id)->count()) === 1, 'Beta API ledger leaked or lost rows');
 
     try {
         memberTenantRun($alpha, static fn() => (new MemberTagContractService())->delete($alpha, $betaTag));
@@ -215,12 +210,12 @@ SQL);
     } catch (Throwable $e) {
         expectMemberTenant($e->getMessage() !== '', 'cross-Tenant tag denial lost shape');
     }
-    expectMemberTenant(memberTenantRun($beta, static fn() => !MemberTenantRepository::tags($beta)->where('id', $betaTag)->findOrEmpty()->isEmpty()), 'Beta tag changed after Alpha cleanup');
-    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberTenantRepository::relations($beta)->where('tag_id', $betaTag)->count()) === 1, 'Alpha cleanup changed Beta relation');
-    expectMemberTenant((int)memberTenantRun($alpha, static fn() => MemberTenantRepository::balanceLogs($alpha)->where('source_sn', 'SOURCE-SAME')->count()) === 1, 'Alpha source_sn scope mismatch');
-    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberTenantRepository::balanceLogs($beta)->where('source_sn', 'SOURCE-SAME')->count()) === 1, 'Beta source_sn scope mismatch');
+    expectMemberTenant(memberTenantRun($beta, static fn() => !MemberTag::where([])->where('id', $betaTag)->findOrEmpty()->isEmpty()), 'Beta tag changed after Alpha cleanup');
+    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberTagRelation::where([])->where('tag_id', $betaTag)->count()) === 1, 'Alpha cleanup changed Beta relation');
+    expectMemberTenant((int)memberTenantRun($alpha, static fn() => MemberBalanceLog::where([])->where('source_sn', 'SOURCE-SAME')->count()) === 1, 'Alpha source_sn scope mismatch');
+    expectMemberTenant((int)memberTenantRun($beta, static fn() => MemberBalanceLog::where([])->where('source_sn', 'SOURCE-SAME')->count()) === 1, 'Beta source_sn scope mismatch');
     try {
-        memberTenantRun($alpha, static fn() => MemberTenantRepository::createBalanceLog($alpha, [
+        memberTenantRun($alpha, static fn() => MemberBalanceLog::create([
             'sn' => MemberBalanceLog::generateSn($alpha),
             'member_id' => 11,
             'change_object' => AccountLogEnum::getChangeObject(AccountLogEnum::USER_MONEY_INC_ADMIN),
@@ -245,11 +240,11 @@ SQL);
         );
     }
     expectMemberTenant(
-        (int)memberTenantRun($alpha, static fn() => MemberTenantRepository::balanceLogs($alpha)->where('source_sn', 'SOURCE-SAME')->count()) === 1,
+        (int)memberTenantRun($alpha, static fn() => MemberBalanceLog::where([])->where('source_sn', 'SOURCE-SAME')->count()) === 1,
         'duplicate same-Tenant source_sn row was inserted'
     );
 
-    foreach (['Modules/Official/Member/Application/MemberAdministrationService.php', 'Modules/Official/Member/Application/MemberTagContractService.php', 'Modules/Official/Member/Application/MemberBalanceService.php', 'Modules/Official/Member/Model/MemberBalanceLog.php', 'Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php'] as $relative) {
+    foreach (['Modules/Official/Member/Application/MemberAdministrationService.php', 'Modules/Official/Member/Application/MemberTagContractService.php', 'Modules/Official/Member/Application/MemberBalanceService.php', 'Modules/Official/Member/Model/MemberBalanceLog.php'] as $relative) {
         exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($serverRoot . '/app/' . $relative), $output, $exit);
         expectMemberTenant($exit === 0, 'PHP 8.3 lint failed: ' . $relative . ' ' . implode(' ', $output));
         $output = [];

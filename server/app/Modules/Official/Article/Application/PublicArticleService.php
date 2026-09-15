@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Application;
 
+use app\Modules\Official\Article\Model\Article;
+use app\Modules\Official\Article\Model\ArticleCate;
+use app\Modules\Official\Article\Model\ArticleCollect;
 use app\common\application\BusinessException;
 use app\common\http\PageResult;
 use app\common\services\ProductAssetReferenceService;
 use app\common\services\RichTextResourceService;
 use app\common\support\PaginationInput;
 use app\Modules\Official\Article\Contracts\PublicArticleQueries;
-use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 
 /** Serves public article reads and authenticated member collection commands. */
@@ -22,7 +24,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function lists(array $params, int $memberId = 0): PageResult
     {
-        $query = ArticleTenantRepository::articles()->field([
+        $query = Article::where([])->field([
             'id', 'cid', 'title', 'desc', 'image',
             'click_virtual', 'click_actual', 'create_time', 'sort',
         ])->where('is_show', 1);
@@ -44,11 +46,12 @@ final class PublicArticleService implements PublicArticleQueries
             $query->order(['sort' => 'desc', 'id' => 'desc']);
         }
 
-        $pageResult = ArticleTenantRepository::arrayPage(PaginationInput::from($params)->result($query));
+        $pageResult = PaginationInput::from($params)->result($query)
+            ->map(static fn(mixed $item): array => $item instanceof \think\Model ? $item->toArray() : (array)$item);
         $lists = $pageResult->items;
         $articleIds = array_map('intval', array_column($lists, 'id'));
         $collectIds = $memberId > 0 && $articleIds !== []
-            ? ArticleTenantRepository::collections()->where('member_id', $memberId)
+            ? ArticleCollect::where([])->where('member_id', $memberId)
                 ->where('status', 1)
                 ->whereIn('article_id', $articleIds)
                 ->column('article_id')
@@ -67,7 +70,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function categories(): array
     {
-        return ArticleTenantRepository::categories()->field(['id', 'name'])
+        return ArticleCate::where([])->field(['id', 'name'])
             ->where('is_show', 1)
             ->order(['sort' => 'desc', 'id' => 'desc'])
             ->select()
@@ -76,14 +79,14 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function detail(int $id, int $memberId = 0): array
     {
-        $article = ArticleTenantRepository::publishedDetail($id);
+        $article = Article::getArticleDetailArr($id);
         if ($article === []) {
             return [];
         }
         $article['image'] = $this->assets->forRead((string)($article['image'] ?? ''));
         $article['content'] = $this->richText->forRead((string)($article['content'] ?? ''));
         $article['collect'] = $memberId > 0
-            ? ArticleTenantRepository::isCollected($memberId, $id)
+            ? ArticleCollect::isCollected($memberId, $id)
             : false;
         return $article;
     }
@@ -91,19 +94,19 @@ final class PublicArticleService implements PublicArticleQueries
     /** Idempotently enables a collection, including a concurrent first insert. */
     public function add(int $articleId, int $memberId): void
     {
-        $article = ArticleTenantRepository::articles()->where('id', $articleId)
+        $article = Article::where([])->where('id', $articleId)
             ->where('is_show', 1)
             ->findOrEmpty();
         if ($article->isEmpty()) {
             throw BusinessException::notFound('ARTICLE_NOT_FOUND', '文章不存在或已下架');
         }
 
-        $collect = ArticleTenantRepository::collections()->where('member_id', $memberId)
+        $collect = ArticleCollect::where([])->where('member_id', $memberId)
             ->where('article_id', $articleId)
             ->findOrEmpty();
         if ($collect->isEmpty()) {
             try {
-                ArticleTenantRepository::createCollection([
+                ArticleCollect::create([
                     'member_id' => $memberId,
                     'article_id' => $articleId,
                     'status' => 1,
@@ -111,7 +114,7 @@ final class PublicArticleService implements PublicArticleQueries
                 return;
             } catch (\Throwable $exception) {
                 // A concurrent insert is successful only when the exact Tenant-scoped collection now exists.
-                $collect = ArticleTenantRepository::collections()->where('member_id', $memberId)
+                $collect = ArticleCollect::where([])->where('member_id', $memberId)
                     ->where('article_id', $articleId)
                     ->findOrEmpty();
                 if ($collect->isEmpty()) {
@@ -130,7 +133,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function cancel(int $articleId, int $memberId): void
     {
-        ArticleTenantRepository::collections()->where('member_id', $memberId)
+        ArticleCollect::where([])->where('member_id', $memberId)
             ->where('article_id', $articleId)
             ->where('status', 1)
             ->update(['status' => 0]);
@@ -138,7 +141,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function collectionLists(int $memberId, array $params): PageResult
     {
-        $query = ArticleTenantRepository::collections()->alias('c')
+        $query = ArticleCollect::where([])->alias('c')
             ->join('article a', 'a.tenant_id = c.tenant_id AND c.article_id = a.id')
             ->where('c.member_id', $memberId)
             ->where('c.status', 1)
@@ -146,9 +149,8 @@ final class PublicArticleService implements PublicArticleQueries
             ->where('a.delete_time', 'null')
             ->field('c.id,c.article_id,a.title,a.image,a.desc,a.is_show,a.click_virtual,a.click_actual,a.create_time,c.create_time as collect_time,a.sort');
 
-        $pageResult = ArticleTenantRepository::arrayPage(
-            PaginationInput::from($params)->result($query->order(['a.sort' => 'desc', 'c.id' => 'desc']))
-        );
+        $pageResult = PaginationInput::from($params)->result($query->order(['a.sort' => 'desc', 'c.id' => 'desc']))
+            ->map(static fn(mixed $item): array => $item instanceof \think\Model ? $item->toArray() : (array)$item);
         $lists = $pageResult->items;
         foreach ($lists as &$row) {
             $row['click'] = (int)$row['click_actual'] + (int)$row['click_virtual'];
@@ -162,7 +164,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function countForMember(AuthenticatedMemberContext $context, int $memberId): int
     {
-        return (int)ArticleTenantRepository::collections()->alias('c')
+        return (int)ArticleCollect::where([])->alias('c')
             ->join('article a', 'a.tenant_id = c.tenant_id AND c.article_id = a.id')
             ->where('c.member_id', $memberId)
             ->where('c.status', 1)
@@ -173,10 +175,10 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function infoCenter(): array
     {
-        $categories = ArticleTenantRepository::categories()->field(['id', 'name'])->where('is_show', 1)
+        $categories = ArticleCate::where([])->field(['id', 'name'])->where('is_show', 1)
             ->order(['sort' => 'desc', 'id' => 'desc'])->select()->toArray();
         $byCategory = [];
-        foreach (ArticleTenantRepository::topPublishedByCategories(array_column($categories, 'id'), 10) as $article) {
+        foreach (Article::topPublishedByCategories(array_column($categories, 'id'), 10) as $article) {
             $article['click'] = (int)$article['click_actual'] + (int)$article['click_virtual'];
             $article['image'] = $this->assets->forRead((string)($article['image'] ?? ''));
             unset($article['click_actual'], $article['click_virtual'], $article['category_rank']);
@@ -191,7 +193,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function homeArticles(int $limit): array
     {
-        $rows = ArticleTenantRepository::articles()->field([
+        $rows = Article::where([])->field([
             'id', 'title', 'desc', 'abstract', 'image', 'author',
             'click_actual', 'click_virtual', 'create_time',
         ])->where('is_show', 1)
@@ -226,7 +228,7 @@ final class PublicArticleService implements PublicArticleQueries
         $detail['last'] = $lists[$nowIndex - 1] ?? [];
         $detail['next'] = $lists[$nowIndex + 1] ?? [];
         $detail['new'] = $this->limitArticles('new', 8, (int)$detail['cid'], $articleId);
-        $detail['cate_name'] = (string)ArticleTenantRepository::categories()
+        $detail['cate_name'] = (string)ArticleCate::where([])
             ->where('id', (int)$detail['cid'])
             ->value('name');
         return $detail;
@@ -234,7 +236,7 @@ final class PublicArticleService implements PublicArticleQueries
 
     public function limitArticles(string $sortType, int $limit = 0, int $cid = 0, int $excludeId = 0): array
     {
-        $query = ArticleTenantRepository::articles()->field([
+        $query = Article::where([])->field([
             'id', 'cid', 'title', 'desc', 'abstract', 'image', 'author',
             'click_actual', 'click_virtual', 'create_time', 'sort',
         ])->where('is_show', 1);

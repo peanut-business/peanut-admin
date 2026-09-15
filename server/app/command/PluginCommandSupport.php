@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use app\platform\service\plugin\PluginLifecycleException;
-use PDO;
 use think\console\Output;
 use think\facade\Config;
 
@@ -13,14 +12,12 @@ trait PluginCommandSupport
 {
     private function pluginLifecycle(): \app\common\contract\module\PluginLifecycleCommands
     {
-        $pdo = $this->database();
         $serverRoot = dirname(__DIR__, 2);
         $config = Config::get('modules', []);
         if (!is_array($config)) {
             throw new PluginLifecycleException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
         }
-        return (new PdoModuleGovernanceProvider(
-            $pdo,
+        return (new ThinkPhpModuleGovernanceProvider(
             $serverRoot,
             $config,
             $this->moduleCatalogs(),

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport;
 
-use app\common\persistence\CoreTenantRepositoryFactory;
+use app\common\persistence\TenantPersistenceConfiguration;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\infrastructure\export\OperationLogExportProvider;
@@ -31,14 +31,10 @@ use PeanutAdmin\ImportExport\Execution\CsvOperationRunner;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskHandler;
 use PeanutAdmin\ImportExport\Execution\ImportExportTaskSubmissionProvider;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
-use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\Settings\Application\SettingAdminService;
 use PeanutAdmin\Settings\Secret\SecretProtector;
 use PeanutAdmin\Settings\Secret\SodiumSecretProtector;
-use PeanutAdmin\Settings\Persistence\SettingStore;
-use PDO;
 use think\App;
-use think\db\PDOConnection;
 use Throwable;
 
 final class ModuleProvider implements ModuleProviderContract
@@ -52,13 +48,10 @@ final class ModuleProvider implements ModuleProviderContract
     {
         return [
             ImportExportApplicationService::class => function (App $app): ImportExportApplicationService {
-                $connection = $app->make(PDOConnection::class);
-                $pdo = $connection->connect();
-                $transactions = new ThinkPhpTransactionManager($connection);
+                $persistence = $app->make(TenantPersistenceConfiguration::class);
                 $tasks = $app->make(TaskJobRuntime::class);
                 return new ImportExportApplicationService(new ImportExportService(
-                    (new CoreTenantRepositoryFactory($pdo))->importExport($connection),
-                    $transactions,
+                    new \PeanutAdmin\ImportExport\Persistence\ImportExportStore($persistence->mode, $persistence->instanceTenantId),
                     new DataProviderRegistry([new OperationLogExportProvider()]),
                     $tasks->publisher(new ImportExportTaskSubmissionProvider()),
                     $tasks->jobs(),
@@ -68,17 +61,19 @@ final class ModuleProvider implements ModuleProviderContract
             ImportExportCommands::class => ImportExportApplicationService::class,
             ImportExportQueries::class => ImportExportApplicationService::class,
             ConfigurationTransferApplicationService::class => function (App $app): ConfigurationTransferApplicationService {
-                $pdo = $app->make(PDO::class);
+                $persistence = $app->make(TenantPersistenceConfiguration::class);
                 return new ConfigurationTransferApplicationService(
-                    $app->make(TransactionManager::class),
                     [
-                        new TenantSettingsConfigurationAdapter($pdo),
-                        new TenantModuleConfigurationAdapter($pdo, $app->make(\app\platform\service\module\PdoModuleGovernanceProvider::class)),
-                        new ExternalBindingConfigurationAdapter($pdo),
+                        $app->make(TenantSettingsConfigurationAdapter::class),
+                        $app->make(TenantModuleConfigurationAdapter::class),
+                        $app->make(ExternalBindingConfigurationAdapter::class),
                         new CoreSettingsConfigurationAdapter(
-                            $app->make(SettingStore::class),
-                            $app->make(\app\platform\service\module\PdoModuleGovernanceProvider::class),
-                            $this->secretProtector(),
+                            new SettingAdminService(
+                            $this->secretProtector($app),
+                                $persistence->mode,
+                                $persistence->instanceTenantId,
+                            ),
+                            $app->make(\app\platform\service\module\ThinkPhpModuleGovernanceProvider::class),
                         ),
                     ],
                     new ConfigurationPackageCodec(),
@@ -88,13 +83,10 @@ final class ModuleProvider implements ModuleProviderContract
             ConfigurationTransferCommands::class => ConfigurationTransferApplicationService::class,
             ConfigurationTransferQueries::class => ConfigurationTransferApplicationService::class,
             ImportExportTaskWorkerDefinition::class => function (App $app): ImportExportTaskWorkerDefinition {
-                $connection = $app->make(PDOConnection::class);
-                $pdo = $connection->connect();
-                $transactions = new ThinkPhpTransactionManager($connection);
+                $persistence = $app->make(TenantPersistenceConfiguration::class);
                 return new ImportExportTaskWorkerDefinition(
                     new ImportExportTaskHandler(new CsvOperationRunner(
-                        (new CoreTenantRepositoryFactory($pdo))->importExport($connection),
-                        $transactions,
+                        new \PeanutAdmin\ImportExport\Persistence\ImportExportStore($persistence->mode, $persistence->instanceTenantId),
                         new DataProviderRegistry([new OperationLogExportProvider()]),
                         $app->make(AppFileMediaGateway::class),
                         $app->make(AuditContractHost::class),
@@ -106,11 +98,11 @@ final class ModuleProvider implements ModuleProviderContract
         ];
     }
 
-    private function secretProtector(): SecretProtector
+    private function secretProtector(App $app): SecretProtector
     {
-        $encoded = getenv('PEANUT_SETTINGS_SECRET_KEYS');
-        $activeKeyId = getenv('PEANUT_SETTINGS_ACTIVE_SECRET_KEY_ID');
-        if (!is_string($encoded) || !is_string($activeKeyId) || $encoded === '' || $activeKeyId === '') {
+        $encoded = trim((string)$app->config->get('peanut.settings_secrets.keys', ''));
+        $activeKeyId = trim((string)$app->config->get('peanut.settings_secrets.active_key_id', ''));
+        if ($encoded === '' || $activeKeyId === '') {
             return new UnavailableSecretProtector();
         }
         try {

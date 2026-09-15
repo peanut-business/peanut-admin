@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
   "protocol": "peanut.release-versions.v2",
-  "source_product_version": "3.1.0",
+  "source_product_version": "3.1.1",
   "instance_version": null,
-  "scaffold_template": "3.1.0",
+  "scaffold_template": "3.1.1",
   "generated_instance_default": "0.1.0",
-  "core_php": "3.1.0",
-  "core_web": "3.1.0"
+  "core_php": "3.1.1",
+  "core_web": "3.1.1"
 }

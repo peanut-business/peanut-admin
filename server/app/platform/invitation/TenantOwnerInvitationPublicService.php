@@ -7,16 +7,10 @@ use app\common\service\audit\AuditContractHost;
 use app\platform\service\ApplicationTenantBootstrapService;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use PeanutAdmin\Kernel\Identity\AccountStatus;
-use PeanutAdmin\Kernel\Identity\CredentialStatus;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
-use PeanutAdmin\Kernel\Identity\IdentityRepository;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
-use PeanutAdmin\Kernel\Membership\MembershipRepository;
-use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 final class TenantOwnerInvitationPublicService
@@ -24,10 +18,6 @@ final class TenantOwnerInvitationPublicService
     private const OWNER_ROLE = 'core.tenant-owner';
 
     public function __construct(
-        private readonly PDO $pdo,
-        private readonly TransactionManager $transactions,
-        private readonly IdentityRepository $identity,
-        private readonly MembershipRepository $memberships,
         private readonly ApplicationTenantBootstrapService $applicationBootstrap,
         private readonly AuditContractHost $audit,
         private readonly PasswordHasher $passwords,
@@ -38,7 +28,7 @@ final class TenantOwnerInvitationPublicService
     public function inspect(#[\SensitiveParameter] string $plaintextToken): array
     {
         $token = OneTimeInvitationToken::fromPlaintext($plaintextToken);
-        $result = $this->transactions->run(function () use ($token): array {
+        $result = Db::transaction(function () use ($token): array {
             $invitation = $this->lockInvitation($token);
             if ($invitation['status'] === 'pending' && $this->isExpired((string)$invitation['expires_at'])) {
                 $this->markExpired((int)$invitation['id']);
@@ -66,7 +56,7 @@ final class TenantOwnerInvitationPublicService
         #[\SensitiveParameter] ?string $newAccountPassword
     ): array {
         $token = OneTimeInvitationToken::fromPlaintext($plaintextToken);
-        $result = $this->transactions->run(function () use ($token, $newAccountPassword): array {
+        $result = Db::transaction(function () use ($token, $newAccountPassword): array {
             $invitation = $this->lockInvitation($token);
             $this->lockTenant((int)$invitation['tenant_id']);
             if ($invitation['status'] === 'accepted') {
@@ -91,83 +81,118 @@ final class TenantOwnerInvitationPublicService
                 return ['_error' => 'TENANT_OWNER_INVITATION_NOT_ALLOWED'];
             }
             if ($tenantStatus === TenantStatus::Provisioning->value) {
-                if ($this->memberships->pendingOrActiveMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+                if ($this->ownerMemberExists($tenantId, ['pending', 'active'])) {
                     return ['_error' => 'TENANT_OWNER_ALREADY_ASSIGNED'];
                 }
-            } elseif (!$this->memberships->activeMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+            } elseif (!$this->ownerMemberExists($tenantId, ['active'])) {
                 return ['_error' => 'TENANT_ACTIVE_OWNER_REQUIRED'];
             }
-            $role = $this->memberships->roleByKey($tenantId, self::OWNER_ROLE, true);
-            if ($role === null || !$role->isBuiltin) {
+            $roleId = Db::name('role')->where('tenant_id', $tenantId)->where('key', self::OWNER_ROLE)
+                ->where('is_builtin', 1)->where('status', 'active')->lock(true)->value('id');
+            if ($roleId === null) {
                 return ['_error' => 'TENANT_OWNER_ROLE_UNAVAILABLE'];
             }
 
-            $email = EmailAddress::fromString((string)$invitation['email_normalized']);
-            $credential = $this->identity->credentialByEmail($email, true);
+            $email = EmailAddress::fromString((string)$invitation['email_normalized'])->value();
+            $credential = Db::name('credential')->where('identifier_type', 'email')
+                ->where('identifier_normalized', $email)->lock(true)->field('id,account_id,status')->find();
             if ($credential === null) {
                 if ($newAccountPassword === null || $newAccountPassword === '') {
                     return ['_error' => 'NEW_ACCOUNT_PASSWORD_REQUIRED'];
                 }
-                $account = $this->identity->createAccount((string)$invitation['display_name']);
-                $credential = $this->identity->createEmailCredential(
-                    $account->id,
-                    $email,
-                    $this->passwords->hash($newAccountPassword)
-                );
+                $now = $this->format($this->now());
+                $accountId = Db::name('account')->insertGetId([
+                    'display_name' => (string)$invitation['display_name'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                Db::name('credential')->insert([
+                    'account_id' => $accountId,
+                    'kind' => 'email_password',
+                    'identifier_type' => 'email',
+                    'identifier_normalized' => $email,
+                    'secret_hash' => $this->passwords->hash($newAccountPassword),
+                    'verified_at' => $now,
+                    'secret_changed_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
             } else {
                 if ($newAccountPassword !== null && $newAccountPassword !== '') {
                     return ['_error' => 'EXISTING_ACCOUNT_PASSWORD_FORBIDDEN'];
                 }
-                $account = $this->identity->accountById($credential->accountId, true);
-                if ($account === null || $account->status !== AccountStatus::Active) {
+                $accountId = (int)$credential['account_id'];
+                if (Db::name('account')->where('id', $accountId)->where('status', 'active')->lock(true)->value('id') === null) {
                     return ['_error' => 'OWNER_ACCOUNT_INACTIVE'];
                 }
-            }
-            if ($credential->status !== CredentialStatus::Active) {
-                return ['_error' => 'OWNER_CREDENTIAL_INACTIVE'];
+                if ((string)$credential['status'] !== 'active') {
+                    return ['_error' => 'OWNER_CREDENTIAL_INACTIVE'];
+                }
             }
 
-            $member = $this->memberships->byTenantAndAccount($tenantId, $account->id, true);
-            if ($member !== null && $this->memberships->memberHasRole($tenantId, $member->id, self::OWNER_ROLE)) {
+            $member = Db::name('tenant_member')->where('tenant_id', $tenantId)->where('account_id', $accountId)
+                ->lock(true)->field('id,status')->find();
+            $memberId = $member === null ? null : (int)$member['id'];
+            if ($memberId !== null && $this->memberHasRole($tenantId, $memberId, (int)$roleId)) {
                 return ['_error' => 'ACCOUNT_ALREADY_TENANT_OWNER'];
             }
             if ($member === null) {
-                $member = $this->memberships->createPending(
-                    $tenantId,
-                    $account->id,
-                    (string)$invitation['display_name']
-                );
+                $now = $this->format($this->now());
+                $memberId = Db::name('tenant_member')->insertGetId([
+                    'tenant_id' => $tenantId,
+                    'account_id' => $accountId,
+                    'display_name' => (string)$invitation['display_name'],
+                    'status' => 'pending',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $member = ['id' => $memberId, 'status' => 'pending'];
             }
-            if ($member->status === TenantMemberStatus::Pending) {
-                $member = $this->memberships->transition($tenantId, $member->id, TenantMemberStatus::Active);
-            } elseif ($member->status !== TenantMemberStatus::Active) {
+            if ($member['status'] === 'pending') {
+                Db::name('tenant_member')->where('tenant_id', $tenantId)->where('id', $memberId)->update([
+                    'status' => 'active',
+                    'joined_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                    'security_revision' => Db::raw('security_revision+1'),
+                    'authorization_revision' => Db::raw('authorization_revision+1'),
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            } elseif ($member['status'] !== 'active') {
                 return ['_error' => 'TENANT_MEMBER_INACTIVE'];
             }
-            $this->memberships->assignRole($tenantId, $member->id, $role->id);
+            if (!$this->memberHasRole($tenantId, $memberId, (int)$roleId)) {
+                Db::name('member_role')->insert([
+                    'tenant_id' => $tenantId,
+                    'tenant_member_id' => $memberId,
+                    'role_id' => (int)$roleId,
+                    'assigned_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+                Db::name('tenant_member')->where('tenant_id', $tenantId)->where('id', $memberId)->update([
+                    'authorization_revision' => Db::raw('authorization_revision+1'),
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+                Db::name('tenant')->where('id', $tenantId)->update([
+                    'authorization_revision' => Db::raw('authorization_revision+1'),
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            }
             $this->applicationBootstrap->provision(
                 $tenantId,
-                $member->id,
-                $role->id,
+                $memberId,
+                (int)$roleId,
                 (string)$invitation['tenant_code']
             );
 
             $now = $this->format($this->now());
-            $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_owner_invitation
-SET token_hash = :consumed_token_hash, status = 'accepted', accepted_at = :accepted_at,
-    accepted_account_id = :account_id, accepted_member_id = :member_id,
-    updated_at = :updated_at
-WHERE id = :id AND status = 'pending'
-SQL);
-            $statement->execute([
-                'consumed_token_hash' => hash('sha256', random_bytes(32)),
+            $updated = Db::name('tenant_owner_invitation')->where('id', (int)$invitation['id'])
+                ->where('status', 'pending')->update([
+                'token_hash' => hash('sha256', random_bytes(32)),
+                'status' => 'accepted',
                 'accepted_at' => $now,
-                'account_id' => $account->id,
-                'member_id' => $member->id,
+                'accepted_account_id' => $accountId,
+                'accepted_member_id' => $memberId,
                 'updated_at' => $now,
-                'id' => (int)$invitation['id'],
             ]);
-            if ($statement->rowCount() !== 1) {
+            if ($updated !== 1) {
                 throw TenantOwnerInvitationException::conflict(
                     'INVITATION_ACCEPT_RACE',
                     'Invitation acceptance lost its concurrency guard.'
@@ -178,7 +203,7 @@ SQL);
                 'tenant.owner-invitation.accepted',
                 'platform.tenant.provision-owner',
                 'owner-invitation:' . (int)$invitation['id'],
-                ['invitation_id' => (int)$invitation['id'], 'member_id' => $member->id],
+                ['invitation_id' => (int)$invitation['id'], 'member_id' => $memberId],
                 AuditOutcome::Success,
                 null,
             );
@@ -186,9 +211,9 @@ SQL);
             return [
                 'invitation_id' => (int)$invitation['id'],
                 'tenant_id' => $tenantId,
-                'account_id' => $account->id,
-                'member_id' => $member->id,
-                'role_id' => $role->id,
+                'account_id' => $accountId,
+                'member_id' => $memberId,
+                'role_id' => (int)$roleId,
                 'status' => 'accepted',
                 'tenant_status' => $tenantStatus,
             ];
@@ -204,18 +229,13 @@ SQL);
     /** @return array<string,mixed> */
     private function lockInvitation(OneTimeInvitationToken $token): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT i.id, i.tenant_id, i.email_normalized, i.display_name, i.status,
-       i.delivery_status, i.expires_at, i.accepted_account_id, i.accepted_member_id,
-       t.code AS tenant_code, t.name AS tenant_name, t.status AS tenant_status
-FROM pa_tenant_owner_invitation i
-JOIN pa_tenant t ON t.id = i.tenant_id
-WHERE i.token_hash = :token_hash
-FOR UPDATE
-SQL);
-        $statement->execute(['token_hash' => $token->hash()]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        $row = Db::name('tenant_owner_invitation')->alias('invitation')
+            ->join('tenant tenant', 'tenant.id=invitation.tenant_id')
+            ->where('invitation.token_hash', $token->hash())
+            ->field('invitation.id,invitation.tenant_id,invitation.email_normalized,invitation.display_name,invitation.status,invitation.delivery_status,invitation.expires_at,invitation.accepted_account_id,invitation.accepted_member_id')
+            ->field('tenant.code AS tenant_code,tenant.name AS tenant_name,tenant.status AS tenant_status')
+            ->lock(true)->find();
+        if ($row === null) {
             throw TenantOwnerInvitationException::notFound();
         }
 
@@ -224,26 +244,17 @@ SQL);
 
     private function markExpired(int $invitationId): void
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_owner_invitation
-SET status = 'expired', updated_at = :updated_at
-WHERE id = :id AND status = 'pending'
-SQL);
-        $statement->execute([
+        Db::name('tenant_owner_invitation')->where('id', $invitationId)->where('status', 'pending')->update([
+            'status' => 'expired',
             'updated_at' => $this->format($this->now()),
-            'id' => $invitationId,
         ]);
     }
 
     /** @return array{id:int,status:string} */
     private function lockTenant(int $tenantId): array
     {
-        $statement = $this->pdo->prepare(
-            'SELECT id, status FROM pa_tenant WHERE id = :id FOR UPDATE'
-        );
-        $statement->execute(['id' => $tenantId]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        $row = Db::name('tenant')->where('id', $tenantId)->field('id,status')->lock(true)->find();
+        if ($row === null) {
             throw TenantOwnerInvitationException::conflict('TENANT_NOT_FOUND', 'Tenant was not found.');
         }
         return $row;
@@ -251,14 +262,23 @@ SQL);
 
     private function credentialExists(string $email): bool
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT id
-FROM pa_credential
-WHERE identifier_type = 'email' AND identifier_normalized = :email
-LIMIT 1
-SQL);
-        $statement->execute(['email' => $email]);
-        return $statement->fetchColumn() !== false;
+        return Db::name('credential')->where('identifier_type', 'email')
+            ->where('identifier_normalized', $email)->value('id') !== null;
+    }
+
+    /** @param list<string> $statuses */
+    private function ownerMemberExists(int $tenantId, array $statuses): bool
+    {
+        return Db::name('tenant_member')->alias('member')
+            ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
+            ->where('member.tenant_id', $tenantId)->whereIn('member.status', $statuses)->value('member.id') !== null;
+    }
+
+    private function memberHasRole(int $tenantId, int $memberId, int $roleId): bool
+    {
+        return Db::name('member_role')->where('tenant_id', $tenantId)
+            ->where('tenant_member_id', $memberId)->where('role_id', $roleId)->value('role_id') !== null;
     }
 
     private function isExpired(string $expiresAt): bool

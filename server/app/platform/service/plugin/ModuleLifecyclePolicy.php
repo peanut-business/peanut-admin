@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
-use PDO;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
+use think\facade\Db;
 
 /** Enforces manifest-owned core protection and explicit business dependencies. */
 final class ModuleLifecyclePolicy
@@ -46,12 +46,10 @@ final class ModuleLifecyclePolicy
 
     /** @param list<string> $moduleKeys @return list<string> */
     public static function activeBusinessDependents(
-        PDO $pdo,
         PluginLockResolver $resolver,
         array $moduleKeys,
     ): array {
         $targets = array_fill_keys($moduleKeys, true);
-        $active = $pdo->prepare("SELECT COUNT(*) FROM pa_module_installation WHERE module_key=? AND status='active'");
         $dependents = [];
         foreach ($resolver->all() as $descriptor) {
             foreach ($descriptor->moduleRoots as $dependentKey => $root) {
@@ -64,8 +62,8 @@ final class ModuleLifecyclePolicy
                     if (!is_string($dependencyKey) || !isset($targets[$dependencyKey])) {
                         continue;
                     }
-                    $active->execute([$dependentKey]);
-                    if ((int)$active->fetchColumn() !== 0) {
+                    if (Db::name('module_installation')->where('module_key', $dependentKey)
+                        ->where('status', 'active')->count() !== 0) {
                         $dependents[] = $dependentKey . '->' . $dependencyKey;
                     }
                 }
@@ -77,11 +75,10 @@ final class ModuleLifecyclePolicy
 
     /** @param list<string> $moduleKeys */
     public static function assertNoActiveBusinessDependents(
-        PDO $pdo,
         PluginLockResolver $resolver,
         array $moduleKeys,
     ): void {
-        if (self::activeBusinessDependents($pdo, $resolver, $moduleKeys) !== []) {
+        if (self::activeBusinessDependents($resolver, $moduleKeys) !== []) {
             throw new PluginLifecycleException(
                 'MODULE_DEPENDENT_INSTALLED',
                 'An active Module has an explicit business dependency on this Bundle.',

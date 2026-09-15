@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
 
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use DateTimeImmutable;
 use DateTimeZone;
 use PeanutAdmin\Kernel\Auth\TenantContext;
@@ -13,30 +13,19 @@ use PeanutAdmin\Settings\Application\SettingException;
 use PeanutAdmin\Settings\Definition\SettingDefinition;
 use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
 use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
-use PeanutAdmin\Settings\Secret\SecretProtector;
-use PeanutAdmin\Settings\Persistence\SettingStore;
+use PeanutAdmin\Settings\Model\DeploymentSettingValue;
+use PeanutAdmin\Settings\Model\SettingDefinitionRecord;
 
 /** Transfers deployment-scoped values through the Core Settings contract. */
 final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTransferAdapter
 {
     private ?SettingDefinitionRegistry $providedDefinitions;
-    private SecretProtector $protector;
-
-    /**
-     * The second argument accepts either a trusted definition registry or a
-     * protector for convenient Host assembly. A missing protector is explicit
-     * and remains fail-closed when a configured secret is applied.
-     */
     public function __construct(
-        private SettingStore $settings,
-        private PdoModuleGovernanceProvider $moduleGovernance,
-        SettingDefinitionRegistry|SecretProtector|null $definitions = null,
-        ?SecretProtector $protector = null,
+        private SettingAdminService $settings,
+        private ThinkPhpModuleGovernanceProvider $moduleGovernance,
+        ?SettingDefinitionRegistry $definitions = null,
     ) {
-        $this->providedDefinitions = $definitions instanceof SettingDefinitionRegistry ? $definitions : null;
-        $this->protector = $definitions instanceof SecretProtector && $protector === null
-            ? $definitions
-            : ($protector ?? new UnavailableSecretProtector());
+        $this->providedDefinitions = $definitions;
     }
 
     public function key(): string
@@ -57,11 +46,9 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             return [];
         }
 
-        $repository = $this->settings;
         $entries = [];
         foreach ($definitions as $definition) {
-            $snapshot = $repository->deploymentSnapshot($definition);
-            $row = $snapshot['deployment'];
+            $row = $this->deploymentRow($definition);
             if (!is_array($row)) {
                 continue;
             }
@@ -90,8 +77,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             throw new \RuntimeException('TRANSFER_CORE_SETTING_SCOPE_INVALID');
         }
 
-        $snapshot = $this->settings->deploymentSnapshot($definition);
-        $row = $snapshot['deployment'];
+        $row = $this->deploymentRow($definition);
         if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
         }
@@ -134,7 +120,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
             if (!$current['exists'] || !is_int($revision)) {
                 return;
             }
-            $this->admin()->unsetDeployment(
+            $this->settings->unsetDeployment(
                 $definition,
                 $platform->operatorId,
                 $this->now(),
@@ -145,7 +131,7 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
 
         try {
             $definition->assertValue($value);
-            $this->admin()->replaceDeployment(
+            $this->settings->replaceDeployment(
                 $definition,
                 $value,
                 $platform->operatorId,
@@ -162,9 +148,20 @@ final readonly class CoreSettingsConfigurationAdapter implements ConfigurationTr
         }
     }
 
-    private function admin(): SettingAdminService
+    /** @return ?array<string,mixed> */
+    private function deploymentRow(SettingDefinition $definition): ?array
     {
-        return new SettingAdminService($this->settings, $this->protector);
+        $definitionRecord = SettingDefinitionRecord::where('module_key', $definition->moduleKey)
+            ->where('setting_key', $definition->key)
+            ->where('status', 'active')
+            ->find();
+        if (!$definitionRecord instanceof SettingDefinitionRecord
+            || !hash_equals((string) $definitionRecord->getAttr('definition_digest'), $definition->digest)) {
+            throw new \RuntimeException('TRANSFER_CORE_SETTING_NOT_FOUND');
+        }
+        $value = DeploymentSettingValue::where('definition_id', (int) $definitionRecord->getAttr('id'))->find();
+
+        return $value instanceof DeploymentSettingValue ? $value->getData() : null;
     }
 
     /** @return list<SettingDefinition> */

@@ -6,14 +6,13 @@ namespace app\platform\service\ops;
 use app\platform\service\plugin\PluginPackageInstaller;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use app\platform\service\plugin\ModuleCatalogApplier;
-use PDO;
+use think\facade\Db;
 
 /** Creates immutable, registry-bound requests before Platform submission. */
 final readonly class DeploymentModuleRequestService
 {
     /** @param array<string,mixed> $moduleConfig @param array<string,string> $trustedKeys */
     public function __construct(
-        private PDO $pdo,
         private string $projectRoot,
         private array $moduleConfig,
         private array $trustedKeys,
@@ -41,7 +40,6 @@ final readonly class DeploymentModuleRequestService
         if ($operation === 'update') {
             $archive = $this->archivePath($resource, (string)$archiveSha256);
             $plan = (new PluginPackageInstaller(
-                $this->pdo,
                 $this->projectRoot . '/server',
                 $this->moduleConfig,
                 $this->trustedKeys,
@@ -124,19 +122,7 @@ final readonly class DeploymentModuleRequestService
         $json = $this->canonicalJson($document) . "\n";
         $this->writeRequestManifest($resource, $requestKey, $json);
 
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_ops_module_request (
-    request_key, environment, target_resource_id, delivery_resource_id,
-    operation, package_key, archive_sha256, signature_key_id,
-    confirm_plan_json, confirm_plan_sha256, request_sha256, state
-) VALUES (
-    :request_key, :environment, :target_resource_id, :delivery_resource_id,
-    :operation, :package_key, :archive_sha256, :signature_key_id,
-    :confirm_plan_json, :confirm_plan_sha256, :request_sha256, 'prepared'
-)
-ON DUPLICATE KEY UPDATE request_key=VALUES(request_key)
-SQL);
-        $statement->execute([
+        Db::name('ops_module_request')->insertOrIgnore([
             'request_key' => $requestKey,
             'environment' => $environment,
             'target_resource_id' => $targetResourceId,
@@ -150,6 +136,7 @@ SQL);
             'confirm_plan_sha256' => $preview['operation'] === 'update'
                 ? null : $preview['plan_digest'],
             'request_sha256' => $requestSha,
+            'state' => 'prepared',
         ]);
         return $document;
     }
@@ -160,11 +147,8 @@ SQL);
         if (preg_match('/^modreq_[a-f0-9]{32}$/D', $requestKey) !== 1) {
             throw new \RuntimeException('OPS_MODULE_REQUEST_KEY_INVALID');
         }
-        $statement = $this->pdo->prepare(
-            "SELECT * FROM pa_ops_module_request WHERE request_key=:request_key AND state IN ('prepared','claimed')"
-        );
-        $statement->execute(['request_key' => $requestKey]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_module_request')->where('request_key', $requestKey)
+            ->whereIn('state', ['prepared', 'claimed'])->find();
         if (!is_array($row)) {
             throw new \RuntimeException('OPS_MODULE_REQUEST_UNAVAILABLE');
         }
@@ -203,7 +187,6 @@ SQL);
         );
         if ((string)$request['operation'] === 'update') {
             return (new PluginPackageInstaller(
-                $this->pdo,
                 $this->projectRoot . '/server',
                 $this->moduleConfig,
                 $this->trustedKeys,

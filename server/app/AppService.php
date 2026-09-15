@@ -31,7 +31,7 @@ use app\common\service\http\OutboundHttpTransport;
 use app\common\service\authorization\AdminAuthorizationService;
 use app\common\service\authorization\CoreTenantModuleAdminBridge;
 use app\common\service\instance\DeploymentMode;
-use app\common\service\idempotency\PdoIdempotentCommandExecutor;
+use app\common\service\idempotency\ThinkPhpIdempotentCommandExecutor;
 use app\common\service\installation\InstallationExecutionHost;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\ApplicationPasswordPolicy;
@@ -81,10 +81,10 @@ use app\platform\service\ops\PlatformOpsApplicationService;
 use app\platform\service\ops\ApplicationRuntimeStatusProvider;
 use app\platform\service\ops\DeploymentModuleRequestService;
 use app\platform\service\ops\PairedBackupProvider;
-use app\platform\service\ops\PdoMaintenanceWindowStore;
-use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
-use app\platform\service\ops\PdoOpsTaskDispatcher;
-use app\platform\service\ops\PdoUpgradeTaskExecutionService;
+use app\platform\service\ops\ThinkPhpMaintenanceWindowStore;
+use app\platform\service\ops\ThinkPhpModuleOperationTaskExecutionService;
+use app\platform\service\ops\ThinkPhpOpsTaskDispatcher;
+use app\platform\service\ops\ThinkPhpUpgradeTaskExecutionService;
 use app\platform\service\ops\PlatformAuditRuntimeLogProvider;
 use app\platform\service\ops\PlatformBackupCenterService;
 use app\platform\service\ops\PlatformDiagnosticBundleService;
@@ -92,7 +92,7 @@ use app\platform\service\ops\PlatformModuleOperationExecutionService;
 use app\platform\service\ops\PlatformOpsPermissionChecker;
 use app\platform\service\ops\PlatformUpgradeExecutionService;
 use app\platform\service\ops\PlatformUpgradeReadinessService;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use app\platform\service\plugin\PlatformModuleRuntimeService;
 use app\platform\service\plugin\ModuleDefinitionRegistryFactory;
 use app\platform\service\plugin\PluginLockResolver;
@@ -102,49 +102,44 @@ use app\platform\service\plugin\PluginRuntimeGovernanceService;
 use app\platform\service\provider\NotificationQualificationContributor;
 use app\platform\service\provider\OauthQualificationContributor;
 use app\platform\service\provider\PaymentQualificationContributor;
-use app\platform\service\provider\PdoProviderQualificationEvidenceRepository;
+use app\platform\service\provider\ThinkPhpProviderQualificationEvidenceRepository;
 use app\platform\service\provider\PlatformProviderQualificationService;
 use app\platform\service\provider\StorageQualificationContributor;
 use think\Service;
 use think\Model;
 use think\facade\Config;
-use think\facade\Db;
-use think\db\PDOConnection;
-use PDO;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoTenantAuthRepository;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpTenantAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\PlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\TenantAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TenantAuthService;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\RoleAdminService;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
-use PeanutAdmin\Kernel\Audit\AuditRepository;
-use PeanutAdmin\Kernel\Identity\IdentityRepository;
+use PeanutAdmin\Kernel\Authorization\ThinkPhpTenantAuthorizationRepository;
+use PeanutAdmin\Kernel\Audit\AuditService;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Identity\SelfService\AccountSelfService;
-use PeanutAdmin\Kernel\Idempotency\PdoIdempotencyRepository;
+use PeanutAdmin\Kernel\Idempotency\IdempotencyService;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantAudit;
 use PeanutAdmin\Kernel\Http\TenantAuthEndpoint;
-use PeanutAdmin\Kernel\Membership\MembershipRepository;
 use PeanutAdmin\Kernel\Membership\Application\MemberAdminService;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\Kernel\Organization\Application\DepartmentAdminService;
 use PeanutAdmin\Kernel\Host\ApplicationHostPolicy;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\ModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\TenantModuleConfigurationService;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
+use PeanutAdmin\Kernel\Menu\ThinkPhpMenuCatalogRepository;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Application\TenantOwnerAdminService;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationRepository;
-use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
-use PeanutAdmin\Kernel\Tenancy\TenantRepository;
 use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogProviderRegistry;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogService;
@@ -157,8 +152,9 @@ use PeanutAdmin\OpsConsole\Status\RuntimeStatusProvider;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use PeanutAdmin\OpsConsole\Task\OpsTaskDispatcher;
 use PeanutAdmin\OpsConsole\Task\OpsTaskService;
-use PeanutAdmin\Settings\Persistence\SettingStore;
-use app\common\persistence\CoreTenantRepositoryFactory;
+use PeanutAdmin\Settings\Definition\SettingDefinitionSynchronizer;
+use app\common\persistence\TenantPersistenceConfiguration;
+use PeanutAdmin\Kernel\Persistence\Tenancy\TenantPersistenceMode;
 
 /** 应用组合根，集中注册 Host 基础设施、业务服务与官方 Module Runtime。 */
 class AppService extends Service
@@ -182,32 +178,30 @@ class AppService extends Service
         $this->app->instance(CurrentExecutionContext::class, $current);
         $configuredOverrides = Config::get('peanut.overrides', []);
         CoreServiceOverrides::configure(is_array($configuredOverrides) ? $configuredOverrides : []);
-        $this->app->bind(PDOConnection::class, fn(): PDOConnection => $this->databaseConnection());
-        $this->app->bind(PDO::class, fn(): PDO => $this->app->make(PDOConnection::class)->connect());
-        $this->app->bind(TransactionManager::class, fn(): TransactionManager => new ThinkPhpTransactionManager(
-            $this->app->make(PDOConnection::class),
-        ));
-        $this->app->bind(IdentityRepository::class, fn(): IdentityRepository => new PdoIdentityRepository(
-            $this->app->make(PDO::class),
-        ));
-        $this->app->bind(MembershipRepository::class, fn(): MembershipRepository => new PdoMembershipRepository(
-            $this->app->make(PDO::class),
-        ));
-        $this->app->bind(TenantRepository::class, fn(): TenantRepository => new PdoTenantRepository(
-            $this->app->make(PDO::class),
-        ));
         $this->app->bind(PasswordHasher::class, fn(): PasswordHasher => ApplicationPasswordPolicy::hasher());
-        $this->app->bind(SettingStore::class, fn(): SettingStore => (new CoreTenantRepositoryFactory(
-            $this->app->make(PDO::class),
-        ))->settings($this->app->make(PDOConnection::class)));
         $this->app->bind(ModuleCatalogApplier::class, fn(): ModuleCatalogApplier => new ModuleCatalogApplier(
-            $this->app->make(PDOConnection::class),
-            $this->app->make(SettingStore::class),
+            $this->app->make(SettingDefinitionSynchronizer::class),
         ));
-        $this->app->bind(PdoIdempotencyRepository::class, fn(): PdoIdempotencyRepository => (new CoreTenantRepositoryFactory(
-            $this->app->make(PDO::class),
-        ))->idempotency());
-        $this->app->bind(IdempotentCommandExecutor::class, PdoIdempotentCommandExecutor::class);
+        $this->app->bind(TenantPersistenceConfiguration::class, function (): TenantPersistenceConfiguration {
+            $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
+            if (!$mode instanceof DeploymentMode) {
+                throw new \RuntimeException('TENANT_PERSISTENCE_DEPLOYMENT_MODE_INVALID');
+            }
+            $storageMode = $mode === DeploymentMode::Standalone
+                ? TenantPersistenceMode::InstanceScoped
+                : TenantPersistenceMode::TenantScoped;
+            $instanceTenantId = $mode === DeploymentMode::Standalone
+                ? $this->app->make(DefaultTenantContextResolver::class)
+                    ->system('peanut-admin', 'resolve-instance-tenant', 'core-tenant-persistence')->tenantId
+                : null;
+
+            return new TenantPersistenceConfiguration($storageMode, $instanceTenantId);
+        });
+        $this->app->bind(IdempotencyService::class, fn(): IdempotencyService => new IdempotencyService(
+            $this->app->make(TenantPersistenceConfiguration::class)->mode,
+            $this->app->make(TenantPersistenceConfiguration::class)->instanceTenantId,
+        ));
+        $this->app->bind(IdempotentCommandExecutor::class, ThinkPhpIdempotentCommandExecutor::class);
         $this->app->bind(OutboundHttpTransport::class, fn(): OutboundHttpTransport => new GuzzleOutboundHttpTransport(
             $this->app->make(CurrentExecutionContext::class),
         ));
@@ -223,10 +217,8 @@ class AppService extends Service
             ),
         );
         $this->app->bind(AuditContractHost::class, fn(): AuditContractHost => new AuditContractHost(
-            $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
         ));
-        $this->app->bind(AuditRepository::class, AuditContractHost::class);
         $this->app->bind(OperationLogService::class, fn(): OperationLogService => new OperationLogService(
             $this->app->make(AuditContractHost::class),
         ));
@@ -238,13 +230,12 @@ class AppService extends Service
     private function registerAuthentication(): void
     {
         $this->app->bind(DemoAccountPolicy::class, fn(): DemoAccountPolicy => new DemoAccountPolicy(
-            $this->app->make(PDO::class),
-            (string)(getenv('PEANUT_DEMO_MODE') ?: '') === 'enabled',
+            (bool)Config::get('peanut.demo.enabled', false),
             array_values(array_filter([
-                (string)(getenv('ADMIN_INITIAL_EMAIL') ?: ''),
-                (string)(getenv('PLATFORM_INITIAL_EMAIL') ?: ''),
-                (string)(getenv('PEANUT_DEMO_TENANT_A_EMAIL') ?: ''),
-                (string)(getenv('PEANUT_DEMO_TENANT_B_EMAIL') ?: ''),
+                (string)Config::get('peanut.demo.admin_initial_email', ''),
+                (string)Config::get('peanut.demo.platform_initial_email', ''),
+                (string)Config::get('peanut.demo.tenant_a_email', ''),
+                (string)Config::get('peanut.demo.tenant_b_email', ''),
             ], static fn(string $email): bool => trim($email) !== '')),
         ));
         $this->app->bind(TenantAuthService::class, function (): TenantAuthService {
@@ -252,10 +243,8 @@ class AppService extends Service
             if (strlen($key) < 32) {
                 throw new \DomainException('TENANT_AUTH_CONFIGURATION_UNAVAILABLE');
             }
-            $pdo = $this->app->make(PDO::class);
             return new TenantAuthService(
-                $this->app->make(TransactionManager::class),
-                new PdoTenantAuthRepository($pdo),
+                $this->app->make(TenantAuthRepository::class),
                 ApplicationPasswordPolicy::hasher(),
                 new SystemClock(),
                 new TokenIssuer(),
@@ -281,38 +270,36 @@ class AppService extends Service
         $this->app->bind(AdminPermissionPolicy::class, fn(): AdminPermissionPolicy =>
             CoreServiceOverrides::adminPermissionPolicy());
         $this->app->bind(AdminMenuPersistence::class, ThinkPhpAdminMenuPersistence::class);
+        $this->app->bind(\PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository::class, ThinkPhpTenantAuthorizationRepository::class);
+        $this->app->bind(\PeanutAdmin\Kernel\Menu\MenuCatalogRepository::class, ThinkPhpMenuCatalogRepository::class);
         $this->app->bind(AdminAuthorizationService::class, fn(): AdminAuthorizationService => new AdminAuthorizationService(
-            new NativeAdminPrincipalRepository($this->app->make(PDO::class)),
+            new NativeAdminPrincipalRepository(),
             $this->app->make(CoreTenantModuleAdminBridge::class),
             $this->app->make(AdminMenuPersistence::class),
             $this->app->make(AdminPermissionPolicy::class),
         ));
         $this->app->bind(AdminAuthorizationQuery::class, fn(): AdminAuthorizationQuery => $this->app->make(AdminAuthorizationService::class));
         $this->app->bind(CoreTenantModuleAdminBridge::class, fn(): CoreTenantModuleAdminBridge => new CoreTenantModuleAdminBridge(
-            $this->app->make(PDO::class),
-            $this->app->make(PdoModuleGovernanceProvider::class),
+            $this->app->make(ThinkPhpModuleGovernanceProvider::class),
             $this->app->make(AdminMenuPersistence::class),
+            $this->app->make(\PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository::class),
+            $this->app->make(\PeanutAdmin\Kernel\Menu\MenuCatalogRepository::class),
         ));
         $this->app->bind(RoleAdministrationRuntime::class, fn(): RoleAdministrationRuntime => new RoleAdministrationRuntime(
-            $this->app->make(PDO::class),
-            new RoleAdminService($this->app->make(PDO::class)),
+            new RoleAdminService($this->app->make(AuditService::class)),
             $this->app->make(AdminAuthorizationService::class),
             $this->app->make(AdminMenuPersistence::class),
         ));
-        $this->app->bind(MenuPermissionUsageQuery::class, fn(): MenuPermissionUsageQuery => new MenuPermissionUsageQuery(
-            $this->app->make(PDO::class),
-        ));
         $this->app->bind(AdminDirectoryQuery::class, fn(): AdminDirectoryQuery => new AdminDirectoryQuery(
-            $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
         ));
         $this->app->bind(DepartmentAdministrationRuntime::class, fn(): DepartmentAdministrationRuntime => new DepartmentAdministrationRuntime(
-            $this->app->make(PDO::class),
             $this->app->make(CurrentExecutionContext::class),
+            new DepartmentAdminService($this->app->make(AuditService::class)),
         ));
         $this->app->bind(TenantAdminRuntime::class, fn(): TenantAdminRuntime => new TenantAdminRuntime(
-            new MemberAdminService($this->app->make(PDO::class)),
-            new AccountSelfService($this->app->make(PDO::class)),
+            new MemberAdminService($this->app->make(AuditService::class), $this->app->make(PasswordHasher::class)),
+            new AccountSelfService($this->app->make(AuditService::class), $this->app->make(PasswordHasher::class)),
             $this->app->make(DemoAccountPolicy::class),
         ));
         $this->app->bind(AdminApiAccessRegistry::class, function (): AdminApiAccessRegistry {
@@ -329,7 +316,6 @@ class AppService extends Service
     {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
         $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
-            $this->app->make(PDOConnection::class),
             $this->app->make(DataScopePolicy::class),
             $this->app->make(DefaultTenantContextResolver::class),
         ));
@@ -357,7 +343,6 @@ class AppService extends Service
         ));
         $this->app->bind(StorageConfigurationService::class, fn(): StorageConfigurationService => new StorageConfigurationService(
             $this->app->make(StorageRepository::class),
-            $this->app->make(TransactionManager::class),
             $this->app->make(AuditContractHost::class),
         ));
     }
@@ -371,12 +356,9 @@ class AppService extends Service
         $this->app->bind(OwnerInvitationDeliveryPort::class, UnavailableOwnerInvitationDeliveryPort::class);
         $this->app->bind(OwnerInvitationRuntimePolicy::class, fn(): OwnerInvitationRuntimePolicy =>
             OwnerInvitationRuntimePolicy::fromEnvironment(
-                (string)env('APP_ENV', ''),
+                (string)Config::get('peanut.environment', ''),
                 (string)Config::get('platform_invitation.delivery_mode', 'auto'),
             ));
-        $this->app->bind(DefaultTenantContextResolver::class, fn(): DefaultTenantContextResolver => new DefaultTenantContextResolver(
-            $this->app->make(PDO::class),
-        ));
         $this->app->bind(TenantEntryBindingResolver::class, function (): TenantEntryBindingResolver {
             $mode = DeploymentMode::fromConfiguredValue(Config::get('deployment.mode'));
             $defaultSystem = $mode === DeploymentMode::Standalone
@@ -385,11 +367,7 @@ class AppService extends Service
                     ->make(DefaultTenantContextResolver::class)
                     ->system($actor, $operation, $operationId)
                 : null;
-            return new TenantEntryBindingResolver(
-                $this->app->make(PDO::class),
-                $defaultSystem,
-                $mode === DeploymentMode::MultiTenant,
-            );
+            return new TenantEntryBindingResolver($defaultSystem, $mode === DeploymentMode::MultiTenant);
         });
         $this->app->bind(ApplicationHostPolicy::class, fn(): ApplicationHostPolicy => new ApplicationHostPolicy(
             (string)Config::get('deployment.mode', ''),
@@ -407,68 +385,47 @@ class AppService extends Service
                 default => throw new \RuntimeException('DEPLOYMENT_MODE_UNCONFIGURED'),
             };
         });
-        $this->app->bind(TenantIdentityQuery::class, fn(): TenantIdentityQuery => new TenantIdentityQuery(
-            $this->app->make(PDO::class),
-        ));
-        $this->app->bind(ModuleExecutionBoundary::class, function (): ModuleExecutionBoundary {
-            return new ModuleExecutionBoundary(
-                $this->app->make(PDO::class),
-                $this->app->make(CurrentExecutionContext::class),
-            );
-        });
-        $this->app->bind(PdoPlatformAuthRepository::class, PdoPlatformAuthRepository::class);
-        $this->app->bind(PdoPlatformAuthorizationRepository::class, PdoPlatformAuthorizationRepository::class);
-        $this->app->bind(PlatformAuthorizationRepository::class, PdoPlatformAuthorizationRepository::class);
-        $this->app->bind(RevisionPermissionCache::class, RevisionPermissionCache::class);
-        $this->app->bind(PlatformAuthorizationEvaluator::class, PlatformAuthorizationEvaluator::class);
+        $this->app->bind(TenantAuthRepository::class, ThinkPhpTenantAuthRepository::class);
+        $this->app->bind(PlatformAuthRepository::class, ThinkPhpPlatformAuthRepository::class);
+        $this->app->bind(PlatformAuthorizationRepository::class, ThinkPhpPlatformAuthorizationRepository::class);
         $this->app->bind(PlatformAuthService::class, fn(): PlatformAuthService => new PlatformAuthService(
-            $this->app->make(TransactionManager::class),
-            $this->app->make(PdoPlatformAuthRepository::class),
+            $this->app->make(PlatformAuthRepository::class),
             $this->app->make(PasswordHasher::class),
             new SystemClock(),
             new TokenIssuer(),
             $this->platformIdentifierHmacKey(),
         ));
-        $this->app->bind(PlatformOperatorSessionService::class, PlatformOperatorSessionService::class);
-        $this->app->bind(CorePlatformOperatorIdentityPort::class, CorePlatformOperatorIdentityPort::class);
         $this->app->bind(PlatformOperatorIdentityPort::class, CorePlatformOperatorIdentityPort::class);
-        $this->app->bind(ApplicationTenantBootstrapService::class, ApplicationTenantBootstrapService::class);
-        $this->app->bind(CoreTenantOwnerAdminProvisioner::class, CoreTenantOwnerAdminProvisioner::class);
         $this->app->bind(TenantOwnerAdminProvisioner::class, CoreTenantOwnerAdminProvisioner::class);
-        $this->app->bind(PdoPlatformRepository::class, PdoPlatformRepository::class);
-        $this->app->bind(BootstrapService::class, fn(): BootstrapService => new BootstrapService(
-            $this->app->make(TransactionManager::class),
-            $this->app->make(IdentityRepository::class),
-            $this->app->make(TenantRepository::class),
-            $this->app->make(MembershipRepository::class),
-            $this->app->make(PdoPlatformRepository::class),
-            $this->app->make(AuditRepository::class),
-            $this->app->make(PasswordHasher::class),
-        ));
         $this->app->bind(DeployedTenantModuleRegistry::class, fn(): DeployedTenantModuleRegistry =>
-            $this->app->make(PdoModuleGovernanceProvider::class)->registry());
-        $this->app->bind(OpisTenantModuleConfigValidator::class, OpisTenantModuleConfigValidator::class);
+            $this->app->make(ThinkPhpModuleGovernanceProvider::class)->registry());
+        $this->app->bind(ModuleRuntimeRepository::class, ThinkPhpModuleRuntimeRepository::class);
+        $this->app->bind(TenantModuleConfigurationService::class, fn(): TenantModuleConfigurationService => new TenantModuleConfigurationService(
+            $this->app->make(DeployedTenantModuleRegistry::class)->compiled(),
+            $this->app->make(OpisTenantModuleConfigValidator::class),
+            $this->app->make(ModuleRuntimeRepository::class),
+            $this->app->make(AuditService::class),
+        ));
         $this->app->bind(TenantModuleManager::class, fn(): TenantModuleManager => new TenantModuleManager(
             $this->app->make(DeployedTenantModuleRegistry::class)->compiled(),
             new VerifiedTenantModuleRepository(
-                new PdoModuleRuntimeRepository($this->app->make(PDO::class), true),
+                new ThinkPhpModuleRuntimeRepository(),
                 $this->app->make(DeployedTenantModuleRegistry::class),
             ),
             $this->app->make(OpisTenantModuleConfigValidator::class),
         ));
-        $this->app->bind(PlatformTenantAdminService::class, PlatformTenantAdminService::class);
-        $this->app->bind(TenantGovernanceService::class, TenantGovernanceService::class);
-        $this->app->bind(PlatformTenantModuleService::class, PlatformTenantModuleService::class);
+        $this->app->bind(TenantOwnerAdminService::class, fn(): TenantOwnerAdminService => new TenantOwnerAdminService(
+            $this->app->make(AuditService::class),
+            $this->app->make(PasswordHasher::class),
+        ));
         $this->app->bind(PluginCatalogSyncService::class, fn(): PluginCatalogSyncService =>
             new PluginCatalogSyncService(
-                $this->app->make(PDO::class),
                 dirname(__DIR__),
                 $this->moduleConfiguration(),
                 $this->app->make(ModuleCatalogApplier::class),
             ));
         $this->app->bind(PlatformModuleRuntimeService::class, fn(): PlatformModuleRuntimeService =>
             new PlatformModuleRuntimeService(
-                $this->app->make(PDO::class),
                 dirname(__DIR__),
                 $this->moduleConfiguration(),
                 $this->trustedModuleKeys(),
@@ -477,10 +434,8 @@ class AppService extends Service
                 $this->app->make(ModuleCatalogApplier::class),
             ));
         $this->app->bind(PlatformPermissionChecker::class, PlatformOpsPermissionChecker::class);
-        $this->app->bind(PdoOpsTaskDispatcher::class, PdoOpsTaskDispatcher::class);
-        $this->app->bind(OpsTaskDispatcher::class, PdoOpsTaskDispatcher::class);
-        $this->app->bind(PdoMaintenanceWindowStore::class, PdoMaintenanceWindowStore::class);
-        $this->app->bind(MaintenanceWindowStore::class, PdoMaintenanceWindowStore::class);
+        $this->app->bind(OpsTaskDispatcher::class, ThinkPhpOpsTaskDispatcher::class);
+        $this->app->bind(MaintenanceWindowStore::class, ThinkPhpMaintenanceWindowStore::class);
         $this->app->bind(BackupRestoreProviderRegistry::class, fn(): BackupRestoreProviderRegistry =>
             new BackupRestoreProviderRegistry([new PairedBackupProvider()]));
         $this->app->bind(MaintenanceReasonRegistry::class, fn(): MaintenanceReasonRegistry =>
@@ -490,50 +445,42 @@ class AppService extends Service
                 'security-maintenance',
                 'module-lifecycle',
             ]));
-        $this->app->bind(OpsTaskService::class, OpsTaskService::class);
-        $this->app->bind(MaintenanceService::class, MaintenanceService::class);
-        $this->app->bind(PdoModuleGovernanceProvider::class, fn(): PdoModuleGovernanceProvider =>
-            new PdoModuleGovernanceProvider(
-                $this->app->make(PDO::class),
+        $this->app->bind(ThinkPhpModuleGovernanceProvider::class, fn(): ThinkPhpModuleGovernanceProvider =>
+            new ThinkPhpModuleGovernanceProvider(
                 dirname(__DIR__),
                 $this->moduleConfiguration(),
                 $this->app->make(ModuleCatalogApplier::class),
             ));
         $this->app->bind(ModuleQualificationQuery::class, fn(): ModuleQualificationQuery => $this->app
-            ->make(PdoModuleGovernanceProvider::class)
+            ->make(ThinkPhpModuleGovernanceProvider::class)
             ->qualification());
         $this->app->bind(PluginRuntimeGovernanceService::class, fn(): PluginRuntimeGovernanceService =>
             new PluginRuntimeGovernanceService(
-                $this->app->make(PDO::class),
                 dirname(__DIR__),
                 $this->moduleConfiguration(),
                 $this->app->make(ModuleCatalogApplier::class),
             ));
         $this->app->bind(DeploymentModuleRequestService::class, fn(): DeploymentModuleRequestService =>
             new DeploymentModuleRequestService(
-                $this->app->make(PDO::class),
                 dirname(__DIR__, 2),
                 $this->moduleConfiguration(),
                 $this->trustedModuleKeys(),
                 $this->app->make(PluginRuntimeGovernanceService::class),
                 $this->app->make(ModuleCatalogApplier::class),
             ));
-        $this->app->bind(PlatformBackupCenterService::class, PlatformBackupCenterService::class);
         $this->app->bind(PlatformUpgradeReadinessService::class, fn(): PlatformUpgradeReadinessService =>
             new PlatformUpgradeReadinessService(
-                $this->app->make(PDO::class),
                 dirname(__DIR__, 2),
-                $this->app->make(PdoModuleGovernanceProvider::class),
+                $this->app->make(ThinkPhpModuleGovernanceProvider::class),
                 $this->app->make(PlatformBackupCenterService::class),
                 $this->app->make(MaintenanceService::class),
                 $this->app->make(PlatformPermissionChecker::class),
             ));
         $this->app->bind(ApplicationRuntimeStatusProvider::class, fn(): ApplicationRuntimeStatusProvider =>
             new ApplicationRuntimeStatusProvider(
-                $this->app->make(PDO::class),
                 dirname(__DIR__, 2),
                 $this->app->make(PlatformUpgradeReadinessService::class),
-                $this->app->make(PdoModuleGovernanceProvider::class),
+                $this->app->make(ThinkPhpModuleGovernanceProvider::class),
             ));
         $this->app->bind(RuntimeStatusProvider::class, ApplicationRuntimeStatusProvider::class);
         $this->app->bind(OpsStatusService::class, fn(): OpsStatusService => new OpsStatusService(
@@ -543,73 +490,66 @@ class AppService extends Service
         $this->app->bind(PlatformProviderQualificationService::class, fn(): PlatformProviderQualificationService =>
             new PlatformProviderQualificationService(
                 $this->app->make(PlatformPermissionChecker::class),
-                new PdoProviderQualificationEvidenceRepository($this->app->make(PDO::class)),
+                new ThinkPhpProviderQualificationEvidenceRepository(),
                 [
-                    new PaymentQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
-                    new NotificationQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
-                    new OauthQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
-                    new StorageQualificationContributor($this->app->make(PDO::class), $this->platformIdentifierHmacKey()),
+                    new PaymentQualificationContributor($this->platformIdentifierHmacKey()),
+                    new NotificationQualificationContributor($this->platformIdentifierHmacKey()),
+                    new OauthQualificationContributor($this->platformIdentifierHmacKey()),
+                    new StorageQualificationContributor($this->platformIdentifierHmacKey()),
                 ],
                 $this->platformIdentifierHmacKey(),
             ));
         $this->app->bind(PlatformDiagnosticBundleService::class, function (): PlatformDiagnosticBundleService {
             $permissions = $this->app->make(PlatformPermissionChecker::class);
             return new PlatformDiagnosticBundleService(
-                $this->app->make(PDO::class),
                 $permissions,
                 fn(\DateTimeImmutable $since): RuntimeLogService => new RuntimeLogService(
                     $permissions,
                     new RuntimeLogProviderRegistry([
                         new PlatformAuditRuntimeLogProvider(
-                            $this->app->make(PDO::class),
                             $since->format('Y-m-d H:i:s.v'),
                         ),
                     ]),
                     new SafeLogMessageCatalog([]),
                 ),
                 $this->app->make(OpsStatusService::class),
-                $this->app->make(PdoModuleGovernanceProvider::class),
+                $this->app->make(ThinkPhpModuleGovernanceProvider::class),
                 (string)Config::get('deployment.mode', ''),
                 (bool)Config::get('app.app_debug', false),
             );
         });
         $this->app->bind(PlatformUpgradeExecutionService::class, fn(): PlatformUpgradeExecutionService =>
             new PlatformUpgradeExecutionService(
-                $this->app->make(PDO::class),
-                $this->app->make(PdoOpsTaskDispatcher::class),
+                $this->app->make(ThinkPhpOpsTaskDispatcher::class),
                 dirname(__DIR__, 2),
                 $this->app->make(ApplicationRuntimeStatusProvider::class),
                 $this->app->make(PlatformPermissionChecker::class),
             ));
         $this->app->bind(PlatformModuleOperationExecutionService::class, fn(): PlatformModuleOperationExecutionService =>
             new PlatformModuleOperationExecutionService(
-                $this->app->make(PDO::class),
-                $this->app->make(PdoOpsTaskDispatcher::class),
+                $this->app->make(ThinkPhpOpsTaskDispatcher::class),
                 $this->app->make(DeploymentModuleRequestService::class),
                 $this->app->make(ApplicationRuntimeStatusProvider::class),
                 $this->app->make(PlatformPermissionChecker::class),
             ));
-        $this->app->bind(PdoUpgradeTaskExecutionService::class, fn(): PdoUpgradeTaskExecutionService =>
-            new PdoUpgradeTaskExecutionService(
-                $this->app->make(PDO::class),
+        $this->app->bind(ThinkPhpUpgradeTaskExecutionService::class, fn(): ThinkPhpUpgradeTaskExecutionService =>
+            new ThinkPhpUpgradeTaskExecutionService(
                 $this->app->make(AuditContractHost::class),
-                $this->app->make(PdoOpsTaskDispatcher::class),
-                $this->app->make(PdoMaintenanceWindowStore::class),
+                $this->app->make(ThinkPhpOpsTaskDispatcher::class),
+                $this->app->make(ThinkPhpMaintenanceWindowStore::class),
                 dirname(__DIR__, 2),
                 $this->app->make(BackupRestoreProviderRegistry::class),
                 $this->app->make(ApplicationRuntimeStatusProvider::class),
             ));
-        $this->app->bind(PdoModuleOperationTaskExecutionService::class, fn(): PdoModuleOperationTaskExecutionService =>
-            new PdoModuleOperationTaskExecutionService(
-                $this->app->make(PDO::class),
+        $this->app->bind(ThinkPhpModuleOperationTaskExecutionService::class, fn(): ThinkPhpModuleOperationTaskExecutionService =>
+            new ThinkPhpModuleOperationTaskExecutionService(
                 $this->app->make(AuditContractHost::class),
-                $this->app->make(PdoOpsTaskDispatcher::class),
-                $this->app->make(PdoMaintenanceWindowStore::class),
+                $this->app->make(ThinkPhpOpsTaskDispatcher::class),
+                $this->app->make(ThinkPhpMaintenanceWindowStore::class),
                 $this->app->make(DeploymentModuleRequestService::class),
                 $this->app->make(BackupRestoreProviderRegistry::class),
                 $this->app->make(ApplicationRuntimeStatusProvider::class),
             ));
-        $this->app->bind(PlatformOpsApplicationService::class, PlatformOpsApplicationService::class);
         $this->app->bind(\app\common\service\dict\DictionaryRuntime::class, function (): \app\common\service\dict\DictionaryRuntime {
             $tenant = new \app\common\service\dict\ThinkPhpTenantDictionaryProvider();
             $system = new \app\common\service\dict\ThinkPhpSystemDictionaryProvider();
@@ -646,10 +586,8 @@ class AppService extends Service
             $this->app->make(\app\common\service\config\WebsiteConfigService::class),
             (string)Config::get('project.default_image.user_avatar', ''),
         ));
-        $this->app->bind(ThinkPhpGeneratorMetadata::class, ThinkPhpGeneratorMetadata::class);
         $this->app->bind(GeneratorService::class, fn(): GeneratorService => new GeneratorService(
             $this->app->make(GeneratorImportPersistence::class),
-            $this->app->make(\app\common\persistence\TransactionalExecution::class),
             $this->app->make(ThinkPhpGeneratorMetadata::class),
             $this->databasePrefix(),
         ));
@@ -663,12 +601,12 @@ class AppService extends Service
             (string)Config::get('project.version', ''),
             [
                 'enabled' => $this->app->make(DemoAccountPolicy::class)->enabled(),
-                'tenant_a_host' => (string)(getenv('PEANUT_DEMO_TENANT_A_HOST') ?: ''),
-                'tenant_b_host' => (string)(getenv('PEANUT_DEMO_TENANT_B_HOST') ?: ''),
+                'tenant_a_host' => (string)Config::get('peanut.demo.tenant_a_host', ''),
+                'tenant_b_host' => (string)Config::get('peanut.demo.tenant_b_host', ''),
                 'shared_hosts' => self::hostList((string)Config::get('deployment.tenant_admin_hosts', '')),
-                'tenant_a_email' => (string)(getenv('PEANUT_DEMO_TENANT_A_EMAIL') ?: ''),
-                'tenant_b_email' => (string)(getenv('PEANUT_DEMO_TENANT_B_EMAIL') ?: ''),
-                'password' => (string)(getenv('PEANUT_DEMO_SHARED_PASSWORD') ?: ''),
+                'tenant_a_email' => (string)Config::get('peanut.demo.tenant_a_email', ''),
+                'tenant_b_email' => (string)Config::get('peanut.demo.tenant_b_email', ''),
+                'password' => (string)Config::get('peanut.demo.shared_password', ''),
             ],
         ));
         $this->app->bind(MemberLoginApplicationService::class, fn(): MemberLoginApplicationService => new MemberLoginApplicationService(
@@ -694,15 +632,6 @@ class AppService extends Service
         });
     }
 
-    private function databaseConnection(): PDOConnection
-    {
-        $connection = Db::connect();
-        if (!$connection instanceof PDOConnection) {
-            throw new \RuntimeException('APPLICATION_DATABASE_UNAVAILABLE');
-        }
-        return $connection;
-    }
-
     private function databasePrefix(): string
     {
         $connection = (string)Config::get('database.default', 'mysql');
@@ -714,7 +643,7 @@ class AppService extends Service
         // Recovery must boot while a pending source journal deliberately blocks the Module resolver.
         if ($this->app->runningInConsole()
             && ($_SERVER['argv'][1] ?? null) === 'module:adopt-package'
-            && env('APP_ENV', '') === 'development') {
+            && Config::get('peanut.environment', '') === 'development') {
             return;
         }
         $config = Config::get('modules', []);

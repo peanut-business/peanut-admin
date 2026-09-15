@@ -26,8 +26,7 @@ use think\App;
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Contracts/DeliveryRecordCommands.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Application/DeliveryRecordAccess.php';
-require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructure/Persistence/PdoDeliveryRecordRepository.php';
-require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php';
+require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/ThinkPhpDeliveryRecordAccess.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/Application/DeliveryRecordService.php';
 require dirname(__DIR__, 2) . '/app/Modules/Fixture/DeliveryRecord/ModuleProvider.php';
 
@@ -117,8 +116,7 @@ function pluginModuleContractControlledObject(string $class): object
 function pluginModuleContractMakeOfficial(App $app, string $abstract, string $concrete): object
 {
     $controlledImplementations = [
-        \PeanutAdmin\Kernel\Persistence\TransactionManager::class => \PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager::class,
-        \app\common\contract\idempotency\IdempotentCommandExecutor::class => \app\common\service\idempotency\PdoIdempotentCommandExecutor::class,
+        \app\common\contract\idempotency\IdempotentCommandExecutor::class => \app\common\service\idempotency\ThinkPhpIdempotentCommandExecutor::class,
         \app\Modules\Official\Task\Contracts\TaskJobRuntime::class => \app\Modules\Official\Task\Infrastructure\Runtime\ThinkPhpTaskJobRuntime::class,
         \app\common\service\http\OutboundHttpTransport::class => \app\common\service\http\GuzzleOutboundHttpTransport::class,
         \PeanutAdmin\IntegrationSecurity\External\ExternalTenantAudit::class => \app\common\service\external\ThinkPhpExternalTenantAudit::class,

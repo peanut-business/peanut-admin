@@ -5,6 +5,7 @@ namespace app\common\service\audit;
 
 use app\common\contract\audit\AuditEvent;
 use app\common\execution\CurrentExecutionContext;
+use app\common\model\log\OperationLog;
 
 final class OperationLogProjection
 {
@@ -25,17 +26,16 @@ final class OperationLogProjection
         }
         $metadata = RedactionPolicy::sanitize($event->metadata);
         $params = $metadata['params'] ?? [];
-        OperationLogTenantRepository::createForTenant(
-            $event->tenantId,
-            $event->trace->requestId,
-            [
-                'admin_id' => (int)($metadata['admin_id'] ?? 0),
-                'username' => (string)($metadata['username'] ?? ''),
-                'ip' => (string)($metadata['ip'] ?? $event->trace->ipAddress ?? ''),
-                'uri' => strtolower(trim((string)($metadata['uri'] ?? ''), '/')),
-                'method' => strtoupper((string)($metadata['method'] ?? '')),
-                'params' => RedactionPolicy::encode($params),
-            ],
-        );
+        OperationLog::create([
+            'tenant_id' => $event->tenantId,
+            'admin_id' => (int)($metadata['admin_id'] ?? 0),
+            'username' => (string)($metadata['username'] ?? ''),
+            'ip' => (string)($metadata['ip'] ?? $event->trace->ipAddress ?? ''),
+            'uri' => strtolower(trim((string)($metadata['uri'] ?? ''), '/')),
+            'method' => strtoupper((string)($metadata['method'] ?? '')),
+            'request_id' => $event->trace->requestId,
+            'params' => RedactionPolicy::encode($params),
+            'create_time' => time(),
+        ]);
     }
 }

@@ -2,21 +2,14 @@
 declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
-use PDO;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolutionException;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
+use think\facade\Db;
 
 /** Transfers Tenant-owned external provider bindings without callback secrets. */
-final readonly class ExternalBindingConfigurationAdapter implements ConfigurationTransferAdapter
+final class ExternalBindingConfigurationAdapter implements ConfigurationTransferAdapter
 {
-    private const TABLE_BINDING = 'p' . 'a_external_channel_binding';
-    private const TABLE_TENANT = 'p' . 'a_tenant';
-
-    public function __construct(private PDO $pdo)
-    {
-    }
-
     public function key(): string
     {
         return ConfigurationPackageCodec::ADAPTER_EXTERNAL_BINDINGS;
@@ -30,17 +23,9 @@ final readonly class ExternalBindingConfigurationAdapter implements Configuratio
     public function export(TenantContext|PlatformContext $context): array
     {
         $tenantId = $this->tenantId($context);
-        $table = self::TABLE_BINDING;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT provider, identity_hash, identity_hint, config_json, status
-FROM {$table}
-WHERE tenant_id = :tenant_id
-ORDER BY provider ASC
-SQL);
-        $statement->execute(['tenant_id' => $tenantId]);
-
         $entries = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        foreach (Db::name('external_channel_binding')->where('tenant_id', $tenantId)
+            ->field('provider,identity_hash,identity_hint,config_json,status')->order('provider')->select()->toArray() as $row) {
             $provider = (string)($row['provider'] ?? '');
             $this->assertProvider($provider);
             $config = $this->decodeConfig($row['config_json'] ?? null);
@@ -61,15 +46,8 @@ SQL);
     {
         $tenantId = $this->tenantId($context);
         $this->assertProvider($key);
-        $table = self::TABLE_BINDING;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT identity_hash, identity_hint, config_json, status, update_time
-FROM {$table}
-WHERE tenant_id = :tenant_id AND provider = :provider
-LIMIT 1
-SQL);
-        $statement->execute(['tenant_id' => $tenantId, 'provider' => $key]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('external_channel_binding')->where('tenant_id', $tenantId)->where('provider', $key)
+            ->field('identity_hash,identity_hint,config_json,status,update_time')->find();
         if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
         }
@@ -233,16 +211,8 @@ SQL);
         }
 
         $this->assertActiveTenant($tenantId);
-        $table = self::TABLE_BINDING;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT id, identity_hash, identity_hint, config_json, status, update_time
-FROM {$table}
-WHERE tenant_id = :tenant_id AND provider = :provider
-LIMIT 1
-FOR UPDATE
-SQL);
-        $statement->execute(['tenant_id' => $tenantId, 'provider' => $provider]);
-        $binding = $statement->fetch(PDO::FETCH_ASSOC);
+        $binding = Db::name('external_channel_binding')->where('tenant_id', $tenantId)->where('provider', $provider)
+            ->field('id,identity_hash,identity_hint,config_json,status,update_time')->lock(true)->find();
         $binding = is_array($binding) ? $binding : null;
         $currentRevision = $binding === null ? null : $this->configurationRevision($binding);
         if (($expectedRevision === null && $binding !== null)
@@ -262,10 +232,7 @@ SQL);
 
     private function assertActiveTenant(int $tenantId): void
     {
-        $tableTenant = self::TABLE_TENANT;
-        $statement = $this->pdo->prepare("SELECT status FROM {$tableTenant} WHERE id = :tenant_id FOR UPDATE");
-        $statement->execute(['tenant_id' => $tenantId]);
-        if ((string)$statement->fetchColumn() !== 'active') {
+        if (Db::name('tenant')->where('id', $tenantId)->lock(true)->value('status') !== 'active') {
             throw new ExternalTenantResolutionException();
         }
     }
@@ -282,15 +249,8 @@ SQL);
     ): void {
         $encoded = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $now = time();
-        $table = self::TABLE_BINDING;
         if ($binding === null) {
-            $statement = $this->pdo->prepare(<<<SQL
-INSERT INTO {$table}
-    (tenant_id, provider, callback_key, identity_hash, identity_hint, config_json, status, create_time, update_time)
-VALUES
-    (:tenant_id, :provider, :callback_key, :identity_hash, :identity_hint, :config_json, :status, :create_time, :update_time)
-SQL);
-            $statement->execute([
+            Db::name('external_channel_binding')->insert([
                 'tenant_id' => $tenantId,
                 'provider' => $provider,
                 'callback_key' => bin2hex(random_bytes(32)),
@@ -305,25 +265,16 @@ SQL);
             return;
         }
 
-        $columns = 'config_json = :config_json, status = :status, update_time = :update_time';
-        $parameters = [
+        $changes = [
             'config_json' => $encoded,
             'status' => $enabled ? 1 : 0,
             'update_time' => $now,
-            'id' => (int)$binding['id'],
-            'tenant_id' => $tenantId,
-            'provider' => $provider,
         ];
         if ($identityHash !== null) {
-            $columns .= ', identity_hash = :identity_hash, identity_hint = :identity_hint';
-            $parameters['identity_hash'] = $identityHash;
-            $parameters['identity_hint'] = $identityHint;
+            $changes['identity_hash'] = $identityHash;
+            $changes['identity_hint'] = $identityHint;
         }
-        $statement = $this->pdo->prepare(<<<SQL
-UPDATE {$table}
-SET {$columns}
-WHERE id = :id AND tenant_id = :tenant_id AND provider = :provider
-SQL);
-        $statement->execute($parameters);
+        Db::name('external_channel_binding')->where('id', (int)$binding['id'])
+            ->where('tenant_id', $tenantId)->where('provider', $provider)->update($changes);
     }
 }

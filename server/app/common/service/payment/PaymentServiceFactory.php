@@ -14,6 +14,7 @@ use app\common\service\payment\gateway\AlipayRefundGateway;
 use app\common\service\payment\gateway\WechatPayGateway;
 use app\common\service\payment\gateway\WechatRefundGateway;
 use app\common\service\payment\transport\CurlPaymentTransport;
+use app\common\service\http\OutboundHttpTransport;
 use app\common\service\external\ExternalTenantContext;
 use PeanutAdmin\IntegrationSecurity\External\ExternalTenantResolver;
 
@@ -25,12 +26,13 @@ final class PaymentServiceFactory
 
     public function __construct(
         private readonly ExternalTenantResolver $externalTenants,
+        private readonly OutboundHttpTransport $httpTransport,
         array $config = [],
         ?PaymentTransportInterface $transport = null,
     )
     {
         $this->config = $config;
-        $this->transport = $transport ?? new CurlPaymentTransport();
+        $this->transport = $transport ?? new CurlPaymentTransport($httpTransport);
     }
 
     public function forTenant(
@@ -49,7 +51,7 @@ final class PaymentServiceFactory
 
     public function forConfig(array $config, ?PaymentTransportInterface $transport = null): self
     {
-        return new self($this->externalTenants, $config, $transport);
+        return new self($this->externalTenants, $this->httpTransport, $config, $transport);
     }
 
     public function prepay(string $channel): PrepayGatewayInterface

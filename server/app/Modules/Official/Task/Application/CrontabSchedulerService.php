@@ -8,7 +8,9 @@ use app\common\service\audit\AuditContractHost;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\infrastructure\crontab\CrontabTenantLock;
-use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
+use app\common\tenancy\PlatformTenantDataGateway;
+use app\Modules\Official\Task\Model\Crontab;
+use app\common\enum\CrontabEnum;
 use PeanutAdmin\Kernel\Scheduling\ScheduleWindow;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -22,7 +24,7 @@ final class CrontabSchedulerService
         private readonly CurrentExecutionContext $current,
         private readonly CrontabTenantLock $locks,
         private readonly AuditContractHost $audit,
-        private readonly CrontabTenantRepository $crontabs,
+        private readonly PlatformTenantDataGateway $tenantData,
     ) {
     }
 
@@ -33,7 +35,16 @@ final class CrontabSchedulerService
     public function runDue(int $now, callable $trigger): array
     {
         $tenantIds = [];
-        foreach ($this->crontabs->dueSchedules() as $item) {
+        $schedules = $this->tenantData
+            ->query(Crontab::class, 'scheduler', 'crontab.discover-due')
+            ->alias('c')
+            ->join('tenant t', 't.id = c.tenant_id')
+            ->where('t.status', 'active')
+            ->where('c.status', CrontabEnum::START)
+            ->field('c.*')
+            ->select();
+        foreach ($schedules as $schedule) {
+            $item = $schedule->getData();
             $tenantId = self::positiveInt($item['tenant_id'] ?? null, 'Scheduled job Tenant owner is invalid');
             $tenantIds[$tenantId] = true;
             $this->consider($item, $now, $trigger);
@@ -67,7 +78,10 @@ final class CrontabSchedulerService
                 try {
                     $window = new ScheduleWindow($lastTime, $now);
                     if ($window->isInitial()) {
-                        $this->crontabs->claimInitial($jobId, $now);
+                        Crontab::where('id', $jobId)
+                            ->where('status', CrontabEnum::START)
+                            ->where('last_time', 0)
+                            ->update(['last_time' => $now]);
                         return;
                     }
 
@@ -76,7 +90,12 @@ final class CrontabSchedulerService
                             ->getNextRunDate(date('Y-m-d H:i:s', $lastTime))
                             ->getTimestamp();
                     } catch (\InvalidArgumentException $exception) {
-                        $this->crontabs->rejectInvalid($jobId, '运行规则错误：' . $exception->getMessage());
+                        Crontab::where('id', $jobId)
+                            ->where('status', CrontabEnum::START)
+                            ->update([
+                                'error' => '运行规则错误：' . $exception->getMessage(),
+                                'status' => CrontabEnum::ERROR,
+                            ]);
                         $this->audit(
                             $scope,
                             $jobId,
@@ -92,7 +111,10 @@ final class CrontabSchedulerService
                         return;
                     }
 
-                    if (!$this->crontabs->claimDue($jobId, $lastTime, $now)) {
+                    if (Crontab::where('id', $jobId)
+                            ->where('status', CrontabEnum::START)
+                            ->where('last_time', $lastTime)
+                            ->update(['last_time' => $now]) !== 1) {
                         return;
                     }
 

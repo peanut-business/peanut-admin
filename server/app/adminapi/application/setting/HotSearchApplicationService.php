@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\setting;
 
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
+use app\common\model\setting\HotSearch;
 use app\common\service\config\TenantApplicationSettingService;
-use app\common\service\hot_search\HotSearchTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
 /**
@@ -19,7 +19,6 @@ class HotSearchApplicationService
     protected const CONFIG_TYPE = 'hot_search';
 
     public function __construct(
-        private readonly TransactionalExecution $transactions,
         private readonly TenantApplicationSettingService $applicationSettings,
     ) {
     }
@@ -29,7 +28,7 @@ class HotSearchApplicationService
     {
         return [
             'status' => (int)$this->applicationSettings->hotSearch($context)['status'],
-            'data'   => HotSearchTenantRepository::terms()
+            'data'   => HotSearch::where([])
                 ->field(['id', 'name', 'sort'])
                 ->order(['sort' => 'desc', 'id' => 'desc'])
                 ->select()
@@ -52,11 +51,14 @@ class HotSearchApplicationService
             $rows[] = ['name' => $name, 'sort' => (int) ($item['sort'] ?? 0)];
         }
 
-        return $this->transactions->run(function () use ($context, $params, $rows): bool {
+        return Db::transaction(function () use ($context, $params, $rows): bool {
             $this->applicationSettings->replaceHotSearch($context, [
                 'status' => (int)($params['status'] ?? 0),
             ]);
-            HotSearchTenantRepository::replace($rows);
+            HotSearch::where([])->delete();
+            if ($rows !== []) {
+                (new HotSearch())->saveAll($rows);
+            }
             return true;
         });
     }

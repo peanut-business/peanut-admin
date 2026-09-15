@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Application;
 
+use app\Modules\Official\Notification\Model\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeScene;
 use app\Modules\Official\Notification\Contracts\DeliveryResult;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
-use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\enum\notice\NoticeSceneEnum;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\context\notice\NoticeTenantContext;
@@ -13,7 +14,7 @@ use app\common\value\notice\sms\SmsDriverResult;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
 use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 
@@ -27,7 +28,6 @@ class VerificationCodeService
 
     public function __construct(
         private readonly NoticeSmsSender $sender,
-        private readonly TransactionManager $transactions,
         private readonly CurrentExecutionContext $executionContext,
         private readonly bool $developmentMode,
     ) {
@@ -52,7 +52,7 @@ class VerificationCodeService
             return new DeliveryResult(false, '', '验证码场景不存在');
         }
 
-        $scene = NoticeTenantRepository::scenes($this->executionContext, $context, 'notice.verification.send')
+        $scene = NoticeScene::where([])
             ->where('code', $sceneCode)->findOrEmpty();
         if ($scene->isEmpty() || (int) $scene->sms_status !== $scene::STATUS_ENABLED) {
             return new DeliveryResult(false, '', '验证码场景未启用');
@@ -151,24 +151,24 @@ class VerificationCodeService
             return new VerificationResult(false, '验证码场景不存在');
         }
 
-        $scene = NoticeTenantRepository::scenes($this->executionContext, $context, 'notice.verification.verify')
+        $scene = NoticeScene::where([])
             ->where('code', $sceneCode)->findOrEmpty();
         if ($scene->isEmpty()) {
             return new VerificationResult(false, '验证码场景不存在');
         }
 
-        return $this->transactions->run(function () use ($context, $scene, $mobile, $code): VerificationResult {
-            $log = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.verify')
+        return Db::transaction(function () use ($scene, $mobile, $code): VerificationResult {
+            $log = NoticeLog::where([])
                 ->where('scene_id', (int) $scene->id)
-                ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
+                ->where('channel', NoticeLog::CHANNEL_SMS)
                 ->where('receiver', $mobile)
-                ->where('status', NoticeTenantRepository::LOG_STATUS_SUCCESS)
+                ->where('status', NoticeLog::STATUS_SUCCESS)
                 ->order('send_time', 'desc')
                 ->order('id', 'desc')
                 ->lock(true)
                 ->findOrEmpty();
 
-            if ($log->isEmpty() || (int)$log->is_verified === NoticeTenantRepository::LOG_VERIFIED_YES) {
+            if ($log->isEmpty() || (int)$log->is_verified === NoticeLog::VERIFIED_YES) {
                 return new VerificationResult(false, '验证码不存在或已使用');
             }
 
@@ -183,7 +183,7 @@ class VerificationCodeService
                 return new VerificationResult(false, '验证码不正确');
             }
 
-            $log->is_verified = NoticeTenantRepository::LOG_VERIFIED_YES;
+            $log->is_verified = NoticeLog::VERIFIED_YES;
             $log->verified_time = time();
             $log->save();
             return new VerificationResult(true);
@@ -217,7 +217,6 @@ class VerificationCodeService
         $requestDigest = hash('sha256', implode("\0", [$sceneCode, $mobile]));
         $receiverHash = hash('sha256', $mobile);
         $create = function () use (
-            $context,
             $sceneId,
             $sceneName,
             $mobile,
@@ -228,7 +227,7 @@ class VerificationCodeService
             $requestDigest,
             $receiverHash,
         ): array {
-            $existing = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.send')
+            $existing = NoticeLog::where([])
                 ->where('idempotency_key_hash', $idempotencyHash)
                 ->lock(true)
                 ->findOrEmpty();
@@ -239,8 +238,8 @@ class VerificationCodeService
                 return ['execute' => false, 'reason' => $reason, 'log' => $existing];
             }
 
-            $active = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.send')
-                ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
+            $active = NoticeLog::where([])
+                ->where('channel', NoticeLog::CHANNEL_SMS)
                 ->where('receiver_hash', $receiverHash)
                 ->where('reservation_active', 1)
                 ->lock(true)
@@ -254,19 +253,19 @@ class VerificationCodeService
                 $active->save();
             }
 
-            $log = NoticeTenantRepository::createLog($this->executionContext, $context, [
+            $log = NoticeLog::create([
                 'template_id' => 0,
                 'scene_id' => $sceneId,
-                'channel' => NoticeTenantRepository::LOG_CHANNEL_SMS,
+                'channel' => NoticeLog::CHANNEL_SMS,
                 'receiver' => $mobile,
                 'title' => $sceneName,
                 'content' => $content,
-                'status' => NoticeTenantRepository::LOG_STATUS_PENDING,
+                'status' => NoticeLog::STATUS_PENDING,
                 'error' => '',
                 'extra' => $this->encodeExtra($templateId, []),
                 'send_time' => $reservationTime,
                 'verify_code_hash' => VerificationCodeSecret::hash($code),
-                'is_verified' => NoticeTenantRepository::LOG_VERIFIED_NO,
+                'is_verified' => NoticeLog::VERIFIED_NO,
                 'check_count' => 0,
                 'verified_time' => 0,
                 'provider' => '',
@@ -276,23 +275,22 @@ class VerificationCodeService
                 'receiver_hash' => $receiverHash,
                 'reservation_until' => $reservationTime + self::SEND_INTERVAL,
                 'reservation_active' => 1,
-            ], 'notice.verification.send');
+            ]);
             return ['execute' => true, 'reason' => 'owner', 'log' => $log];
         };
 
         try {
-            return $this->transactions->run($create);
+            return Db::transaction($create);
         } catch (\Throwable $exception) {
             if (!$this->isUniqueConflict($exception)) {
                 throw $exception;
             }
-            return $this->transactions->run(function () use (
-                $context,
+            return Db::transaction(function () use (
                 $idempotencyHash,
                 $requestDigest,
                 $receiverHash,
             ): array {
-                $existing = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.send')
+                $existing = NoticeLog::where([])
                     ->where('idempotency_key_hash', $idempotencyHash)
                     ->lock(true)
                     ->findOrEmpty();
@@ -302,8 +300,8 @@ class VerificationCodeService
                         : 'conflict';
                     return ['execute' => false, 'reason' => $reason, 'log' => $existing];
                 }
-                $active = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.send')
-                    ->where('channel', NoticeTenantRepository::LOG_CHANNEL_SMS)
+                $active = NoticeLog::where([])
+                    ->where('channel', NoticeLog::CHANNEL_SMS)
                     ->where('receiver_hash', $receiverHash)
                     ->where('reservation_active', 1)
                     ->lock(true)
@@ -322,13 +320,13 @@ class VerificationCodeService
         string $reservationKey,
         string $provider,
     ): void {
-        $this->transactions->run(function () use ($context, $reservationKey, $provider): void {
+        Db::transaction(function () use ($context, $reservationKey, $provider): void {
             $log = $this->lockedReservation($context, $reservationKey);
-            if ((int)$log->status !== NoticeTenantRepository::LOG_STATUS_PENDING) {
+            if ((int)$log->status !== NoticeLog::STATUS_PENDING) {
                 throw new \LogicException('SMS_RESERVATION_NOT_PENDING');
             }
             $log->provider = trim($provider);
-            $log->status = NoticeTenantRepository::LOG_STATUS_UNKNOWN;
+            $log->status = NoticeLog::STATUS_UNKNOWN;
             $log->error = '短信服务商调用结果待确认';
             $log->save();
         });
@@ -344,7 +342,7 @@ class VerificationCodeService
         string $templateId,
         array $receipt,
     ): void {
-        $this->transactions->run(function () use (
+        Db::transaction(function () use (
             $context,
             $reservationKey,
             $outcome,
@@ -356,21 +354,21 @@ class VerificationCodeService
             $log = $this->lockedReservation($context, $reservationKey);
             $currentStatus = (int)$log->status;
             if (!in_array($currentStatus, [
-                NoticeTenantRepository::LOG_STATUS_PENDING,
-                NoticeTenantRepository::LOG_STATUS_UNKNOWN,
+                NoticeLog::STATUS_PENDING,
+                NoticeLog::STATUS_UNKNOWN,
             ], true)) {
                 throw new \LogicException('SMS_RESERVATION_ALREADY_FINALIZED');
             }
             if ($outcome === SmsDriverResult::OUTCOME_SUCCEEDED
-                && $currentStatus !== NoticeTenantRepository::LOG_STATUS_UNKNOWN) {
+                && $currentStatus !== NoticeLog::STATUS_UNKNOWN) {
                 throw new \LogicException('SMS_PROVIDER_ATTEMPT_NOT_RECORDED');
             }
 
             $log->provider = trim($provider) !== '' ? trim($provider) : (string)$log->provider;
             $log->status = match ($outcome) {
-                SmsDriverResult::OUTCOME_SUCCEEDED => NoticeTenantRepository::LOG_STATUS_SUCCESS,
-                SmsDriverResult::OUTCOME_FAILED => NoticeTenantRepository::LOG_STATUS_FAIL,
-                default => NoticeTenantRepository::LOG_STATUS_UNKNOWN,
+                SmsDriverResult::OUTCOME_SUCCEEDED => NoticeLog::STATUS_SUCCESS,
+                SmsDriverResult::OUTCOME_FAILED => NoticeLog::STATUS_FAIL,
+                default => NoticeLog::STATUS_UNKNOWN,
             };
             $log->error = $error;
             $log->extra = $this->encodeExtra($templateId, $receipt);
@@ -383,7 +381,7 @@ class VerificationCodeService
         TenantContext|TenantSystemContext $context,
         string $reservationKey,
     ): \app\Modules\Official\Notification\Model\NoticeLog {
-        $log = NoticeTenantRepository::logs($this->executionContext, $context, 'notice.verification.send')
+        $log = NoticeLog::where([])
             ->where('reservation_key', $reservationKey)
             ->lock(true)
             ->findOrEmpty();
@@ -401,7 +399,7 @@ class VerificationCodeService
             return new DeliveryResult(false, '', '短信幂等请求内容冲突');
         }
         if ($reason === 'active') {
-            $error = (int)$log->status === NoticeTenantRepository::LOG_STATUS_UNKNOWN
+            $error = (int)$log->status === NoticeLog::STATUS_UNKNOWN
                 ? '上次短信发送结果未知，请稍后重试'
                 : '同一手机号1分钟只能发送1条短信';
             return new DeliveryResult(false, (string)$log->provider, $error);
@@ -410,9 +408,9 @@ class VerificationCodeService
         $status = (int)$log->status;
         $receipt = $this->decodeReceipt((string)$log->extra);
         return match ($status) {
-            NoticeTenantRepository::LOG_STATUS_SUCCESS => new DeliveryResult(true, (string)$log->provider, '', $receipt),
-            NoticeTenantRepository::LOG_STATUS_FAIL => new DeliveryResult(false, (string)$log->provider, (string)$log->error, $receipt),
-            NoticeTenantRepository::LOG_STATUS_UNKNOWN => new DeliveryResult(false, (string)$log->provider, '短信服务商调用结果未知，请稍后重试', $receipt),
+            NoticeLog::STATUS_SUCCESS => new DeliveryResult(true, (string)$log->provider, '', $receipt),
+            NoticeLog::STATUS_FAIL => new DeliveryResult(false, (string)$log->provider, (string)$log->error, $receipt),
+            NoticeLog::STATUS_UNKNOWN => new DeliveryResult(false, (string)$log->provider, '短信服务商调用结果未知，请稍后重试', $receipt),
             default => new DeliveryResult(false, (string)$log->provider, '验证码发送正在处理中'),
         };
     }

@@ -15,14 +15,13 @@ use app\common\services\XlsxExportService;
 use app\Modules\Official\Member\Contracts\MemberBalanceCommands;
 use app\Modules\Official\Payment\Application\RechargeAdministrationService;
 use app\Modules\Official\Payment\Model\RechargeOrder;
-use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Tenancy\ScheduledTenantContext;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use think\facade\Console;
-use think\facade\Db;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
@@ -94,7 +93,6 @@ function financeRefundService(
     return new RechargeAdministrationService(
         $xlsx,
         $idempotency,
-        app(TransactionManager::class),
         app(PaymentRetryLock::class),
         app(PaymentServiceFactory::class),
         app(FileService::class),
@@ -322,28 +320,26 @@ try {
     $app = new think\App(); $app->initialize();
     $alpha = financeTenantContext(101, 501, 'mt03-finance-alpha');
     $beta = financeTenantContext(202, 502, 'mt03-finance-beta');
-    financeRun($alpha, 'test.refund.seed.alpha', static function () use ($alpha): void {
-        expectFinanceTenant(!FinanceTenantRepository::records($alpha)->where('id', 31)->findOrEmpty()->isEmpty(), 'Alpha refund record disappeared');
-        expectFinanceTenant(!FinanceTenantRepository::logs($alpha)->where('id', 41)->findOrEmpty()->isEmpty(), 'Alpha refund log disappeared');
+    financeRun($alpha, 'test.refund.seed.alpha', static function (): void {
+        expectFinanceTenant(!RefundRecord::where([])->where('id', 31)->findOrEmpty()->isEmpty(), 'Alpha refund record disappeared');
+        expectFinanceTenant(!RefundLog::where([])->where('id', 41)->findOrEmpty()->isEmpty(), 'Alpha refund log disappeared');
     });
-    financeRun($beta, 'test.refund.seed.beta', static function () use ($beta): void {
-        expectFinanceTenant(FinanceTenantRepository::records($beta)->where('id', 31)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund record');
-        expectFinanceTenant(FinanceTenantRepository::logs($beta)->where('id', 41)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund log');
+    financeRun($beta, 'test.refund.seed.beta', static function (): void {
+        expectFinanceTenant(RefundRecord::where([])->where('id', 31)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund record');
+        expectFinanceTenant(RefundLog::where([])->where('id', 41)->findOrEmpty()->isEmpty(), 'Beta read Alpha refund log');
     });
 
-    $betaOrder = financeRun($beta, 'test.refund.beta-order', static fn() => FinanceTenantRepository::createOrder($beta, [
+    $betaOrder = financeRun($beta, 'test.refund.beta-order', static fn() => RechargeOrder::create([
         'tenant_id' => 101,
         'sn' => 'RC-BETA-22', 'user_id' => 22, 'pay_sn' => null, 'pay_way' => 2,
         'pay_status' => RechargeOrder::PAY_STATUS_UNPAID, 'order_amount' => '5.00',
         'order_terminal' => 3, 'transaction_id' => null, 'refund_status' => 0,
     ]));
     expectFinanceTenant((int)$betaOrder->tenant_id === 202, 'payload forged order Tenant ownership');
-    financeRun($alpha, 'test.refund.beta-order-isolation', static function () use ($alpha, $betaOrder): void {
-        expectFinanceTenant(FinanceTenantRepository::orders($alpha)->where('id', (int)$betaOrder->id)->findOrEmpty()->isEmpty(), 'Alpha read Beta order');
+    financeRun($alpha, 'test.refund.beta-order-isolation', static function () use ($betaOrder): void {
+        expectFinanceTenant(RechargeOrder::where([])->where('id', (int)$betaOrder->id)->findOrEmpty()->isEmpty(), 'Alpha read Beta order');
     });
 
-    $dbPdo = Db::connect()->connect();
-    expectFinanceTenant($dbPdo instanceof PDO, 'ThinkPHP refund PDO is unavailable');
     $idempotency = $app->make(IdempotentCommandExecutor::class);
     $xlsx = (new ReflectionClass(XlsxExportService::class))->newInstanceWithoutConstructor();
     $refunds = financeRefundService($xlsx, $idempotency);
@@ -356,7 +352,7 @@ try {
         'refund-unknown-001',
     ));
     expectFinanceTenant($unknown === [true, '操作成功'], 'accepted Provider result was not kept pending');
-    $unknownRecord = financeRun($alpha, 'test.refund.accepted-unknown-record', static fn() => FinanceTenantRepository::records($alpha)
+    $unknownRecord = financeRun($alpha, 'test.refund.accepted-unknown-record', static fn() => RefundRecord::where([])
         ->where('order_id', 23)->findOrEmpty());
     expectFinanceTenant(!$unknownRecord->isEmpty() && (int)$unknownRecord->refund_status === RefundEnum::REFUND_ING, 'accepted unknown result did not stay ING');
     expectFinanceTenant(
@@ -376,7 +372,7 @@ try {
         'accepted unknown refund repeated the external effect or changed its Provider key'
     );
     financeReconcile($alpha);
-    $unknownRecord = financeRun($alpha, 'test.refund.accepted-unknown-settled', static fn() => FinanceTenantRepository::records($alpha)
+    $unknownRecord = financeRun($alpha, 'test.refund.accepted-unknown-settled', static fn() => RefundRecord::where([])
         ->where('id', (int)$unknownRecord->id)->findOrEmpty());
     expectFinanceTenant((int)$unknownRecord->refund_status === RefundEnum::REFUND_SUCCESS, 'reconcile did not settle accepted refund');
     expectFinanceTenant(
@@ -392,7 +388,7 @@ try {
         'refund-retry-001',
     ));
     expectFinanceTenant($failed === [false, 'provider rejected refund'], 'known Provider failure result changed');
-    $retryRecord = financeRun($alpha, 'test.refund.known-failure-record', static fn() => FinanceTenantRepository::records($alpha)
+    $retryRecord = financeRun($alpha, 'test.refund.known-failure-record', static fn() => RefundRecord::where([])
         ->where('order_id', 24)->findOrEmpty());
     expectFinanceTenant((int)$retryRecord->refund_status === RefundEnum::REFUND_ERROR, 'known Provider failure did not settle ERROR');
     $failedReplay = financeRun($alpha, 'test.refund.known-failure-replay', static fn() => $refunds->refund(
@@ -414,7 +410,7 @@ try {
         'refund retry changed the Provider key or duplicated the external effect'
     );
     expectFinanceTenant(
-        financeRun($alpha, 'test.refund.retry-logs', static fn() => (int)FinanceTenantRepository::logs($alpha)
+        financeRun($alpha, 'test.refund.retry-logs', static fn() => (int)RefundLog::where([])
             ->where('record_id', (int)$retryRecord->id)->count()) === 2,
         'refund retry did not append exactly one local attempt log'
     );
@@ -431,11 +427,11 @@ try {
         'refund-finalize-001',
     ));
     expectFinanceTenant($finalizeFailure[0] === false, 'fixture receipt finalize failure was hidden');
-    $finalizeRecord = financeRun($alpha, 'test.refund.finalize-failure-record', static fn() => FinanceTenantRepository::records($alpha)
+    $finalizeRecord = financeRun($alpha, 'test.refund.finalize-failure-record', static fn() => RefundRecord::where([])
         ->where('order_id', 25)->findOrEmpty());
-    $finalizeLog = financeRun($alpha, 'test.refund.finalize-failure-log', static fn() => FinanceTenantRepository::logs($alpha)
+    $finalizeLog = financeRun($alpha, 'test.refund.finalize-failure-log', static fn() => RefundLog::where([])
         ->where('record_id', (int)$finalizeRecord->id)->order('id', 'desc')->findOrEmpty());
-    $finalizeOrder = financeRun($alpha, 'test.refund.finalize-failure-order', static fn() => FinanceTenantRepository::orders($alpha)
+    $finalizeOrder = financeRun($alpha, 'test.refund.finalize-failure-order', static fn() => RechargeOrder::where([])
         ->where('id', 25)->findOrEmpty());
     expectFinanceTenant(
         (int)$finalizeRecord->refund_status === RefundEnum::REFUND_ING
@@ -450,7 +446,7 @@ try {
         'finalize failure changed the Provider key or repeated the external effect'
     );
     financeReconcile($alpha);
-    $finalizeRecord = financeRun($alpha, 'test.refund.finalize-failure-settled', static fn() => FinanceTenantRepository::records($alpha)
+    $finalizeRecord = financeRun($alpha, 'test.refund.finalize-failure-settled', static fn() => RefundRecord::where([])
         ->where('id', (int)$finalizeRecord->id)->findOrEmpty());
     expectFinanceTenant(
         (int)$finalizeRecord->refund_status === RefundEnum::REFUND_SUCCESS
@@ -460,7 +456,7 @@ try {
 
     $alphaRecordIds = [(int)$unknownRecord->id, (int)$retryRecord->id, (int)$finalizeRecord->id];
     expectFinanceTenant(
-        financeRun($beta, 'test.refund.behavior-isolation', static fn() => (int)FinanceTenantRepository::records($beta)
+        financeRun($beta, 'test.refund.behavior-isolation', static fn() => (int)RefundRecord::where([])
             ->whereIn('id', $alphaRecordIds)->count()) === 0,
         'Beta read Alpha refund behavior records'
     );

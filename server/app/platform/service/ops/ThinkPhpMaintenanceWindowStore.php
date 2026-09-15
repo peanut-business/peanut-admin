@@ -4,33 +4,26 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindow;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceWindowStore;
 use PeanutAdmin\OpsConsole\Task\OpsAuditEvent;
-use Throwable;
+use think\facade\Db;
 
 /** Application-owned persistence and audit transaction for the Core maintenance contract. */
-final readonly class PdoMaintenanceWindowStore implements MaintenanceWindowStore
+final readonly class ThinkPhpMaintenanceWindowStore implements MaintenanceWindowStore
 {
     public function __construct(
-        private PDO $pdo,
         private AuditContractHost $audit,
     ) {
     }
 
     public function current(PlatformContext $context): ?MaintenanceWindow
     {
-        $row = $this->one(<<<'SQL'
-SELECT maintenance_key, state, reason_key, starts_at, ends_at, revision
-FROM pa_ops_maintenance_window
-WHERE state IN ('scheduled', 'active')
-ORDER BY id DESC
-LIMIT 1
-SQL);
+        $row = Db::name('ops_maintenance_window')->whereIn('state', ['scheduled', 'active'])
+            ->field('maintenance_key,state,reason_key,starts_at,ends_at,revision')->order('id', 'desc')->find();
 
         return $row === null ? null : $this->window($row);
     }
@@ -43,7 +36,7 @@ SQL);
         string $requestDigest,
         OpsAuditEvent $audit,
     ): MaintenanceWindow {
-        return $this->transaction(function () use (
+        return Db::transaction(function () use (
             $context,
             $candidate,
             $expectedRevision,
@@ -51,10 +44,8 @@ SQL);
             $requestDigest,
             $audit,
         ): MaintenanceWindow {
-            $replayed = $this->one(
-                'SELECT * FROM pa_ops_maintenance_window WHERE created_by_operator_id = :operator_id AND idempotency_digest = :idempotency_digest FOR UPDATE',
-                ['operator_id' => $context->operatorId, 'idempotency_digest' => $idempotencyDigest],
-            );
+            $replayed = Db::name('ops_maintenance_window')->where('created_by_operator_id', $context->operatorId)
+                ->where('idempotency_digest', $idempotencyDigest)->lock(true)->find();
             if ($replayed !== null) {
                 if (!hash_equals((string)$replayed['request_digest'], $requestDigest)) {
                     throw OpsConsoleException::idempotencyConflict();
@@ -62,9 +53,8 @@ SQL);
                 return $this->window($replayed);
             }
 
-            $existing = $this->one(
-                "SELECT revision FROM pa_ops_maintenance_window WHERE state IN ('scheduled', 'active') ORDER BY id DESC LIMIT 1 FOR UPDATE",
-            );
+            $existing = Db::name('ops_maintenance_window')->whereIn('state', ['scheduled', 'active'])
+                ->field('revision')->order('id', 'desc')->lock(true)->find();
             if (($existing === null && $expectedRevision !== 0)
                 || ($existing !== null && (int)$existing['revision'] !== $expectedRevision)
             ) {
@@ -74,16 +64,7 @@ SQL);
                 throw OpsConsoleException::operationInProgress();
             }
 
-            $insert = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_ops_maintenance_window (
-    maintenance_key, state, reason_key, starts_at, ends_at, revision,
-    idempotency_digest, request_digest, created_by_operator_id, created_at, updated_at
-) VALUES (
-    :maintenance_key, :state, :reason_key, :starts_at, :ends_at, :revision,
-    :idempotency_digest, :request_digest, :operator_id, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)
-)
-SQL);
-            $insert->execute([
+            Db::name('ops_maintenance_window')->insert([
                 'maintenance_key' => $candidate->maintenanceKey,
                 'state' => $candidate->state,
                 'reason_key' => $candidate->reasonKey,
@@ -92,14 +73,13 @@ SQL);
                 'revision' => $candidate->revision,
                 'idempotency_digest' => $idempotencyDigest,
                 'request_digest' => $requestDigest,
-                'operator_id' => $context->operatorId,
+                'created_by_operator_id' => $context->operatorId,
+                'created_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
             ]);
             $this->audit($context, $audit);
 
-            $created = $this->one(
-                'SELECT * FROM pa_ops_maintenance_window WHERE maintenance_key = :maintenance_key',
-                ['maintenance_key' => $candidate->maintenanceKey],
-            );
+            $created = Db::name('ops_maintenance_window')->where('maintenance_key', $candidate->maintenanceKey)->find();
             if ($created === null) {
                 throw OpsConsoleException::internal();
             }
@@ -115,7 +95,7 @@ SQL);
         string $requestDigest,
         OpsAuditEvent $audit,
     ): MaintenanceWindow {
-        return $this->transaction(function () use (
+        return Db::transaction(function () use (
             $context,
             $maintenanceKey,
             $expectedRevision,
@@ -123,10 +103,7 @@ SQL);
             $requestDigest,
             $audit,
         ): MaintenanceWindow {
-            $current = $this->one(
-                'SELECT * FROM pa_ops_maintenance_window WHERE maintenance_key = :maintenance_key FOR UPDATE',
-                ['maintenance_key' => $maintenanceKey],
-            );
+            $current = Db::name('ops_maintenance_window')->where('maintenance_key', $maintenanceKey)->lock(true)->find();
             if ($current === null) {
                 throw OpsConsoleException::revisionConflict();
             }
@@ -142,39 +119,26 @@ SQL);
                 throw OpsConsoleException::revisionConflict();
             }
 
-            $close = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_maintenance_window
-SET state = 'closed', revision = revision + 1,
-    idempotency_digest = :idempotency_digest, request_digest = :request_digest,
-    closed_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3)
-WHERE id = :id AND revision = :revision
-SQL);
-            $close->execute([
+            $changed = Db::name('ops_maintenance_window')->where('id', $current['id'])
+                ->where('revision', $expectedRevision)->update([
+                'state' => 'closed',
+                'revision' => Db::raw('revision + 1'),
                 'idempotency_digest' => $idempotencyDigest,
                 'request_digest' => $requestDigest,
-                'id' => $current['id'],
-                'revision' => $expectedRevision,
+                'closed_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
             ]);
-            if ($close->rowCount() !== 1) {
+            if ($changed !== 1) {
                 throw OpsConsoleException::revisionConflict();
             }
             $this->audit($context, $audit);
 
-            $closed = $this->one('SELECT * FROM pa_ops_maintenance_window WHERE id = :id', ['id' => $current['id']]);
+            $closed = Db::name('ops_maintenance_window')->where('id', $current['id'])->find();
             if ($closed === null) {
                 throw OpsConsoleException::internal();
             }
             return $this->window($closed);
         });
-    }
-
-    /** @param array<string, mixed> $parameters @return array<string, mixed>|null */
-    private function one(string $sql, array $parameters = []): ?array
-    {
-        $statement = $this->pdo->prepare($sql);
-        $statement->execute($parameters);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        return is_array($row) ? $row : null;
     }
 
     /** @param array<string, mixed> $row */
@@ -202,26 +166,6 @@ SQL);
             AuditOutcome::Success,
             null,
         );
-    }
-
-    private function transaction(callable $operation): MaintenanceWindow
-    {
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-        try {
-            $result = $operation();
-            if ($ownsTransaction) {
-                $this->pdo->commit();
-            }
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
     }
 
     private function databaseInstant(string $value): string

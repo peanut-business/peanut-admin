@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Application;
 
+use app\Modules\Official\Notification\Model\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\application\BusinessException;
 use app\common\http\PageResult;
 use app\Modules\Official\Notification\Contracts\DeliveryResult;
@@ -10,7 +12,6 @@ use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use app\Modules\Official\Notification\Contracts\VerificationResult;
-use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use app\common\services\notice\NoticeChannelService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\execution\CurrentExecutionContext;
@@ -34,7 +35,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function saveScene(array $params): void
     {
-        $scene = NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())
+        $scene = NoticeScene::where([])
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($scene->isEmpty()) {
@@ -54,7 +55,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function scenes(): array
     {
-        $list = NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->field([
+        $list = NoticeScene::where([])->field([
             'id', 'code', 'name', 'description', 'recipient', 'variables',
             'sms_template_id', 'sms_content', 'sms_status', 'update_time',
         ])->order('id', 'asc')->select()->toArray();
@@ -64,17 +65,17 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function sceneDetail(int $id): array
     {
-        return NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->toArray();
+        return NoticeScene::where('id', $id)->findOrEmpty()->toArray();
     }
 
     public function sceneExists(int $id): bool
     {
-        return !NoticeTenantRepository::scenes($this->executionContext, $this->executionContext->tenantAdmin())->where('id', $id)->findOrEmpty()->isEmpty();
+        return !NoticeScene::where('id', $id)->findOrEmpty()->isEmpty();
     }
 
     public function logs(array $params): PageResult
     {
-        $query = NoticeTenantRepository::logQuery('l')
+        $query = NoticeLog::alias('l')->where([])
             ->leftJoin('notice_template t', 't.id = l.template_id AND t.tenant_id = l.tenant_id')
             ->leftJoin('notice_scene s', 's.id = l.scene_id AND s.tenant_id = l.tenant_id')
             ->field([
@@ -107,7 +108,9 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
         $pagination = PaginationInput::from($params);
         $pageResult = $pagination->result($query->order('l.id', 'desc'));
-        $pageResult = NoticeTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
         $list = $pageResult->items;
 
         return new PageResult($list, $pageResult->total, $pageResult->page, $pageResult->pageSize);
@@ -115,7 +118,7 @@ final class NotificationApplicationService implements NotificationCommands, Noti
 
     public function logDetail(int $id): array
     {
-        return NoticeTenantRepository::logQuery('l')
+        return NoticeLog::alias('l')->where([])
             ->leftJoin('notice_template t', 't.id = l.template_id AND t.tenant_id = l.tenant_id')
             ->leftJoin('notice_scene s', 's.id = l.scene_id AND s.tenant_id = l.tenant_id')
             ->field([

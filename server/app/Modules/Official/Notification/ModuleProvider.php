@@ -17,9 +17,9 @@ use app\Modules\Official\Notification\Contracts\NotificationCommands;
 use app\Modules\Official\Notification\Contracts\NotificationQueries;
 use app\Modules\Official\Notification\Contracts\VerificationCodeCommands;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
 use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 use think\App;
+use think\facade\Config;
 
 final class ModuleProvider implements ModuleProviderContract
 {
@@ -34,13 +34,12 @@ final class ModuleProvider implements ModuleProviderContract
             NoticeSmsSender::class => fn(App $app): NoticeSmsSender => new ApplicationNoticeSmsSender(
                 $app->make(CurrentExecutionContext::class),
                 $app->make(NoticeChannelService::class),
-                (string)env('APP_ENV', '') === 'development',
+                (string)Config::get('peanut.environment', '') === 'development',
             ),
             VerificationCodeService::class => fn(App $app): VerificationCodeService => new VerificationCodeService(
                 $app->make(NoticeSmsSender::class),
-                $app->make(TransactionManager::class),
                 $app->make(CurrentExecutionContext::class),
-                (string)env('APP_ENV', '') === 'development',
+                (string)Config::get('peanut.environment', '') === 'development',
             ),
             NotificationCommands::class => NotificationApplicationService::class,
             NotificationBootstrapCommands::class => NotificationBootstrapService::class,

@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Application;
 
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\http\PageResult;
 use app\common\application\BusinessException;
 use app\common\services\FileService;
-use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 
@@ -22,7 +23,7 @@ class RefundApplicationService
     /** Peanut 按实际退款金额汇总；当前全额退款时与参考订单金额口径一致。 */
     public function stat(TenantContext $context): array
     {
-        $aggregate = FinanceTenantRepository::records($context)->fieldRaw(
+        $aggregate = RefundRecord::where([])->fieldRaw(
             'COALESCE(SUM(refund_amount), 0) AS total'
             . ',COALESCE(SUM(CASE WHEN refund_status=' . RefundEnum::REFUND_ING . ' THEN refund_amount ELSE 0 END), 0) AS ing'
             . ',COALESCE(SUM(CASE WHEN refund_status=' . RefundEnum::REFUND_SUCCESS . ' THEN refund_amount ELSE 0 END), 0) AS success'
@@ -73,7 +74,9 @@ class RefundApplicationService
                     'var_page' => 'page_no',
                 ]), $pageNo)
                 : $pagination->result($query->field('r.*,u.nickname,u.avatar')->order('r.id', 'desc'));
-            $pageResult = FinanceTenantRepository::arrayPage($pageResult);
+            $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+                ? $item->toArray()
+                : (array)$item);
             $lists = $pageResult->items;
 
             foreach ($lists as &$item) {
@@ -109,7 +112,7 @@ class RefundApplicationService
     /** 最新日志在前；支付渠道原始报文不对管理页面暴露。 */
     public function refundLog(TenantContext $context, int $recordId): array
     {
-        $lists = FinanceTenantRepository::logs($context)
+        $lists = RefundLog::where([])
             ->alias('rl')
             ->leftJoin('tenant_member tm', 'tm.tenant_id = rl.tenant_id AND tm.id = rl.handle_id')
             ->field('rl.*,tm.display_name AS handler')
@@ -137,7 +140,7 @@ class RefundApplicationService
 
     private static function buildBaseQuery(TenantContext $context, array $params, bool $withStatus)
     {
-        $query = FinanceTenantRepository::records($context, 'r')
+        $query = RefundRecord::alias('r')->where([])
             ->join('member u', 'u.tenant_id = r.tenant_id AND u.id = r.user_id');
 
         if (!empty($params['sn'])) {

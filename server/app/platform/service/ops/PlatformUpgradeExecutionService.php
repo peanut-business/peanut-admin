@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
 use PeanutAdmin\OpsConsole\Package;
+use think\facade\Db;
 
 /** Platform submission and read projection for the fixed PC42 upgrade workflow. */
 final readonly class PlatformUpgradeExecutionService
@@ -18,8 +18,7 @@ final readonly class PlatformUpgradeExecutionService
     public const PERMISSION = 'platform.ops.upgrade.manage';
 
     public function __construct(
-        private PDO $pdo,
-        private PdoOpsTaskDispatcher $tasks,
+        private ThinkPhpOpsTaskDispatcher $tasks,
         private string $projectRoot,
         private ApplicationRuntimeStatusProvider $runtimeStatus,
         private PlatformPermissionChecker $permissions,
@@ -72,20 +71,8 @@ final readonly class PlatformUpgradeExecutionService
     public function snapshot(PlatformContext $context): array
     {
         $this->assertRead($context);
-        $statement = $this->pdo->query(<<<'SQL'
-SELECT task.*
-FROM pa_ops_task task
-WHERE task.task_type = 'ops.upgrade.execute'
-ORDER BY task.id DESC
-LIMIT 10
-SQL);
-        if ($statement === false) {
-            throw OpsConsoleException::taskUnavailable();
-        }
-        $tasks = [];
-        while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
-            $tasks[] = $this->taskProjection($row);
-        }
+        $tasks = array_map(fn(array $row): array => $this->taskProjection($row),
+            Db::name('ops_task')->where('task_type', self::TASK_TYPE)->order('id', 'desc')->limit(10)->select()->toArray());
         return ['tasks' => $tasks];
     }
 
@@ -96,11 +83,7 @@ SQL);
         if (preg_match('/^job_[a-f0-9]{32}$/D', $taskKey) !== 1) {
             return null;
         }
-        $statement = $this->pdo->prepare(
-            'SELECT * FROM pa_ops_task WHERE task_key = :task_key AND task_type = :task_type'
-        );
-        $statement->execute(['task_key' => $taskKey, 'task_type' => self::TASK_TYPE]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_task')->where('task_key', $taskKey)->where('task_type', self::TASK_TYPE)->find();
         return is_array($row) ? $this->taskProjection($row) : null;
     }
 
@@ -159,27 +142,18 @@ SQL);
     /** @return array<string,mixed>|null */
     private function execution(string $taskKey): ?array
     {
-        $statement = $this->pdo->prepare(
-            'SELECT * FROM pa_ops_upgrade_execution WHERE task_key = :task_key'
-        );
-        $statement->execute(['task_key' => $taskKey]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_upgrade_execution')->where('task_key', $taskKey)->find();
         return is_array($row) ? $row : null;
     }
 
     /** @return list<array<string,mixed>> */
     private function steps(string $taskKey): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT step_key, step_order, status, input_sha256, output_sha256,
-       last_error_code, started_at, completed_at
-FROM pa_ops_upgrade_step
-WHERE task_key = :task_key
-ORDER BY step_order
-SQL);
-        $statement->execute(['task_key' => $taskKey]);
         $steps = [];
-        while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+        $rows = Db::name('ops_upgrade_step')->where('task_key', $taskKey)
+            ->field('step_key,step_order,status,input_sha256,output_sha256,last_error_code,started_at,completed_at')
+            ->order('step_order')->select()->toArray();
+        foreach ($rows as $row) {
             $steps[] = [
                 'step_key' => (string)$row['step_key'],
                 'step_order' => (int)$row['step_order'],

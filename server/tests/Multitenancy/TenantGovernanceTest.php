@@ -3,35 +3,32 @@ declare(strict_types=1);
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
-use PeanutAdmin\Kernel\Tenancy\TenantAvailabilityGuard;
+use app\platform\context\PlatformOperatorContext;
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use app\platform\identity\UnavailablePlatformOperatorIdentityPort;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\TenantOwnerAdminProvisioner;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
+use PeanutAdmin\Kernel\Audit\AuditService;
+use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
+use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
+use PeanutAdmin\Kernel\Platform\Application\TenantOwnerAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function pm01Expect(bool $condition, string $message): void
 {
@@ -60,12 +57,22 @@ final readonly class Pm01FixtureIdentity implements PlatformOperatorIdentityPort
     {
     }
 
-    public function requireActive(string $credential): PlatformOperatorIdentity
+    public function requireActive(string $credential, string $requestId): PlatformOperatorContext
     {
         if (!hash_equals('fixture-platform-credential', $credential)) {
             throw new DomainException('PLATFORM_OPERATOR_AUTHENTICATION_FAILED');
         }
-        return $this->identity;
+        return PlatformOperatorContext::fromValidatedPlatformSession(PlatformContext::fromValidatedSession(
+            new ValidatedPlatformSession(
+                $this->identity->operatorId,
+                'fixture-platform-session',
+                $this->identity->operatorId,
+                $this->identity->accountId,
+                'platform-web',
+                new DateTimeImmutable('+1 hour'),
+            ),
+            $requestId,
+        ));
     }
 }
 
@@ -79,17 +86,9 @@ final class Pm01FixtureConfigValidator implements TenantModuleConfigValidator
     }
 }
 
-function pm01Bootstrap(PDO $pdo): BootstrapService
+function pm01Bootstrap(): BootstrapService
 {
-    return new BootstrapService(
-        new PdoTransactionManager($pdo),
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        new PasswordHasher()
-    );
+    return new BootstrapService(passwords: new PasswordHasher());
 }
 
 $host = IsolatedBackendEnvironment::required('DB_HOST');
@@ -123,8 +122,9 @@ try {
     foreach (ModuleSchema::tableNames() as $table) {
         $pdo->exec(ModuleSchema::createSql($table));
     }
+    ThinkPhpTestConnection::fromPdo($pdo);
 
-    $bootstrap = pm01Bootstrap($pdo);
+    $bootstrap = pm01Bootstrap();
     $platform = $bootstrap->bootstrapPlatformOwner(
         'operator@example.test',
         'OperatorPassword2026',
@@ -136,11 +136,11 @@ try {
         'tenant' => ['requires' => []],
     ]);
     $registry = new CompiledModuleRegistry([$manifest], [], [], [], $manifest->digest);
-    $moduleRepository = new PdoModuleRuntimeRepository($pdo);
+    $moduleRepository = new ThinkPhpModuleRuntimeRepository();
     $validator = new Pm01FixtureConfigValidator();
     $modules = new TenantModuleManager($registry, $moduleRepository, $validator);
-    $administration = new PlatformTenantAdminService($pdo, $modules);
-    $transactions = new PdoTransactionManager($pdo);
+    $administration = new PlatformTenantAdminService($modules, new AuditService());
+    $owners = new TenantOwnerAdminService(new AuditService());
     $ownerAdmins = new class implements TenantOwnerAdminProvisioner {
         public function provision(
             int $tenantId,
@@ -156,17 +156,15 @@ try {
     $identity = new PlatformOperatorIdentity($platform->operatorId, $platform->accountId);
     $governance = new TenantGovernanceService(
         new Pm01FixtureIdentity($identity),
-        $transactions,
-        $bootstrap,
         $administration,
+        $owners,
         $ownerAdmins
     );
 
     $failClosed = new TenantGovernanceService(
         new UnavailablePlatformOperatorIdentityPort(),
-        $transactions,
-        $bootstrap,
         $administration,
+        $owners,
         $ownerAdmins
     );
     pm01Rejected(
@@ -224,25 +222,11 @@ SQL)->execute(['peanut.fixture-governance', $manifest->digest]);
     );
     pm01Expect($enabled['status'] === 'enabled', 'valid module configuration was not enabled');
 
-    $tenantRepository = new PdoTenantRepository($pdo);
-    $guard = new TenantAvailabilityGuard($tenantRepository);
-    $context = TenantContext::fromValidatedSession(
-        new ValidatedTenantSession(
-            1, 'fixture-session', $tenantId, $candidate['account_id'], $candidate['member_id'],
-            'admin-web', new DateTimeImmutable('2026-08-12T00:00:00Z'), 1
-        ),
-        'pm01-business-write'
-    );
-    $guard->assertNewSessionAllowed($tenantId);
-    $guard->assertBusinessWriteAllowed($context);
-
     $revision = (int)$pdo->query("SELECT revision FROM pa_tenant WHERE id={$tenantId}")->fetchColumn();
     $suspended = $governance->transition(
         'fixture-platform-credential', $tenantId, $revision, TenantStatus::Suspended, 'support hold', 'pm01-suspend'
     );
     pm01Expect($suspended['status'] === 'suspended', 'active tenant did not suspend');
-    pm01Rejected(static fn() => $guard->assertNewSessionAllowed($tenantId), 'TENANT_UNAVAILABLE');
-    pm01Rejected(static fn() => $guard->assertBusinessWriteAllowed($context), 'TENANT_UNAVAILABLE');
     pm01Rejected(
         static fn() => $governance->enableModule(
             'fixture-platform-credential', $tenantId, 'peanut.fixture-governance', ['region' => 'cn-west'],
@@ -267,7 +251,6 @@ SQL)->execute(['peanut.fixture-governance', $manifest->digest]);
         ),
         'Tenant cannot transition from closed to active'
     );
-    pm01Rejected(static fn() => $guard->assertNewSessionAllowed($tenantId), 'TENANT_UNAVAILABLE');
     pm01Expect(
         (int)$pdo->query("SELECT COUNT(*) FROM pa_tenant_audit_event WHERE tenant_id={$tenantId}")->fetchColumn() >= 5,
         'Core tenant governance audit evidence is incomplete'

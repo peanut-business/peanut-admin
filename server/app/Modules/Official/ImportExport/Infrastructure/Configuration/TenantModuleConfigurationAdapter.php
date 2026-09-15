@@ -2,12 +2,10 @@
 declare(strict_types=1);
 
 namespace app\Modules\Official\ImportExport\Infrastructure\Configuration;
-use app\platform\service\module\OpisTenantModuleConfigValidator;
-use app\platform\service\module\PdoModuleGovernanceProvider;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigurationService;
+use think\facade\Db;
 
 /** Transfers only the configuration of currently effective Tenant Modules. */
 final readonly class TenantModuleConfigurationAdapter implements ConfigurationTransferAdapter
@@ -15,8 +13,7 @@ final readonly class TenantModuleConfigurationAdapter implements ConfigurationTr
     private const TABLE = 'p' . 'a_tenant_module';
 
     public function __construct(
-        private PDO $pdo,
-        private PdoModuleGovernanceProvider $moduleGovernance,
+        private TenantModuleConfigurationService $modules,
     ) {
     }
 
@@ -33,20 +30,11 @@ final readonly class TenantModuleConfigurationAdapter implements ConfigurationTr
     public function export(TenantContext|PlatformContext $context): array
     {
         $tenantId = $this->tenantId($context);
-        $table = self::TABLE;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT module_key, config_json
-FROM {$table}
-WHERE tenant_id = :tenant_id
-  AND status = 'enabled'
-  AND (effective_at IS NULL OR effective_at <= CURRENT_TIMESTAMP(3))
-  AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP(3))
-ORDER BY module_key ASC
-SQL);
-        $statement->execute(['tenant_id' => $tenantId]);
-
         $entries = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        foreach (Db::name('tenant_module')->where('tenant_id', $tenantId)->where('status', 'enabled')
+            ->where(function ($query): void { $query->whereNull('effective_at')->whereOr('effective_at', '<=', Db::raw('CURRENT_TIMESTAMP(3)')); })
+            ->where(function ($query): void { $query->whereNull('expires_at')->whereOr('expires_at', '>', Db::raw('CURRENT_TIMESTAMP(3)')); })
+            ->field('module_key,config_json')->order('module_key')->select()->toArray() as $row) {
             $moduleKey = (string)($row['module_key'] ?? '');
             $this->assertModuleKey($moduleKey);
             $entries[] = ConfigurationTransferValue::entry(
@@ -62,15 +50,8 @@ SQL);
     {
         $tenantId = $this->tenantId($context);
         $this->assertModuleKey($key);
-        $table = self::TABLE;
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT status, config_json, config_revision, effective_at, expires_at
-FROM {$table}
-WHERE tenant_id = :tenant_id AND module_key = :module_key
-LIMIT 1
-SQL);
-        $statement->execute(['tenant_id' => $tenantId, 'module_key' => $key]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('tenant_module')->where('tenant_id', $tenantId)->where('module_key', $key)
+            ->field('status,config_json,config_revision,effective_at,expires_at')->find();
         if (!is_array($row)) {
             return ['exists' => false, 'value' => null, 'revision' => null];
         }
@@ -104,19 +85,11 @@ SQL);
             throw new \RuntimeException('TRANSFER_TENANT_MODULE_NOT_ENABLED');
         }
 
-        $registry = $this->moduleGovernance->registry();
-        (new TenantModuleConfigurationService(
-            $this->pdo,
-            $registry->compiled(),
-            new OpisTenantModuleConfigValidator(),
-        ))->update(
-            $tenant->tenantId,
+        $this->modules->update(
+            $tenant,
             $key,
             $value,
             $revision,
-            $tenant->memberId,
-            $tenant->accountId,
-            $tenant->requestId,
         );
     }
 

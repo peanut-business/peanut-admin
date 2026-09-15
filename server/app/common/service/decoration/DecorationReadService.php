@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\common\service\decoration;
 
 use app\common\model\decoration\DecorateTabbar;
+use app\common\model\decoration\DecoratePage;
+use app\common\model\decoration\DecorationTabbarSetting;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -18,7 +20,7 @@ final readonly class DecorationReadService
         string $operation = ''
     ): array
     {
-        $page = DecorationTenantRepository::pages()
+        $page = DecoratePage::where([])
             ->where('type', $type)->findOrEmpty();
         if ($page->isEmpty()) {
             throw new \RuntimeException('装修页面不存在');
@@ -31,8 +33,8 @@ final readonly class DecorationReadService
         bool $visibleOnly = false,
         string $operation = ''
     ): array {
-        $style = DecorationTabbarTenantRepository::readStyle();
-        $rows = DecorationTabbarTenantRepository::items()
+        $style = $this->tabbarStyle();
+        $rows = DecorateTabbar::where([])
             ->order(['position' => 'asc', 'id' => 'asc'])->select()->toArray();
         $list = [];
         foreach ($rows as $item) {
@@ -53,5 +55,20 @@ final readonly class DecorationReadService
         $page['data'] = $this->schema->resourcesForRead($data);
         $page['meta'] = $this->schema->resourcesForRead($meta);
         return $page;
+    }
+
+    /** @return array{default_color:string,selected_color:string} */
+    private function tabbarStyle(): array
+    {
+        $raw = DecorationTabbarSetting::where([])->value('style');
+        if ($raw === null) {
+            return ['default_color' => '#666666', 'selected_color' => '#2F80ED'];
+        }
+        $style = json_decode((string)$raw, true, 512, JSON_THROW_ON_ERROR);
+        if (!is_array($style) || array_is_list($style)) {
+            throw new \RuntimeException('Tabbar 样式配置无效');
+        }
+
+        return $style;
     }
 }

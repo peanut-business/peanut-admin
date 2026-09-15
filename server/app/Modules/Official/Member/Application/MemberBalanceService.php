@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
+use app\Modules\Official\Member\Model\Member;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
 use app\common\application\BusinessException;
 use app\common\enum\AccountLogEnum;
 use app\common\service\Money;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -34,7 +35,7 @@ final class MemberBalanceService
             throw BusinessException::invalid('MEMBER_BALANCE_ACTION_INVALID', '余额变动方向无效');
         }
 
-        $member = MemberTenantRepository::members($context)->lock(true)->findOrEmpty($memberId);
+        $member = Member::where([])->lock(true)->findOrEmpty($memberId);
         if ($member->isEmpty()) {
             throw BusinessException::notFound(
                 'MEMBER_NOT_FOUND',
@@ -65,7 +66,7 @@ final class MemberBalanceService
         $afterMoney = Money::fromCents($afterCents);
         $member->user_money = $afterMoney;
         if ($rechargeDeltaCents !== 0) {
-            $member->total_recharge_amount = self::centsToMoney($afterRechargeCents);
+            $member->total_recharge_amount = Money::fromCents($afterRechargeCents);
         }
         $member->save();
 
@@ -74,7 +75,7 @@ final class MemberBalanceService
             $memberId,
             $changeType,
             $action,
-            $amountCents / 100,
+            $amountCents,
             $sourceSn,
             $remark,
             $extra,
@@ -102,8 +103,8 @@ final class MemberBalanceService
             throw BusinessException::invalid('MEMBER_BALANCE_CHANGE_TYPE_INVALID', '账户流水变动类型无效');
         }
 
-        MemberTenantRepository::createBalanceLog($context, [
-            'sn' => MemberTenantRepository::nextBalanceLogSn($context),
+        MemberBalanceLog::create([
+            'sn' => MemberBalanceLog::generateSn($context),
             'member_id' => $memberId,
             'change_object' => $changeObject,
             'change_type' => $changeType,

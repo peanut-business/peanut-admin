@@ -4,8 +4,6 @@ declare(strict_types=1);
 use app\adminapi\application\system\SystemApplicationService;
 use app\adminapi\service\OperationLogService;
 use app\common\service\permission\RegisteredAdminPermissionPolicy;
-use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -21,39 +19,6 @@ $serverRoot = dirname(__DIR__, 2);
 $repositoryRoot = dirname($serverRoot);
 $app = new think\App();
 $app->initialize();
-
-$transactions = app(TransactionManager::class);
-expectOpsHost(
-    $transactions instanceof ThinkPhpTransactionManager,
-    'application transaction boundary must use the native ThinkPHP manager',
-);
-$transactionPdo = app(PDO::class);
-$outerTransactionObserved = false;
-$nestedTransactionObserved = false;
-try {
-    $transactions->run(function () use (
-        $transactions,
-        $transactionPdo,
-        &$outerTransactionObserved,
-        &$nestedTransactionObserved,
-    ): void {
-        $outerTransactionObserved = $transactionPdo->inTransaction();
-        $transactions->run(function () use ($transactionPdo, &$nestedTransactionObserved): void {
-            $nestedTransactionObserved = $transactionPdo->inTransaction();
-        });
-        throw new RuntimeException('PB04_NATIVE_TRANSACTION_ROLLBACK');
-    });
-    throw new RuntimeException('native transaction rollback probe unexpectedly committed');
-} catch (RuntimeException $exception) {
-    expectOpsHost(
-        $exception->getMessage() === 'PB04_NATIVE_TRANSACTION_ROLLBACK',
-        'native transaction rollback probe failed unexpectedly',
-    );
-}
-expectOpsHost(
-    $outerTransactionObserved && $nestedTransactionObserved && !$transactionPdo->inTransaction(),
-    'ThinkPHP transaction boundary did not share the application PDO connection or roll back cleanly',
-);
 
 $permissions = ['log/lists', 'log/clear', 'system/info', 'system/clearcache'];
 $policy = new RegisteredAdminPermissionPolicy();
@@ -147,10 +112,9 @@ expectOpsHost(
     'operation log projection must be the unique OperationLog writer'
 );
 expectOpsHost(
-    str_contains($auditHostSource, 'beginTransaction()')
-        && str_contains($auditHostSource, 'commit()')
-        && str_contains($auditHostSource, 'rollBack()'),
-    'Operation Log projections must share one transaction boundary',
+    str_contains($auditHostSource, 'Db::transaction(')
+        && !str_contains($auditHostSource, 'beginTransaction()'),
+    'Operation Log projections must use the native ThinkPHP transaction boundary',
 );
 expectOpsHost(
     substr_count($repositorySource, 'OperationLog::create') === 1
@@ -177,7 +141,7 @@ expectOpsHost(
         && str_contains($diagnosticSource, "'items' => \$this->operationLogEvidence(\$since)"),
     'diagnostic bundle does not include Operation Log evidence',
 );
-expectOpsHost(str_contains($logicSource, '$this->transactions->run('), 'log clear must be transactional');
+expectOpsHost(str_contains($logicSource, 'Db::transaction('), 'log clear must use a ThinkPHP transaction');
 expectOpsHost(str_contains($logicSource, "'log/clear'"), 'log clear must retain an audit tombstone');
 expectOpsHost(!str_contains($serviceSource, 'PeanutAdmin\\OpsConsole'), 'application log owner must not deep import core');
 

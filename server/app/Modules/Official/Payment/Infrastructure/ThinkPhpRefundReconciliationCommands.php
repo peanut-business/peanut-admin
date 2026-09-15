@@ -3,29 +3,30 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Payment\Infrastructure;
 
+use app\Modules\Official\Payment\Model\RechargeOrder;
+use app\Modules\Official\Payment\Model\RefundLog;
+use app\Modules\Official\Payment\Model\RefundRecord;
 use app\common\execution\CurrentExecutionContext;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
 use app\common\service\payment\contract\RefundGatewayInterface;
 use app\common\service\payment\PaymentServiceFactory;
 use app\common\service\runtime\OperationalLog;
 use app\Modules\Official\Payment\Contracts\PaymentMethod;
 use app\Modules\Official\Payment\Contracts\RefundReconciliationCommands;
 use app\Modules\Official\Payment\Application\RefundEnum;
-use app\Modules\Official\Payment\Infrastructure\Persistence\FinanceTenantRepository;
 
 /** Queries providers and converges pending recharge refunds to a final state. */
 final readonly class ThinkPhpRefundReconciliationCommands implements RefundReconciliationCommands
 {
     public function __construct(
         private PaymentServiceFactory $payments,
-        private TransactionalExecution $transactions,
         private CurrentExecutionContext $executionContext,
     ) {
     }
 
     public function reconcile(object $scope, array $diagnostics): array
     {
-        $records = FinanceTenantRepository::records($scope)
+        $records = RefundRecord::where([])
             ->where('order_type', RefundEnum::ORDER_TYPE_RECHARGE)
             ->where('refund_status', RefundEnum::REFUND_ING)
             ->order('id', 'asc')
@@ -39,7 +40,7 @@ final readonly class ThinkPhpRefundReconciliationCommands implements RefundRecon
         }
         $logsByRecord = [];
         if ($recordIds !== []) {
-            $logs = FinanceTenantRepository::logs($scope)
+            $logs = RefundLog::where([])
                 ->whereIn('record_id', $recordIds)
                 ->where('refund_status', RefundEnum::REFUND_ING)
                 ->order(['record_id' => 'asc', 'id' => 'desc'])
@@ -51,7 +52,7 @@ final readonly class ThinkPhpRefundReconciliationCommands implements RefundRecon
         }
         $ordersById = [];
         if ($orderIds !== []) {
-            foreach (FinanceTenantRepository::orders($scope)->whereIn('id', $orderIds)->select() as $candidate) {
+            foreach (RechargeOrder::where([])->whereIn('id', $orderIds)->select() as $candidate) {
                 $ordersById[(int)$candidate->id] = $candidate;
             }
         }
@@ -106,22 +107,21 @@ final readonly class ThinkPhpRefundReconciliationCommands implements RefundRecon
         }
 
         try {
-            return $this->transactions->run(function () use (
-                $scope,
+            return Db::transaction(function () use (
                 $record,
                 $order,
                 $log,
                 $gatewayStatus,
                 $result,
             ): bool {
-                $lockedRecord = FinanceTenantRepository::records($scope)->where('id', (int)$record->id)
+                $lockedRecord = RefundRecord::where([])->where('id', (int)$record->id)
                     ->lock(true)
                     ->findOrEmpty();
-                $lockedLog = FinanceTenantRepository::logs($scope)->where('record_id', (int)$record->id)
+                $lockedLog = RefundLog::where([])->where('record_id', (int)$record->id)
                     ->order('id', 'desc')
                     ->lock(true)
                     ->findOrEmpty();
-                $lockedOrder = FinanceTenantRepository::orders($scope)->where('id', (int)$lockedRecord->order_id)
+                $lockedOrder = RechargeOrder::where([])->where('id', (int)$lockedRecord->order_id)
                     ->lock(true)
                     ->findOrEmpty();
 

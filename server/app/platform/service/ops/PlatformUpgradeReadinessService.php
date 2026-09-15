@@ -4,11 +4,10 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\installation\ApplicationReleaseVersions;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use app\platform\service\module\StrictVersionConstraintMatcher;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLockResolver;
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
@@ -27,9 +26,8 @@ final readonly class PlatformUpgradeReadinessService
     private const PACKAGE_IDENTITY = '/^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/D';
 
     public function __construct(
-        private PDO $pdo,
         private string $projectRoot,
-        private PdoModuleGovernanceProvider $moduleGovernance,
+        private ThinkPhpModuleGovernanceProvider $moduleGovernance,
         private PlatformBackupCenterService $backups,
         private MaintenanceService $maintenance,
         private PlatformPermissionChecker $permissions,

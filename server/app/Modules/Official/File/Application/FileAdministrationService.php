@@ -3,22 +3,22 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\File\Application;
 
+use app\Modules\Official\File\Model\File;
+use app\Modules\Official\File\Model\FileCate;
 use app\Modules\Official\File\Contracts\FileAdministration;
 use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\services\FileService;
-use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\services\storage\StorageService;
 use app\common\support\PaginationInput;
 use app\common\support\PositiveIds;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 
 /** Application use cases for File media and categories. */
 final class FileAdministrationService implements FileAdministration
 {
     public function __construct(
-        private readonly TransactionManager $transactions,
         private readonly StorageService $storage,
         private readonly CurrentExecutionContext $executionContext,
         private readonly FileService $files,
@@ -53,13 +53,15 @@ final class FileAdministrationService implements FileAdministration
         }
 
         $pagination = PaginationInput::from($params);
-        $query = FileTenantRepository::files()->where($where);
+        $query = File::where([])->where($where);
         if ($categoryIds !== null) {
             $query->whereIn('cid', $categoryIds);
         }
 
         $pageResult = $pagination->result($query->order(['id' => 'desc']));
-        $pageResult = FileTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
         $lists = $pageResult->items;
         foreach ($lists as &$item) {
             $item['url'] = $this->files->getFileUrl((string) ($item['file_key'] ?? ''));
@@ -73,7 +75,7 @@ final class FileAdministrationService implements FileAdministration
     public function move(array $ids, int $cid): void
     {
         $ids = $this->normalizeIds($ids);
-        $rows = FileTenantRepository::files()->whereIn('id', $ids)->select()->toArray();
+        $rows = File::where([])->whereIn('id', $ids)->select()->toArray();
         if (count($rows) !== count($ids)) {
             throw new \InvalidArgumentException('包含不存在的素材');
         }
@@ -82,7 +84,7 @@ final class FileAdministrationService implements FileAdministration
             throw new \InvalidArgumentException('目标分类无效');
         }
         if ($cid > 0) {
-            $category = FileTenantRepository::findCategory($cid);
+            $category = FileCate::where('id', $cid)->find();
             if (!$category) {
                 throw new \InvalidArgumentException('目标分类不存在');
             }
@@ -94,7 +96,7 @@ final class FileAdministrationService implements FileAdministration
             }
         }
 
-        FileTenantRepository::files()->whereIn('id', $ids)->update(['cid' => $cid]);
+        File::where([])->whereIn('id', $ids)->update(['cid' => $cid]);
     }
 
     /** 重命名。 */
@@ -107,7 +109,7 @@ final class FileAdministrationService implements FileAdministration
         if (mb_strlen($name) > 20) {
             throw new \InvalidArgumentException('名称最多 20 个字符');
         }
-        $file = FileTenantRepository::findFile($id);
+        $file = File::where('id', $id)->find();
         if (!$file) {
             throw new \InvalidArgumentException('素材不存在');
         }
@@ -118,7 +120,7 @@ final class FileAdministrationService implements FileAdministration
     public function delete(array $ids): array
     {
         $ids = $this->normalizeIds($ids);
-        $rows = FileTenantRepository::files()->whereIn('id', $ids)->order(['id' => 'asc'])->select();
+        $rows = File::where([])->whereIn('id', $ids)->order(['id' => 'asc'])->select();
         if ($rows->count() !== count($ids)) {
             throw new \InvalidArgumentException('包含不存在的素材');
         }
@@ -129,7 +131,7 @@ final class FileAdministrationService implements FileAdministration
         foreach ($rows as $row) {
             $fileId = (int) $row['id'];
             $fileKey = (string) $row['file_key'];
-            if (FileTenantRepository::files()->where('id', $fileId)->update(['delete_time' => time()]) !== 1) {
+            if (File::where([])->where('id', $fileId)->update(['delete_time' => time()]) !== 1) {
                 throw new \RuntimeException('素材 ' . $fileId . ' 记录删除失败');
             }
             try {
@@ -137,7 +139,7 @@ final class FileAdministrationService implements FileAdministration
                 $deleted++;
                 $storageDeleted++;
             } catch (\Throwable $e) {
-                if (!FileTenantRepository::restoreFile($fileId)) {
+                if ((new File())->withTrashed()->where('id', $fileId)->update(['delete_time' => null]) !== 1) {
                     throw new \RuntimeException(
                         '素材 ' . $fileId . ' 删除失败且记录恢复失败：' . $e->getMessage(),
                         0,
@@ -161,7 +163,7 @@ final class FileAdministrationService implements FileAdministration
             throw new \InvalidArgumentException('文件类型无效');
         }
 
-        $categories = FileTenantRepository::categories()
+        $categories = FileCate::where([])
             ->where('type', $type)
             ->order(['id' => 'asc'])
             ->select()
@@ -184,7 +186,7 @@ final class FileAdministrationService implements FileAdministration
             throw new \InvalidArgumentException('父分类无效');
         }
         if ($pid > 0) {
-            $parent = FileTenantRepository::findCategory($pid);
+            $parent = FileCate::where('id', $pid)->find();
             if (!$parent) {
                 throw new \InvalidArgumentException('父分类不存在');
             }
@@ -193,7 +195,7 @@ final class FileAdministrationService implements FileAdministration
             }
         }
 
-        FileTenantRepository::createCategory([
+        FileCate::create([
             'pid' => $pid,
             'type' => $type,
             'name' => $name,
@@ -206,7 +208,7 @@ final class FileAdministrationService implements FileAdministration
         if ($name === '') {
             throw new \InvalidArgumentException('分类名称不能为空');
         }
-        $category = FileTenantRepository::findCategory((int) ($params['id'] ?? 0));
+        $category = FileCate::where('id', (int)($params['id'] ?? 0))->find();
         if (!$category) {
             throw new \InvalidArgumentException('分类不存在');
         }
@@ -220,21 +222,21 @@ final class FileAdministrationService implements FileAdministration
         if ($id <= 0) {
             throw new \InvalidArgumentException('分类 ID 无效');
         }
-        $root = FileTenantRepository::findCategory($id);
+        $root = FileCate::where('id', $id)->find();
         if (!$root) {
             throw new \InvalidArgumentException('分类不存在');
         }
         $categoryIds = $this->subtreeIds($id, (int) $root->type);
         $fileIds = array_map(
             'intval',
-            FileTenantRepository::files()->whereIn('cid', $categoryIds)->column('id'),
+            File::where([])->whereIn('cid', $categoryIds)->column('id'),
         );
         $fileResult = $fileIds === []
             ? ['files_deleted' => 0, 'storage_deleted' => 0]
             : $this->delete($fileIds);
 
-        $this->transactions->run(function () use ($categoryIds): void {
-            $query = FileTenantRepository::categories()->whereIn('id', $categoryIds);
+        Db::transaction(function () use ($categoryIds): void {
+            $query = FileCate::where([])->whereIn('id', $categoryIds);
             if ($query->count() !== count($categoryIds)) {
                 throw new \RuntimeException('分类记录删除不完整');
             }
@@ -257,7 +259,7 @@ final class FileAdministrationService implements FileAdministration
             throw new \InvalidArgumentException('文件类型无效');
         }
 
-        $categories = FileTenantRepository::categories()
+        $categories = FileCate::where([])
             ->order(['id' => 'asc'])
             ->field(['id', 'pid', 'type'])
             ->select()

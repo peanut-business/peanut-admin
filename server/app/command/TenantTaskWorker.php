@@ -7,23 +7,19 @@ use app\Modules\Official\ImportExport\Contracts\ImportExportWorkerRuntime;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\runtime\OperationalLog;
-use app\common\execution\DatabaseContextualCommand;
-use PDO;
-use app\platform\service\plugin\ModuleCatalogApplier;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Argument;
 
-final class TenantTaskWorker extends DatabaseContextualCommand
+final class TenantTaskWorker extends ContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
-        PDO $pdo,
-        ModuleCatalogApplier $catalogs,
         private readonly ImportExportWorkerRuntime $runtime,
     ) {
-        parent::__construct($contexts, $executionContext, $pdo, $catalogs);
+        parent::__construct($contexts, $executionContext);
     }
 
     protected function configure()

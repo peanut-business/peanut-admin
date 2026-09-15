@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\common\composition\storage;
 
+use app\common\execution\CurrentExecutionContext;
 use app\common\service\http\OutboundHttpAttemptObservation;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\Create;
@@ -13,6 +14,10 @@ use Qcloud\Cos\Client;
 /** Provider SDK assembly kept outside business storage drivers. */
 final class QcloudStorageClientFactory
 {
+    public function __construct(private readonly CurrentExecutionContext $executionContext)
+    {
+    }
+
     public function make(array $account, array $space): Client
     {
         $credentials = (array)($account['resolved_credentials'] ?? []);
@@ -30,20 +35,21 @@ final class QcloudStorageClientFactory
         ]);
         /** @var HandlerStack $handler */
         $handler = $client->httpClient->getConfig('handler');
-        $handler->push(static function (callable $next): callable {
-            return static function (RequestInterface $request, array $options) use ($next) {
+        $executionContext = $this->executionContext;
+        $handler->push(static function (callable $next) use ($executionContext): callable {
+            return static function (RequestInterface $request, array $options) use ($next, $executionContext) {
                 $startedAt = hrtime(true);
                 $attempt = (int)($options['retries'] ?? 0) + 1;
                 return $next($request, $options)->then(
-                    static function (ResponseInterface $response) use ($request, $attempt, $startedAt): ResponseInterface {
+                    static function (ResponseInterface $response) use ($executionContext, $request, $attempt, $startedAt): ResponseInterface {
                         OutboundHttpAttemptObservation::response(
-                            $request->getMethod(), (string)$request->getUri(), $attempt, $startedAt, $response->getStatusCode(),
+                            $executionContext, $request->getMethod(), (string)$request->getUri(), $attempt, $startedAt, $response->getStatusCode(),
                         );
                         return $response;
                     },
-                    static function (\Throwable $exception) use ($request, $attempt, $startedAt) {
+                    static function (\Throwable $exception) use ($executionContext, $request, $attempt, $startedAt) {
                         OutboundHttpAttemptObservation::failure(
-                            $request->getMethod(), (string)$request->getUri(), $attempt, $startedAt, $exception,
+                            $executionContext, $request->getMethod(), (string)$request->getUri(), $attempt, $startedAt, $exception,
                         );
                         return Create::rejectionFor($exception);
                     },

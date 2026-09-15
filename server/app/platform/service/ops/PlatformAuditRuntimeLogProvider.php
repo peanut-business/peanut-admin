@@ -5,18 +5,17 @@ namespace app\platform\service\ops;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogProvider;
 use PeanutAdmin\OpsConsole\Logs\RuntimeLogQuery;
 use PeanutAdmin\OpsConsole\Logs\StructuredLogBatch;
 use PeanutAdmin\OpsConsole\Logs\StructuredLogRecord;
+use think\facade\Db;
 
 /** Bounded, metadata-only projection of platform audit events. */
 final readonly class PlatformAuditRuntimeLogProvider implements RuntimeLogProvider
 {
     public function __construct(
-        private PDO $pdo,
         private string $since,
     ) {
     }
@@ -28,18 +27,11 @@ final readonly class PlatformAuditRuntimeLogProvider implements RuntimeLogProvid
 
     public function read(PlatformContext $context, RuntimeLogQuery $query): StructuredLogBatch
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT event_type, outcome, MAX(occurred_at) AS occurred_at, COUNT(*) AS occurrences
-FROM pa_platform_audit_event
-WHERE occurred_at >= :since
-GROUP BY event_type, outcome
-ORDER BY occurred_at DESC, event_type ASC
-LIMIT 100
-SQL);
-        $statement->execute(['since' => $this->since]);
-
         $records = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $rows = Db::name('platform_audit_event')->where('occurred_at', '>=', $this->since)
+            ->field('event_type,outcome')->fieldRaw('MAX(occurred_at) AS occurred_at,COUNT(*) AS occurrences')
+            ->group('event_type,outcome')->order('occurred_at', 'desc')->order('event_type')->limit(100)->select()->toArray();
+        foreach ($rows as $row) {
             $severity = match ((string)($row['outcome'] ?? '')) {
                 'success' => 'info',
                 'denied' => 'warning',

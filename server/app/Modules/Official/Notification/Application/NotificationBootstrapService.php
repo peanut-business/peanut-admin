@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Notification\Application;
 
+use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\execution\SystemExecutionContext;
 use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
-use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 
 final class NotificationBootstrapService implements NotificationBootstrapCommands
 {
@@ -18,6 +18,6 @@ final class NotificationBootstrapService implements NotificationBootstrapCommand
             || $system->operationId === '') {
             throw new \DomainException('NOTIFICATION_PROVISION_CONTEXT_INVALID');
         }
-        NoticeTenantRepository::provisionDefaultScenes(NotificationBootstrapDefaults::scenes());
+        NoticeScene::provisionDefaults(NotificationBootstrapDefaults::scenes());
     }
 }

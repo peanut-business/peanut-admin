@@ -3,14 +3,12 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
-use PDO;
 
 /** Applies module.json catalog contributions through the same compiled Plugin registry used at runtime. */
 final readonly class PluginCatalogSyncService
 {
     /** @param array<string,mixed> $moduleConfig */
     public function __construct(
-        private PDO $pdo,
         private string $serverRoot,
         private array $moduleConfig,
         private ModuleCatalogApplier $catalogs,
@@ -21,7 +19,7 @@ final readonly class PluginCatalogSyncService
     public function sync(?string $moduleKey = null): array
     {
         $roots = array_values((new DevelopmentModuleDiscovery(dirname($this->serverRoot)))->moduleRoots());
-        $compiled = (new PluginModuleRegistryFactory($this->pdo, $this->serverRoot))
+        $compiled = (new PluginModuleRegistryFactory($this->serverRoot))
             ->fromDeploymentConfig(array_replace($this->moduleConfig, ['roots' => $roots]))
             ->compiled();
         $registered = [];

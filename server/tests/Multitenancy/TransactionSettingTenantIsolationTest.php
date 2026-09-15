@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use app\adminapi\application\setting\TransactionSettingsApplicationService;
 use app\common\execution\ExecutionContextStore;
-use app\common\service\transaction\TransactionSettingTenantRepository;
+use app\common\model\setting\TransactionSetting;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
@@ -135,7 +135,7 @@ SQL);
 
     app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($beta, 'test.transaction-settings.set.beta'),
-        fn() => app(TransactionSettingsApplicationService::class)->setConfig([
+        fn() => app(TransactionSettingsApplicationService::class)->setConfig($beta, [
             'tenant_id' => 101,
             'cancel_unpaid_orders' => 1,
             'cancel_unpaid_orders_times' => 60,
@@ -146,28 +146,28 @@ SQL);
     expectTransactionTenant(
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($alpha, 'test.transaction-settings.get.alpha'),
-            fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
+            fn() => app(TransactionSettingsApplicationService::class)->getConfig($alpha),
         )['cancel_unpaid_orders_times'] === 30,
         'Beta changed Alpha transaction policy',
     );
     expectTransactionTenant(
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($beta, 'test.transaction-settings.get.beta'),
-            fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
+            fn() => app(TransactionSettingsApplicationService::class)->getConfig($beta),
         )['cancel_unpaid_orders_times'] === 60,
         'Beta transaction policy was not updated',
     );
     expectTransactionTenant(
         (int)app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($alpha, 'test.transaction-settings.query.alpha'),
-            fn() => TransactionSettingTenantRepository::settings()->count(),
+            fn() => TransactionSetting::where([])->count(),
         ) === 1,
         'Alpha query crossed Tenant boundary',
     );
     expectTransactionTenant(
         (int)app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($beta, 'test.transaction-settings.query.beta'),
-            fn() => TransactionSettingTenantRepository::settings()->count(),
+            fn() => TransactionSetting::where([])->count(),
         ) === 1,
         'Beta query crossed Tenant boundary',
     );
@@ -182,7 +182,7 @@ SQL);
     expectTransactionTenant(
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($gamma, 'test.transaction-settings.get.gamma'),
-            fn() => app(TransactionSettingsApplicationService::class)->getConfig(),
+            fn() => app(TransactionSettingsApplicationService::class)->getConfig($gamma),
         ) === [
             'cancel_unpaid_orders' => 1,
             'cancel_unpaid_orders_times' => 30,
@@ -193,7 +193,7 @@ SQL);
     );
     app(ExecutionContextStore::class)->run(
         new \app\common\execution\AdminExecutionContext($gamma, 'test.transaction-settings.set.gamma'),
-        fn() => app(TransactionSettingsApplicationService::class)->setConfig([
+        fn() => app(TransactionSettingsApplicationService::class)->setConfig($gamma, [
             'tenant_id' => 101,
             'cancel_unpaid_orders' => 0,
             'verification_orders' => 0,

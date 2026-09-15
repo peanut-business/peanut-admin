@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace app\common\service\authorization;
 
 use app\common\contract\authorization\AdminMenuPersistence;
-use app\platform\service\module\PdoModuleGovernanceProvider;
-use PDO;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Authorization\PdoTenantAuthorizationRepository;
+use PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository;
 use PeanutAdmin\Kernel\Menu\MenuDefinition;
+use PeanutAdmin\Kernel\Menu\MenuCatalogRepository;
 use PeanutAdmin\Kernel\Menu\MenuRegistry;
-use PeanutAdmin\Kernel\Menu\PdoMenuCatalogRepository;
+use think\facade\Db;
 
 /**
  * Adapts the Core Module/TenantModule catalog to the Admin Shell menu payload.
@@ -42,9 +42,10 @@ final readonly class CoreTenantModuleAdminBridge
     }
 
     public function __construct(
-        private PDO $pdo,
-        private PdoModuleGovernanceProvider $moduleGovernance,
+        private ThinkPhpModuleGovernanceProvider $moduleGovernance,
         private AdminMenuPersistence $menus,
+        private TenantAuthorizationRepository $authorization,
+        private MenuCatalogRepository $menuCatalog,
     ) {
     }
 
@@ -57,22 +58,20 @@ final readonly class CoreTenantModuleAdminBridge
             return ['menu' => [], 'permissions' => []];
         }
 
-        $pdo = $this->pdo;
         $permissions = array_values(array_unique([
-            ...(new PdoTenantAuthorizationRepository($pdo))->permissions(
+            ...$this->authorization->permissions(
                 $tenantContext->tenantId,
                 $tenantContext->memberId
             )->keys(),
-            ...$this->applicationPermissions($pdo, $tenantContext),
+            ...$this->applicationPermissions($tenantContext),
         ]));
-        if ($this->isTenantOwner($pdo, $tenantContext)) {
+        if ($this->isTenantOwner($tenantContext)) {
             $permissions = array_values(array_unique([
                 ...$permissions,
                 ...$this->registeredPermissions($tenantContext->tenantId),
             ]));
         }
-        $catalog = new PdoMenuCatalogRepository($pdo);
-        $definitions = $catalog->activeDefinitions('tenant');
+        $definitions = $this->menuCatalog->activeDefinitions('tenant');
         $qualification = $this->moduleGovernance->qualification();
         $deploymentModules = array_map(
             static fn($module): string => $module->moduleKey,
@@ -98,15 +97,13 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $pdo = $this->pdo;
-        $catalog = new PdoMenuCatalogRepository($pdo);
         $qualification = $this->moduleGovernance->qualification();
         $deploymentModules = array_map(
             static fn($module): string => $module->moduleKey,
             $qualification->installedModules()
         );
         $tenantModules = $qualification->activeTenantModuleKeys($tenantId);
-        $visible = (new MenuRegistry($catalog->activeDefinitions('tenant')))->visible(
+        $visible = (new MenuRegistry($this->menuCatalog->activeDefinitions('tenant')))->visible(
             'admin-web',
             static fn(string $moduleKey): bool => in_array($moduleKey, $deploymentModules, true),
             static fn(string $moduleKey): bool => in_array($moduleKey, $tenantModules, true),
@@ -122,7 +119,6 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $pdo = $this->pdo;
         $qualification = $this->moduleGovernance->qualification();
         $installed = array_fill_keys(array_map(
             static fn($module): string => $module->moduleKey,
@@ -135,20 +131,8 @@ final readonly class CoreTenantModuleAdminBridge
                 static fn(string $moduleKey): bool => isset($installed[$moduleKey])
             ),
         ]));
-        $placeholders = implode(',', array_map(
-            static fn(int $index): string => ':module_' . $index,
-            array_keys($active)
-        ));
-        $statement = $pdo->prepare(
-            "SELECT DISTINCT p.`key` FROM pa_permission p WHERE p.status = 'active' "
-            . "AND p.module_key IN ({$placeholders}) ORDER BY p.`key`"
-        );
-        $parameters = [];
-        foreach ($active as $index => $moduleKey) {
-            $parameters['module_' . $index] = $moduleKey;
-        }
-        $statement->execute($parameters);
-        return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+        return array_values(array_map('strval', Db::name('permission')->where('status', 'active')
+            ->whereIn('module_key', $active)->distinct(true)->order('key')->column('key')));
     }
 
     /** @return list<string> */
@@ -157,7 +141,6 @@ final readonly class CoreTenantModuleAdminBridge
         if ($tenantId < 1) {
             return [];
         }
-        $pdo = $this->pdo;
         $qualification = $this->moduleGovernance->qualification();
         $installed = array_fill_keys(array_map(
             static fn($module): string => $module->moduleKey,
@@ -185,38 +168,16 @@ final readonly class CoreTenantModuleAdminBridge
     }
 
     /** @return list<string> */
-    private function applicationPermissions(PDO $pdo, TenantContext $context): array
+    private function applicationPermissions(TenantContext $context): array
     {
-        $statement = $pdo->prepare(<<<'SQL'
-SELECT DISTINCT permission.`key`
-FROM pa_tenant tenant
-JOIN pa_tenant_member member
-  ON member.tenant_id = tenant.id
- AND member.id = :member_id
- AND member.status = 'active'
-JOIN pa_member_role member_role
-  ON member_role.tenant_id = tenant.id
- AND member_role.tenant_member_id = member.id
-JOIN pa_role role
-  ON role.tenant_id = tenant.id
- AND role.id = member_role.role_id
- AND role.status = 'active'
-JOIN pa_role_permission role_permission
-  ON role_permission.tenant_id = tenant.id
- AND role_permission.role_id = role.id
-JOIN pa_permission permission
-  ON permission.id = role_permission.permission_id
- AND permission.module_key = 'peanut.admin'
- AND permission.status = 'active'
-WHERE tenant.id = :tenant_id AND tenant.status = 'active'
-ORDER BY permission.`key`
-SQL);
-        $statement->execute([
-            'tenant_id' => $context->tenantId,
-            'member_id' => $context->memberId,
-        ]);
-
-        return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+        return array_values(array_map('strval', Db::name('tenant')->alias('tenant')
+            ->join('tenant_member member', "member.tenant_id=tenant.id AND member.status='active'")
+            ->join('member_role membership', 'membership.tenant_id=tenant.id AND membership.tenant_member_id=member.id')
+            ->join('role role', "role.tenant_id=tenant.id AND role.id=membership.role_id AND role.status='active'")
+            ->join('role_permission binding', 'binding.tenant_id=tenant.id AND binding.role_id=role.id')
+            ->join('permission permission', "permission.id=binding.permission_id AND permission.module_key='peanut.admin' AND permission.status='active'")
+            ->where('tenant.id', $context->tenantId)->where('tenant.status', 'active')->where('member.id', $context->memberId)
+            ->distinct(true)->order('permission.key')->column('permission.key')));
     }
 
     /**
@@ -264,26 +225,12 @@ SQL);
         return 2_000_000_000 + (int)sprintf('%u', crc32($menuKey)) % 100_000_000;
     }
 
-    private function isTenantOwner(PDO $pdo, TenantContext $context): bool
+    private function isTenantOwner(TenantContext $context): bool
     {
-        $statement = $pdo->prepare(<<<'SQL'
-SELECT 1
-FROM pa_member_role mr
-JOIN pa_role r
-  ON r.tenant_id = mr.tenant_id
- AND r.id = mr.role_id
- AND r.`key` = 'core.tenant-owner'
- AND r.is_builtin = 1
- AND r.status = 'active'
-WHERE mr.tenant_id = :tenant_id
-  AND mr.tenant_member_id = :member_id
-LIMIT 1
-SQL);
-        $statement->execute([
-            'tenant_id' => $context->tenantId,
-            'member_id' => $context->memberId,
-        ]);
-
-        return $statement->fetchColumn() !== false;
+        return Db::name('member_role')->alias('membership')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
+            ->where('membership.tenant_id', $context->tenantId)
+            ->where('membership.tenant_member_id', $context->memberId)
+            ->value('membership.tenant_member_id') !== null;
     }
 }

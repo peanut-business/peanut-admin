@@ -17,6 +17,7 @@ use app\adminapi\service\generator\GeneratorRenderService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use think\Container;
 use think\DbManager;
 use think\Model;
@@ -148,13 +149,6 @@ final class Tpq51SceneValidate extends Validate
     protected $scene = [
         'narrow' => ['narrow'],
     ];
-}
-
-final class Tpq51UnconnectedPdo extends PDO
-{
-    public function __construct()
-    {
-    }
 }
 
 function tpq51TenantContext(int $tenantId): TenantContext
@@ -560,7 +554,7 @@ expectTpq51(
 
 $contextFailure = false;
 try {
-    (new ModuleExecutionBoundary(new Tpq51UnconnectedPdo(), $current))->assertWorker('official.article');
+    (new ModuleExecutionBoundary($current, new ThinkPhpModuleRuntimeRepository()))->assertWorker('official.article');
 } catch (DomainException $exception) {
     $contextFailure = $exception->getMessage() === 'EXECUTION_CONTEXT_REQUIRED';
 }

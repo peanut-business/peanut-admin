@@ -6,15 +6,15 @@ namespace app\platform\service\module;
 use app\common\contract\module\ModuleGovernanceProvider;
 use app\common\contract\module\ModuleQualificationQuery;
 use app\common\contract\module\PluginLifecycleCommands;
-use PDO;
+use app\platform\service\plugin\ModuleCatalogApplier;
+use app\platform\service\plugin\ModuleMigrationSqlExecutor;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLifecycleService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
-use app\platform\service\plugin\ModuleCatalogApplier;
 
-/** Single Host assembly point for the Module Governance contracts. */
-final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
+/** Single Host assembly point for the native ThinkPHP Module Governance contracts. */
+final class ThinkPhpModuleGovernanceProvider implements ModuleGovernanceProvider
 {
     private PluginModuleRegistryFactory $registryFactory;
     private ?PluginLockResolver $lockResolver = null;
@@ -23,12 +23,11 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
 
     /** @param array<string,mixed> $moduleConfig */
     public function __construct(
-        private readonly PDO $pdo,
         private readonly string $serverRoot,
         private readonly array $moduleConfig,
         private readonly ModuleCatalogApplier $catalogs,
     ) {
-        $this->registryFactory = new PluginModuleRegistryFactory($pdo, $serverRoot);
+        $this->registryFactory = new PluginModuleRegistryFactory($serverRoot);
     }
 
     public function registry(): DeployedTenantModuleRegistry
@@ -36,35 +35,30 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
         if ($this->registryInstance instanceof DeployedTenantModuleRegistry) {
             return $this->registryInstance;
         }
-
         $lockPath = trim((string)($this->moduleConfig['plugin_lock'] ?? ''));
         if ($lockPath !== '' && is_file($this->lockFile($lockPath))) {
             return $this->registryInstance = $this->registryFactory->fromPluginLock(
                 $this->lockResolver($lockPath),
-                $this->moduleConfig
+                $this->moduleConfig,
             );
         }
-
         return $this->registryInstance = $this->registryFactory->fromDeploymentConfig($this->moduleConfig);
     }
 
     public function pluginLifecycle(): PluginLifecycleCommands
     {
         return new PluginLifecycleService(
-            $this->pdo,
             $this->lockResolver(),
             $this->registryFactory,
             $this->moduleConfig,
             $this->catalogs,
+            new ModuleMigrationSqlExecutor(),
         );
     }
 
     public function qualification(): ModuleQualificationQuery
     {
-        return $this->qualificationInstance ??= new ModuleQualificationQueryService(
-            $this->pdo,
-            $this->registry()
-        );
+        return $this->qualificationInstance ??= new ModuleQualificationQueryService($this->registry());
     }
 
     private function lockResolver(?string $lockPath = null): PluginLockResolver
@@ -82,5 +76,4 @@ final class PdoModuleGovernanceProvider implements ModuleGovernanceProvider
             ? $lockPath
             : $this->serverRoot . '/' . ltrim($lockPath, '/');
     }
-
 }

@@ -207,7 +207,9 @@ namespace {
         $credentialResolver,
         new \app\common\infrastructure\storage\QiniuStorageHttpTransport($outboundTransport),
         new \app\common\composition\storage\AliyunStorageClientFactory(),
-        new \app\common\composition\storage\QcloudStorageClientFactory(),
+        new \app\common\composition\storage\QcloudStorageClientFactory(
+            new \app\common\execution\CurrentExecutionContext(new \app\common\execution\ExecutionContextStore()),
+        ),
         new \app\common\execution\CurrentExecutionContext(new \app\common\execution\ExecutionContextStore()),
         new \think\App($serverRoot . DIRECTORY_SEPARATOR),
     );

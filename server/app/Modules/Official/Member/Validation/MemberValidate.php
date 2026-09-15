@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Validation;
 
+use app\Modules\Official\Member\Model\Member;
 use app\common\enum\AccountLogEnum;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\validate\TenantContextValidate;
 
 class MemberValidate extends TenantContextValidate
@@ -54,7 +54,7 @@ class MemberValidate extends TenantContextValidate
 
     protected function checkMember($value): bool|string
     {
-        return MemberTenantRepository::members($this->requireTenantContext())->where('id', (int)$value)->findOrEmpty()->isEmpty()
+        return Member::where([])->where('id', (int)$value)->findOrEmpty()->isEmpty()
             ? '用户不存在！' : true;
     }
 
@@ -65,7 +65,7 @@ class MemberValidate extends TenantContextValidate
         }
 
         if ($value === 'account') {
-            $exists = MemberTenantRepository::members($this->requireTenantContext())->where('id', '<>', (int)($data['id'] ?? 0))
+            $exists = Member::where([])->where('id', '<>', (int)($data['id'] ?? 0))
                 ->where('account', (string)($data['value'] ?? ''))
                 ->findOrEmpty();
             if (!$exists->isEmpty()) {
@@ -78,7 +78,7 @@ class MemberValidate extends TenantContextValidate
             if (!preg_match('/^1[3-9]\d{9}$/', $mobile)) {
                 return '手机号码格式错误';
             }
-            $exists = MemberTenantRepository::members($this->requireTenantContext())->where('id', '<>', (int)($data['id'] ?? 0))
+            $exists = Member::where([])->where('id', '<>', (int)($data['id'] ?? 0))
                 ->where('mobile', $mobile)
                 ->findOrEmpty();
             if (!$exists->isEmpty()) {
@@ -91,7 +91,7 @@ class MemberValidate extends TenantContextValidate
 
     protected function checkMoney($value, $rule, array $data): bool|string
     {
-        $member = MemberTenantRepository::members($this->requireTenantContext())->where('id', (int)($data['user_id'] ?? 0))->findOrEmpty();
+        $member = Member::where([])->where('id', (int)($data['user_id'] ?? 0))->findOrEmpty();
         if ($member->isEmpty()) {
             return '用户不存在';
         }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\platform\identity;
 
+use app\platform\context\PlatformOperatorContext;
 use app\platform\service\PlatformOperatorSessionService;
 
 /** Bridges governance services to the independently validated platform session audience. */
@@ -12,10 +13,8 @@ final readonly class CorePlatformOperatorIdentityPort implements PlatformOperato
     {
     }
 
-    public function requireActive(string $credential): PlatformOperatorIdentity
+    public function requireActive(string $credential, string $requestId): PlatformOperatorContext
     {
-        return $this->sessions
-            ->context($credential, 'platform-governance-' . bin2hex(random_bytes(12)))
-            ->identity();
+        return $this->sessions->context($credential, $requestId);
     }
 }

@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace app\platform\service\provider;
 
-use PDO;
+use think\facade\Db;
 
 final readonly class StorageQualificationContributor implements ProviderQualificationContributor
 {
-    public function __construct(private PDO $pdo, private string $digestKey)
+    public function __construct(private string $digestKey)
     {
         if (strlen($digestKey) < 32) {
             throw new \InvalidArgumentException('PROVIDER_QUALIFICATION_DIGEST_KEY_INVALID');
@@ -16,16 +16,12 @@ final readonly class StorageQualificationContributor implements ProviderQualific
 
     public function subjects(): array
     {
-        $rows = $this->pdo->query(<<<'SQL'
-SELECT a.id,a.account_key,a.driver,a.credential_ciphertext,a.credential_key_version,
-       a.credential_rotated_at,a.status,a.updated_at,COUNT(s.id) AS active_space_count,
-       MAX(s.updated_at) AS space_updated_at
-FROM pa_storage_account a
-LEFT JOIN pa_storage_space s ON s.account_id=a.id AND s.status='active'
-GROUP BY a.id,a.account_key,a.driver,a.credential_ciphertext,a.credential_key_version,
-         a.credential_rotated_at,a.status,a.updated_at
-ORDER BY a.id
-SQL)->fetchAll(PDO::FETCH_ASSOC);
+        $rows = Db::name('storage_account')->alias('a')
+            ->leftJoin('storage_space s', "s.account_id=a.id AND s.status='active'")
+            ->field('a.id,a.account_key,a.driver,a.credential_ciphertext,a.credential_key_version,a.credential_rotated_at,a.status,a.updated_at')
+            ->fieldRaw('COUNT(s.id) AS active_space_count,MAX(s.updated_at) AS space_updated_at')
+            ->group('a.id,a.account_key,a.driver,a.credential_ciphertext,a.credential_key_version,a.credential_rotated_at,a.status,a.updated_at')
+            ->order('a.id')->select()->toArray();
         return array_map(function (array $row): ProviderQualificationSubject {
             $driver = (string)$row['driver'];
             $configured = (string)$row['status'] === 'active'

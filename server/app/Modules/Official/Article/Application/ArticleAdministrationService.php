@@ -3,14 +3,15 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Application;
 
+use app\Modules\Official\Article\Model\Article;
+use app\Modules\Official\Article\Model\ArticleCate;
 use app\Modules\Official\Article\Contracts\ArticleAdministration;
 use app\common\execution\CurrentExecutionContext;
 use app\common\http\PageResult;
 use app\common\services\ProductAssetReferenceService;
 use app\common\services\RichTextResourceService;
-use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
 use app\common\support\PaginationInput;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 
 /** Application use cases for Article content and categories. */
 final class ArticleAdministrationService implements ArticleAdministration
@@ -20,7 +21,6 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function __construct(
         private readonly CurrentExecutionContext $executionContext,
-        private readonly TransactionManager $transactions,
         private readonly ProductAssetReferenceService $assets,
         private readonly RichTextResourceService $richText,
     ) {}
@@ -42,7 +42,7 @@ final class ArticleAdministrationService implements ArticleAdministration
             $pageSize = $pagination->pageSize;
         }
 
-        $query = ArticleTenantRepository::articles()->field(self::articleFields());
+        $query = Article::where([])->field(self::articleFields());
         if (!empty($params['title'])) {
             $query->whereLike('title', '%' . $params['title'] . '%');
         }
@@ -69,7 +69,9 @@ final class ArticleAdministrationService implements ArticleAdministration
                 'var_page' => 'page_no',
             ]), $pageNo)
             : $pagination->result($query);
-        $pageResult = ArticleTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
         $lists = $pageResult->items;
         $categoryNames = $this->categoryNames(array_column($lists, 'cid'));
         foreach ($lists as &$row) {
@@ -83,7 +85,7 @@ final class ArticleAdministrationService implements ArticleAdministration
     /** @return array<string,mixed> */
     public function detail(int $id): array
     {
-        $article = ArticleTenantRepository::articles()
+        $article = Article::where([])
             ->field(self::articleFields())
             ->where('id', $id)
             ->findOrEmpty();
@@ -100,13 +102,13 @@ final class ArticleAdministrationService implements ArticleAdministration
     public function add(array $params): void
     {
         $this->requireCategory((int) $params['cid']);
-        ArticleTenantRepository::createArticle($this->articleWriteData($params));
+        Article::create($this->articleWriteData($params));
     }
 
     public function edit(array $params): void
     {
         $this->requireCategory((int) $params['cid']);
-        $article = ArticleTenantRepository::articles()
+        $article = Article::where([])
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($article->isEmpty()) {
@@ -118,7 +120,7 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function delete(int $id): void
     {
-        $article = ArticleTenantRepository::articles()->where('id', $id)->findOrEmpty();
+        $article = Article::where([])->where('id', $id)->findOrEmpty();
         if ($article->isEmpty()) {
             throw new \RuntimeException('资讯不存在');
         }
@@ -128,7 +130,7 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function updateStatus(int $id, int $isShow): void
     {
-        $updated = ArticleTenantRepository::articles()
+        $updated = Article::where([])
             ->where('id', $id)
             ->update(['is_show' => $isShow]);
         if ($updated !== 1) {
@@ -153,7 +155,7 @@ final class ArticleAdministrationService implements ArticleAdministration
             $pageSize = $pagination->pageSize;
         }
 
-        $query = ArticleTenantRepository::categories()->field([
+        $query = ArticleCate::where([])->field([
             'id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time',
         ]);
         $field = (string) ($params['field'] ?? '');
@@ -172,7 +174,9 @@ final class ArticleAdministrationService implements ArticleAdministration
                 'var_page' => 'page_no',
             ]), $pageNo)
             : $pagination->result($query);
-        $pageResult = ArticleTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
         $lists = $pageResult->items;
         $articleCounts = $this->articleCounts(array_column($lists, 'id'));
         foreach ($lists as &$row) {
@@ -187,7 +191,7 @@ final class ArticleAdministrationService implements ArticleAdministration
     /** 下拉用：全部启用分类。 */
     public function allCategories(): array
     {
-        $lists = ArticleTenantRepository::categories()
+        $lists = ArticleCate::where([])
             ->where('is_show', 1)
             ->field(['id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time'])
             ->order(['sort' => 'desc', 'id' => 'desc'])
@@ -200,7 +204,7 @@ final class ArticleAdministrationService implements ArticleAdministration
     /** @return array<string,mixed> */
     public function categoryDetail(int $id): array
     {
-        $category = ArticleTenantRepository::categories()->field([
+        $category = ArticleCate::where([])->field([
             'id', 'name', 'sort', 'is_show', 'create_time', 'update_time', 'delete_time',
         ])->where('id', $id)->findOrEmpty();
 
@@ -209,7 +213,7 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function addCategory(array $params): void
     {
-        ArticleTenantRepository::createCategory([
+        ArticleCate::create([
             'name' => $params['name'],
             'sort' => (int) ($params['sort'] ?? 0),
             'is_show' => (int) ($params['is_show'] ?? 1),
@@ -218,7 +222,7 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function editCategory(array $params): void
     {
-        $category = ArticleTenantRepository::categories()
+        $category = ArticleCate::where([])
             ->where('id', (int) $params['id'])
             ->findOrEmpty();
         if ($category->isEmpty()) {
@@ -234,13 +238,13 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function deleteCategory(int $id): void
     {
-        $this->transactions->run(function () use ($id): void {
-            $category = ArticleTenantRepository::categories()->where('id', $id)->lock(true)->findOrEmpty();
+        Db::transaction(function () use ($id): void {
+            $category = ArticleCate::where([])->where('id', $id)->lock(true)->findOrEmpty();
             if ($category->isEmpty()) {
                 throw new \RuntimeException('资讯分类不存在');
             }
 
-            if (!ArticleTenantRepository::articles()->where('cid', $id)->lock(true)->findOrEmpty()->isEmpty()) {
+            if (!Article::where([])->where('cid', $id)->lock(true)->findOrEmpty()->isEmpty()) {
                 throw new \RuntimeException('资讯分类已使用，请先删除绑定该资讯分类的资讯');
             }
 
@@ -250,7 +254,7 @@ final class ArticleAdministrationService implements ArticleAdministration
 
     public function updateCategoryStatus(int $id, int $isShow): void
     {
-        $updated = ArticleTenantRepository::categories()
+        $updated = ArticleCate::where([])
             ->where('id', $id)
             ->update(['is_show' => $isShow]);
         if ($updated !== 1) {
@@ -299,12 +303,12 @@ final class ArticleAdministrationService implements ArticleAdministration
         $ids = array_values(array_unique(array_map('intval', $ids)));
         return $ids === []
             ? []
-            : ArticleTenantRepository::categories()->whereIn('id', $ids)->column('name', 'id');
+            : ArticleCate::where([])->whereIn('id', $ids)->column('name', 'id');
     }
 
     private function requireCategory(int $id): void
     {
-        if (ArticleTenantRepository::categories()->where('id', $id)->findOrEmpty()->isEmpty()) {
+        if (ArticleCate::where([])->where('id', $id)->findOrEmpty()->isEmpty()) {
             throw new \RuntimeException('所属栏目必须存在');
         }
     }
@@ -332,7 +336,7 @@ final class ArticleAdministrationService implements ArticleAdministration
             return [];
         }
 
-        $rows = ArticleTenantRepository::articles()
+        $rows = Article::where([])
             ->whereIn('cid', $categoryIds)
             ->field('cid, COUNT(*) AS article_count')
             ->group('cid')

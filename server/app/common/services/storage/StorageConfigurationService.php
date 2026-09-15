@@ -11,7 +11,7 @@ use app\common\service\audit\AuditContractHost;
 use app\common\value\storage\StoragePurpose;
 use app\platform\context\PlatformOperatorContext;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 use Throwable;
 
 final readonly class StorageConfigurationService
@@ -20,7 +20,6 @@ final readonly class StorageConfigurationService
 
     public function __construct(
         private StorageRepository $repo,
-        private TransactionManager $transactions,
         private AuditContractHost $audit,
     ) {}
 
@@ -41,13 +40,13 @@ final readonly class StorageConfigurationService
         ], function () use ($value): int {
             $this->assertKeys($value, ['account_key', 'driver', 'name', 'credentials', 'credential_ref']);
             $account = $this->account($value, true);
-            $this->repo->connection()->execute("INSERT INTO pa_storage_account(account_key,driver,name,credential_ciphertext,credential_key_version,credential_rotated_at,status,created_at,updated_at) VALUES(:account_key,:driver,:name,:ciphertext,:key_version,:rotated_at,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [
+            return Db::name('storage_account')->insertGetId([
                 'account_key' => $account['account_key'], 'driver' => $account['driver'],
-                'name' => $account['name'], 'ciphertext' => $account['credential']['ciphertext'],
-                'key_version' => $account['credential']['key_version'],
-                'rotated_at' => $account['credential']['rotated_at'],
+                'name' => $account['name'], 'credential_ciphertext' => $account['credential']['ciphertext'],
+                'credential_key_version' => $account['credential']['key_version'],
+                'credential_rotated_at' => $account['credential']['rotated_at'], 'status' => 'active',
+                'created_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
             ]);
-            return $this->lastInsertId();
         });
     }
 
@@ -58,27 +57,26 @@ final readonly class StorageConfigurationService
         ], function () use ($value): void {
             $this->assertKeys($value, ['id', 'name', 'status', 'credentials', 'credential_ref']);
             $id = $this->id($value['id'] ?? 0);
-            $existing = $this->one('SELECT account_key,driver FROM pa_storage_account WHERE id=:id', ['id' => $id]);
+            $existing = Db::name('storage_account')->where('id', $id)->field('account_key,driver')->find();
             if ($existing === null) throw new \InvalidArgumentException('存储账号不存在');
             $account = $this->account([
                 'account_key' => $existing['account_key'], 'driver' => $existing['driver'],
                 'name' => $value['name'] ?? '', 'credentials' => $value['credentials'] ?? null,
                 'credential_ref' => $value['credential_ref'] ?? null,
             ], false);
-            $sql = 'UPDATE pa_storage_account SET name=:name,status=:status,updated_at=UTC_TIMESTAMP(3) WHERE id=:id';
-            $params = [
-                'id' => $id, 'name' => $account['name'],
+            $data = [
+                'name' => $account['name'],
                 'status' => $this->status((string)($value['status'] ?? 'active'), ['active', 'disabled']),
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
             ];
             if ($account['credential'] !== null) {
-                $sql = 'UPDATE pa_storage_account SET name=:name,credential_ciphertext=:ciphertext,credential_key_version=:key_version,credential_rotated_at=:rotated_at,status=:status,updated_at=UTC_TIMESTAMP(3) WHERE id=:id';
-                $params += [
-                    'ciphertext' => $account['credential']['ciphertext'],
-                    'key_version' => $account['credential']['key_version'],
-                    'rotated_at' => $account['credential']['rotated_at'],
+                $data += [
+                    'credential_ciphertext' => $account['credential']['ciphertext'],
+                    'credential_key_version' => $account['credential']['key_version'],
+                    'credential_rotated_at' => $account['credential']['rotated_at'],
                 ];
             }
-            $this->repo->connection()->execute($sql, $params);
+            Db::name('storage_account')->where('id', $id)->update($data);
         });
     }
 
@@ -90,14 +88,14 @@ final readonly class StorageConfigurationService
                 'region', 'endpoint', 'access_domain', 'local_path',
             ]);
             $space = $this->space($value + ['status' => 'active']);
-            $this->repo->connection()->execute("INSERT INTO pa_storage_space(space_key,account_id,name,access_type,bucket,region,endpoint,access_domain,local_path,status,created_at,updated_at) VALUES(:space_key,:account_id,:name,:access_type,:bucket,:region,:endpoint,:access_domain,:local_path,'active',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [
+            return Db::name('storage_space')->insertGetId([
                 'space_key' => $space['space_key'], 'account_id' => $space['account_id'],
                 'name' => $space['name'], 'access_type' => $space['access_type'],
                 'bucket' => $space['bucket'], 'region' => $space['region'],
                 'endpoint' => $space['endpoint'], 'access_domain' => $space['access_domain'],
-                'local_path' => $space['local_path'],
+                'local_path' => $space['local_path'], 'status' => 'active',
+                'created_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
             ]);
-            return $this->lastInsertId();
         });
     }
 
@@ -106,7 +104,8 @@ final readonly class StorageConfigurationService
         $this->mutate($context, 'storage.space.updated', 'STORAGE_SPACE_UPDATE', [], function () use ($value): void {
             $this->assertKeys($value, ['id', 'name', 'access_domain', 'status']);
             $id = $this->id($value['id'] ?? 0);
-            $existing = $this->one('SELECT account_id,space_key,access_type,bucket,region,endpoint,local_path FROM pa_storage_space WHERE id=:id', ['id' => $id]);
+            $existing = Db::name('storage_space')->where('id', $id)
+                ->field('account_id,space_key,access_type,bucket,region,endpoint,local_path')->find();
             if ($existing === null) throw new \InvalidArgumentException('Space 不存在');
             $space = $this->space([
                 ...$existing,
@@ -114,9 +113,9 @@ final readonly class StorageConfigurationService
                 'access_domain' => $value['access_domain'] ?? '',
                 'status' => $value['status'] ?? 'active',
             ]);
-            $this->repo->connection()->execute('UPDATE pa_storage_space SET name=:name,access_domain=:domain,status=:status,updated_at=UTC_TIMESTAMP(3) WHERE id=:id', [
-                'id' => $id, 'name' => $space['name'],
-                'domain' => $space['access_domain'], 'status' => $space['status'],
+            Db::name('storage_space')->where('id', $id)->update([
+                'name' => $space['name'], 'access_domain' => $space['access_domain'],
+                'status' => $space['status'], 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
             ]);
         });
     }
@@ -133,8 +132,13 @@ final readonly class StorageConfigurationService
                 throw new \InvalidArgumentException('用途路由属性不匹配');
             }
             $space = $this->id($value['space_id'] ?? 0);
-            if ($this->one("SELECT 1 available FROM pa_storage_space WHERE id=:id AND access_type=:access AND status='active'", ['id' => $space, 'access' => $access]) === null) throw new \InvalidArgumentException('路由目标 Space 不可用');
-            $this->repo->connection()->execute('INSERT INTO pa_storage_route(route_key,access_type,space_id,updated_at) VALUES(:route_key,:access,:space,UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE access_type=VALUES(access_type),space_id=VALUES(space_id),updated_at=VALUES(updated_at)', ['route_key' => $key, 'access' => $access, 'space' => $space]);
+            if (!Db::name('storage_space')->where('id', $space)->where('access_type', $access)->where('status', 'active')->find()) {
+                throw new \InvalidArgumentException('路由目标 Space 不可用');
+            }
+            Db::name('storage_route')->duplicate(['access_type', 'space_id', 'updated_at'])->insert([
+                'route_key' => $key, 'access_type' => $access, 'space_id' => $space,
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            ]);
         });
     }
 
@@ -153,7 +157,7 @@ final readonly class StorageConfigurationService
     private function space(array $value): array
     {
         $accountId = $this->id($value['account_id'] ?? 0);
-        $driver = $this->one('SELECT driver FROM pa_storage_account WHERE id=:id', ['id' => $accountId])['driver'] ?? null;
+        $driver = Db::name('storage_account')->where('id', $accountId)->value('driver');
         if (!is_string($driver)) throw new \InvalidArgumentException('存储账号不存在');
         $driver = $this->driver($driver);
         $access = StorageAccess::assertType((string)($value['access_type'] ?? ''));
@@ -188,7 +192,7 @@ final readonly class StorageConfigurationService
         callable $operation,
     ): mixed {
         try {
-            return $this->transactions->run(function () use ($context, $eventType, $metadata, $operation): mixed {
+            return Db::transaction(function () use ($context, $eventType, $metadata, $operation): mixed {
                 $result = $operation();
                 $this->audit($context, $eventType, $metadata, AuditOutcome::Success, null);
                 return $result;
@@ -201,22 +205,6 @@ final readonly class StorageConfigurationService
             $this->audit($context, $eventType, $metadata, AuditOutcome::Error, $reasonPrefix . '_FAILED');
             throw $exception;
         }
-    }
-
-    /** @param array<string, mixed> $parameters */
-    private function one(string $sql, array $parameters = []): ?array
-    {
-        $row = $this->repo->connection()->query($sql, $parameters)[0] ?? null;
-        return is_array($row) ? $row : null;
-    }
-
-    private function lastInsertId(): int
-    {
-        $id = $this->one('SELECT LAST_INSERT_ID() AS id')['id'] ?? null;
-        if ((!is_int($id) && !(is_string($id) && ctype_digit($id))) || (int) $id < 1) {
-            throw new \RuntimeException('存储配置身份生成失败');
-        }
-        return (int) $id;
     }
 
     private function audit(

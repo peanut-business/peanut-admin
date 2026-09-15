@@ -5,6 +5,7 @@ require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
+use app\platform\context\PlatformOperatorContext;
 use app\platform\identity\PlatformOperatorIdentity;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use app\Modules\Official\Notification\Application\NotificationBootstrapService;
@@ -19,26 +20,23 @@ use app\platform\service\ApplicationTenantBootstrapService;
 use app\platform\service\TenantGovernanceService;
 use app\platform\service\CoreTenantOwnerAdminProvisioner;
 use app\platform\service\TenantOwnerAdminProvisioner;
+use PeanutAdmin\Kernel\Audit\AuditService;
+use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
+use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleConfigValidator;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
-use PeanutAdmin\Kernel\Auth\TenantContext;
-use PeanutAdmin\Kernel\Context\TenantSystemContext;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
+use PeanutAdmin\Kernel\Platform\Application\TenantOwnerAdminService;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function lifecycleExpect(bool $condition, string $message): void
 {
@@ -63,13 +61,37 @@ final readonly class LifecycleIdentity implements PlatformOperatorIdentityPort
     {
     }
 
-    public function requireActive(string $credential): PlatformOperatorIdentity
+    public function requireActive(string $credential, string $requestId): PlatformOperatorContext
     {
         if (!hash_equals('pm01-lifecycle-token', $credential)) {
             throw new DomainException('PLATFORM_OPERATOR_AUTHENTICATION_FAILED');
         }
-        return $this->identity;
+        return PlatformOperatorContext::fromValidatedPlatformSession(PlatformContext::fromValidatedSession(
+            new ValidatedPlatformSession(
+                $this->identity->operatorId,
+                'pm01-lifecycle-session',
+                $this->identity->operatorId,
+                $this->identity->accountId,
+                'platform-web',
+                new DateTimeImmutable('+1 hour'),
+            ),
+            $requestId,
+        ));
     }
+}
+
+function lifecycleApplicationBootstrap(): ApplicationTenantBootstrapService
+{
+    $contexts = new ExecutionContextStore();
+    return new ApplicationTenantBootstrapService(
+        new NotificationBootstrapService(),
+        new TaskBootstrapService(),
+        $contexts,
+        new TenantSettingService(new ThinkPhpTenantSettingsProvider(
+            new MultiTenantDataScopePolicy(new CurrentExecutionContext($contexts)),
+        )),
+        new ThinkPhpTenantApplicationBootstrapPersistence(),
+    );
 }
 
 $host = IsolatedBackendEnvironment::required('DB_HOST');
@@ -109,16 +131,8 @@ SQL);
     $applicationSchema = (string)file_get_contents(dirname(__DIR__, 2) . '/database/init.sql');
     lifecycleExpect($applicationSchema !== '', 'canonical application schema is missing');
     $pdo->exec($applicationSchema);
-    $transactions = new PdoTransactionManager($pdo);
-    $bootstrap = new BootstrapService(
-        $transactions,
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        new PasswordHasher()
-    );
+    ThinkPhpTestConnection::fromPdo($pdo);
+    $bootstrap = new BootstrapService(passwords: new PasswordHasher());
     $platform = $bootstrap->bootstrapPlatformOwner(
         'lifecycle@example.test',
         'LifecyclePassword2026',
@@ -127,7 +141,7 @@ SQL);
     );
     $modules = new TenantModuleManager(
         new CompiledModuleRegistry([], [], [], [], 'pm01-lifecycle'),
-        new PdoModuleRuntimeRepository($pdo),
+        new ThinkPhpModuleRuntimeRepository(),
         new class implements TenantModuleConfigValidator {
             public function assertValid(\PeanutAdmin\Kernel\Module\ManifestDocument $manifest, array $config): void
             {
@@ -135,26 +149,13 @@ SQL);
             }
         }
     );
-    $applicationContexts = new ExecutionContextStore();
+    $administration = new PlatformTenantAdminService($modules, new AuditService());
+    $owners = new TenantOwnerAdminService(new AuditService());
     $service = new TenantGovernanceService(
         new LifecycleIdentity(new PlatformOperatorIdentity($platform->operatorId, $platform->accountId)),
-        $transactions,
-        $bootstrap,
-        new PlatformTenantAdminService($pdo, $modules),
-        new CoreTenantOwnerAdminProvisioner(
-            new PdoIdentityRepository($pdo),
-            new PdoMembershipRepository($pdo),
-            new ApplicationTenantBootstrapService(
-                $pdo,
-                new NotificationBootstrapService(),
-                new TaskBootstrapService(),
-                $applicationContexts,
-                new TenantSettingService(new ThinkPhpTenantSettingsProvider(
-                    new MultiTenantDataScopePolicy(new CurrentExecutionContext($applicationContexts)),
-                )),
-                new ThinkPhpTenantApplicationBootstrapPersistence(),
-            ),
-        )
+        $administration,
+        $owners,
+        new CoreTenantOwnerAdminProvisioner(lifecycleApplicationBootstrap()),
     );
 
     lifecycleRejects(static fn() => $service->provision(
@@ -229,24 +230,10 @@ SQL);
 
     $tenantCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant')->fetchColumn();
     $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
-    $failingOwnerAdmins = new class($pdo) implements TenantOwnerAdminProvisioner {
+    $failingOwnerAdmins = new class implements TenantOwnerAdminProvisioner {
         private CoreTenantOwnerAdminProvisioner $delegate;
-        public function __construct(PDO $pdo) {
-            $contexts = new ExecutionContextStore();
-            $this->delegate = new CoreTenantOwnerAdminProvisioner(
-                new PdoIdentityRepository($pdo),
-                new PdoMembershipRepository($pdo),
-                new ApplicationTenantBootstrapService(
-                    $pdo,
-                    new NotificationBootstrapService(),
-                    new TaskBootstrapService(),
-                    $contexts,
-                    new TenantSettingService(new ThinkPhpTenantSettingsProvider(
-                        new MultiTenantDataScopePolicy(new CurrentExecutionContext($contexts)),
-                    )),
-                    new ThinkPhpTenantApplicationBootstrapPersistence(),
-                ),
-            );
+        public function __construct() {
+            $this->delegate = new CoreTenantOwnerAdminProvisioner(lifecycleApplicationBootstrap());
         }
         public function provision(
             int $tenantId,
@@ -262,9 +249,8 @@ SQL);
     };
     $failingService = new TenantGovernanceService(
         new LifecycleIdentity(new PlatformOperatorIdentity($platform->operatorId, $platform->accountId)),
-        $transactions,
-        $bootstrap,
-        new PlatformTenantAdminService($pdo, $modules),
+        $administration,
+        $owners,
         $failingOwnerAdmins
     );
     lifecycleRejects(static fn() => $failingService->provision(

@@ -17,11 +17,10 @@ use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\org\AdminDirectoryQuery;
 use app\common\services\CrontabCommandService;
 use Closure;
-use app\common\persistence\CoreTenantRepositoryFactory;
+use app\common\persistence\TenantPersistenceConfiguration;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
-use PeanutAdmin\Kernel\Persistence\ThinkPhp\ThinkPhpTransactionManager;
 use think\App;
-use think\db\PDOConnection;
+use PeanutAdmin\TaskJob\Persistence\TaskJobStore;
 
 final class ModuleProvider implements ModuleProviderContract
 {
@@ -40,7 +39,7 @@ final class ModuleProvider implements ModuleProviderContract
     }
 
     public function jobs(
-        PDOConnection $connection,
+        TenantPersistenceConfiguration $persistence,
         string $signingKey,
         ExecutionContextStore $executionContexts,
         CurrentExecutionContext $currentExecution,
@@ -51,11 +50,8 @@ final class ModuleProvider implements ModuleProviderContract
         int $workerLimit,
     ): TaskJobRuntime
     {
-        $transactions = new ThinkPhpTransactionManager($connection);
-
         return new ThinkPhpTaskJobRuntime(
-            (new CoreTenantRepositoryFactory($connection->connect()))->taskJobs($connection),
-            $transactions,
+            new TaskJobStore($persistence->mode, $persistence->instanceTenantId),
             $signingKey,
             $executionContexts,
             $currentExecution,
@@ -71,7 +67,7 @@ final class ModuleProvider implements ModuleProviderContract
     {
         return [
             TaskJobRuntime::class => fn(App $app): TaskJobRuntime => $this->jobs(
-                $app->make(PDOConnection::class),
+                $app->make(TenantPersistenceConfiguration::class),
                 (string)$app->config->get('async.signing_key', ''),
                 $app->make(ExecutionContextStore::class),
                 $app->make(CurrentExecutionContext::class),

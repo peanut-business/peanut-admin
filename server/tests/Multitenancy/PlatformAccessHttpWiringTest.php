@@ -6,30 +6,28 @@ require_once dirname(__DIR__, 2) . '/route/registry_source.php';
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\PlatformOperatorSessionService;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Audit\AuditService;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
+use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalogSynchronizer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
+use PeanutAdmin\Kernel\Authorization\Persistence\ThinkPhpAuthorizationCatalogRepository;
 use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
+use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Platform\Application\PlatformAccessAdminService;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function platformAccessHttpExpect(bool $condition, string $message): void
 {
@@ -38,13 +36,12 @@ function platformAccessHttpExpect(bool $condition, string $message): void
     }
 }
 
-function platformAccessHttpSessions(PDO $pdo): PlatformOperatorSessionService
+function platformAccessHttpSessions(): PlatformOperatorSessionService
 {
-    $permissions = new PdoPlatformAuthorizationRepository($pdo);
+    $permissions = new ThinkPhpPlatformAuthorizationRepository();
     return new PlatformOperatorSessionService(
         new PlatformAuthService(
-            new PdoTransactionManager($pdo),
-            new PdoPlatformAuthRepository($pdo),
+            new ThinkPhpPlatformAuthRepository(),
             new PasswordHasher(),
             new SystemClock(),
             new TokenIssuer(),
@@ -94,7 +91,8 @@ foreach ($expectedRoutes as $path => [$action, $permission]) {
 platformAccessHttpExpect(
     !str_contains($composition, 'PlatformRuntimeFactory')
         && str_contains($composition, 'bind(PlatformAuthService::class')
-        && str_contains($composition, 'make(TransactionManager::class)')
+        && !str_contains($composition, 'TransactionManager::class')
+        && str_contains($composition, 'ThinkPhpPlatformAuthRepository')
         && str_contains($composition, 'bind(PasswordHasher::class')
         && str_contains($composition, 'ApplicationPasswordPolicy::hasher()'),
     'PlatformAccessAdminService is not using native constructor injection'
@@ -144,34 +142,32 @@ try {
     foreach (AuthorizationSchema::tableNames() as $table) {
         $pdo->exec(AuthorizationSchema::createSql($table));
     }
-    (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
+    ThinkPhpTestConnection::fromPdo($pdo);
+    (new CorePermissionCatalogSynchronizer(new ThinkPhpAuthorizationCatalogRepository()))->synchronize();
 
-    $bootstrap = new BootstrapService(
-        new PdoTransactionManager($pdo),
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        new PasswordHasher()
-    );
+    $bootstrap = new BootstrapService(passwords: new PasswordHasher());
     $owner = $bootstrap->bootstrapPlatformOwner(
         'access-owner@example.test',
         'AccessOwnerPassword2026',
         'Access Owner',
         'pm01-access-http-bootstrap'
     );
-    $created = (new PlatformAccessAdminService($pdo))->createOperator(
-        $owner->operatorId,
-        $owner->accountId,
+    $created = (new PlatformAccessAdminService(new AuditService()))->createOperator(
+        PlatformContext::fromValidatedSession(new ValidatedPlatformSession(
+            $owner->operatorId,
+            'pm01-access-http-owner-session',
+            $owner->operatorId,
+            $owner->accountId,
+            'platform-web',
+            new DateTimeImmutable('+1 hour'),
+        ), 'pm01-access-http-create'),
         'access-scoped@example.test',
         'Access Scoped',
-        'AccessScopedPassword2026',
-        'pm01-access-http-create'
+        'AccessScopedPassword2026'
     );
     platformAccessHttpExpect($created['status'] === 'active', 'real operator create did not produce an active operator');
 
-    $sessions = platformAccessHttpSessions($pdo);
+    $sessions = platformAccessHttpSessions();
     $login = $sessions->login(
         'access-scoped@example.test',
         'AccessScopedPassword2026',

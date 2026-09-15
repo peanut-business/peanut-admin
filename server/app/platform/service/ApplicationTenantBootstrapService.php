@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
-use PDO;
 use app\Modules\Official\Notification\Contracts\NotificationBootstrapCommands;
 use app\Modules\Official\Task\Contracts\TaskBootstrapCommands;
 use app\common\execution\ExecutionContextStore;
@@ -11,6 +10,7 @@ use app\common\execution\SystemExecutionContext;
 use app\common\service\config\BrandDefaults;
 use app\common\service\tenant\TenantSettingService;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
+use think\facade\Db;
 
 /** Seeds the application-owned defaults that every new Tenant must receive. */
 final readonly class ApplicationTenantBootstrapService
@@ -30,7 +30,6 @@ final readonly class ApplicationTenantBootstrapService
     ];
 
     public function __construct(
-        private PDO $pdo,
         private NotificationBootstrapCommands $notifications,
         private TaskBootstrapCommands $tasks,
         private ExecutionContextStore $executionContexts,
@@ -74,12 +73,10 @@ final readonly class ApplicationTenantBootstrapService
 
     private function applicationSchemaPresent(): bool
     {
-        $statement = $this->pdo->prepare(
-            'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('
-            . implode(',', array_fill(0, count(self::REQUIRED_TABLES), '?')) . ')'
-        );
-        $statement->execute(self::REQUIRED_TABLES);
-        $tables = $statement->fetchAll(PDO::FETCH_COLUMN);
+        $tables = Db::table('information_schema.TABLES')
+            ->where('TABLE_SCHEMA', Db::raw('DATABASE()'))
+            ->whereIn('TABLE_NAME', self::REQUIRED_TABLES)
+            ->column('TABLE_NAME');
         if ($tables === []) {
             // Core package tests intentionally exercise this adapter without the application schema.
             return false;
@@ -95,18 +92,21 @@ final readonly class ApplicationTenantBootstrapService
 
     private function grantOwnerPermissions(int $tenantId, int $ownerMemberId, int $ownerRoleId): void
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT IGNORE INTO pa_role_permission
-  (tenant_id, role_id, permission_id, granted_by_member_id, granted_at)
-SELECT :tenant_id, :role_id, permission.id, :member_id, UTC_TIMESTAMP(3)
-FROM pa_permission permission
-WHERE permission.module_key = 'peanut.admin' AND permission.status = 'active'
-SQL);
-        $statement->execute([
-            'tenant_id' => $tenantId,
-            'role_id' => $ownerRoleId,
-            'member_id' => $ownerMemberId,
-        ]);
+        $permissionIds = array_map('intval', Db::name('permission')
+            ->where('module_key', 'peanut.admin')->where('status', 'active')->column('id'));
+        $existing = $permissionIds === [] ? [] : array_map('intval', Db::name('role_permission')
+            ->where('tenant_id', $tenantId)->where('role_id', $ownerRoleId)
+            ->whereIn('permission_id', $permissionIds)->column('permission_id'));
+        $missing = array_values(array_diff($permissionIds, $existing));
+        if ($missing !== []) {
+            Db::name('role_permission')->insertAll(array_map(static fn(int $permissionId): array => [
+                'tenant_id' => $tenantId,
+                'role_id' => $ownerRoleId,
+                'permission_id' => $permissionId,
+                'granted_by_member_id' => $ownerMemberId,
+                'granted_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            ], $missing));
+        }
     }
 
     private function seedCrontab(): void
@@ -198,10 +198,17 @@ SQL);
                 $this->tenantSettings->replace($context, $namespace, $document);
             }
         }
-        $this->insertIgnore(
-            'INSERT IGNORE INTO pa_customer_service_setting (tenant_id,qr_file_id,wechat,phone,service_time,create_time,update_time) VALUES (?,NULL,\'\',\'\',\'\',0,0)',
-            [$context->tenantId]
-        );
+        if (Db::name('customer_service_setting')->where('tenant_id', $context->tenantId)->value('tenant_id') === null) {
+            Db::name('customer_service_setting')->insert([
+                'tenant_id' => $context->tenantId,
+                'qr_file_id' => null,
+                'wechat' => '',
+                'phone' => '',
+                'service_time' => '',
+                'create_time' => 0,
+                'update_time' => 0,
+            ]);
+        }
         $this->persistence->ensureSettings(
             [
                 'style' => '{"default_color":"#666666","selected_color":"#2F80ED"}',
@@ -221,14 +228,6 @@ SQL);
 
     private function seedExternalBindings(int $tenantId, string $tenantCode): void
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_external_channel_binding
-  (tenant_id,provider,callback_key,identity_hash,identity_hint,config_json,status,create_time,update_time)
-SELECT :tenant_id,:provider,:callback_key,:identity_hash,:identity_hint,JSON_OBJECT(),0,0,0
-WHERE NOT EXISTS (
-  SELECT 1 FROM pa_external_channel_binding WHERE tenant_id = :tenant_scope AND provider = :provider_scope
-)
-SQL);
         foreach ([
             'payment.wechat',
             'payment.alipay',
@@ -237,22 +236,19 @@ SQL);
             'oauth.wechat.mini-program',
             'oauth.wechat.open-pc',
         ] as $provider) {
-            $statement->execute([
-                'tenant_id' => $tenantId,
-                'provider' => $provider,
-                'callback_key' => bin2hex(random_bytes(32)),
-                'identity_hash' => hash('sha256', "unconfigured:{$tenantCode}:{$provider}"),
-                'identity_hint' => '',
-                'tenant_scope' => $tenantId,
-                'provider_scope' => $provider,
-            ]);
+            if (Db::name('external_channel_binding')->where('tenant_id', $tenantId)->where('provider', $provider)->value('id') === null) {
+                Db::name('external_channel_binding')->insert([
+                    'tenant_id' => $tenantId,
+                    'provider' => $provider,
+                    'callback_key' => bin2hex(random_bytes(32)),
+                    'identity_hash' => hash('sha256', "unconfigured:{$tenantCode}:{$provider}"),
+                    'identity_hint' => '',
+                    'config_json' => '{}',
+                    'status' => 0,
+                    'create_time' => 0,
+                    'update_time' => 0,
+                ]);
+            }
         }
-    }
-
-    /** @param list<mixed> $values */
-    private function insertIgnore(string $sql, array $values): void
-    {
-        $statement = $this->pdo->prepare($sql);
-        $statement->execute($values);
     }
 }

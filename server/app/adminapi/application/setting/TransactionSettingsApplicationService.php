@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 namespace app\adminapi\application\setting;
 
-use app\common\service\transaction\TransactionSettingTenantRepository;
+use app\common\model\setting\TransactionSetting;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\facade\Db;
 
 /**
  * 交易设置 Logic
@@ -26,7 +27,7 @@ class TransactionSettingsApplicationService
 
     public function getConfig(TenantContext $context): array
     {
-        $setting = TransactionSettingTenantRepository::settings()->findOrEmpty();
+        $setting = TransactionSetting::where([])->findOrEmpty();
         if ($setting->isEmpty()) {
             return self::DEFAULTS;
         }
@@ -42,7 +43,7 @@ class TransactionSettingsApplicationService
     {
         unset($params['tenant_id']);
         $current = self::getConfig($context);
-        TransactionSettingTenantRepository::update([
+        $data = [
             'cancel_unpaid_orders' => (int)$params['cancel_unpaid_orders'],
             'cancel_unpaid_orders_times' => isset($params['cancel_unpaid_orders_times'])
                 ? (int)$params['cancel_unpaid_orders_times']
@@ -51,6 +52,14 @@ class TransactionSettingsApplicationService
             'verification_orders_times' => isset($params['verification_orders_times'])
                 ? (int)$params['verification_orders_times']
                 : $current['verification_orders_times'],
-        ]);
+        ];
+        Db::transaction(static function () use ($data): void {
+            $setting = TransactionSetting::where([])->lock(true)->findOrEmpty();
+            if ($setting->isEmpty()) {
+                TransactionSetting::create($data);
+                return;
+            }
+            $setting->save($data);
+        });
     }
 }

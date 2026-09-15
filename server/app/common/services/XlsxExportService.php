@@ -21,7 +21,6 @@ class XlsxExportService
         string $name,
         array $headings,
         array $rows,
-        string $relativeDirectory = ''
     ): array
     {
         $tenantId = $this->trustedTenantId();
@@ -39,7 +38,6 @@ class XlsxExportService
         string $name,
         array $headings,
         array $rows,
-        string $relativeDirectory = ''
     ): array
     {
         if (!class_exists(ZipArchive::class)) {
@@ -94,17 +92,6 @@ class XlsxExportService
             throw new \InvalidArgumentException('可信租户上下文缺失');
         }
         return TenantScope::fromTrustedContext($context->tenantId, $context->requestId)->tenantId();
-    }
-
-    private static function normalizeRelativeDirectory(string $relativeDirectory): string
-    {
-        $relativeDirectory = trim(str_replace('\\', '/', $relativeDirectory), '/');
-        if ($relativeDirectory !== ''
-            && (!preg_match('#^[a-zA-Z0-9][a-zA-Z0-9/_-]*$#D', $relativeDirectory)
-                || str_contains($relativeDirectory, '..'))) {
-            throw new \InvalidArgumentException('导出目录非法');
-        }
-        return $relativeDirectory;
     }
 
     private static function worksheet(array $rows): string

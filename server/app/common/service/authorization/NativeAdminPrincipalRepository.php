@@ -4,81 +4,35 @@ declare(strict_types=1);
 namespace app\common\service\authorization;
 
 use app\common\dto\authorization\AdminPrincipal;
-use PDO;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\facade\Db;
 
 /** Reads the management principal exclusively from the Core identity and RBAC tables. */
 final class NativeAdminPrincipalRepository
 {
-    public function __construct(private readonly PDO $pdo)
-    {
-    }
-
     public function require(TenantContext $context): AdminPrincipal
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT
-    tm.id,
-    tm.tenant_id,
-    tm.account_id,
-    tm.display_name,
-    tm.primary_department_id,
-    tm.status,
-    tm.authorization_revision,
-    tenant.name AS tenant_name,
-    account.avatar_uri,
-    account.last_login_at,
-    credential.identifier_normalized AS username,
-    (
-        SELECT COUNT(*)
-        FROM pa_tenant_member switch_member
-        JOIN pa_tenant switch_tenant
-          ON switch_tenant.id = switch_member.tenant_id
-         AND switch_tenant.status = 'active'
-        WHERE switch_member.account_id = tm.account_id
-          AND switch_member.status = 'active'
-    ) AS switchable_tenant_count,
-    EXISTS (
-        SELECT 1
-        FROM pa_member_role owner_membership
-        JOIN pa_role owner_role
-          ON owner_role.tenant_id = owner_membership.tenant_id
-         AND owner_role.id = owner_membership.role_id
-         AND owner_role.`key` = 'core.tenant-owner'
-         AND owner_role.is_builtin = 1
-         AND owner_role.status = 'active'
-        WHERE owner_membership.tenant_id = tm.tenant_id
-          AND owner_membership.tenant_member_id = tm.id
-    ) AS root
-FROM pa_tenant_member tm
-JOIN pa_tenant tenant
-  ON tenant.id = tm.tenant_id
- AND tenant.status = 'active'
-JOIN pa_account account
-  ON account.id = tm.account_id
- AND account.status = 'active'
-JOIN pa_credential credential
-  ON credential.account_id = account.id
- AND credential.kind = 'email_password'
- AND credential.identifier_type = 'email'
- AND credential.status = 'active'
-WHERE tm.tenant_id = :tenant_id
-  AND tm.id = :member_id
-  AND tm.account_id = :account_id
-  AND tm.status = 'active'
-LIMIT 1
-SQL);
-        $statement->execute([
-            'tenant_id' => $context->tenantId,
-            'member_id' => $context->memberId,
-            'account_id' => $context->accountId,
-        ]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        $row = Db::name('tenant_member')->alias('member')
+            ->join('tenant tenant', "tenant.id=member.tenant_id AND tenant.status='active'")
+            ->join('account account', "account.id=member.account_id AND account.status='active'")
+            ->join('credential credential', "credential.account_id=account.id AND credential.kind='email_password' AND credential.identifier_type='email' AND credential.status='active'")
+            ->where('member.tenant_id', $context->tenantId)->where('member.id', $context->memberId)
+            ->where('member.account_id', $context->accountId)->where('member.status', 'active')
+            ->field('member.id,member.tenant_id,member.account_id,member.display_name,member.primary_department_id,member.status,member.authorization_revision')
+            ->field('tenant.name AS tenant_name,account.avatar_uri,account.last_login_at,credential.identifier_normalized AS username')
+            ->find();
+        if ($row === null) {
             throw new \DomainException('TENANT_ADMIN_PRINCIPAL_UNAVAILABLE');
         }
 
         $roles = $this->roles($context->tenantId, $context->memberId);
+        $switchableTenantCount = Db::name('tenant_member')->alias('member')
+            ->join('tenant tenant', "tenant.id=member.tenant_id AND tenant.status='active'")
+            ->where('member.account_id', $context->accountId)->where('member.status', 'active')->count();
+        $root = false;
+        foreach ($roles as $role) {
+            $root = $root || ($role['key'] === 'core.tenant-owner' && $role['is_builtin']);
+        }
         return new AdminPrincipal(
             id: (int)$row['id'],
             tenantId: (int)$row['tenant_id'],
@@ -88,8 +42,8 @@ SQL);
             nickname: (string)($row['display_name'] ?: $row['username']),
             name: (string)($row['display_name'] ?: $row['username']),
             avatar: (string)($row['avatar_uri'] ?? ''),
-            root: (int)$row['root'] === 1,
-            switchableTenantCount: (int)$row['switchable_tenant_count'],
+            root: $root,
+            switchableTenantCount: (int)$switchableTenantCount,
             roles: $roles,
             roleName: implode('/', array_column($roles, 'name')),
             authorizationRevision: (int)$row['authorization_revision'],
@@ -103,27 +57,15 @@ SQL);
     /** @return list<array{id:int,key:string,name:string,is_builtin:bool}> */
     private function roles(int $tenantId, int $memberId): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT r.id, r.`key`, r.name, r.is_builtin
-FROM pa_member_role mr
-JOIN pa_role r
-  ON r.tenant_id = mr.tenant_id
- AND r.id = mr.role_id
- AND r.status = 'active'
-WHERE mr.tenant_id = :tenant_id
-  AND mr.tenant_member_id = :member_id
-ORDER BY r.`key`, r.id
-SQL);
-        $statement->execute(['tenant_id' => $tenantId, 'member_id' => $memberId]);
-        $roles = [];
-        while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
-            $roles[] = [
+        $rows = Db::name('member_role')->alias('membership')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.status='active'")
+            ->where('membership.tenant_id', $tenantId)->where('membership.tenant_member_id', $memberId)
+            ->field('role.id,role.key,role.name,role.is_builtin')->order('role.key')->order('role.id')->select()->toArray();
+        return array_map(static fn(array $row): array => [
                 'id' => (int)$row['id'],
                 'key' => (string)$row['key'],
                 'name' => (string)$row['name'],
                 'is_builtin' => (int)$row['is_builtin'] === 1,
-            ];
-        }
-        return $roles;
+            ], $rows);
     }
 }

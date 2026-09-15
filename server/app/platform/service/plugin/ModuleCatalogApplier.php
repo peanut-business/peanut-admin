@@ -5,30 +5,21 @@ namespace app\platform\service\plugin;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Authorization\ModuleAuthorizationCatalogSynchronizer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
+use PeanutAdmin\Kernel\Authorization\Persistence\ThinkPhpAuthorizationCatalogRepository;
 use PeanutAdmin\Kernel\Menu\MenuCatalogSynchronizer;
-use PeanutAdmin\Kernel\Menu\PdoMenuCatalogRepository;
+use PeanutAdmin\Kernel\Menu\ThinkPhpMenuCatalogRepository;
 use PeanutAdmin\Kernel\Module\CompiledModuleRegistry;
 use PeanutAdmin\Kernel\Module\ManifestDocument;
 use PeanutAdmin\Settings\Definition\SettingDefinitionLoader;
 use PeanutAdmin\Settings\Definition\SettingDefinitionRegistry;
-use PeanutAdmin\Settings\Persistence\SettingStore;
-use think\db\PDOConnection;
+use PeanutAdmin\Settings\Definition\SettingDefinitionSynchronizer;
+use think\facade\Db;
 
 /** The single application entry point for applying, retiring, and purging Module catalog contributions. */
 final readonly class ModuleCatalogApplier
 {
-    private PDO $pdo;
-
-    public function __construct(
-        PDOConnection $connection,
-        private SettingStore $settings,
-    )
-    {
-        $this->pdo = $connection->connect();
-    }
+    public function __construct(private SettingDefinitionSynchronizer $settings) {}
 
     /**
      * @param null|list<string> $moduleKeys Null applies the complete compiled registry; a list applies only that scope.
@@ -53,16 +44,14 @@ final readonly class ModuleCatalogApplier
         $selected = array_intersect_key($manifests, array_fill_keys($selectedKeys, true));
         $compiledScope = $this->scope($registry, $selected);
         $before = $this->catalogRevision();
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) $this->pdo->beginTransaction();
-        try {
-            (new ModuleAuthorizationCatalogSynchronizer(new PdoAuthorizationCatalogRepository($this->pdo)))
+        Db::transaction(function () use ($compiledScope, $fullRegistry, $registry, $selected, $selectedKeys): void {
+            (new ModuleAuthorizationCatalogSynchronizer(new ThinkPhpAuthorizationCatalogRepository()))
                 ->synchronize($compiledScope);
 
-            $menuRepository = new PdoMenuCatalogRepository($this->pdo);
+            $menuRepository = new ThinkPhpMenuCatalogRepository();
             $menus = $fullRegistry
                 ? $menuRepository
-                : new ScopedMenuCatalogRepository($this->pdo, $menuRepository, $selectedKeys);
+                : new ScopedMenuCatalogRepository($menuRepository, $selectedKeys);
             (new MenuCatalogSynchronizer($menus))->synchronize($fullRegistry ? $registry : $compiledScope);
 
             $settings = new SettingDefinitionRegistry();
@@ -80,17 +69,13 @@ final readonly class ModuleCatalogApplier
                 new DateTimeImmutable('now', new DateTimeZone('UTC')),
             );
 
-            $mutations = new ModuleCatalogMutationRepository($this->pdo);
+            $mutations = new ModuleCatalogMutationRepository();
             $mutations->retireMissing($selected);
             if ($fullRegistry) {
                 $absent = array_values(array_diff($mutations->activeModuleKeys(), $selectedKeys));
                 if ($absent !== []) $mutations->retire($absent);
             }
-            if ($ownsTransaction) $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($ownsTransaction && $this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
-        }
+        });
 
         $after = $this->catalogRevision();
         return [
@@ -104,56 +89,56 @@ final readonly class ModuleCatalogApplier
     /** @param list<string> $moduleKeys */
     public function retire(array $moduleKeys): void
     {
-        (new ModuleCatalogMutationRepository($this->pdo))->retire($moduleKeys);
+        (new ModuleCatalogMutationRepository())->retire($moduleKeys);
     }
 
     /** @param list<string> $moduleKeys */
     public function purge(array $moduleKeys): void
     {
-        (new ModuleCatalogMutationRepository($this->pdo))->purge($moduleKeys);
+        (new ModuleCatalogMutationRepository())->purge($moduleKeys);
     }
 
     /** @param list<string> $moduleKeys @return array{removed:list<array<string,mixed>>,preserved:list<array<string,mixed>>,blockers:list<array<string,mixed>>} */
     public function plan(array $moduleKeys, bool $purge): array
     {
-        return (new ModuleCatalogMutationRepository($this->pdo))->plan($moduleKeys, $purge);
+        return (new ModuleCatalogMutationRepository())->plan($moduleKeys, $purge);
     }
 
     public function catalogRevision(): string
     {
         $rows = [];
-        foreach ([
-            'pa_permission' => 'SELECT id,`key`,module_key,status,COALESCE(DATE_FORMAT(retired_at,"%Y-%m-%d %H:%i:%s.%f"),"") retired_at FROM pa_permission ORDER BY id',
-            'pa_menu_definition' => 'SELECT id,`key`,module_key,status,manifest_digest FROM pa_menu_definition ORDER BY id',
-            'pa_setting_definition' => 'SELECT id,module_key,setting_key,status,revision,definition_digest FROM pa_setting_definition ORDER BY id',
-        ] as $table => $sql) {
-            $rows[$table] = $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        }
+        $rows['pa_permission'] = Db::name('permission')
+            ->field('id,key,module_key,status')
+            ->fieldRaw('COALESCE(DATE_FORMAT(retired_at,"%Y-%m-%d %H:%i:%s.%f"),"") AS retired_at')
+            ->order('id')->select()->toArray();
+        $rows['pa_menu_definition'] = Db::name('menu_definition')
+            ->field('id,key,module_key,status,manifest_digest')->order('id')->select()->toArray();
+        $rows['pa_setting_definition'] = Db::name('setting_definition')
+            ->field('id,module_key,setting_key,status,revision,definition_digest')->order('id')->select()->toArray();
         return hash('sha256', json_encode($rows, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
     }
 
     /** @param list<string> $moduleKeys */
     public function invalidateTenantAuthorization(array $moduleKeys): void
     {
-        if ($moduleKeys === []) return;
-        $placeholders = implode(',', array_fill(0, count($moduleKeys), '?'));
-        $this->pdo->beginTransaction();
-        try {
-            $tenants = $this->pdo->prepare("SELECT DISTINCT tenant_id FROM pa_tenant_module WHERE module_key IN ({$placeholders}) ORDER BY tenant_id FOR UPDATE");
-            $tenants->execute($moduleKeys);
-            $tenantIds = array_map('intval', $tenants->fetchAll(PDO::FETCH_COLUMN));
-            $modules = $this->pdo->prepare("UPDATE pa_tenant_module SET authorization_revision=authorization_revision+1,updated_at=UTC_TIMESTAMP(3) WHERE module_key IN ({$placeholders})");
-            $modules->execute($moduleKeys);
-            if ($tenantIds !== []) {
-                $tenantPlaceholders = implode(',', array_fill(0, count($tenantIds), '?'));
-                $statement = $this->pdo->prepare("UPDATE pa_tenant SET authorization_revision=authorization_revision+1,revision=revision+1,updated_at=UTC_TIMESTAMP(3) WHERE id IN ({$tenantPlaceholders})");
-                $statement->execute($tenantIds);
-            }
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
+        if ($moduleKeys === []) {
+            return;
         }
+        Db::transaction(function () use ($moduleKeys): void {
+            $tenantIds = array_map('intval', Db::name('tenant_module')
+                ->whereIn('module_key', $moduleKeys)->lock(true)->distinct(true)->order('tenant_id')->column('tenant_id'));
+            Db::name('tenant_module')->whereIn('module_key', $moduleKeys)->update([
+                'authorization_revision' => Db::raw('authorization_revision+1'),
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            ]);
+            if ($tenantIds !== []) {
+                Db::name('tenant')->whereIn('id', $tenantIds)->update([
+                    'authorization_revision' => Db::raw('authorization_revision+1'),
+                    'revision' => Db::raw('revision+1'),
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            }
+        });
     }
 
     /** @param array<string,ManifestDocument> $manifests */
@@ -177,12 +162,9 @@ final readonly class ModuleCatalogApplier
     private function activeCounts(array $moduleKeys): array
     {
         if ($moduleKeys === []) return ['menus' => 0, 'permissions' => 0, 'settings' => 0];
-        $placeholders = implode(',', array_fill(0, count($moduleKeys), '?'));
         $counts = [];
         foreach (['menus' => 'pa_menu_definition', 'permissions' => 'pa_permission', 'settings' => 'pa_setting_definition'] as $name => $table) {
-            $statement = $this->pdo->prepare("SELECT COUNT(*) FROM `{$table}` WHERE module_key IN ({$placeholders}) AND status='active'");
-            $statement->execute($moduleKeys);
-            $counts[$name] = (int)$statement->fetchColumn();
+            $counts[$name] = (int)Db::table($table)->whereIn('module_key', $moduleKeys)->where('status', 'active')->count();
         }
         return $counts;
     }

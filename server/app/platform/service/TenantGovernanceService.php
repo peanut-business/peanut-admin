@@ -7,8 +7,8 @@ use app\common\application\BusinessException;
 use app\platform\identity\PlatformOperatorIdentityPort;
 use DateTimeImmutable;
 use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
-use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use PeanutAdmin\Kernel\Platform\Application\TenantOwnerAdminService;
+use think\facade\Db;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 /**
@@ -21,9 +21,8 @@ final readonly class TenantGovernanceService
 {
     public function __construct(
         private PlatformOperatorIdentityPort $identities,
-        private TransactionManager $transactions,
-        private BootstrapService $bootstrap,
         private PlatformTenantAdminService $administration,
+        private TenantOwnerAdminService $owners,
         private TenantOwnerAdminProvisioner $ownerAdmins
     ) {
     }
@@ -39,8 +38,8 @@ final readonly class TenantGovernanceService
         string $requestId
     ): array {
         try {
-            $operator = $this->identities->requireActive($operatorCredential);
-            return $this->transactions->run(function () use (
+            $operator = $this->identities->requireActive($operatorCredential, $requestId);
+            return Db::transaction(function () use (
                 $operator,
                 $tenantCode,
                 $tenantName,
@@ -49,31 +48,46 @@ final readonly class TenantGovernanceService
                 $ownerDisplayName,
                 $requestId
             ): array {
-                $candidate = $this->bootstrap->provisionTenantOwnerCandidate(
-                    $operator->operatorId,
+                $tenant = $this->administration->createTenant(
+                    $operator->core,
                     $tenantCode,
                     $tenantName,
-                    $ownerEmail,
-                    $initialPassword,
-                    $ownerDisplayName,
-                    $requestId
+                    $tenantName,
+                    'zh-CN',
+                    'Asia/Shanghai',
                 );
-                $this->bootstrap->activateTenantOwner(
-                    $operator->operatorId,
-                    $candidate->tenantId,
-                    $candidate->memberId,
-                    $requestId . ':owner-activation'
+                $candidate = $this->owners->createCandidate(
+                    $operator->core,
+                    (int)$tenant['id'],
+                    $ownerEmail,
+                    $ownerDisplayName,
+                    $initialPassword,
+                );
+                $member = $candidate['member'];
+                $this->owners->activateCandidate(
+                    $operator->core,
+                    (int)$candidate['tenant_id'],
+                    (int)$member['id'],
+                    (int)$member['revision'],
+                    $requestId . ':owner-activation',
+                    'Initial Tenant owner activation',
                 );
                 $this->ownerAdmins->provision(
-                    $candidate->tenantId,
-                    $candidate->accountId,
-                    $candidate->memberId,
-                    $candidate->roleId,
+                    (int)$candidate['tenant_id'],
+                    (int)$member['account_id'],
+                    (int)$member['id'],
+                    (int)$member['role_id'],
                     $tenantCode,
                     $ownerDisplayName
                 );
 
-                return $candidate->toArray();
+                return [
+                    'tenant_id' => (int)$candidate['tenant_id'],
+                    'account_id' => (int)$member['account_id'],
+                    'member_id' => (int)$member['id'],
+                    'role_id' => (int)$member['role_id'],
+                    'status' => 'pending',
+                ];
             });
         } catch (\DomainException|\InvalidArgumentException) {
             throw BusinessException::conflict(
@@ -93,15 +107,13 @@ final readonly class TenantGovernanceService
         string $requestId
     ): array {
         try {
-            $operator = $this->identities->requireActive($operatorCredential);
+            $operator = $this->identities->requireActive($operatorCredential, $requestId);
             return $this->administration->transitionTenant(
-                $operator->operatorId,
-                $operator->accountId,
+                $operator->core,
                 $tenantId,
                 $expectedRevision,
                 $next,
                 $changeReason,
-                $requestId
             );
         } catch (\DomainException|\InvalidArgumentException) {
             [$errorCode, $message] = match ($next) {
@@ -126,11 +138,10 @@ final readonly class TenantGovernanceService
         string $changeReason,
         string $requestId
     ): array {
-        $operator = $this->identities->requireActive($operatorCredential);
+        $operator = $this->identities->requireActive($operatorCredential, $requestId);
 
         return $this->administration->enableModule(
-            $operator->operatorId,
-            $operator->accountId,
+            $operator->core,
             $tenantId,
             $moduleKey,
             $config,
@@ -138,7 +149,6 @@ final readonly class TenantGovernanceService
             $effectiveAt,
             $expiresAt,
             $changeReason,
-            $requestId
         );
     }
 
@@ -150,15 +160,13 @@ final readonly class TenantGovernanceService
         string $changeReason,
         string $requestId
     ): array {
-        $operator = $this->identities->requireActive($operatorCredential);
+        $operator = $this->identities->requireActive($operatorCredential, $requestId);
 
         return $this->administration->disableModule(
-            $operator->operatorId,
-            $operator->accountId,
+            $operator->core,
             $tenantId,
             $moduleKey,
             $changeReason,
-            $requestId
         );
     }
 }

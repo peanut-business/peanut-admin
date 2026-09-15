@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginReleaseCompositionGuard;
 use think\console\Input;
@@ -12,7 +12,7 @@ use think\console\Output;
 use think\facade\Config;
 
 /** Runs the read-only Plugin composition gate from the staged application release. */
-final class PluginReleaseComposition extends DatabaseContextualCommand
+final class PluginReleaseComposition extends ModuleContextualCommand
 {
     /** Exposes only the current immutable release root; the target is always this command's own application. */
     protected function configure()
@@ -42,7 +42,6 @@ final class PluginReleaseComposition extends DatabaseContextualCommand
             }
             $serverRoot = dirname(__DIR__, 2);
             $result = (new PluginReleaseCompositionGuard(
-                $this->database(),
                 dirname($serverRoot),
                 $config,
                 $this->moduleCatalogs(),

@@ -4,14 +4,13 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\audit\AuditContractHost;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\OpsConsole\Package;
 use RuntimeException;
-use Throwable;
+use think\facade\Db;
 
 /** Trusted deployment-worker boundary; no HTTP controller calls this service. */
-final readonly class PdoBackupTaskExecutionService
+final readonly class ThinkPhpBackupTaskExecutionService
 {
     private const FAILURE_CODES = [
         'OPS_BACKUP_CAPACITY_INSUFFICIENT',
@@ -24,7 +23,6 @@ final readonly class PdoBackupTaskExecutionService
     ];
 
     public function __construct(
-        private PDO $pdo,
         private AuditContractHost $audit,
     ) {
     }
@@ -34,22 +32,10 @@ final readonly class PdoBackupTaskExecutionService
     {
         return $this->transaction(function (): ?array {
             $this->failStaleRunningTasks();
-            $statement = $this->pdo->prepare(<<<'SQL'
-SELECT id, task_key, payload_json, attempt_count, max_attempts, revision
-FROM pa_ops_task
-WHERE task_type = :task_type
-  AND handler_key = :handler_key
-  AND status = 'queued'
-  AND available_at <= UTC_TIMESTAMP(3)
-ORDER BY id ASC
-LIMIT 1
-FOR UPDATE SKIP LOCKED
-SQL);
-            $statement->execute([
-                'task_type' => Package::BACKUP_TASK_TYPE,
-                'handler_key' => PairedBackupProvider::BACKUP_HANDLER_KEY,
-            ]);
-            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            $row = Db::name('ops_task')->where('task_type', Package::BACKUP_TASK_TYPE)
+                ->where('handler_key', PairedBackupProvider::BACKUP_HANDLER_KEY)->where('status', 'queued')
+                ->where('available_at', '<=', Db::raw('UTC_TIMESTAMP(3)'))->field('id,task_key,payload_json,attempt_count,max_attempts,revision')
+                ->order('id')->lock('FOR UPDATE SKIP LOCKED')->find();
             if (!is_array($row)) {
                 return null;
             }
@@ -63,14 +49,12 @@ SQL);
                 throw new RuntimeException('OPS_BACKUP_TASK_INVALID');
             }
 
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status = 'running', attempt_count = attempt_count + 1,
-    revision = revision + 1, updated_at = UTC_TIMESTAMP(3)
-WHERE id = :id AND status = 'queued' AND revision = :revision
-SQL);
-            $update->execute(['id' => $row['id'], 'revision' => $row['revision']]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_task')->where('id', $row['id'])->where('status', 'queued')
+                ->where('revision', $row['revision'])->update([
+                    'status' => 'running', 'attempt_count' => Db::raw('attempt_count + 1'),
+                    'revision' => Db::raw('revision + 1'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new RuntimeException('OPS_BACKUP_TASK_CLAIM_CONFLICT');
             }
 
@@ -97,12 +81,8 @@ SQL);
             ) {
                 throw new RuntimeException('OPS_BACKUP_EXECUTION_FENCED');
             }
-            $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET updated_at = UTC_TIMESTAMP(3)
-WHERE task_key = :task_key AND status = 'running' AND revision = :revision
-SQL);
-            $statement->execute(['task_key' => $taskKey, 'revision' => $executionRevision]);
+            Db::name('ops_task')->where('task_key', $taskKey)->where('status', 'running')
+                ->where('revision', $executionRevision)->update(['updated_at' => Db::raw('UTC_TIMESTAMP(3)')]);
             return [
                 'task_key' => $taskKey,
                 'status' => 'running',
@@ -113,31 +93,17 @@ SQL);
 
     private function failStaleRunningTasks(): void
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT task.*, operator.account_id
-FROM pa_ops_task AS task
-INNER JOIN pa_platform_operator AS operator ON operator.id = task.submitted_by_operator_id
-WHERE task.task_type = :task_type
-  AND task.handler_key = :handler_key
-  AND task.status = 'running'
-  AND task.updated_at < TIMESTAMPADD(HOUR, -2, UTC_TIMESTAMP(3))
-ORDER BY task.id ASC
-FOR UPDATE
-SQL);
-        $statement->execute([
-            'task_type' => Package::BACKUP_TASK_TYPE,
-            'handler_key' => PairedBackupProvider::BACKUP_HANDLER_KEY,
-        ]);
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $task) {
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status = 'dead', revision = revision + 1,
-    last_error_code = 'OPS_BACKUP_RUNTIME_FAILED',
-    updated_at = UTC_TIMESTAMP(3), completed_at = UTC_TIMESTAMP(3)
-WHERE id = :id AND status = 'running'
-SQL);
-            $update->execute(['id' => $task['id']]);
-            if ($update->rowCount() === 1) {
+        $tasks = Db::name('ops_task')->alias('task')->join('platform_operator operator', 'operator.id=task.submitted_by_operator_id')
+            ->where('task.task_type', Package::BACKUP_TASK_TYPE)->where('task.handler_key', PairedBackupProvider::BACKUP_HANDLER_KEY)
+            ->where('task.status', 'running')->where('task.updated_at', '<', Db::raw('TIMESTAMPADD(HOUR, -2, UTC_TIMESTAMP(3))'))
+            ->field('task.*,operator.account_id')->order('task.id')->lock(true)->select()->toArray();
+        foreach ($tasks as $task) {
+            $updated = Db::name('ops_task')->where('id', $task['id'])->where('status', 'running')->update([
+                'status' => 'dead', 'revision' => Db::raw('revision + 1'),
+                'last_error_code' => 'OPS_BACKUP_RUNTIME_FAILED', 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'completed_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            ]);
+            if ($updated === 1) {
                 $this->audit($task, 'platform.ops.backup.failed', 'backup.fail', [
                     'task_key' => (string)$task['task_key'],
                     'provider_key' => PairedBackupProvider::PROVIDER_KEY,
@@ -181,18 +147,7 @@ SQL);
 
             $source = $manifestArray['source'];
             $window = $manifestArray['consistency_window'];
-            $insert = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_ops_backup_evidence (
-    backup_reference_key, task_key, provider_key, manifest_sha256,
-    source_commit, source_tree, source_release_key,
-    consistency_started_at, consistency_completed_at, verified_at, manifest_json
-) VALUES (
-    :backup_reference_key, :task_key, :provider_key, :manifest_sha256,
-    :source_commit, :source_tree, :source_release_key,
-    :started_at, :completed_at, UTC_TIMESTAMP(3), :manifest_json
-)
-SQL);
-            $insert->execute([
+            Db::name('ops_backup_evidence')->insert([
                 'backup_reference_key' => $manifest->backupReferenceKey(),
                 'task_key' => $taskKey,
                 'provider_key' => PairedBackupProvider::PROVIDER_KEY,
@@ -200,19 +155,18 @@ SQL);
                 'source_commit' => $source['commit'],
                 'source_tree' => $source['tree'],
                 'source_release_key' => $source['release_key'],
-                'started_at' => $this->databaseInstant($window['started_at']),
-                'completed_at' => $this->databaseInstant($window['completed_at']),
+                'consistency_started_at' => $this->databaseInstant($window['started_at']),
+                'consistency_completed_at' => $this->databaseInstant($window['completed_at']),
+                'verified_at' => Db::raw('UTC_TIMESTAMP(3)'),
                 'manifest_json' => $canonical,
             ]);
 
-            $update = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status = 'succeeded', revision = revision + 1, last_error_code = NULL,
-    updated_at = UTC_TIMESTAMP(3), completed_at = UTC_TIMESTAMP(3)
-WHERE task_key = :task_key AND status = 'running' AND revision = :revision
-SQL);
-            $update->execute(['task_key' => $taskKey, 'revision' => $executionRevision]);
-            if ($update->rowCount() !== 1) {
+            $updated = Db::name('ops_task')->where('task_key', $taskKey)->where('status', 'running')
+                ->where('revision', $executionRevision)->update([
+                    'status' => 'succeeded', 'revision' => Db::raw('revision + 1'), 'last_error_code' => null,
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'), 'completed_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new RuntimeException('OPS_BACKUP_TASK_STATE_CONFLICT');
             }
             $this->audit($task, 'platform.ops.backup.succeeded', 'backup.succeed', [
@@ -248,18 +202,12 @@ SQL);
             ) {
                 throw new RuntimeException('OPS_BACKUP_EXECUTION_FENCED');
             }
-            $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_task
-SET status = 'dead', revision = revision + 1, last_error_code = :error_code,
-    updated_at = UTC_TIMESTAMP(3), completed_at = UTC_TIMESTAMP(3)
-WHERE task_key = :task_key AND status = 'running' AND revision = :revision
-SQL);
-            $statement->execute([
-                'task_key' => $taskKey,
-                'revision' => $executionRevision,
-                'error_code' => $errorCode,
-            ]);
-            if ($statement->rowCount() !== 1) {
+            $updated = Db::name('ops_task')->where('task_key', $taskKey)->where('status', 'running')
+                ->where('revision', $executionRevision)->update([
+                    'status' => 'dead', 'revision' => Db::raw('revision + 1'), 'last_error_code' => $errorCode,
+                    'updated_at' => Db::raw('UTC_TIMESTAMP(3)'), 'completed_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                ]);
+            if ($updated !== 1) {
                 throw new RuntimeException('OPS_BACKUP_TASK_STATE_CONFLICT');
             }
             $this->audit($task, 'platform.ops.backup.failed', 'backup.fail', [
@@ -273,21 +221,10 @@ SQL);
     /** @return array<string,mixed> */
     private function taskForUpdate(string $taskKey): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT task.*, operator.account_id
-FROM pa_ops_task AS task
-INNER JOIN pa_platform_operator AS operator ON operator.id = task.submitted_by_operator_id
-WHERE task.task_key = :task_key
-  AND task.task_type = :task_type
-  AND task.handler_key = :handler_key
-FOR UPDATE
-SQL);
-        $statement->execute([
-            'task_key' => $taskKey,
-            'task_type' => Package::BACKUP_TASK_TYPE,
-            'handler_key' => PairedBackupProvider::BACKUP_HANDLER_KEY,
-        ]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_task')->alias('task')->join('platform_operator operator', 'operator.id=task.submitted_by_operator_id')
+            ->where('task.task_key', $taskKey)->where('task.task_type', Package::BACKUP_TASK_TYPE)
+            ->where('task.handler_key', PairedBackupProvider::BACKUP_HANDLER_KEY)
+            ->field('task.*,operator.account_id')->lock(true)->find();
         if (!is_array($row)) {
             throw new RuntimeException('OPS_BACKUP_TASK_NOT_FOUND');
         }
@@ -297,11 +234,7 @@ SQL);
     /** @return array<string,mixed>|null */
     private function evidence(string $taskKey): ?array
     {
-        $statement = $this->pdo->prepare(
-            'SELECT manifest_sha256 FROM pa_ops_backup_evidence WHERE task_key = :task_key FOR UPDATE'
-        );
-        $statement->execute(['task_key' => $taskKey]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_backup_evidence')->where('task_key', $taskKey)->field('manifest_sha256')->lock(true)->find();
         return is_array($row) ? $row : null;
     }
 
@@ -347,24 +280,8 @@ SQL);
         }
     }
 
-    /** @template T @param callable():T $operation @return T */
     private function transaction(callable $operation): mixed
     {
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-        try {
-            $result = $operation();
-            if ($ownsTransaction) {
-                $this->pdo->commit();
-            }
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        return Db::transaction($operation);
     }
 }

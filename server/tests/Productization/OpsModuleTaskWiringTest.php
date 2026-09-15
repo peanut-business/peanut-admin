@@ -7,7 +7,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\audit\AuditContractHost;
 use app\platform\service\ops\DeploymentModuleRequestService;
-use app\platform\service\ops\PdoModuleOperationTaskExecutionService;
+use app\platform\service\ops\ThinkPhpModuleOperationTaskExecutionService;
 use app\platform\service\plugin\ModuleCatalogApplier;
 use think\App;
 use think\console\Input;
@@ -25,14 +25,12 @@ function expectOpsModuleWiring(bool $condition, string $message): void
 $app = new App(dirname(__DIR__, 2));
 $contexts = new ExecutionContextStore();
 $current = new CurrentExecutionContext($contexts);
-$pdo = new class extends PDO { public function __construct() {} };
 $audit = (new ReflectionClass(AuditContractHost::class))->newInstanceWithoutConstructor();
 $trustedKey = str_repeat('k', SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES);
 $app->config->set(['official.article' => ['root' => 'app/Modules/Official/Article']], 'modules');
 $app->config->set(['trusted_ed25519_keys' => ['c01-test' => base64_encode($trustedKey)]], 'module_packages');
 $app->instance(ExecutionContextStore::class, $contexts);
 $app->instance(CurrentExecutionContext::class, $current);
-$app->instance(PDO::class, $pdo);
 $app->instance(AuditContractHost::class, $audit);
 $app->instance(
     ModuleCatalogApplier::class,
@@ -42,12 +40,12 @@ $appService = new AppService($app);
 $registerPlatform = new ReflectionMethod(AppService::class, 'registerPlatform');
 $registerPlatform->invoke($appService);
 
-$registeredService = $app->make(PdoModuleOperationTaskExecutionService::class);
+$registeredService = $app->make(ThinkPhpModuleOperationTaskExecutionService::class);
 $command = $app->make(OpsModuleTask::class);
 $serviceProperty = new ReflectionProperty(OpsModuleTask::class, 'service');
 expectOpsModuleWiring(
     $serviceProperty->getValue($command) === $registeredService
-        && $registeredService === $app->make(PdoModuleOperationTaskExecutionService::class),
+        && $registeredService === $app->make(ThinkPhpModuleOperationTaskExecutionService::class),
     'OpsModuleTask did not receive the AppService-owned execution service',
 );
 $requests = $app->make(DeploymentModuleRequestService::class);

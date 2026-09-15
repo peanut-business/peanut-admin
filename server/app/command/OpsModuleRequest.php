@@ -5,7 +5,7 @@ namespace app\command;
 
 use app\platform\service\ops\DeploymentModuleRequestService;
 use app\platform\service\plugin\PluginRuntimeGovernanceService;
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -14,7 +14,7 @@ use think\facade\Config;
 use Throwable;
 
 /** Deployment-only preparation of an opaque Module operation request. */
-final class OpsModuleRequest extends DatabaseContextualCommand
+final class OpsModuleRequest extends ModuleContextualCommand
 {
     protected function configure(): void
     {
@@ -33,16 +33,14 @@ final class OpsModuleRequest extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = $this->database();
             $config = Config::get('modules', []);
             if (!is_array($config)) throw new \RuntimeException('OPS_MODULE_CONFIG_INVALID');
             $catalogs = $this->moduleCatalogs();
             $service = new DeploymentModuleRequestService(
-                $pdo,
                 dirname(__DIR__, 3),
                 $config,
                 $this->trustedKeys(),
-                new PluginRuntimeGovernanceService($pdo, dirname(__DIR__, 2), $config, $catalogs),
+                new PluginRuntimeGovernanceService(dirname(__DIR__, 2), $config, $catalogs),
                 $catalogs,
             );
             $arguments = [

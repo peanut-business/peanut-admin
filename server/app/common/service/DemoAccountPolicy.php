@@ -3,14 +3,13 @@ declare(strict_types=1);
 
 namespace app\common\service;
 
-use PDO;
+use think\facade\Db;
 
 /** Keeps public demo credentials and password locking out of normal deployments. */
 final class DemoAccountPolicy
 {
     /** @param list<string> $demoEmails */
     public function __construct(
-        private readonly PDO $pdo,
         private readonly bool $enabled,
         private readonly array $demoEmails,
     ) {}
@@ -46,18 +45,10 @@ final class DemoAccountPolicy
         if (!$this->enabled) {
             return;
         }
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT identifier_normalized
-FROM pa_credential
-WHERE account_id = :account_id
-  AND kind = 'email_password'
-  AND identifier_type = 'email'
-  AND status = 'active'
-ORDER BY id
-LIMIT 2
-SQL);
-        $statement->execute(['account_id' => $accountId]);
-        foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $email) {
+        $emails = Db::name('credential')->where('account_id', $accountId)
+            ->where('kind', 'email_password')->where('identifier_type', 'email')->where('status', 'active')
+            ->order('id')->limit(2)->column('identifier_normalized');
+        foreach ($emails as $email) {
             if ($this->isDemoEmail((string)$email)) {
                 throw new \DomainException('演示账号密码已锁定，不能在页面中修改');
             }
@@ -85,18 +76,10 @@ SQL);
         if (!$this->enabled || $accountId < 1) {
             return false;
         }
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT c.identifier_normalized
-FROM pa_credential c
-WHERE c.account_id = :account_id
-  AND c.kind = 'email_password'
-  AND c.identifier_type = 'email'
-  AND c.status = 'active'
-ORDER BY c.id
-LIMIT 2
-SQL);
-        $statement->execute(['account_id' => $accountId]);
-        foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $email) {
+        $emails = Db::name('credential')->where('account_id', $accountId)
+            ->where('kind', 'email_password')->where('identifier_type', 'email')->where('status', 'active')
+            ->order('id')->limit(2)->column('identifier_normalized');
+        foreach ($emails as $email) {
             if ($this->isDemoEmail((string)$email)) {
                 return true;
             }
@@ -114,6 +97,25 @@ SQL);
 
     public function replaceCredentialHashes(array $emails): void
     {
+        $hash = $this->credentialHash();
+        foreach (array_values(array_unique(array_map('strtolower', $emails))) as $email) {
+            if (trim($email) !== '') {
+                Db::name('credential')->where('identifier_type', 'email')
+                    ->where('kind', 'email_password')->where('status', 'active')
+                    ->where('identifier_normalized', trim($email))->update([
+                        'secret_hash' => $hash,
+                        'failed_attempts' => 0,
+                        'locked_until' => null,
+                        'secret_changed_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                        'revision' => Db::raw('revision+1'),
+                        'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                    ]);
+            }
+        }
+    }
+
+    public function credentialHash(): string
+    {
         if (!$this->enabled) {
             throw new \LogicException('演示密码策略未启用');
         }
@@ -125,23 +127,6 @@ SQL);
         if (!is_string($hash) || $hash === '') {
             throw new \RuntimeException('演示密码摘要生成失败');
         }
-        $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_credential
-SET secret_hash = :secret_hash,
-    failed_attempts = 0,
-    locked_until = NULL,
-    secret_changed_at = UTC_TIMESTAMP(3),
-    revision = revision + 1,
-    updated_at = UTC_TIMESTAMP(3)
-WHERE identifier_type = 'email'
-  AND kind = 'email_password'
-  AND status = 'active'
-  AND identifier_normalized = :email
-SQL);
-        foreach (array_values(array_unique(array_map('strtolower', $emails))) as $email) {
-            if (trim($email) !== '') {
-                $statement->execute(['secret_hash' => $hash, 'email' => trim($email)]);
-            }
-        }
+        return $hash;
     }
 }

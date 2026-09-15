@@ -142,8 +142,7 @@ $request = new CallbackRequest($body, [
     'Wechatpay-Serial' => PaymentCrypto::certificateSerial($certificate['certificate']),
     'Wechatpay-Signature' => $signature,
 ]);
-$factory = new PaymentServiceFactory($config);
-$parser = $factory->callback('wechat');
+$parser = new WechatCallbackParser($config);
 expectCombinedDomain($parser instanceof WechatCallbackParser, 'application payment Host changed');
 $event = $parser->parse($request);
 expectCombinedDomain(
@@ -156,11 +155,11 @@ expectCombinedDomain(
     'signed and encrypted payment callback behavior changed'
 );
 
-$invalidFactory = new PaymentServiceFactory(array_replace($config, [
+$invalidParser = new WechatCallbackParser(array_replace($config, [
     'wx_pay_secret' => 'combined-upgrade-api-v3-key-0002',
 ]));
 expectCombinedDomainThrows(
-    static fn() => $invalidFactory->callback('wechat')->parse($request),
+    static fn() => $invalidParser->parse($request),
     'authenticated payment ciphertext accepted the wrong key'
 );
 

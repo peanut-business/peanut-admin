@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Validation;
 
-use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
+use app\Modules\Official\Article\Model\Article;
+use app\Modules\Official\Article\Model\ArticleCate;
 use app\common\validate\PageSizeRule;
 use app\common\validate\TenantContextValidate;
 
@@ -53,14 +54,14 @@ class ArticleValidate extends TenantContextValidate
     protected function checkArticle($value): bool|string
     {
         $this->requireTenantContext();
-        return ArticleTenantRepository::articles()->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        return Article::where([])->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '资讯不存在' : true;
     }
 
     protected function checkCategory($value): bool|string
     {
         $this->requireTenantContext();
-        return ArticleTenantRepository::categories()->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        return ArticleCate::where([])->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '所属栏目必须存在' : true;
     }
 

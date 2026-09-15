@@ -12,7 +12,7 @@ use app\common\enum\notice\NoticeSceneEnum;
 use app\common\application\BusinessException;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
 use app\common\service\config\TenantApplicationSettingService;
 use PeanutAdmin\IntegrationSecurity\OAuth\OAuthProfile;
 use PeanutAdmin\IntegrationSecurity\OAuth\OAuthTransport;
@@ -47,7 +47,6 @@ final class OAuthCommandService implements OAuthCommands
         private readonly MemberProfileCommands $memberProfiles,
         private readonly VerificationCodeCommands $verificationCodes,
         private readonly AdvisoryLockExecution $locks,
-        private readonly TransactionalExecution $transactions,
         private readonly TenantApplicationSettingService $applicationSettings,
         private readonly ExternalTenantResolver $externalTenants,
         private readonly OAuthPersistence $persistence,
@@ -150,7 +149,7 @@ final class OAuthCommandService implements OAuthCommands
             throw BusinessException::invalid('OAUTH_COMPLETION_TICKET_REQUIRED', '登录补全票据缺失');
         }
 
-        return $this->transactions->run(function () use ($context, $params, $rawTicket, $ip): OAuthLoginResult {
+        return Db::transaction(function () use ($context, $params, $rawTicket, $ip): OAuthLoginResult {
                 $ticket = $this->persistence->completionForUpdate($context, hash('sha256', $rawTicket));
                 if ($ticket === null || $ticket->usedAt !== null || $ticket->expiresAt < time()) {
                     throw BusinessException::invalid('OAUTH_COMPLETION_TICKET_INVALID', '登录补全票据无效或已过期');
@@ -260,7 +259,7 @@ final class OAuthCommandService implements OAuthCommands
             return $this->locks->run(
                 $lockName,
                 5,
-                fn(): array => $this->transactions->run(function () use (
+                fn(): array => Db::transaction(function () use (
                     $bindingMemberId,
                     $clientKey,
                     $context,
@@ -473,7 +472,7 @@ final class OAuthCommandService implements OAuthCommands
         if ($state === '') {
             throw BusinessException::invalid('OAUTH_STATE_REQUIRED', '微信授权 state 缺失');
         }
-        return $this->transactions->run(function () use ($context, $scene, $state): string {
+        return Db::transaction(function () use ($context, $scene, $state): string {
             $attempt = $this->persistence->attemptForUpdate($context, hash('sha256', $state));
             if ($attempt === null || $attempt->scene !== $scene
                 || $attempt->usedAt !== null || $attempt->expiresAt < time()) {

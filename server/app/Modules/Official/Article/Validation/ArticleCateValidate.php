@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Article\Validation;
 
-use app\Modules\Official\Article\Infrastructure\Persistence\ArticleTenantRepository;
+use app\Modules\Official\Article\Model\Article;
+use app\Modules\Official\Article\Model\ArticleCate;
 use app\common\validate\PageSizeRule;
 use app\common\validate\TenantContextValidate;
 
@@ -58,14 +59,14 @@ class ArticleCateValidate extends TenantContextValidate
     protected function checkArticleCate($value): bool|string
     {
         $this->requireTenantContext();
-        return ArticleTenantRepository::categories()->where('id', (int) $value)->findOrEmpty()->isEmpty()
+        return ArticleCate::where([])->where('id', (int) $value)->findOrEmpty()->isEmpty()
             ? '资讯分类不存在' : true;
     }
 
     protected function checkDeleteArticleCate($value): bool|string
     {
         $this->requireTenantContext();
-        return ArticleTenantRepository::articles()->where('cid', (int) $value)->findOrEmpty()->isEmpty()
+        return Article::where([])->where('cid', (int) $value)->findOrEmpty()->isEmpty()
             ? true
             : '资讯分类已使用，请先删除绑定该资讯分类的资讯';
     }

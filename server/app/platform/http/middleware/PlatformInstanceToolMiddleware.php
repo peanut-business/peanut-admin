@@ -12,7 +12,7 @@ final class PlatformInstanceToolMiddleware
 {
     public function handle($request, \Closure $next)
     {
-        if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'
+        if (strtolower(trim((string)Config::get('peanut.environment', ''))) !== 'development'
             || !app()->isDebug()
             || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
             throw \app\common\http\ApiProblem::fromEnvelope(

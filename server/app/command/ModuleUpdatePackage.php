@@ -7,14 +7,14 @@ use app\common\service\instance\InstanceToolAccessGuard;
 use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginPackageException;
 use app\platform\service\plugin\PluginPackageInstaller;
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 
-final class ModuleUpdatePackage extends DatabaseContextualCommand
+final class ModuleUpdatePackage extends ModuleContextualCommand
 {
     protected function configure()
     {
@@ -28,12 +28,11 @@ final class ModuleUpdatePackage extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            if (strtolower(trim((string)env('APP_ENV', ''))) !== 'development'
+            if (strtolower(trim((string)Config::get('peanut.environment', ''))) !== 'development'
                 || !app()->isDebug()
                 || !InstanceToolAccessGuard::fromConfiguredValue(Config::get('deployment.mode'))->allows()) {
                 throw new PluginPackageException('MODULE_RUNTIME_MUTATION_DISABLED', 'Runtime Module mutation is disabled.');
             }
-            $pdo = $this->database();
             $trusted = [];
             foreach ((array)Config::get('module_packages.trusted_ed25519_keys', []) as $keyId => $encoded) {
                 $decoded = is_string($encoded) ? base64_decode($encoded, true) : false;
@@ -46,7 +45,6 @@ final class ModuleUpdatePackage extends DatabaseContextualCommand
                 throw new PluginPackageException('MODULE_REGISTRY_UNAVAILABLE', 'Module deployment config is invalid.');
             }
             $result = (new PluginPackageInstaller(
-                $pdo,
                 dirname(__DIR__, 2),
                 $config,
                 $trusted,

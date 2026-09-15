@@ -8,13 +8,11 @@ use app\platform\context\PlatformOperatorContext;
 use app\platform\service\PlatformOperatorSessionService;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Identity\EmailAddress;
-use PeanutAdmin\Kernel\Membership\MembershipRepository;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
-use PeanutAdmin\Kernel\Tenancy\TenantRepository;
+use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
+use think\facade\Db;
 use PeanutAdmin\Kernel\Tenancy\TenantStatus;
 
 final class TenantOwnerInvitationAdminService
@@ -24,10 +22,7 @@ final class TenantOwnerInvitationAdminService
     private const INVITE_PERMISSION = 'platform.tenant.provision-owner';
 
     public function __construct(
-        private readonly PDO $pdo,
-        private readonly TransactionManager $transactions,
-        private readonly TenantRepository $tenants,
-        private readonly MembershipRepository $memberships,
+        private readonly PlatformTenantAdminService $tenants,
         private readonly PlatformOperatorSessionService $sessions,
         private readonly OwnerInvitationDeliveryPort $delivery,
         private readonly OwnerInvitationRuntimePolicy $runtimePolicy,
@@ -51,7 +46,7 @@ final class TenantOwnerInvitationAdminService
         $token = OneTimeInvitationToken::issue();
         $expiresAt = $this->expiry($expiresInHours);
 
-        $issued = $this->transactions->run(function () use (
+        $issued = Db::transaction(function () use (
             $context,
             $tenantCode,
             $tenantName,
@@ -60,16 +55,12 @@ final class TenantOwnerInvitationAdminService
             $token,
             $expiresAt
         ): array {
-            if ($this->tenants->byCode($tenantCode, true) !== null) {
-                throw TenantOwnerInvitationException::conflict(
-                    'TENANT_CODE_EXISTS',
-                    'Tenant code is already in use.'
-                );
-            }
-            $tenant = $this->tenants->createProvisioning($tenantCode, $tenantName);
-            $this->memberships->createBuiltinRole($tenant->id, self::OWNER_ROLE, 'Tenant Owner');
+            $tenant = $this->tenants->createTenant(
+                $context->core, $tenantCode, $tenantName, $tenantName, 'zh-CN', 'Asia/Shanghai',
+            );
+            $tenantId = (int)$tenant['id'];
             $invitation = $this->insertInvitation(
-                $tenant->id,
+                $tenantId,
                 $email,
                 $ownerDisplayName,
                 $token,
@@ -82,14 +73,14 @@ final class TenantOwnerInvitationAdminService
                 $context->core->requestId,
                 $context->core->operatorId,
                 $context->core->accountId,
-                ['tenant_id' => $tenant->id, 'invitation_id' => $invitation['id']],
+                ['tenant_id' => $tenantId, 'invitation_id' => $invitation['id']],
                 AuditOutcome::Success,
                 null,
             );
 
             return $invitation + [
-                'tenant_code' => $tenant->code,
-                'tenant_name' => $tenant->name,
+                'tenant_code' => $tenant['code'],
+                'tenant_name' => $tenant['name'],
                 'tenant_status' => TenantStatus::Provisioning->value,
             ];
         });
@@ -111,7 +102,7 @@ final class TenantOwnerInvitationAdminService
         $token = OneTimeInvitationToken::issue();
         $expiresAt = $this->expiry($expiresInHours);
 
-        $issued = $this->transactions->run(function () use (
+        $issued = Db::transaction(function () use (
             $context,
             $tenantId,
             $email,
@@ -128,8 +119,13 @@ final class TenantOwnerInvitationAdminService
                     'Tenant already has a pending owner invitation.'
                 );
             }
-            if ($this->memberships->roleByKey($tenantId, self::OWNER_ROLE, true) === null) {
-                $this->memberships->createBuiltinRole($tenantId, self::OWNER_ROLE, 'Tenant Owner');
+            if (Db::name('role')->where('tenant_id', $tenantId)->where('key', self::OWNER_ROLE)->lock(true)->value('id') === null) {
+                $now = $this->format($this->now());
+                Db::name('role')->insert([
+                    'tenant_id' => $tenantId, 'key' => self::OWNER_ROLE, 'name' => 'Tenant Owner',
+                    'description' => 'Built-in owner role for tenant governance.', 'is_builtin' => 1,
+                    'status' => 'active', 'created_at' => $now, 'updated_at' => $now,
+                ]);
             }
             $invitation = $this->insertInvitation(
                 $tenantId,
@@ -167,29 +163,15 @@ final class TenantOwnerInvitationAdminService
         PageRequest $page
     ): array {
         $this->sessions->assertAllowed($context, self::INVITE_PERMISSION);
-        $count = $this->pdo->prepare(
-            'SELECT COUNT(*) FROM pa_tenant_owner_invitation WHERE tenant_id = :tenant_id'
-        );
-        $count->execute(['tenant_id' => $tenantId]);
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT id, tenant_id, email_normalized AS email, display_name,
-       CASE WHEN status = 'pending' AND expires_at <= UTC_TIMESTAMP(3) THEN 'expired' ELSE status END AS status,
-       delivery_status, delivery_provider, delivery_attempts, delivery_error_code,
-       generation, expires_at, accepted_at, revoked_at, accepted_account_id, accepted_member_id,
-       invited_by_operator_id, revoked_by_operator_id, created_at, updated_at
-FROM pa_tenant_owner_invitation
-WHERE tenant_id = :tenant_id
-ORDER BY id DESC
-LIMIT :limit OFFSET :offset
-SQL);
-        $statement->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
-        $statement->bindValue(':limit', $page->pageSize, PDO::PARAM_INT);
-        $statement->bindValue(':offset', $page->offset(), PDO::PARAM_INT);
-        $statement->execute();
+        $query = Db::name('tenant_owner_invitation')->where('tenant_id', $tenantId);
+        $items = (clone $query)
+            ->field('id,tenant_id,email_normalized AS email,display_name,delivery_status,delivery_provider,delivery_attempts,delivery_error_code,generation,expires_at,accepted_at,revoked_at,accepted_account_id,accepted_member_id,invited_by_operator_id,revoked_by_operator_id,created_at,updated_at')
+            ->fieldRaw("CASE WHEN status='pending' AND expires_at<=UTC_TIMESTAMP(3) THEN 'expired' ELSE status END AS status")
+            ->order('id', 'desc')->limit($page->offset(), $page->pageSize)->select()->toArray();
 
         return [
-            'items' => $statement->fetchAll(PDO::FETCH_ASSOC),
-            'total' => (int)$count->fetchColumn(),
+            'items' => $items,
+            'total' => (int)$query->count(),
         ];
     }
 
@@ -203,7 +185,7 @@ SQL);
         $this->runtimePolicy->assertIssuanceAllowed($this->delivery);
         $token = OneTimeInvitationToken::issue();
         $expiresAt = $this->expiry($expiresInHours);
-        $issued = $this->transactions->run(function () use (
+        $issued = Db::transaction(function () use (
             $context,
             $invitationId,
             $expiresAt,
@@ -220,19 +202,17 @@ SQL);
             }
             $this->assertOwnerBaseline($tenantId, (string)$tenant['status']);
             $now = $this->now();
-            $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_owner_invitation
-SET token_hash = :token_hash,
-    delivery_status = 'pending_delivery', delivery_provider = NULL, delivery_message_id = NULL,
-    delivery_attempts = 0, delivery_error_code = NULL, last_delivery_at = NULL,
-    generation = generation + 1, expires_at = :expires_at, updated_at = :updated_at
-WHERE id = :id AND status = 'pending'
-SQL);
-            $statement->execute([
+            Db::name('tenant_owner_invitation')->where('id', $invitationId)->where('status', 'pending')->update([
                 'token_hash' => $token->hash(),
+                'delivery_status' => 'pending_delivery',
+                'delivery_provider' => null,
+                'delivery_message_id' => null,
+                'delivery_attempts' => 0,
+                'delivery_error_code' => null,
+                'last_delivery_at' => null,
+                'generation' => Db::raw('generation+1'),
                 'expires_at' => $this->format($expiresAt),
                 'updated_at' => $this->format($now),
-                'id' => $invitationId,
             ]);
             $this->audit->recordPlatform(
                 'tenant.owner-invitation.resent',
@@ -267,7 +247,7 @@ SQL);
     {
         $this->sessions->assertAllowed($context, self::INVITE_PERMISSION);
 
-        return $this->transactions->run(function () use ($context, $invitationId): array {
+        return Db::transaction(function () use ($context, $invitationId): array {
             $invitation = $this->lockInvitationById($invitationId);
             $this->lockInvitableTenant((int)$invitation['tenant_id']);
             if ($invitation['status'] !== 'pending') {
@@ -277,17 +257,11 @@ SQL);
                 );
             }
             $now = $this->format($this->now());
-            $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_owner_invitation
-SET status = 'revoked', revoked_at = :revoked_at,
-    revoked_by_operator_id = :operator_id, updated_at = :updated_at
-WHERE id = :id AND status = 'pending'
-SQL);
-            $statement->execute([
+            Db::name('tenant_owner_invitation')->where('id', $invitationId)->where('status', 'pending')->update([
+                'status' => 'revoked',
                 'revoked_at' => $now,
-                'operator_id' => $context->core->operatorId,
+                'revoked_by_operator_id' => $context->core->operatorId,
                 'updated_at' => $now,
-                'id' => $invitationId,
             ]);
             $this->audit->recordPlatform(
                 'tenant.owner-invitation.revoked',
@@ -318,28 +292,19 @@ SQL);
         int $operatorId
     ): array {
         $now = $this->format($this->now());
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_tenant_owner_invitation (
-    tenant_id, email_normalized, display_name, token_hash, expires_at,
-    invited_by_operator_id, created_at, updated_at
-) VALUES (
-    :tenant_id, :email, :display_name, :token_hash, :expires_at,
-    :operator_id, :created_at, :updated_at
-)
-SQL);
-        $statement->execute([
+        $id = Db::name('tenant_owner_invitation')->insertGetId([
             'tenant_id' => $tenantId,
-            'email' => $email,
+            'email_normalized' => $email,
             'display_name' => $displayName,
             'token_hash' => $token->hash(),
             'expires_at' => $this->format($expiresAt),
-            'operator_id' => $operatorId,
+            'invited_by_operator_id' => $operatorId,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
 
         return [
-            'id' => (int)$this->pdo->lastInsertId(),
+            'id' => $id,
             'tenant_id' => $tenantId,
             'email' => $email,
             'display_name' => $displayName,
@@ -367,30 +332,20 @@ SQL);
             $result = OwnerInvitationDeliveryResult::failed('delivery-port', 'DELIVERY_PROVIDER_ERROR');
         }
         $now = $this->format($this->now());
-        $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_owner_invitation
-SET delivery_status = :delivery_status,
-    delivery_provider = :delivery_provider,
-    delivery_message_id = :delivery_message_id,
-    delivery_attempts = delivery_attempts + :attempted,
-    delivery_error_code = :delivery_error_code,
-    last_delivery_at = CASE WHEN :attempted_at = 1 THEN :last_delivery_at ELSE last_delivery_at END,
-    updated_at = :updated_at
-WHERE id = :id AND token_hash = :token_hash AND status = 'pending'
-SQL);
         $attempted = $result->status === 'pending_delivery' ? 0 : 1;
-        $statement->execute([
+        $changes = [
             'delivery_status' => $result->status,
             'delivery_provider' => $result->provider,
             'delivery_message_id' => $result->messageId,
-            'attempted' => $attempted,
+            'delivery_attempts' => Db::raw('delivery_attempts+' . $attempted),
             'delivery_error_code' => $result->errorCode,
-            'attempted_at' => $attempted,
-            'last_delivery_at' => $now,
             'updated_at' => $now,
-            'id' => (int)$issued['id'],
-            'token_hash' => $token->hash(),
-        ]);
+        ];
+        if ($attempted === 1) {
+            $changes['last_delivery_at'] = $now;
+        }
+        Db::name('tenant_owner_invitation')->where('id', (int)$issued['id'])
+            ->where('token_hash', $token->hash())->where('status', 'pending')->update($changes);
 
         $response = array_replace($issued, ['delivery_status' => $result->status]);
         if ($this->runtimePolicy->allowsPlaintextTokenResponse()) {
@@ -403,15 +358,9 @@ SQL);
     /** @return array{id:int,tenant_id:int,email_normalized:string,display_name:string,status:string,generation:int} */
     private function lockInvitationById(int $invitationId): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT id, tenant_id, email_normalized, display_name, status, generation
-FROM pa_tenant_owner_invitation
-WHERE id = :id
-FOR UPDATE
-SQL);
-        $statement->execute(['id' => $invitationId]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        $row = Db::name('tenant_owner_invitation')->where('id', $invitationId)
+            ->field('id,tenant_id,email_normalized,display_name,status,generation')->lock(true)->find();
+        if ($row === null) {
             throw TenantOwnerInvitationException::notFound();
         }
 
@@ -421,12 +370,8 @@ SQL);
     /** @return array{id:int,code:string,name:string,status:string} */
     private function lockInvitableTenant(int $tenantId): array
     {
-        $statement = $this->pdo->prepare(
-            'SELECT id, code, name, status FROM pa_tenant WHERE id = :id FOR UPDATE'
-        );
-        $statement->execute(['id' => $tenantId]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        $row = Db::name('tenant')->where('id', $tenantId)->field('id,code,name,status')->lock(true)->find();
+        if ($row === null) {
             throw TenantOwnerInvitationException::conflict('TENANT_NOT_FOUND', 'Tenant was not found.');
         }
         if (!in_array($row['status'], [TenantStatus::Provisioning->value, TenantStatus::Active->value], true)) {
@@ -442,7 +387,7 @@ SQL);
     private function assertOwnerBaseline(int $tenantId, string $tenantStatus): void
     {
         if ($tenantStatus === TenantStatus::Provisioning->value) {
-            if ($this->memberships->pendingOrActiveMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+            if ($this->ownerMemberExists($tenantId, ['pending', 'active'])) {
                 throw TenantOwnerInvitationException::conflict(
                     'TENANT_OWNER_ALREADY_ASSIGNED',
                     'Tenant already has an owner candidate.'
@@ -451,7 +396,7 @@ SQL);
             return;
         }
 
-        if (!$this->memberships->activeMemberWithRoleExists($tenantId, self::OWNER_ROLE)) {
+        if (!$this->ownerMemberExists($tenantId, ['active'])) {
             throw TenantOwnerInvitationException::conflict(
                 'TENANT_ACTIVE_OWNER_REQUIRED',
                 'An active Tenant must retain an active owner before another owner is invited.'
@@ -462,21 +407,24 @@ SQL);
     private function expireStalePending(int $tenantId): void
     {
         $now = $this->format($this->now());
-        $statement = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_owner_invitation
-SET status = 'expired', updated_at = :updated_at
-WHERE tenant_id = :tenant_id AND status = 'pending' AND expires_at <= :expired_at
-SQL);
-        $statement->execute(['updated_at' => $now, 'tenant_id' => $tenantId, 'expired_at' => $now]);
+        Db::name('tenant_owner_invitation')->where('tenant_id', $tenantId)
+            ->where('status', 'pending')->where('expires_at', '<=', $now)
+            ->update(['status' => 'expired', 'updated_at' => $now]);
     }
 
     private function pendingInvitationExists(int $tenantId): bool
     {
-        $statement = $this->pdo->prepare(
-            "SELECT id FROM pa_tenant_owner_invitation WHERE tenant_id = :tenant_id AND status = 'pending' LIMIT 1"
-        );
-        $statement->execute(['tenant_id' => $tenantId]);
-        return $statement->fetchColumn() !== false;
+        return Db::name('tenant_owner_invitation')->where('tenant_id', $tenantId)
+            ->where('status', 'pending')->value('id') !== null;
+    }
+
+    /** @param list<string> $statuses */
+    private function ownerMemberExists(int $tenantId, array $statuses): bool
+    {
+        return Db::name('tenant_member')->alias('member')
+            ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
+            ->where('member.tenant_id', $tenantId)->whereIn('member.status', $statuses)->value('member.id') !== null;
     }
 
     private function expiry(int $hours): DateTimeImmutable

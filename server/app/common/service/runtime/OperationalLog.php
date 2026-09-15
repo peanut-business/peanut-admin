@@ -95,7 +95,7 @@ final class OperationalLog
             },
             'tenant_id' => $context->tenantId(),
         ] + ($context instanceof SystemExecutionContext ? $context->metadata->toArray() : []);
-        $trace['runtime_id'] = RuntimeNamespace::fromEnvironment()->fingerprint();
+        $trace['runtime_id'] = RuntimeNamespace::fromConfiguration()->fingerprint();
 
         $sanitized = RedactionPolicy::sanitize($trace + $attributes);
         return is_array($sanitized) ? $sanitized : [];

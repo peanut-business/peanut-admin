@@ -41,7 +41,7 @@ class RechargeOrder extends TenantOwnedModel
     {
         do {
             $sn = 'RC' . date('YmdHis') . strtoupper(bin2hex(random_bytes(6)));
-        } while (self::withTrashed()->where('sn', $sn)->count() > 0);
+        } while ((new self())->withTrashed()->where('sn', $sn)->count() > 0);
 
         return $sn;
     }

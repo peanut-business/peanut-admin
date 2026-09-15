@@ -5,15 +5,14 @@ namespace app\Modules\Fixture\DeliveryRecord\Infrastructure\Authorization;
 
 use app\Modules\Fixture\DeliveryRecord\Application\DeliveryRecordAccess;
 use app\common\execution\CurrentExecutionContext;
-use PDO;
-use PeanutAdmin\Kernel\Authorization\PdoTenantAuthorizationRepository;
+use PeanutAdmin\Kernel\Authorization\TenantAuthorizationRepository;
 use PeanutAdmin\Kernel\Module\ModuleException;
 
-final readonly class PdoDeliveryRecordAccess implements DeliveryRecordAccess
+final readonly class ThinkPhpDeliveryRecordAccess implements DeliveryRecordAccess
 {
     public function __construct(
-        private PDO $pdo,
         private CurrentExecutionContext $executionContext,
+        private TenantAuthorizationRepository $authorization,
     )
     {
     }
@@ -21,7 +20,7 @@ final readonly class PdoDeliveryRecordAccess implements DeliveryRecordAccess
     public function requirePermission(string $permission): void
     {
         $context = $this->executionContext->tenantAdmin();
-        $permissions = (new PdoTenantAuthorizationRepository($this->pdo))->permissions(
+        $permissions = $this->authorization->permissions(
             $context->tenantId,
             $context->memberId,
         );

@@ -3,16 +3,15 @@ declare(strict_types=1);
 
 namespace app\platform\service\plugin;
 
-use PDO;
 use PeanutAdmin\Kernel\Menu\MenuCatalogRepository;
 use PeanutAdmin\Kernel\Menu\MenuDefinition;
+use think\facade\Db;
 
 /** Preserves active menus outside a targeted module:sync/apply scope. */
 final readonly class ScopedMenuCatalogRepository implements MenuCatalogRepository
 {
     /** @param non-empty-list<string> $moduleKeys */
     public function __construct(
-        private PDO $pdo,
         private MenuCatalogRepository $inner,
         private array $moduleKeys,
     ) {
@@ -25,10 +24,11 @@ final readonly class ScopedMenuCatalogRepository implements MenuCatalogRepositor
 
     public function retireMissing(array $activeKeys): void
     {
-        $placeholders = implode(',', array_fill(0, count($this->moduleKeys), '?'));
-        $statement = $this->pdo->prepare("SELECT `key` FROM pa_menu_definition WHERE status='active' AND module_key NOT IN ({$placeholders}) ORDER BY `key`");
-        $statement->execute($this->moduleKeys);
-        $preserved = array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        $preserved = array_map('strval', Db::name('menu_definition')
+            ->where('status', 'active')
+            ->whereNotIn('module_key', $this->moduleKeys)
+            ->order('key')
+            ->column('key'));
         $keys = array_values(array_unique([...$activeKeys, ...$preserved]));
         sort($keys, SORT_STRING);
         $this->inner->retireMissing($keys);

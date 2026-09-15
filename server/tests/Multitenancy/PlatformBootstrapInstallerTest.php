@@ -4,19 +4,19 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\PlatformOperatorSessionService;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require dirname(__DIR__, 2) . '/database/install.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function mt05BootstrapExpect(bool $condition, string $message): void
 {
@@ -73,11 +73,11 @@ function mt05BootstrapUseDatabase(string $database, array $overrides = []): void
 
 function mt05BootstrapPlatformSessions(PDO $pdo): PlatformOperatorSessionService
 {
-    $permissions = new PdoPlatformAuthorizationRepository($pdo);
+    ThinkPhpTestConnection::fromPdo($pdo);
+    $permissions = new ThinkPhpPlatformAuthorizationRepository();
     return new PlatformOperatorSessionService(
         new PlatformAuthService(
-            new PdoTransactionManager($pdo),
-            new PdoPlatformAuthRepository($pdo),
+            new ThinkPhpPlatformAuthRepository(),
             new PasswordHasher(),
             new SystemClock(),
             new TokenIssuer(),

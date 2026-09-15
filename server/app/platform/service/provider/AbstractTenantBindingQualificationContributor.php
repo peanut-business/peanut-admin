@@ -3,12 +3,11 @@ declare(strict_types=1);
 
 namespace app\platform\service\provider;
 
-use PDO;
+use think\facade\Db;
 
 abstract class AbstractTenantBindingQualificationContributor implements ProviderQualificationContributor
 {
     public function __construct(
-        protected readonly PDO $pdo,
         private readonly string $digestKey,
     ) {
         if (strlen($digestKey) < 32) {
@@ -26,8 +25,7 @@ abstract class AbstractTenantBindingQualificationContributor implements Provider
 
     public function subjects(): array
     {
-        $tenants = $this->pdo->query("SELECT id FROM pa_tenant WHERE status='active' ORDER BY id")
-            ->fetchAll(PDO::FETCH_COLUMN);
+        $tenants = Db::name('tenant')->where('status', 'active')->order('id')->column('id');
         $definitions = $this->definitions();
         $bindingProviders = array_values(array_unique(array_column($definitions, 'binding_provider')));
         $bindings = $this->bindings($bindingProviders);
@@ -63,16 +61,11 @@ abstract class AbstractTenantBindingQualificationContributor implements Provider
         if ($providers === []) {
             return [];
         }
-        $placeholders = implode(',', array_fill(0, count($providers), '?'));
-        $statement = $this->pdo->prepare(<<<SQL
-SELECT id,tenant_id,provider,identity_hash,config_json,status,update_time
-FROM pa_external_channel_binding
-WHERE provider IN ({$placeholders})
-ORDER BY tenant_id,provider
-SQL);
-        $statement->execute($providers);
         $indexed = [];
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $rows = Db::name('external_channel_binding')->whereIn('provider', $providers)
+            ->field('id,tenant_id,provider,identity_hash,config_json,status,update_time')
+            ->order('tenant_id')->order('provider')->select()->toArray();
+        foreach ($rows as $row) {
             $indexed[(int)$row['tenant_id']][(string)$row['provider']] = $row;
         }
         return $indexed;

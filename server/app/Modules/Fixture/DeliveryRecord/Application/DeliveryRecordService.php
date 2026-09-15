@@ -6,13 +6,12 @@ namespace app\Modules\Fixture\DeliveryRecord\Application;
 
 use InvalidArgumentException;
 use app\Modules\Fixture\DeliveryRecord\Contracts\DeliveryRecordCommands;
-use app\Modules\Fixture\DeliveryRecord\Infrastructure\Persistence\PdoDeliveryRecordRepository;
+use app\Modules\Fixture\DeliveryRecord\Model\DeliveryRecord;
 use app\common\execution\CurrentExecutionContext;
 
 final readonly class DeliveryRecordService implements DeliveryRecordCommands
 {
     public function __construct(
-        private PdoDeliveryRecordRepository $records,
         private DeliveryRecordAccess $access,
         private CurrentExecutionContext $executionContext,
     ) {}
@@ -26,13 +25,34 @@ final readonly class DeliveryRecordService implements DeliveryRecordCommands
             throw new InvalidArgumentException('Delivery reference must contain at most 96 bytes.');
         }
 
-        return $this->records->create($reference);
+        $now = gmdate('Y-m-d H:i:s.v');
+        $record = DeliveryRecord::create([
+            'reference' => $reference,
+            'status' => 'recorded',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return [
+            'id' => (int)$record->id,
+            'tenant_id' => (int)$record->tenant_id,
+            'reference' => (string)$record->reference,
+            'status' => (string)$record->status,
+        ];
     }
 
     public function list(): array
     {
         $this->executionContext->tenantAdmin();
         $this->access->requirePermission('fixture.delivery-record.read');
-        return $this->records->all();
+        return array_map(
+            static fn(array $row): array => [
+                'id' => (int)$row['id'],
+                'tenant_id' => (int)$row['tenant_id'],
+                'reference' => (string)$row['reference'],
+                'status' => (string)$row['status'],
+            ],
+            DeliveryRecord::field('id,tenant_id,reference,status')->order('id')->select()->toArray(),
+        );
     }
 }

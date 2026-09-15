@@ -2,25 +2,16 @@
 <?php
 declare(strict_types=1);
 
-use app\Modules\Official\Notification\Infrastructure\Persistence\PdoNotificationBootstrapService;
-use app\Modules\Official\Task\Infrastructure\Persistence\PdoTaskBootstrapService;
-use app\common\execution\CurrentExecutionContext;
-use app\common\execution\ExecutionContextStore;
 use app\common\service\DemoAccountPolicy;
-use app\common\service\tenant\TenantSettingsBootstrapRuntimeFactory;
-use app\platform\infrastructure\PdoTenantApplicationBootstrapPersistence;
-use app\platform\service\ApplicationTenantBootstrapService;
-use app\platform\service\PdoTenantOwnerAdminProvisioner;
+use app\platform\service\TenantOwnerAdminProvisioner;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
-use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
-use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
+use PeanutAdmin\Kernel\Context\PlatformContext;
+use PeanutAdmin\Kernel\Platform\Application\PlatformTenantAdminService;
+use PeanutAdmin\Kernel\Platform\Application\TenantOwnerAdminService;
 use PeanutAdmin\Kernel\Tenancy\TenantEntryBindingResolver;
+use PeanutAdmin\Kernel\Tenancy\TenantStatus;
+use think\App;
+use think\facade\Db;
 
 require __DIR__ . '/install.php';
 
@@ -40,29 +31,32 @@ function demoMultiRequired(string $name): string
 }
 
 /** @param list<string> $clientKeys */
-function demoMultiBinding(PDO $pdo, int $tenantId, string $host, array $clientKeys = ['admin-web', 'member-api']): void
+function demoMultiBinding(int $tenantId, string $host, array $clientKeys = ['admin-web', 'member-api']): void
 {
     $host = TenantEntryBindingResolver::normalizeHost($host);
     foreach ($clientKeys as $clientKey) {
-        $query = $pdo->prepare(
-            'SELECT id, tenant_id, status FROM pa_tenant_entry_binding WHERE host = ? AND client_key = ? LIMIT 1'
-        );
-        $query->execute([$host, $clientKey]);
-        $row = $query->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('tenant_entry_binding')
+            ->where('host', $host)
+            ->where('client_key', $clientKey)
+            ->field('id,tenant_id,status')
+            ->lock(true)
+            ->find();
         if (is_array($row) && (int)$row['tenant_id'] !== $tenantId) {
             throw new RuntimeException("demo Tenant host is already owned by another Tenant: {$host}");
         }
         if (is_array($row)) {
-            $update = $pdo->prepare(
-                'UPDATE pa_tenant_entry_binding SET status = \'active\', updated_at = UTC_TIMESTAMP(3) WHERE id = ?'
-            );
-            $update->execute([(int)$row['id']]);
+            Db::name('tenant_entry_binding')->where('id', (int)$row['id'])->update([
+                'status' => 'active',
+                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            ]);
             continue;
         }
-        $insert = $pdo->prepare(
-            'INSERT INTO pa_tenant_entry_binding (tenant_id,host,client_key,status) VALUES (?,?,?,\'active\')'
-        );
-        $insert->execute([$tenantId, $host, $clientKey]);
+        Db::name('tenant_entry_binding')->insert([
+            'tenant_id' => $tenantId,
+            'host' => $host,
+            'client_key' => $clientKey,
+            'status' => 'active',
+        ]);
     }
 }
 
@@ -79,76 +73,83 @@ function demoMultiHostList(string $name): array
     return array_values(array_unique($hosts));
 }
 
-function demoMultiOwner(PDO $pdo, PdoMembershipRepository $memberships, int $tenantId, string $email): array
+function demoMultiOwner(int $tenantId, string $email): array
 {
-    $statement = $pdo->prepare(<<<'SQL'
-SELECT tm.account_id, tm.id AS member_id, tm.display_name, r.id AS role_id,
-       c.identifier_normalized AS email, c.secret_hash
-FROM pa_tenant_member tm
-JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
-JOIN pa_role r ON r.tenant_id = tm.tenant_id
-  AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
-JOIN pa_credential c ON c.account_id = tm.account_id
-  AND c.kind = 'email_password' AND c.identifier_type = 'email' AND c.status = 'active'
-WHERE tm.tenant_id = :tenant_id
-  AND tm.status = 'active'
-  AND c.identifier_normalized = :email
-LIMIT 2
-SQL);
-    $statement->execute(['tenant_id' => $tenantId, 'email' => $email]);
-    $owners = $statement->fetchAll(PDO::FETCH_ASSOC);
+    $owners = Db::name('tenant_member')->alias('member')
+        ->join('account account', "account.id=member.account_id AND account.status='active'")
+        ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+        ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
+        ->join('credential credential', "credential.account_id=member.account_id AND credential.kind='email_password' AND credential.identifier_type='email' AND credential.status='active'")
+        ->where('member.tenant_id', $tenantId)
+        ->where('member.status', 'active')
+        ->where('credential.identifier_normalized', $email)
+        ->field('member.account_id,member.id AS member_id,member.display_name,role.id AS role_id,credential.identifier_normalized AS email,credential.secret_hash')
+        ->limit(2)
+        ->select()
+        ->toArray();
     if (count($owners) !== 1) {
         throw new RuntimeException("Tenant {$tenantId} does not have exactly one active owner for {$email}");
     }
-    $owner = $owners[0];
-    if (!$memberships->memberHasRole($tenantId, (int)$owner['member_id'], 'core.tenant-owner')) {
-        $memberships->assignRole($tenantId, (int)$owner['member_id'], (int)$owner['role_id']);
-    }
-    return $owner;
+    return $owners[0];
 }
 
 /** @return array{tenant_id:int,account_id:int,member_id:int,role_id:int,email:string} */
 function demoMultiTenant(
-    PDO $pdo,
-    BootstrapService $bootstrap,
-    PdoTenantOwnerAdminProvisioner $adminProvisioner,
-    int $platformOperatorId,
+    PlatformTenantAdminService $tenants,
+    TenantOwnerAdminService $owners,
+    TenantOwnerAdminProvisioner $adminProvisioner,
+    PlatformContext $actor,
     string $code,
     string $name,
     string $email,
     string $password,
     PasswordHasher $passwords,
-    PdoMembershipRepository $memberships,
     DemoAccountPolicy $demoAccounts,
 ): array {
-    $statement = $pdo->prepare(
-        'SELECT id, name, display_name, status FROM pa_tenant WHERE code = ? ORDER BY id LIMIT 1'
-    );
-    $statement->execute([$code]);
-    $tenant = $statement->fetch(PDO::FETCH_ASSOC);
+    $tenant = Db::name('tenant')->where('code', $code)->order('id')->field(
+        'id,name,display_name,status,revision'
+    )->find();
     if (!is_array($tenant)) {
         $bootstrapPassword = $demoAccounts->bootstrapPassword();
-        $candidate = $bootstrap->provisionTenantOwnerCandidate(
-            $platformOperatorId,
+        $tenant = $tenants->createTenant(
+            $actor,
             $code,
             $name,
+            $name,
+            'zh-CN',
+            'Asia/Shanghai',
+        );
+        $tenantId = (int)$tenant['id'];
+        $candidate = $owners->createCandidate(
+            $actor,
+            $tenantId,
             $email,
-            $bootstrapPassword,
             "{$name} Owner",
-            "demo-{$code}-provision"
+            $bootstrapPassword,
         );
-        $bootstrap->activateTenantOwner(
-            $platformOperatorId,
-            $candidate->tenantId,
-            $candidate->memberId,
-            "demo-{$code}-owner-activate"
+        $candidate = $owners->activateCandidate(
+            $actor,
+            $tenantId,
+            (int)$candidate['member']['id'],
+            (int)$candidate['member']['revision'],
+            "demo-{$code}-owner-activate",
+            'Provision the public demo tenant owner.',
         );
-        $bootstrap->activateTenant(
-            $platformOperatorId,
-            $candidate->tenantId,
-            "demo-{$code}-activate"
+        $adminProvisioner->provision(
+            $tenantId,
+            (int)$candidate['member']['account_id'],
+            (int)$candidate['member']['id'],
+            (int)$candidate['member']['role_id'],
+            $code,
+            "{$name} Owner",
         );
-        $tenantId = $candidate->tenantId;
+        $tenants->transitionTenant(
+            $actor,
+            $tenantId,
+            (int)$tenant['revision'],
+            TenantStatus::Active,
+            'Activate the provisioned public demo tenant.',
+        );
     } else {
         $tenantId = (int)$tenant['id'];
         if ($tenant['status'] !== 'active'
@@ -160,7 +161,7 @@ function demoMultiTenant(
 
     $demoAccounts->replaceCredentialHashes([$email]);
 
-    $owner = demoMultiOwner($pdo, $memberships, $tenantId, $email);
+    $owner = demoMultiOwner($tenantId, $email);
     if (!$passwords->verify($password, (string)$owner['secret_hash'])) {
         throw new RuntimeException("demo Tenant {$code} credential does not match the published password");
     }
@@ -182,55 +183,77 @@ function demoMultiTenant(
 }
 
 function demoMultiEnsureSharedOwner(
-    PDO $pdo,
-    PdoMembershipRepository $memberships,
     int $tenantId,
     int $accountId,
     int $ownerRoleId
 ): int {
-    $member = $memberships->byTenantAndAccount($tenantId, $accountId, true);
+    $member = Db::name('tenant_member')->where('tenant_id', $tenantId)
+        ->where('account_id', $accountId)->lock(true)->field('id,status')->find();
     if ($member === null) {
-        $member = $memberships->createPending($tenantId, $accountId, 'Tenant B Shared Admin');
+        $now = Db::raw('UTC_TIMESTAMP(3)');
+        $memberId = Db::name('tenant_member')->insertGetId([
+            'tenant_id' => $tenantId,
+            'account_id' => $accountId,
+            'display_name' => 'Tenant B Shared Admin',
+            'status' => 'pending',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $member = ['id' => $memberId, 'status' => 'pending'];
     }
-    if ($member->status === TenantMemberStatus::Pending) {
-        $member = $memberships->transition($tenantId, $member->id, TenantMemberStatus::Active);
-    } elseif ($member->status !== TenantMemberStatus::Active) {
+    $memberId = (int)$member['id'];
+    if ($member['status'] === 'pending') {
+        Db::name('tenant_member')->where('tenant_id', $tenantId)->where('id', $memberId)->update([
+            'status' => 'active',
+            'joined_at' => Db::raw('UTC_TIMESTAMP(3)'),
+            'security_revision' => Db::raw('security_revision+1'),
+            'authorization_revision' => Db::raw('authorization_revision+1'),
+            'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+        ]);
+    } elseif ($member['status'] !== 'active') {
         throw new RuntimeException('shared demo Account has an inactive Tenant B membership');
     }
-    $rename = $pdo->prepare(<<<'SQL'
-UPDATE pa_tenant_member
-SET display_name = 'Tenant B Shared Admin', updated_at = CURRENT_TIMESTAMP(3)
-WHERE tenant_id = :tenant_id AND id = :member_id
-  AND display_name <> 'Tenant B Shared Admin'
-SQL);
-    $rename->execute(['tenant_id' => $tenantId, 'member_id' => $member->id]);
-    if (!$memberships->memberHasRole($tenantId, $member->id, 'core.tenant-owner')) {
-        $memberships->assignRole($tenantId, $member->id, $ownerRoleId);
+    Db::name('tenant_member')->where('tenant_id', $tenantId)->where('id', $memberId)
+        ->where('display_name', '<>', 'Tenant B Shared Admin')->update([
+            'display_name' => 'Tenant B Shared Admin',
+            'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+        ]);
+    $hasRole = Db::name('member_role')->where('tenant_id', $tenantId)
+        ->where('tenant_member_id', $memberId)->where('role_id', $ownerRoleId)->value('role_id');
+    if ($hasRole === null) {
+        Db::name('member_role')->insert([
+            'tenant_id' => $tenantId,
+            'tenant_member_id' => $memberId,
+            'role_id' => $ownerRoleId,
+            'assigned_at' => Db::raw('UTC_TIMESTAMP(3)'),
+        ]);
+        Db::name('tenant_member')->where('tenant_id', $tenantId)->where('id', $memberId)->update([
+            'authorization_revision' => Db::raw('authorization_revision+1'),
+            'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+        ]);
+        Db::name('tenant')->where('id', $tenantId)->update([
+            'authorization_revision' => Db::raw('authorization_revision+1'),
+            'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+        ]);
     }
-    return $member->id;
+    return $memberId;
 }
 
-function demoMultiAssertIdentityClosure(PDO $pdo): void
+function demoMultiAssertIdentityClosure(): void
 {
-    $identityAccountIds = $pdo->query(<<<'SQL'
-SELECT account_id FROM pa_tenant_member
-UNION
-SELECT account_id FROM pa_platform_operator
-ORDER BY account_id
-SQL)->fetchAll(PDO::FETCH_COLUMN);
+    $identityAccountIds = array_values(array_unique(array_map('intval', array_merge(
+        Db::name('tenant_member')->column('account_id'),
+        Db::name('platform_operator')->column('account_id'),
+    ))));
+    sort($identityAccountIds, SORT_NUMERIC);
     if ($identityAccountIds === []) {
         throw new RuntimeException('demo seed state has no installation identities');
     }
-    $accountCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_account')->fetchColumn();
-    $activeAccountCount = (int)$pdo->query(
-        "SELECT COUNT(*) FROM pa_account WHERE status = 'active'"
-    )->fetchColumn();
-    $credentialCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_credential')->fetchColumn();
-    $activeCredentialCount = (int)$pdo->query(<<<'SQL'
-SELECT COUNT(*)
-FROM pa_credential
-WHERE kind = 'email_password' AND identifier_type = 'email' AND status = 'active'
-SQL)->fetchColumn();
+    $accountCount = (int)Db::name('account')->count();
+    $activeAccountCount = (int)Db::name('account')->where('status', 'active')->count();
+    $credentialCount = (int)Db::name('credential')->count();
+    $activeCredentialCount = (int)Db::name('credential')->where('kind', 'email_password')
+        ->where('identifier_type', 'email')->where('status', 'active')->count();
     if ($accountCount !== count($identityAccountIds)
         || $activeAccountCount !== $accountCount
         || $credentialCount !== $accountCount
@@ -239,10 +262,9 @@ SQL)->fetchColumn();
     }
 }
 
-function demoMultiAssertSeedState(PDO $pdo): void
+function demoMultiAssertSeedState(): void
 {
-    $rows = $pdo->query('SELECT code, status FROM pa_tenant ORDER BY code FOR UPDATE')
-        ->fetchAll(PDO::FETCH_ASSOC);
+    $rows = Db::name('tenant')->field('code,status')->order('code')->lock(true)->select()->toArray();
     $codes = array_column($rows, 'code');
     if ($codes !== ['default'] && $codes !== ['default', 'tenant-a', 'tenant-b']) {
         throw new RuntimeException('demo seed requires an exact fresh baseline or its completed retry state');
@@ -256,27 +278,23 @@ function demoMultiAssertSeedState(PDO $pdo): void
         return;
     }
 
-    $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
-    $platformCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_platform_operator')->fetchColumn();
-    $bindingCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_entry_binding')->fetchColumn();
-    $defaultOwnerCount = (int)$pdo->query(<<<'SQL'
-SELECT COUNT(*)
-FROM pa_tenant t
-JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
-JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
-JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
-WHERE t.code = 'default'
-  AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
-SQL)->fetchColumn();
+    $memberCount = (int)Db::name('tenant_member')->count();
+    $platformCount = (int)Db::name('platform_operator')->count();
+    $bindingCount = (int)Db::name('tenant_entry_binding')->count();
+    $defaultOwnerCount = (int)Db::name('tenant')->alias('tenant')
+        ->join('tenant_member member', "member.tenant_id=tenant.id AND member.status='active'")
+        ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+        ->join('role role', 'role.tenant_id=membership.tenant_id AND role.id=membership.role_id')
+        ->where('tenant.code', 'default')->where('role.key', 'core.tenant-owner')
+        ->where('role.is_builtin', 1)->where('role.status', 'active')->count();
     if ($memberCount !== 1 || $platformCount !== 1 || $bindingCount !== 0 || $defaultOwnerCount !== 1) {
         throw new RuntimeException('demo seed fresh baseline contains existing identities or Host bindings');
     }
 
-    demoMultiAssertIdentityClosure($pdo);
+    demoMultiAssertIdentityClosure();
 }
 
 function demoMultiAssertFinalState(
-    PDO $pdo,
     PasswordHasher $passwords,
     string $tenantAEmail,
     string $tenantBEmail,
@@ -285,9 +303,7 @@ function demoMultiAssertFinalState(
     string $tenantBHost,
     array $sharedAdminHosts
 ): void {
-    $tenants = $pdo->query(
-        'SELECT code, name, display_name, status FROM pa_tenant ORDER BY code'
-    )->fetchAll(PDO::FETCH_ASSOC);
+    $tenants = Db::name('tenant')->field('code,name,display_name,status')->order('code')->select()->toArray();
     $expectedTenants = [
         ['code' => 'default', 'status' => 'active'],
         ['code' => 'tenant-a', 'name' => 'Tenant A', 'display_name' => 'Tenant A', 'status' => 'active'],
@@ -304,21 +320,17 @@ function demoMultiAssertFinalState(
         }
     }
 
-    $statement = $pdo->prepare(<<<'SQL'
-SELECT t.code, tm.display_name, c.identifier_normalized AS email, c.secret_hash
-FROM pa_tenant t
-JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
-JOIN pa_account a ON a.id = tm.account_id AND a.status = 'active'
-JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
-JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
-  AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
-JOIN pa_credential c ON c.account_id = tm.account_id
-  AND c.kind = 'email_password' AND c.identifier_type = 'email' AND c.status = 'active'
-WHERE t.code IN ('tenant-a', 'tenant-b')
-ORDER BY t.code, c.identifier_normalized
-SQL);
-    $statement->execute();
-    $owners = $statement->fetchAll(PDO::FETCH_ASSOC);
+    $owners = Db::name('tenant')->alias('tenant')
+        ->join('tenant_member member', "member.tenant_id=tenant.id AND member.status='active'")
+        ->join('account account', "account.id=member.account_id AND account.status='active'")
+        ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+        ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
+        ->join('credential credential', "credential.account_id=member.account_id AND credential.kind='email_password' AND credential.identifier_type='email' AND credential.status='active'")
+        ->whereIn('tenant.code', ['tenant-a', 'tenant-b'])
+        ->field('tenant.code,member.display_name,credential.identifier_normalized AS email,credential.secret_hash')
+        ->order('tenant.code,credential.identifier_normalized')
+        ->select()
+        ->toArray();
     $expectedOwners = [
         "tenant-a\0{$tenantAEmail}\0Tenant A Owner",
         "tenant-b\0{$tenantAEmail}\0Tenant B Shared Admin",
@@ -332,45 +344,37 @@ SQL);
     if ($actualOwners !== $expectedOwners) {
         throw new RuntimeException('demo owner memberships do not provide the exact A/B selection model');
     }
-    $memberCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_member')->fetchColumn();
-    $defaultOwnerCount = (int)$pdo->query(<<<'SQL'
-SELECT COUNT(*)
-FROM pa_tenant t
-JOIN pa_tenant_member tm ON tm.tenant_id = t.id AND tm.status = 'active'
-JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
-JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
-WHERE t.code = 'default'
-  AND r.`key` = 'core.tenant-owner' AND r.is_builtin = 1 AND r.status = 'active'
-SQL)->fetchColumn();
-    $demoMemberCount = (int)$pdo->query(<<<'SQL'
-SELECT COUNT(*)
-FROM pa_tenant_member tm
-JOIN pa_tenant t ON t.id = tm.tenant_id
-WHERE t.code IN ('tenant-a', 'tenant-b')
-SQL)->fetchColumn();
+    $memberCount = (int)Db::name('tenant_member')->count();
+    $defaultOwnerCount = (int)Db::name('tenant')->alias('tenant')
+        ->join('tenant_member member', "member.tenant_id=tenant.id AND member.status='active'")
+        ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+        ->join('role role', 'role.tenant_id=membership.tenant_id AND role.id=membership.role_id')
+        ->where('tenant.code', 'default')->where('role.key', 'core.tenant-owner')
+        ->where('role.is_builtin', 1)->where('role.status', 'active')->count();
+    $demoMemberCount = (int)Db::name('tenant_member')->alias('member')
+        ->join('tenant tenant', 'tenant.id=member.tenant_id')
+        ->whereIn('tenant.code', ['tenant-a', 'tenant-b'])->count();
     if ($memberCount !== 4 || $defaultOwnerCount !== 1 || $demoMemberCount !== 3) {
         throw new RuntimeException('demo Tenants contain unexpected membership rows');
     }
-    $platformCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_platform_operator')->fetchColumn();
+    $platformCount = (int)Db::name('platform_operator')->count();
     if ($platformCount !== 1) {
         throw new RuntimeException('demo seed final state contains unexpected PlatformOperators');
     }
-    demoMultiAssertIdentityClosure($pdo);
+    demoMultiAssertIdentityClosure();
     foreach ($owners as $owner) {
         if (!$passwords->verify($sharedPassword, (string)$owner['secret_hash'])) {
             throw new RuntimeException('published demo password does not match an owner credential');
         }
     }
 
-    $binding = $pdo->query(<<<'SQL'
-SELECT b.host, b.client_key, t.code, b.status
-FROM pa_tenant_entry_binding b
-JOIN pa_tenant t ON t.id = b.tenant_id
-WHERE b.client_key IN ('admin-web', 'member-api')
-ORDER BY b.host, b.client_key
-SQL);
     $bindings = [];
-    foreach ($binding->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $bindingRows = Db::name('tenant_entry_binding')->alias('binding')
+        ->join('tenant tenant', 'tenant.id=binding.tenant_id')
+        ->whereIn('binding.client_key', ['admin-web', 'member-api'])
+        ->field('binding.host,binding.client_key,tenant.code,binding.status')
+        ->order('binding.host,binding.client_key')->select()->toArray();
+    foreach ($bindingRows as $row) {
         $bindings[$row['host'] . "\0" . $row['client_key']] = [$row['code'], $row['status']];
     }
     $expectedBindings = [];
@@ -383,7 +387,7 @@ SQL);
         }
     }
     ksort($expectedBindings, SORT_STRING);
-    $bindingCount = (int)$pdo->query('SELECT COUNT(*) FROM pa_tenant_entry_binding')->fetchColumn();
+    $bindingCount = (int)Db::name('tenant_entry_binding')->count();
     if ($bindings !== $expectedBindings || $bindingCount !== count($expectedBindings)) {
         throw new RuntimeException('demo Tenant Host bindings do not match the final plan');
     }
@@ -445,54 +449,18 @@ function demoMultiMain(): int
         throw new RuntimeException('demo Tenant hosts must be distinct from Platform and shared Admin hosts');
     }
 
-    $config = loadConfig($serverDir);
-    $pdo = new PDO(
-        sprintf(
-            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-            $config['DB_HOST'],
-            $config['DB_PORT'],
-            $config['DB_NAME']
-        ),
-        $config['DB_USER'],
-        $config['DB_PASS'],
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-
-    $transactions = new PdoTransactionManager($pdo);
-    $memberships = new PdoMembershipRepository($pdo);
-    $passwords = \app\common\service\ApplicationPasswordPolicy::hasher();
-    $demoAccounts = new DemoAccountPolicy($pdo, true, [$tenantAEmail, $tenantBEmail]);
-    $bootstrap = new BootstrapService(
-        $transactions,
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        $memberships,
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        $passwords
-    );
-    $applicationContexts = new ExecutionContextStore();
-    $currentExecution = new CurrentExecutionContext($applicationContexts);
-    $adminProvisioner = new PdoTenantOwnerAdminProvisioner(
-        $pdo,
-        new ApplicationTenantBootstrapService(
-            $pdo,
-            new PdoNotificationBootstrapService($pdo, $currentExecution),
-            new PdoTaskBootstrapService($pdo, $currentExecution),
-            $applicationContexts,
-            TenantSettingsBootstrapRuntimeFactory::forProvisioning($pdo),
-            new PdoTenantApplicationBootstrapPersistence($pdo, $currentExecution),
-        ),
-    );
-    [$tenantA, $tenantB] = $transactions->run(function () use (
-        $pdo,
-        $bootstrap,
+    loadConfig($serverDir);
+    require_once $serverDir . '/bootstrap/environment.php';
+    $app = (new App($serverDir))->initialize();
+    $tenants = $app->make(PlatformTenantAdminService::class);
+    $owners = $app->make(TenantOwnerAdminService::class);
+    $adminProvisioner = $app->make(TenantOwnerAdminProvisioner::class);
+    $passwords = $app->make(PasswordHasher::class);
+    $demoAccounts = new DemoAccountPolicy(true, [$tenantAEmail, $tenantBEmail]);
+    [$tenantA, $tenantB] = Db::transaction(function () use (
+        $tenants,
+        $owners,
         $adminProvisioner,
-        $memberships,
         $passwords,
         $tenantAEmail,
         $tenantBEmail,
@@ -502,60 +470,59 @@ function demoMultiMain(): int
         $tenantBHost,
         $sharedAdminHosts
     ): array {
-        demoMultiAssertSeedState($pdo);
-        $platforms = $pdo->query(
-            "SELECT id, account_id FROM pa_platform_operator WHERE status = 'active' ORDER BY id LIMIT 2 FOR UPDATE"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        demoMultiAssertSeedState();
+        $platforms = Db::name('platform_operator')->where('status', 'active')
+            ->field('id,account_id')->order('id')->limit(2)->lock(true)->select()->toArray();
         if (count($platforms) !== 1) {
             throw new RuntimeException('demo seed requires exactly one active PlatformOperator');
         }
-        $platformOperatorId = (int)$platforms[0]['id'];
+        $actor = PlatformContext::fromTrustedAutomation(
+            (int)$platforms[0]['account_id'],
+            (int)$platforms[0]['id'],
+            'demo-seed',
+            'demo-multi-tenant-seed',
+            new DateTimeImmutable('now', new DateTimeZone('UTC')),
+        );
         $tenantA = demoMultiTenant(
-            $pdo,
-            $bootstrap,
+            $tenants,
+            $owners,
             $adminProvisioner,
-            $platformOperatorId,
+            $actor,
             'tenant-a',
             'Tenant A',
             $tenantAEmail,
             $sharedPassword,
             $passwords,
-            $memberships,
             $demoAccounts,
         );
         $tenantB = demoMultiTenant(
-            $pdo,
-            $bootstrap,
+            $tenants,
+            $owners,
             $adminProvisioner,
-            $platformOperatorId,
+            $actor,
             'tenant-b',
             'Tenant B',
             $tenantBEmail,
             $sharedPassword,
             $passwords,
-            $memberships,
             $demoAccounts,
         );
         demoMultiEnsureSharedOwner(
-            $pdo,
-            $memberships,
             $tenantB['tenant_id'],
             $tenantA['account_id'],
             $tenantB['role_id']
         );
-        $defaultTenant = $pdo->query(
-            "SELECT id FROM pa_tenant WHERE code = 'default' AND status = 'active' LIMIT 1"
-        )->fetch(PDO::FETCH_ASSOC);
+        $defaultTenant = Db::name('tenant')->where('code', 'default')->where('status', 'active')
+            ->field('id')->find();
         if (!is_array($defaultTenant)) {
             throw new RuntimeException('demo default Tenant is unavailable');
         }
         foreach ($sharedAdminHosts as $sharedAdminHost) {
-            demoMultiBinding($pdo, (int)$defaultTenant['id'], $sharedAdminHost, ['member-api']);
+            demoMultiBinding((int)$defaultTenant['id'], $sharedAdminHost, ['member-api']);
         }
-        demoMultiBinding($pdo, $tenantA['tenant_id'], $tenantAHost);
-        demoMultiBinding($pdo, $tenantB['tenant_id'], $tenantBHost);
+        demoMultiBinding($tenantA['tenant_id'], $tenantAHost);
+        demoMultiBinding($tenantB['tenant_id'], $tenantBHost);
         demoMultiAssertFinalState(
-            $pdo,
             $passwords,
             $tenantAEmail,
             $tenantBEmail,

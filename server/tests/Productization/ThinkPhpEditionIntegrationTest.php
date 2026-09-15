@@ -321,7 +321,7 @@ function tpq52RunMultiTenant(PDO $pdo, array &$sql): array
         'Tenant pagination envelope or count changed',
     );
 
-    $boundary = new ModuleExecutionBoundary($pdo, app(CurrentExecutionContext::class));
+    $boundary = app(ModuleExecutionBoundary::class);
     $store->run(
         new \app\common\execution\SystemExecutionContext(new TenantSystemContext(101, 'callback', 'tpq52.callback', 'alpha-callback')),
         static fn() => $boundary->assertExternalCallback('official.article'),
@@ -459,13 +459,13 @@ function tpq52RunStandalone(PDO $pdo, array &$sql): array
     ];
 }
 
-$edition = in_array('--multi-tenant', $argv ?? [], true)
+$edition = in_array('--multi-tenant', $argv, true)
     ? 'multi_tenant'
-    : (in_array('--standalone', $argv ?? [], true) ? 'standalone' : '');
+    : (in_array('--standalone', $argv, true) ? 'standalone' : '');
 if ($edition === '') {
     throw new RuntimeException('TPQ52_EDITION_REQUIRED');
 }
-$database = tpq52DatabaseName($edition, $argv ?? []);
+$database = tpq52DatabaseName($edition, $argv);
 $admin = tpq52AdminPdo();
 expectTpq52(tpq52DatabaseIsAbsent($admin, $database), 'TPQ52_DATABASE_NOT_FRESH');
 $admin->exec("CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");

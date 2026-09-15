@@ -28,7 +28,7 @@ expectMemberFinance(Money::toCents('10.10') === 1010, 'decimal amount conversion
 expectMemberFinance(Money::toCents(0.1) === 10, 'float amount conversion changed');
 expectMemberFinance(Money::fromCents(1010) === '10.10', 'money formatting changed');
 expectMemberFinance(
-    str_contains($balanceService, 'MemberTenantRepository::members($context)->lock(true)'),
+    str_contains($balanceService, 'Member::where([])->lock(true)'),
     'balance owner must lock the Tenant-scoped member row'
 );
 expectMemberFinance(str_contains($balanceService, 'appendBalanceLog'), 'balance owner must append a ledger row');
@@ -92,7 +92,7 @@ expectMemberFinance(
     'Member balance command must delegate to the unique writer'
 );
 expectMemberFinance(
-    $ledgerWriters === [$serverRoot . '/app/Modules/Official/Member/Infrastructure/Persistence/MemberTenantRepository.php'],
+    $ledgerWriters === [$balanceServicePath],
     'member balance ledger must have exactly one writer'
 );
 foreach ($callers as $relativePath) {
@@ -100,20 +100,18 @@ foreach ($callers as $relativePath) {
     $call = strpos($source, 'applyInTransaction(');
     expectMemberFinance($call !== false, 'balance path bypasses the unique owner: ' . $relativePath);
     $beforeCall = substr($source, 0, $call);
-    $hasTransactionBoundary = strrpos($beforeCall, 'Db::transaction(') !== false
-        || strrpos($beforeCall, 'TransactionalExecution::class)->run(') !== false
-        || strrpos($beforeCall, '$this->transactions->run(') !== false;
+    $hasTransactionBoundary = strrpos($beforeCall, 'Db::transaction(') !== false;
     expectMemberFinance($hasTransactionBoundary, 'balance path lacks an outer transaction: ' . $relativePath);
     expectMemberFinance(!str_contains($source, 'MemberBalanceLog::create'), 'caller writes the ledger directly: ' . $relativePath);
 }
 
 $settle = (string)file_get_contents($serverRoot . '/app/Modules/Official/Payment/Application/RechargeApplicationService.php');
-$paidGuard = strpos($settle, 'pay_status === FinanceTenantRepository::PAY_STATUS_PAID');
+$paidGuard = strpos($settle, 'pay_status === RechargeOrder::PAY_STATUS_PAID');
 $credit = strpos($settle, 'memberBalances->applyInTransaction');
 expectMemberFinance($paidGuard !== false && $credit !== false && $paidGuard < $credit, 'paid callback guard must precede credit');
 expectMemberFinance(strpos($settle, "where('sn', \$orderSn)->lock(true)") < $paidGuard, 'recharge order must be locked before the paid guard');
 expectMemberFinance(
-    !str_contains($settle, 'MemberTenantRepository::members'),
+    !str_contains($settle, 'Member::where('),
     'Payment must query Member through the public contract'
 );
 

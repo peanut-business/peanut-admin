@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\File\Application;
 
+use app\Modules\Official\File\Model\File;
+use app\Modules\Official\File\Model\FileCate;
 use app\Modules\Official\File\Contracts\FileUploads;
 use app\Modules\Official\File\Contracts\Dto\UploadFile;
-use app\Modules\Official\File\Infrastructure\Persistence\FileTenantRepository;
 use app\common\enum\FileEnum;
 use app\common\execution\CurrentExecutionContext;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
@@ -46,7 +47,7 @@ final class FileUploadService implements FileUploads
             throw new \InvalidArgumentException('目标分类无效');
         }
         if ($cid > 0) {
-            $category = FileTenantRepository::findCategory($cid);
+            $category = FileCate::where('id', $cid)->find();
             if (!$category) {
                 throw new \InvalidArgumentException('目标分类不存在');
             }
@@ -85,7 +86,7 @@ final class FileUploadService implements FileUploads
         );
 
         try {
-            $file = FileTenantRepository::createFile([
+            $file = File::create([
                 'cid' => $cid,
                 'source_id' => $sourceId,
                 'source' => $source,

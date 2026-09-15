@@ -5,7 +5,7 @@ use app\adminapi\application\decoration\DecorationTabbarApplicationService;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\service\decoration\DecorationReadService;
-use app\common\service\decoration\DecorationTabbarTenantRepository;
+use app\common\model\decoration\DecorateTabbar;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
@@ -137,6 +137,7 @@ SQL);
     IsolatedBackendEnvironment::activateDatabase($host, $port, $database, $user, $password, 'multi-tenant');
     $app = new think\App($serverRoot);
     $app->initialize();
+    $decorationReads = app(DecorationReadService::class);
     $alpha = tabbarTenantContext(101, 11, 'fresh-tabbar-alpha');
     $beta = tabbarTenantContext(202, 22, 'fresh-tabbar-beta');
     $alphaFirstId = (int)$pdo->query(
@@ -160,7 +161,7 @@ SQL);
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
             new \app\common\execution\AdminExecutionContext($alpha, 'test.decoration.tabbar.read.alpha'),
-            fn() => DecorationReadService::tabbar($alpha, true),
+            fn() => $decorationReads->tabbar($alpha, true),
         )['list'][0]['id'] === $alphaFirstId,
         'same order read selected another Tenant',
     );
@@ -207,12 +208,12 @@ SQL);
     expectTabbarTenant(
         app(ExecutionContextStore::class)->run(
             \app\common\execution\ConsumerExecutionContext::publicTenant($publicAlpha),
-            fn() => DecorationReadService::tabbar($publicAlpha, true, 'decoration.config'),
+            fn() => $decorationReads->tabbar($publicAlpha, true, 'decoration.config'),
         )['list'][0]['name'] === 'Saved Alpha Home',
         'trusted public Tabbar read selected another Tenant'
     );
     try {
-        DecorationTabbarTenantRepository::items()->count();
+        DecorateTabbar::where([])->count();
         throw new RuntimeException('untrusted public Tabbar context unexpectedly succeeded');
     } catch (Throwable $exception) {
         expectTabbarTenant($exception->getMessage() !== '', 'untrusted context denial lost shape');

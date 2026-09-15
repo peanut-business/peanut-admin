@@ -3,17 +3,12 @@ declare(strict_types=1);
 
 namespace app\platform\service;
 
-use PeanutAdmin\Kernel\Identity\AccountStatus;
-use PeanutAdmin\Kernel\Identity\IdentityRepository;
-use PeanutAdmin\Kernel\Membership\MembershipRepository;
-use PeanutAdmin\Kernel\Membership\TenantMemberStatus;
+use think\facade\Db;
 
 /** Verifies that Core already provisioned the first owner and initializes application capabilities. */
 final readonly class CoreTenantOwnerAdminProvisioner implements TenantOwnerAdminProvisioner
 {
     public function __construct(
-        private IdentityRepository $identities,
-        private MembershipRepository $memberships,
         private ApplicationTenantBootstrapService $applicationBootstrap,
     ) {}
 
@@ -29,18 +24,14 @@ final readonly class CoreTenantOwnerAdminProvisioner implements TenantOwnerAdmin
             throw new \DomainException('TENANT_OWNER_ADMIN_PRINCIPAL_INVALID');
         }
 
-        $account = $this->identities->accountById($accountId);
-        $member = $this->memberships->byId($tenantId, $memberId);
-        $ownerRole = $this->memberships->roleByKey($tenantId, 'core.tenant-owner');
-        if ($account === null
-            || $account->status !== AccountStatus::Active
-            || $member === null
-            || $member->accountId !== $accountId
-            || $member->status !== TenantMemberStatus::Active
-            || $ownerRole === null
-            || $ownerRole->id !== $coreRoleId
-            || !$ownerRole->isBuiltin
-            || !$this->memberships->memberHasRole($tenantId, $memberId, 'core.tenant-owner')) {
+        $principal = Db::name('tenant_member')->alias('member')
+            ->join('account account', "account.id=member.account_id AND account.status='active'")
+            ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner' AND role.is_builtin=1 AND role.status='active'")
+            ->where('member.tenant_id', $tenantId)->where('member.id', $memberId)
+            ->where('member.account_id', $accountId)->where('member.status', 'active')
+            ->where('role.id', $coreRoleId)->value('member.id');
+        if ($principal === null) {
             throw new \DomainException('TENANT_OWNER_ADMIN_PRINCIPAL_INVALID');
         }
 

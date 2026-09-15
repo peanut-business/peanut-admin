@@ -7,47 +7,28 @@ use app\common\contract\audit\AuditActor;
 use app\common\contract\audit\AuditEvent;
 use app\common\contract\audit\AuditResource;
 use app\common\execution\CurrentExecutionContext;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
-use PeanutAdmin\Kernel\Audit\AuditRepository;
+use PeanutAdmin\Kernel\Audit\Model\PlatformAuditEventRecord;
+use PeanutAdmin\Kernel\Audit\Model\TenantAuditEventRecord;
 use PeanutAdmin\Kernel\Auth\TenantContext;
+use think\facade\Db;
 
-final class AuditContractHost implements AuditRepository
+final class AuditContractHost
 {
     private OperationLogProjection $operationLogs;
 
-    public function __construct(
-        private readonly PDO $pdo,
-        ?CurrentExecutionContext $execution,
-    )
+    public function __construct(?CurrentExecutionContext $execution)
     {
         $this->operationLogs = new OperationLogProjection($execution);
-    }
-
-    public static function fromPdo(PDO $pdo): self
-    {
-        return new self($pdo, null);
     }
 
     public function record(AuditEvent $event): void
     {
         if ($event->projection === AuditEvent::OPERATION_LOG) {
-            $ownsTransaction = !$this->pdo->inTransaction();
-            if ($ownsTransaction) {
-                $this->pdo->beginTransaction();
-            }
-            try {
+            Db::transaction(function () use ($event): void {
                 $this->operationLogs->append($event);
                 $this->appendTenantEvent($event);
-                if ($ownsTransaction) {
-                    $this->pdo->commit();
-                }
-            } catch (\Throwable $exception) {
-                if ($ownsTransaction && $this->pdo->inTransaction()) {
-                    $this->pdo->rollBack();
-                }
-                throw $exception;
-            }
+            });
             return;
         }
         if ($event->projection === AuditEvent::PLATFORM) {
@@ -201,18 +182,7 @@ final class AuditContractHost implements AuditRepository
     private function appendPlatformEvent(AuditEvent $event): void
     {
         $actor = $event->actor;
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_platform_audit_event (
-    event_type, action, outcome, reason_code, operator_id, account_id,
-    target_type, target_id, request_id, operation_id, ip_address,
-    user_agent_hash, before_json, after_json, metadata_json, occurred_at
-) VALUES (
-    :event_type, :action, :outcome, :reason_code, :operator_id, :account_id,
-    :target_type, :target_id, :request_id, :operation_id, :ip_address,
-    :user_agent_hash, :before_json, :after_json, :metadata_json, :occurred_at
-)
-SQL);
-        $statement->execute([
+        (new PlatformAuditEventRecord())->save([
             'event_type' => $event->eventType,
             'action' => $event->operation,
             'outcome' => $event->outcome->value,
@@ -228,7 +198,7 @@ SQL);
             'before_json' => RedactionPolicy::nullableJson($event->before),
             'after_json' => RedactionPolicy::nullableJson($event->after),
             'metadata_json' => RedactionPolicy::nullableJson($event->metadata),
-            'occurred_at' => $this->now(),
+            'occurred_at' => Db::raw('UTC_TIMESTAMP(3)'),
         ]);
     }
 
@@ -238,24 +208,7 @@ SQL);
             throw new \InvalidArgumentException('AUDIT_TENANT_REQUIRED');
         }
         $actor = $event->actor;
-        $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO pa_tenant_audit_event (
-    tenant_id, event_type, action, outcome, reason_code,
-    actor_tenant_id, actor_tenant_member_id, actor_account_id, actor_platform_operator_id, actor_type,
-    target_resource_type, target_resource_id, boundary_target_type, boundary_target_id,
-    target_count, target_set_digest, authorization_basis_json,
-    request_id, operation_id, ip_address, user_agent_hash,
-    before_json, after_json, metadata_json, occurred_at
-) VALUES (
-    :tenant_id, :event_type, :action, :outcome, :reason_code,
-    :actor_tenant_id, :actor_tenant_member_id, :actor_account_id, :actor_platform_operator_id, :actor_type,
-    :target_resource_type, :target_resource_id, :boundary_target_type, :boundary_target_id,
-    :target_count, :target_set_digest, :authorization_basis_json,
-    :request_id, :operation_id, :ip_address, :user_agent_hash,
-    :before_json, :after_json, :metadata_json, :occurred_at
-)
-SQL);
-        $statement->execute([
+        (new TenantAuditEventRecord())->save([
             'tenant_id' => $event->tenantId,
             'event_type' => $event->eventType,
             'action' => $event->operation,
@@ -282,12 +235,7 @@ SQL);
             'before_json' => RedactionPolicy::nullableJson($event->before),
             'after_json' => RedactionPolicy::nullableJson($event->after),
             'metadata_json' => RedactionPolicy::nullableJson($event->metadata),
-            'occurred_at' => $this->now(),
+            'occurred_at' => Db::raw('UTC_TIMESTAMP(3)'),
         ]);
-    }
-
-    private function now(): string
-    {
-        return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s.v');
     }
 }

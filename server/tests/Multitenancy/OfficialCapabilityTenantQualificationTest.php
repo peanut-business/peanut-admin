@@ -35,11 +35,11 @@ foreach ([
     'member_context' => 'app/common/service/member/MemberApiTenantContextResolver.php',
     'member_subject_lookup' => 'app/Modules/Official/Member/Infrastructure/Persistence/ThinkPhpMemberSubjectLookup.php',
     'member_middleware' => 'app/api/middleware/CheckTokenMiddleware.php',
-    'file_repository' => 'app/Modules/Official/File/Infrastructure/Persistence/FileTenantRepository.php',
+    'file_model' => 'app/Modules/Official/File/Model/File.php',
     'file_namespace_core' => 'vendor/peanut-admin/core/file-media/src/Storage/TenantObjectNamespace.php',
-    'article_repository' => 'app/Modules/Official/Article/Infrastructure/Persistence/ArticleTenantRepository.php',
-    'decoration_repository' => 'app/common/service/decoration/DecorationTenantRepository.php',
-    'notice_repository' => 'app/Modules/Official/Notification/Infrastructure/Persistence/NoticeTenantRepository.php',
+    'article_model' => 'app/Modules/Official/Article/Model/Article.php',
+    'decoration_model' => 'app/common/model/decoration/DecoratePage.php',
+    'notice_model' => 'app/Modules/Official/Notification/Model/NoticeLog.php',
     'oauth_repository' => 'app/Modules/Official/Oauth/Infrastructure/Persistence/ThinkPhpOAuthPersistence.php',
     'oauth_attempt_model' => 'app/Modules/Official/Oauth/Model/OAuthAttempt.php',
     'oauth_completion_model' => 'app/Modules/Official/Oauth/Model/OAuthCompletionTicket.php',
@@ -50,7 +50,7 @@ foreach ([
     'external_resolver_core' => 'vendor/peanut-admin/core/integration-security/src/External/ExternalTenantResolver.php',
     'external_binding_adapter' => 'app/common/service/external/ThinkPhpExternalTenantBindingRepository.php',
     'external_audit_adapter' => 'app/common/service/external/ThinkPhpExternalTenantAudit.php',
-    'finance_repository' => 'app/Modules/Official/Payment/Infrastructure/Persistence/FinanceTenantRepository.php',
+    'finance_model' => 'app/Modules/Official/Payment/Model/RefundRecord.php',
     'recharge_settings' => 'app/Modules/Official/Payment/Application/RechargeTenantSettingService.php',
     'tenant_settings' => 'app/common/service/tenant/TenantSettingService.php',
     'tenant_settings_provider' => 'app/common/service/tenant/ThinkPhpTenantSettingsProvider.php',
@@ -61,7 +61,7 @@ foreach ([
     'platform_storage_controller' => 'app/platform/controller/PlatformStorageController.php',
     'admin_permissions' => 'app/common/service/authorization/AdminAuthorizationService.php',
     'crontab_scheduler' => 'app/Modules/Official/Task/Application/CrontabSchedulerService.php',
-    'crontab_repository' => 'app/Modules/Official/Task/Infrastructure/Persistence/CrontabTenantRepository.php',
+    'crontab_model' => 'app/Modules/Official/Task/Model/Crontab.php',
     'crontab_task_definition' => 'app/Modules/Official/Task/Application/CrontabTaskDefinition.php',
     'scheduled_context_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/ScheduledTenantContext.php',
     'tenant_scope_core' => 'vendor/peanut-admin/core/kernel/src/Tenancy/TenantScope.php',
@@ -91,7 +91,7 @@ foreach ([
     'module_manifest' => 'vendor/peanut-admin/core/kernel/src/Module/ManifestLoader.php',
     'module_availability' => 'vendor/peanut-admin/core/kernel/src/Host/ModuleAvailabilityAdapter.php',
     'deployed_module_registry' => 'app/platform/service/module/DeployedTenantModuleRegistry.php',
-    'fixture_module_access' => 'app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/PdoDeliveryRecordAccess.php',
+    'fixture_module_access' => 'app/Modules/Fixture/DeliveryRecord/Infrastructure/Authorization/ThinkPhpDeliveryRecordAccess.php',
     'official_article_manifest' => 'app/Modules/Official/Article/module.json',
     'official_article_public' => 'app/api/middleware/PublicTenantModuleMiddleware.php',
     'member_token' => 'app/api/service/UserTokenService.php',
@@ -104,10 +104,10 @@ foreach ([
         : qualificationSource($root, $relative);
 }
 
-foreach (['file_repository', 'article_repository', 'decoration_repository', 'notice_repository', 'finance_repository'] as $key) {
+foreach (['file_model', 'article_model', 'decoration_model', 'notice_model', 'finance_model', 'crontab_model'] as $key) {
     qualificationExpect(
-        str_contains($sources[$key], '::where([])'),
-        $key . ' lost its global-scope ORM entry',
+        str_contains($sources[$key], 'extends TenantOwnedModel'),
+        $key . ' lost its Tenant-owned Model scope',
     );
 }
 foreach (['oauth_attempt_model', 'oauth_completion_model', 'oauth_identity_model', 'oauth_principal_model'] as $key) {
@@ -240,7 +240,7 @@ qualificationExpect(
     'OAuth subject lookup is not explicitly bound to the member Tenant context'
 );
 qualificationExpect(
-    str_contains($sources['crontab_repository'], "t.status', 'active'")
+    str_contains($sources['crontab_scheduler'], "where('t.status', 'active')")
         && str_contains($sources['crontab_scheduler'], 'use PeanutAdmin\\Kernel\\Tenancy\\TenantScope;')
         && !str_contains($sources['crontab_scheduler'], 'Console::call')
         && str_contains($sources['crontab_task_definition'], 'ScheduledTenantContext::run')
@@ -397,14 +397,14 @@ qualificationExpect(
         && str_contains($sources['official_module_middleware'], 'ModuleExecutionBoundary')
         && str_contains($sources['official_article_public'], '$this->entryBindings->system(')
         && str_contains($sources['official_article_public'], 'ModuleExecutionBoundary')
-        && str_contains($sources['article_repository'], 'return Article::where([])'),
+        && str_contains($sources['article_model'], 'extends TenantOwnedModel'),
     'official Article Module is not guarded by the shared execution and public Host boundaries'
 );
 qualificationExpect(
     str_contains($sources['module_manifest'], "'/module.json'")
         && str_contains($sources['module_availability'], 'assertDeployment(')
         && str_contains($sources['module_availability'], 'assertTenant(')
-        && str_contains($sources['fixture_module_access'], 'PdoTenantAuthorizationRepository')
+        && str_contains($sources['fixture_module_access'], 'ThinkPhpTenantAuthorizationRepository')
         && str_contains($sources['fixture_module_access'], "AUTHORIZATION_PERMISSION_DENIED")
         && str_contains($sources['deployed_module_registry'], "(\$tenant['enableable'] ?? null) !== true"),
     'optional Modules are not guarded by both module.json and Tenant enablement'

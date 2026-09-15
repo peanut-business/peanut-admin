@@ -3,42 +3,37 @@ declare(strict_types=1);
 
 namespace app\platform\query;
 
-use app\common\contract\module\ModuleQualificationQuery;
 use app\common\contract\module\ModuleQualification;
+use app\common\contract\module\ModuleQualificationQuery;
 use app\platform\context\PlatformOperatorContext;
 use app\platform\service\PlatformOperatorSessionService;
-use PDO;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
+use think\db\Query;
+use think\facade\Db;
 
 final readonly class PlatformControlPlaneQueryService
 {
     public function __construct(
-        private PDO $pdo,
         private PlatformOperatorSessionService $sessions,
         private ModuleQualificationQuery $qualification,
-    ) {
-    }
+    ) {}
 
     /** @return array{items:list<array<string,mixed>>,total:int} */
     public function operators(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.operator.read');
-        return $this->paginateQuery(<<<'SQL'
-SELECT po.id, po.account_id, po.display_name, po.status, po.security_revision,
-       a.display_name AS account_display_name, a.status AS account_status,
-       c.identifier_normalized AS email,
-       COALESCE(GROUP_CONCAT(DISTINCT pr.`key` ORDER BY pr.`key` SEPARATOR ','), '') AS role_keys,
-       po.created_at, po.updated_at
-FROM pa_platform_operator po
-JOIN pa_account a ON a.id = po.account_id
-LEFT JOIN pa_credential c ON c.account_id = a.id AND c.identifier_type = 'email' AND c.status = 'active'
-LEFT JOIN pa_platform_operator_role por ON por.platform_operator_id = po.id
-LEFT JOIN pa_platform_role pr ON pr.id = por.platform_role_id
-GROUP BY po.id, po.account_id, po.display_name, po.status, po.security_revision,
-         a.display_name, a.status, c.identifier_normalized, po.created_at, po.updated_at
-ORDER BY po.id DESC
-SQL, [], $page, static function (array $row): array {
+        $query = Db::name('platform_operator')->alias('operator')
+            ->join('account account', 'account.id=operator.account_id')
+            ->leftJoin('credential credential', "credential.account_id=account.id AND credential.identifier_type='email' AND credential.status='active'")
+            ->leftJoin('platform_operator_role membership', 'membership.platform_operator_id=operator.id')
+            ->leftJoin('platform_role role', 'role.id=membership.platform_role_id')
+            ->field('operator.id,operator.account_id,operator.display_name,operator.status,operator.security_revision,operator.created_at,operator.updated_at')
+            ->field('account.display_name AS account_display_name,account.status AS account_status,credential.identifier_normalized AS email')
+            ->fieldRaw("COALESCE(GROUP_CONCAT(DISTINCT role.`key` ORDER BY role.`key` SEPARATOR ','),'') AS role_keys")
+            ->group('operator.id,operator.account_id,operator.display_name,operator.status,operator.security_revision,account.display_name,account.status,credential.identifier_normalized,operator.created_at,operator.updated_at')
+            ->order('operator.id', 'desc');
+        return $this->paginate($query, $page, (int)Db::name('platform_operator')->count(), static function (array $row): array {
             $row['role_keys'] = $row['role_keys'] === '' ? [] : explode(',', (string)$row['role_keys']);
             return $row;
         });
@@ -48,21 +43,16 @@ SQL, [], $page, static function (array $row): array {
     public function roles(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.role.read');
-        return $this->paginateQuery(<<<'SQL'
-SELECT pr.id, pr.`key`, pr.name, pr.description, pr.is_builtin, pr.status, pr.revision,
-       COUNT(DISTINCT prp.permission_id) AS permission_count,
-       COALESCE(GROUP_CONCAT(DISTINCT p.`key` ORDER BY p.`key` SEPARATOR ','), '') AS permission_keys,
-       pr.created_at, pr.updated_at
-FROM pa_platform_role pr
-LEFT JOIN pa_platform_role_permission prp ON prp.platform_role_id = pr.id
-LEFT JOIN pa_permission p ON p.id = prp.permission_id AND p.status = 'active'
-GROUP BY pr.id, pr.`key`, pr.name, pr.description, pr.is_builtin, pr.status, pr.revision,
-         pr.created_at, pr.updated_at
-ORDER BY pr.id DESC
-SQL, [], $page, static function (array $row): array {
-            $row['permission_keys'] = $row['permission_keys'] === ''
-                ? []
-                : explode(',', (string)$row['permission_keys']);
+        $query = Db::name('platform_role')->alias('role')
+            ->leftJoin('platform_role_permission binding', 'binding.platform_role_id=role.id')
+            ->leftJoin('permission permission', "permission.id=binding.permission_id AND permission.status='active'")
+            ->field('role.id,role.key,role.name,role.description,role.is_builtin,role.status,role.revision,role.created_at,role.updated_at')
+            ->fieldRaw('COUNT(DISTINCT binding.permission_id) AS permission_count')
+            ->fieldRaw("COALESCE(GROUP_CONCAT(DISTINCT permission.`key` ORDER BY permission.`key` SEPARATOR ','),'') AS permission_keys")
+            ->group('role.id,role.key,role.name,role.description,role.is_builtin,role.status,role.revision,role.created_at,role.updated_at')
+            ->order('role.id', 'desc');
+        return $this->paginate($query, $page, (int)Db::name('platform_role')->count(), static function (array $row): array {
+            $row['permission_keys'] = $row['permission_keys'] === '' ? [] : explode(',', (string)$row['permission_keys']);
             return $row;
         });
     }
@@ -71,26 +61,19 @@ SQL, [], $page, static function (array $row): array {
     public function permissions(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.permission.read');
-        return $this->paginateQuery(<<<'SQL'
-SELECT id, `key`, module_key, `type`, name, description, risk_level, status,
-       manifest_version, created_at, updated_at, retired_at
-FROM pa_permission
-WHERE module_key = 'platform'
-ORDER BY id ASC
-SQL, [], $page);
+        $query = Db::name('permission')->where('module_key', 'platform');
+        return $this->paginate((clone $query)
+            ->field('id,key,module_key,type,name,description,risk_level,status,manifest_version,created_at,updated_at,retired_at')
+            ->order('id'), $page, (int)$query->count());
     }
 
     /** @return array{items:list<array<string,mixed>>,total:int} */
     public function audit(PlatformOperatorContext $context, PageRequest $page): array
     {
         $this->sessions->assertAllowed($context, 'platform.audit.read');
-        $result = $this->paginateQuery(<<<'SQL'
-SELECT id, event_type, action, outcome, reason_code, operator_id, account_id,
-       target_type, target_id, request_id, operation_id, ip_address,
-       user_agent_hash, before_json, after_json, metadata_json, occurred_at
-FROM pa_platform_audit_event
-ORDER BY id DESC
-SQL, [], $page);
+        $result = $this->paginate(Db::name('platform_audit_event')
+            ->field('id,event_type,action,outcome,reason_code,operator_id,account_id,target_type,target_id,request_id,operation_id,ip_address,user_agent_hash,before_json,after_json,metadata_json,occurred_at')
+            ->order('id', 'desc'), $page, (int)Db::name('platform_audit_event')->count());
         foreach ($result['items'] as &$item) {
             foreach (['before_json', 'after_json', 'metadata_json'] as $column) {
                 $item[$column] = $this->decodeJson($item[$column] ?? null);
@@ -101,96 +84,51 @@ SQL, [], $page);
     }
 
     /** @return array{items:list<array<string,mixed>>,total:int} */
-    public function moduleStates(
-        PlatformOperatorContext $context,
-        int $tenantId,
-        PageRequest $page
-    ): array {
+    public function moduleStates(PlatformOperatorContext $context, int $tenantId, PageRequest $page): array
+    {
         $this->sessions->assertAllowed($context, 'platform.tenant.read');
         $states = [];
         foreach ($this->qualification->tenantModuleStates($tenantId) as $state) {
             $states[$state->moduleKey] = $state->toArray();
         }
-
-        $rows = array_map(
-            static function (ModuleQualification $module) use ($states, $tenantId): array {
-                $state = $states[$module->moduleKey] ?? null;
-                return [
-                    'id' => $state['id'] ?? null,
-                    'tenant_id' => $tenantId,
-                    'module_key' => $module->moduleKey,
-                    'status' => $state['status'] ?? 'not_enabled',
-                    'source' => $state['source'] ?? 'not_configured',
-                    'config_revision' => $state['config_revision'] ?? 0,
-                    'effective_at' => $state['effective_at'] ?? null,
-                    'expires_at' => $state['expires_at'] ?? null,
-                    'enabled_at' => $state['enabled_at'] ?? null,
-                    'disabled_at' => $state['disabled_at'] ?? null,
-                    'disabled_reason' => $state['disabled_reason'] ?? null,
-                    'created_at' => $state['created_at'] ?? null,
-                    'updated_at' => $state['updated_at'] ?? null,
-                    'installed_version' => $module->version,
-                    'installation_status' => $module->status,
-                ];
-            },
-            $this->qualification->installedModules()
-        );
-        return [
-            'items' => array_slice($rows, $page->offset(), $page->pageSize),
-            'total' => count($rows),
-        ];
+        $rows = array_map(static function (ModuleQualification $module) use ($states, $tenantId): array {
+            $state = $states[$module->moduleKey] ?? null;
+            return [
+                'id' => $state['id'] ?? null, 'tenant_id' => $tenantId, 'module_key' => $module->moduleKey,
+                'status' => $state['status'] ?? 'not_enabled', 'source' => $state['source'] ?? 'not_configured',
+                'config_revision' => $state['config_revision'] ?? 0, 'effective_at' => $state['effective_at'] ?? null,
+                'expires_at' => $state['expires_at'] ?? null, 'enabled_at' => $state['enabled_at'] ?? null,
+                'disabled_at' => $state['disabled_at'] ?? null, 'disabled_reason' => $state['disabled_reason'] ?? null,
+                'created_at' => $state['created_at'] ?? null, 'updated_at' => $state['updated_at'] ?? null,
+                'installed_version' => $module->version, 'installation_status' => $module->status,
+            ];
+        }, $this->qualification->installedModules());
+        return ['items' => array_slice($rows, $page->offset(), $page->pageSize), 'total' => count($rows)];
     }
 
     /** @return array<string,mixed> */
     public function owner(PlatformOperatorContext $context, int $tenantId): array
     {
         $this->sessions->assertAllowed($context, 'platform.tenant.read');
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT tm.id AS member_id, tm.tenant_id, tm.account_id, tm.display_name,
-       tm.status AS member_status, tm.security_revision, tm.authorization_revision,
-       tm.joined_at, a.display_name AS account_display_name, a.status AS account_status,
-       c.identifier_normalized AS email, r.id AS role_id, r.`key` AS role_key,
-       tm.created_at, tm.updated_at
-FROM pa_tenant_member tm
-JOIN pa_account a ON a.id = tm.account_id
-JOIN pa_member_role mr ON mr.tenant_id = tm.tenant_id AND mr.tenant_member_id = tm.id
-JOIN pa_role r ON r.tenant_id = mr.tenant_id AND r.id = mr.role_id
-LEFT JOIN pa_credential c ON c.account_id = a.id AND c.identifier_type = 'email' AND c.status = 'active'
-WHERE tm.tenant_id = :tenant_id AND r.`key` = 'core.tenant-owner'
-ORDER BY tm.id ASC
-LIMIT 1
-SQL);
-        $statement->execute(['tenant_id' => $tenantId]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
+        $row = Db::name('tenant_member')->alias('member')
+            ->join('account account', 'account.id=member.account_id')
+            ->join('member_role membership', 'membership.tenant_id=member.tenant_id AND membership.tenant_member_id=member.id')
+            ->join('role role', "role.tenant_id=membership.tenant_id AND role.id=membership.role_id AND role.`key`='core.tenant-owner'")
+            ->leftJoin('credential credential', "credential.account_id=account.id AND credential.identifier_type='email' AND credential.status='active'")
+            ->where('member.tenant_id', $tenantId)
+            ->field('member.id AS member_id,member.tenant_id,member.account_id,member.display_name,member.status AS member_status,member.security_revision,member.authorization_revision,member.joined_at,member.created_at,member.updated_at')
+            ->field('account.display_name AS account_display_name,account.status AS account_status,credential.identifier_normalized AS email,role.id AS role_id,role.key AS role_key')
+            ->order('member.id')->find();
+        if ($row === null) {
             throw AdminAccessException::notFound();
         }
         return $row;
     }
 
-    /** @param array<string,mixed> $parameters @return array{items:list<array<string,mixed>>,total:int} */
-    private function paginateQuery(
-        string $sql,
-        array $parameters,
-        PageRequest $page,
-        ?callable $map = null
-    ): array {
-        $countSql = 'SELECT COUNT(*) FROM (' . $sql . ') AS platform_query';
-        $count = $this->pdo->prepare($countSql);
-        foreach ($parameters as $name => $value) {
-            $count->bindValue(':' . $name, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
-        }
-        $count->execute();
-        $total = (int)$count->fetchColumn();
-
-        $statement = $this->pdo->prepare($sql . ' LIMIT :limit OFFSET :offset');
-        foreach ($parameters as $name => $value) {
-            $statement->bindValue(':' . $name, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
-        }
-        $statement->bindValue(':limit', $page->pageSize, PDO::PARAM_INT);
-        $statement->bindValue(':offset', $page->offset(), PDO::PARAM_INT);
-        $statement->execute();
-        $items = $statement->fetchAll(PDO::FETCH_ASSOC);
+    /** @return array{items:list<array<string,mixed>>,total:int} */
+    private function paginate(Query $query, PageRequest $page, int $total, ?callable $map = null): array
+    {
+        $items = $query->limit($page->offset(), $page->pageSize)->select()->toArray();
         if ($map !== null) {
             $items = array_map($map, $items);
         }

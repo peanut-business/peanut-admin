@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
+use app\Modules\Official\Member\Model\Member;
+use app\Modules\Official\Member\Model\MemberBalanceLog;
+use app\Modules\Official\Member\Model\MemberTag;
+use app\Modules\Official\Member\Model\MemberTagRelation;
 use DateTimeImmutable;
 use app\common\application\BusinessException;
 use app\common\enum\AccountLogEnum;
@@ -20,11 +24,10 @@ use app\Modules\Official\Member\Contracts\MemberQueries;
 use app\Modules\Official\Member\Contracts\MemberTagCommands;
 use app\common\services\FileService;
 use app\common\service\Money;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use app\common\services\XlsxExportService;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
-use PeanutAdmin\Kernel\Persistence\TransactionManager;
+use think\facade\Db;
 
 final class MemberAdministrationService implements MemberAdministration
 {
@@ -40,7 +43,6 @@ final class MemberAdministrationService implements MemberAdministration
         private readonly MemberTagCommands $tags,
         private readonly MemberBalanceCommands $balances,
         private readonly IdempotentCommandExecutor $idempotency,
-        private readonly TransactionManager $transactions,
         private readonly FileService $files,
     ) {}
 
@@ -63,7 +65,9 @@ final class MemberAdministrationService implements MemberAdministration
         }
 
         $pageResult = PaginationInput::from($params)->result($this->buildListQuery($params));
-        $pageResult = MemberTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
         $rows = $pageResult->items;
         $rows = $this->hydrateTags($rows);
 
@@ -99,7 +103,7 @@ final class MemberAdministrationService implements MemberAdministration
 
     private function buildListQuery(array $params)
     {
-        $query = MemberTenantRepository::members($this->executionContext->tenantAdmin());
+        $query = Member::where([]);
         if (!empty($params['keyword'])) {
             $keyword = trim((string)$params['keyword']);
             $query->where('sn|nickname|mobile|account', 'like', '%' . $keyword . '%');
@@ -212,10 +216,10 @@ final class MemberAdministrationService implements MemberAdministration
         if ($memberIds === []) {
             return $rows;
         }
-        $relations = MemberTenantRepository::relations($context)
+        $relations = MemberTagRelation::where([])
             ->whereIn('member_id', $memberIds)->select()->toArray();
         $tagIds = array_values(array_unique(array_map('intval', array_column($relations, 'tag_id'))));
-        $tags = $tagIds === [] ? [] : MemberTenantRepository::tags($context)
+        $tags = $tagIds === [] ? [] : MemberTag::where([])
             ->whereIn('id', $tagIds)->column('*', 'id');
         $byMember = [];
         foreach ($relations as $relation) {
@@ -258,7 +262,7 @@ final class MemberAdministrationService implements MemberAdministration
             $pageSize = $pagination->pageSize;
         }
 
-        $query = MemberTenantRepository::balanceLogs($this->executionContext->tenantAdmin())->alias('al')
+        $query = MemberBalanceLog::where([])->alias('al')
             ->join('member u', 'u.tenant_id = al.tenant_id AND u.id = al.member_id')
             ->field(
                 'u.nickname,u.account,u.sn,u.avatar,u.mobile,'
@@ -293,7 +297,9 @@ final class MemberAdministrationService implements MemberAdministration
                 'var_page' => 'page_no',
             ]), $pageNo)
             : $pagination->result($query->order('al.id', 'desc'));
-        $pageResult = MemberTenantRepository::arrayPage($pageResult);
+        $pageResult = $pageResult->map(static fn(mixed $item): array => $item instanceof \think\Model
+            ? $item->toArray()
+            : (array)$item);
         $rows = $pageResult->items;
 
         foreach ($rows as &$row) {
@@ -335,13 +341,13 @@ final class MemberAdministrationService implements MemberAdministration
     public function deleteTag(int $id): void
     {
         $context = $this->executionContext->tenantAdmin();
-        $this->transactions->run(fn() => $this->tags->delete($context, $id));
+        Db::transaction(fn() => $this->tags->delete($context, $id));
     }
 
     public function createMember(array $params): void
     {
         $context = $this->executionContext->tenantAdmin();
-        $this->transactions->run(function () use ($context, $params): void {
+        Db::transaction(function () use ($context, $params): void {
                 $this->profiles->createAdminMember($context, [
                     'nickname' => $params['nickname'],
                     'avatar'   => $this->files->setTenantFileUrl($context, (string)($params['avatar'] ?? '')),
@@ -357,7 +363,7 @@ final class MemberAdministrationService implements MemberAdministration
     public function updateMember(array $params): void
     {
         $context = $this->executionContext->tenantAdmin();
-        $this->transactions->run(function () use ($context, $params): void {
+        Db::transaction(function () use ($context, $params): void {
                 $data = [];
                 foreach (['nickname', 'avatar', 'mobile', 'email', 'birthday'] as $f) {
                     if (isset($params[$f])) {
@@ -402,7 +408,7 @@ final class MemberAdministrationService implements MemberAdministration
     ): void
     {
         $context = $this->executionContext->tenantAdmin();
-        $this->transactions->run(function () use ($context, $params, $adminId, $idempotencyKey): void {
+        Db::transaction(function () use ($context, $params, $adminId, $idempotencyKey): void {
                 $action = (int)$params['action'];
                 $memberId = (int)$params['user_id'];
                 $amountCents = Money::toCents(abs((float)$params['num']));

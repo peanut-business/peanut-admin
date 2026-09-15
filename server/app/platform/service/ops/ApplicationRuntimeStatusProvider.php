@@ -4,22 +4,21 @@ declare(strict_types=1);
 namespace app\platform\service\ops;
 
 use app\common\service\installation\ApplicationReleaseVersions;
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Status\OpsStatusSnapshot;
 use PeanutAdmin\OpsConsole\Status\RuntimeStatusProvider;
-use app\platform\service\module\PdoModuleGovernanceProvider;
-use app\common\service\runtime\ApplicationCache;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use Throwable;
+use think\facade\Cache;
+use think\facade\Db;
 
 /** Application-owned runtime evidence provider for the Core Ops status contract. */
 final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusProvider
 {
     public function __construct(
-        private PDO $pdo,
         private string $projectRoot,
         private PlatformUpgradeReadinessService $readiness,
-        private PdoModuleGovernanceProvider $moduleGovernance,
+        private ThinkPhpModuleGovernanceProvider $moduleGovernance,
     ) {
     }
 
@@ -78,8 +77,8 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         $checks = [];
 
         [$databaseStatus, $databaseLatency] = $this->probe(function (): void {
-            $statement = $this->pdo->query('SELECT 1');
-            if ($statement === false || (int)$statement->fetchColumn() !== 1) {
+            $result = Db::query('SELECT 1 AS healthy');
+            if ((int)($result[0]['healthy'] ?? 0) !== 1) {
                 throw new \RuntimeException('database probe failed');
             }
         });
@@ -108,7 +107,7 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
         $checks[] = $this->check('module.catalog', $moduleStatus, true, $moduleLatency);
 
         [$cacheStatus, $cacheLatency] = $this->probe(static function (): void {
-            ApplicationCache::get('ops.readonly-health');
+            Cache::get('application:v1:ops-readonly-health');
         });
         $checks[] = $this->check('cache.read', $cacheStatus, false, $cacheLatency);
 
@@ -325,13 +324,8 @@ final readonly class ApplicationRuntimeStatusProvider implements RuntimeStatusPr
     private function migrationState(): array
     {
         $expected = $this->expectedMigrations();
-        $statement = $this->pdo->query(
-            'SELECT migration_id, checksum, status FROM pa_schema_migration ORDER BY migration_id'
-        );
-        if ($statement === false) {
-            throw new \RuntimeException('OPS_MIGRATION_STATUS_UNAVAILABLE');
-        }
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = Db::name('schema_migration')->field('migration_id,checksum,status')
+            ->order('migration_id')->select()->toArray();
         $actual = [];
         foreach ($rows as $row) {
             $actual[(string)$row['migration_id']] = [

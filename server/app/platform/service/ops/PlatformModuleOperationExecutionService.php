@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace app\platform\service\ops;
 
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
 use PeanutAdmin\OpsConsole\Package;
-use Throwable;
 use Closure;
+use think\facade\Db;
 
 /** Platform projection for opaque deployment-staged Module requests. */
 final readonly class PlatformModuleOperationExecutionService
@@ -20,8 +19,7 @@ final readonly class PlatformModuleOperationExecutionService
     public const PERMISSION = 'platform.ops.module.manage';
 
     public function __construct(
-        private PDO $pdo,
-        private PdoOpsTaskDispatcher $tasks,
+        private ThinkPhpOpsTaskDispatcher $tasks,
         private DeploymentModuleRequestService $requests,
         private ApplicationRuntimeStatusProvider|Closure $runtimeStatus,
         private PlatformPermissionChecker $permissions,
@@ -36,11 +34,7 @@ final readonly class PlatformModuleOperationExecutionService
         ) {
             throw OpsConsoleException::denied();
         }
-        $ownsTransaction = !$this->pdo->inTransaction();
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-        try {
+        return Db::transaction(function () use ($context, $requestKey, $idempotencyKey): array {
             $request = $this->requestStore()->assertPrepared($requestKey);
             $runtime = $this->runtime($context);
             if ($runtime['health'] === 'unhealthy' || !$runtime['repository_clean']
@@ -66,22 +60,10 @@ final readonly class PlatformModuleOperationExecutionService
             ];
             $row = $this->tasks
                 ->dispatchModuleOperation($context, $payload, $idempotencyKey);
-            $claim = $this->pdo->prepare(<<<'SQL'
-UPDATE pa_ops_module_request
-SET state='claimed', claimed_at=UTC_TIMESTAMP(3)
-WHERE request_key=:request_key AND state='prepared'
-SQL);
-            $claim->execute(['request_key' => $requestKey]);
-            if ($ownsTransaction) {
-                $this->pdo->commit();
-            }
+            Db::name('ops_module_request')->where('request_key', $requestKey)->where('state', 'prepared')
+                ->update(['state' => 'claimed', 'claimed_at' => Db::raw('UTC_TIMESTAMP(3)')]);
             return $this->taskProjection($row);
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $exception;
-        }
+        });
     }
 
     /** @return array<string,mixed>|null */
@@ -91,11 +73,7 @@ SQL);
         if (preg_match('/^job_[a-f0-9]{32}$/D', $taskKey) !== 1) {
             return null;
         }
-        $statement = $this->pdo->prepare(
-            'SELECT * FROM pa_ops_task WHERE task_key=:task_key AND task_type=:task_type'
-        );
-        $statement->execute(['task_key' => $taskKey, 'task_type' => self::TASK_TYPE]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_task')->where('task_key', $taskKey)->where('task_type', self::TASK_TYPE)->find();
         return is_array($row) ? $this->taskProjection($row) : null;
     }
 
@@ -103,13 +81,8 @@ SQL);
     public function snapshot(PlatformContext $context): array
     {
         $this->assertRead($context);
-        $statement = $this->pdo->query(
-            "SELECT * FROM pa_ops_task WHERE task_type='ops.module.execute' ORDER BY id DESC LIMIT 10"
-        );
-        $tasks = [];
-        while ($statement !== false && ($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
-            $tasks[] = $this->taskProjection($row);
-        }
+        $tasks = array_map(fn(array $row): array => $this->taskProjection($row),
+            Db::name('ops_task')->where('task_type', self::TASK_TYPE)->order('id', 'desc')->limit(10)->select()->toArray());
         return ['tasks' => $tasks];
     }
 
@@ -120,9 +93,7 @@ SQL);
         if (!is_array($payload)) {
             throw OpsConsoleException::taskUnavailable();
         }
-        $statement = $this->pdo->prepare('SELECT * FROM pa_ops_module_execution WHERE task_key=:task_key');
-        $statement->execute(['task_key' => $task['task_key']]);
-        $execution = $statement->fetch(PDO::FETCH_ASSOC);
+        $execution = Db::name('ops_module_execution')->where('task_key', $task['task_key'])->find();
         $pointer = null;
         if (is_array($execution) && is_string($execution['recovery_pointer_json'] ?? null)) {
             $decoded = json_decode($execution['recovery_pointer_json'], true, 64, JSON_THROW_ON_ERROR);

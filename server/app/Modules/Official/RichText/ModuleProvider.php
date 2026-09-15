@@ -7,6 +7,7 @@ use app\common\execution\CurrentExecutionContext;
 use app\Modules\Official\RichText\Application\RichTextDocumentService;
 use PeanutAdmin\Kernel\Module\ModuleProvider as ModuleProviderContract;
 use think\App;
+use think\facade\Config;
 
 final class ModuleProvider implements ModuleProviderContract
 {
@@ -20,8 +21,8 @@ final class ModuleProvider implements ModuleProviderContract
         return [
             RichTextDocumentService::class => fn(App $app): RichTextDocumentService => new RichTextDocumentService(
                 $app->make(CurrentExecutionContext::class),
-                trim((string)env('RICH_TEXT_COLLABORATION_URL', '')),
-                trim((string)env('RICH_TEXT_COLLABORATION_SECRET', '')),
+                trim((string)Config::get('peanut.rich_text.collaboration_url', '')),
+                trim((string)Config::get('peanut.rich_text.collaboration_secret', '')),
             ),
         ];
     }

@@ -5,17 +5,16 @@ namespace app\platform\service\plugin;
 
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
-use PDO;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Module\ModuleHostLayout;
 use PeanutAdmin\Kernel\Module\ModuleKey;
+use think\facade\Db;
 
 /** Deployment-scoped retire/purge state machine. It never mutates pa_tenant_module. */
 final class PluginRuntimeGovernanceService
 {
     /** @param array<string,mixed> $moduleConfig @param null|callable(string):void $faultInjector */
     public function __construct(
-        private readonly PDO $pdo,
         private readonly string $serverRoot,
         private readonly array $moduleConfig,
         private readonly ModuleCatalogApplier $catalogs,
@@ -80,7 +79,7 @@ final class PluginRuntimeGovernanceService
 
         $lockName = 'pa:module-runtime:' . substr(hash('sha256', $packageKey), 0, 40);
         try {
-            return (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, function () use (
+            return (new AdvisoryLockExecution())->run($lockName, 0, function () use (
                 $packageKey,
                 $confirmPlan,
                 $purge,
@@ -126,18 +125,12 @@ final class PluginRuntimeGovernanceService
                     $this->dropOwnedTables($ownedTables, $ownedTablesByModule);
                     $this->inject('after-first-drop');
                     $this->assertOwnedTablesAbsent($ownedTables);
-                    $this->pdo->beginTransaction();
-                    try {
-                        $statement = $this->pdo->prepare('DELETE FROM pa_module_migration WHERE module_key IN (' . $this->placeholders($moduleKeys) . ')');
-                        $statement->execute($moduleKeys);
+                    Db::transaction(function () use ($moduleKeys): void {
+                        Db::name('module_migration')->whereIn('module_key', $moduleKeys)->delete();
                         if ($this->catalogs->plan($moduleKeys, true)['removed'] !== []) {
                             throw new PluginLifecycleException('MODULE_PURGE_INCOMPLETE', 'Module catalog remains after purge.');
                         }
-                        $this->pdo->commit();
-                    } catch (\Throwable $exception) {
-                        if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-                        throw $exception;
-                    }
+                    });
                     $this->inject('after-database-clean');
                 }
 
@@ -236,19 +229,14 @@ final class PluginRuntimeGovernanceService
     /** @return array{package_key:string,package_manifest_digest:string,affected_modules:list<array<string,mixed>>}|null */
     private function quarantinedScope(string $moduleOrPackageKey): ?array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT DISTINCT pi.plugin_key,pi.installed_version,pi.artifact_sha256
-FROM pa_plugin_installation pi
-JOIN pa_plugin_module pm ON pm.plugin_key=pi.plugin_key
-WHERE (pi.plugin_key=:package_input OR pm.module_key=:module_input)
-  AND pi.status='uninstalled' AND pi.last_error_code IS NULL
-ORDER BY pi.plugin_key
-SQL);
-        $statement->execute([
-            'package_input' => $moduleOrPackageKey,
-            'module_input' => $moduleOrPackageKey,
-        ]);
-        $installation = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $installation = Db::name('plugin_installation')->alias('plugin')
+            ->join('plugin_module member', 'member.plugin_key=plugin.plugin_key')
+            ->where(function ($query) use ($moduleOrPackageKey): void {
+                $query->where('plugin.plugin_key', $moduleOrPackageKey)->whereOr('member.module_key', $moduleOrPackageKey);
+            })
+            ->where('plugin.status', 'uninstalled')->whereNull('plugin.last_error_code')
+            ->distinct(true)->field('plugin.plugin_key,plugin.installed_version,plugin.artifact_sha256')
+            ->order('plugin.plugin_key')->select()->toArray();
         if ($installation === []) return null;
         if (count($installation) !== 1) {
             throw new PluginLifecycleException('MODULE_QUARANTINE_CONFLICT', 'Retired Module package identity is ambiguous.');
@@ -274,11 +262,8 @@ SQL);
             throw new PluginLifecycleException('MODULE_QUARANTINE_INVALID', 'Retired Module package identity changed.');
         }
 
-        $ownership = $this->pdo->prepare(
-            'SELECT module_key,manifest_digest FROM pa_plugin_module WHERE plugin_key=? ORDER BY module_key'
-        );
-        $ownership->execute([$packageKey]);
-        $ownedManifests = $ownership->fetchAll(PDO::FETCH_KEY_PAIR);
+        $ownedManifests = Db::name('plugin_module')->where('plugin_key', $packageKey)
+            ->order('module_key')->column('manifest_digest', 'module_key');
         $affected = [];
         $seenTables = [];
         $layout = new ModuleHostLayout('server/app/Modules', 'app\\Modules', 'web/src/modules');
@@ -346,13 +331,11 @@ SQL);
                 'identifiers' => $protected,
             ];
         }
-        $statement = $this->pdo->prepare('SELECT module_key FROM pa_tenant_module WHERE module_key IN (' . $this->placeholders($moduleKeys) . ") AND status='enabled' ORDER BY module_key");
-        $statement->execute($moduleKeys);
-        $enabled = array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        $enabled = array_map('strval', Db::name('tenant_module')->whereIn('module_key', $moduleKeys)
+            ->where('status', 'enabled')->order('module_key')->column('module_key'));
         if ($enabled !== []) $blockers[] = ['code' => 'PLUGIN_TENANT_MODULE_ACTIVE', 'kind' => 'tenant_enablement', 'identifiers' => $enabled];
 
         $dependents = ModuleLifecyclePolicy::activeBusinessDependents(
-            $this->pdo,
             new PluginLockResolver(
                 $this->serverRoot,
                 (string)($this->moduleConfig['plugin_lock'] ?? '../plugins.lock'),
@@ -375,10 +358,13 @@ SQL);
     private function externalForeignKeys(array $tables): array
     {
         if ($tables === []) return [];
-        $sql = 'SELECT CONCAT(TABLE_NAME,".",CONSTRAINT_NAME,"->",REFERENCED_TABLE_NAME) FROM information_schema.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA=DATABASE() AND REFERENCED_TABLE_NAME IN (' . $this->placeholders($tables) . ') AND TABLE_NAME NOT IN (' . $this->placeholders($tables) . ') AND CONSTRAINT_NAME<>"PRIMARY" ORDER BY TABLE_NAME,CONSTRAINT_NAME';
-        $statement = $this->pdo->prepare($sql);
-        $statement->execute([...$tables, ...$tables]);
-        return array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        $rows = Db::table('information_schema.KEY_COLUMN_USAGE')
+            ->where('REFERENCED_TABLE_SCHEMA', Db::raw('DATABASE()'))
+            ->whereIn('REFERENCED_TABLE_NAME', $tables)->whereNotIn('TABLE_NAME', $tables)
+            ->where('CONSTRAINT_NAME', '<>', 'PRIMARY')
+            ->field('TABLE_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_NAME')
+            ->order('TABLE_NAME')->order('CONSTRAINT_NAME')->select()->toArray();
+        return array_map(static fn(array $row): string => $row['TABLE_NAME'] . '.' . $row['CONSTRAINT_NAME'] . '->' . $row['REFERENCED_TABLE_NAME'], $rows);
     }
 
     /** @param list<string> $tables @return list<string>|null */
@@ -386,9 +372,11 @@ SQL);
     {
         $remaining = array_fill_keys($tables, true);
         if ($tables === []) return [];
-        $statement = $this->pdo->prepare('SELECT TABLE_NAME,REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND REFERENCED_TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN (' . $this->placeholders($tables) . ') AND REFERENCED_TABLE_NAME IN (' . $this->placeholders($tables) . ')');
-        $statement->execute([...$tables, ...$tables]);
-        $edges = $statement->fetchAll(PDO::FETCH_NUM);
+        $edgeRows = Db::table('information_schema.KEY_COLUMN_USAGE')
+            ->where('TABLE_SCHEMA', Db::raw('DATABASE()'))->where('REFERENCED_TABLE_SCHEMA', Db::raw('DATABASE()'))
+            ->whereIn('TABLE_NAME', $tables)->whereIn('REFERENCED_TABLE_NAME', $tables)
+            ->field('TABLE_NAME,REFERENCED_TABLE_NAME')->select()->toArray();
+        $edges = array_map(static fn(array $row): array => [$row['TABLE_NAME'], $row['REFERENCED_TABLE_NAME']], $edgeRows);
         $ordered = [];
         while ($remaining !== []) {
             $parents = [];
@@ -417,7 +405,8 @@ SQL);
         }
         foreach ($order as $table) {
             if (preg_match('/^pa_[a-z0-9_]+$/D', $table) !== 1) throw new PluginLifecycleException('MODULE_TABLE_OWNERSHIP_INVALID', 'Owned table name is invalid.');
-            $this->pdo->exec("DROP TABLE IF EXISTS `{$table}`");
+            // Framework query builders do not expose DDL; validated owned table names remain the driver-level boundary.
+            Db::execute("DROP TABLE IF EXISTS `{$table}`");
             if ($first) { $this->inject('after-first-drop-statement'); $first = false; }
             $moduleKey = $moduleByTable[$table] ?? null;
             if (is_string($moduleKey)) unset($remainingByModule[$moduleKey][$table]);
@@ -441,57 +430,54 @@ SQL);
     private function existingOwnedTables(array $tables): array
     {
         if ($tables === []) return [];
-        $statement = $this->pdo->prepare('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN (' . $this->placeholders($tables) . ') ORDER BY TABLE_NAME');
-        $statement->execute($tables);
-        return array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        return array_map('strval', Db::table('information_schema.TABLES')
+            ->where('TABLE_SCHEMA', Db::raw('DATABASE()'))->whereIn('TABLE_NAME', $tables)
+            ->order('TABLE_NAME')->column('TABLE_NAME'));
     }
 
     /** @param list<string> $moduleKeys @return list<string> */
     private function migrationIdentifiers(array $moduleKeys): array
     {
         if ($moduleKeys === []) return [];
-        $statement = $this->pdo->prepare('SELECT CONCAT(module_key,"/",migration_key) FROM pa_module_migration WHERE module_key IN (' . $this->placeholders($moduleKeys) . ') ORDER BY module_key,migration_key');
-        $statement->execute($moduleKeys);
-        return array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN));
+        $rows = Db::name('module_migration')->whereIn('module_key', $moduleKeys)
+            ->field('module_key,migration_key')->order('module_key')->order('migration_key')->select()->toArray();
+        return array_map(static fn(array $row): string => $row['module_key'] . '/' . $row['migration_key'], $rows);
     }
 
     /** @param list<string> $moduleKeys */
     private function markMaintenance(string $packageKey, array $moduleKeys, string $marker): void
     {
         $now = gmdate('Y-m-d H:i:s.v');
-        $this->pdo->beginTransaction();
-        try {
-            $plugin = $this->pdo->prepare("UPDATE pa_plugin_installation SET status='maintenance',last_error_code=:marker,revision=revision+1,updated_at=:now WHERE plugin_key=:key");
-            $plugin->execute(['marker' => $marker, 'now' => $now, 'key' => $packageKey]);
-            $modules = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=?,revision=revision+1,updated_at=? WHERE module_key IN (" . $this->placeholders($moduleKeys) . ')');
-            $modules->execute([$marker, $now, ...$moduleKeys]);
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
-        }
+        Db::transaction(function () use ($packageKey, $moduleKeys, $marker, $now): void {
+            Db::name('plugin_installation')->where('plugin_key', $packageKey)->update([
+                'status' => 'maintenance', 'last_error_code' => $marker,
+                'revision' => Db::raw('revision+1'), 'updated_at' => $now,
+            ]);
+            Db::name('module_installation')->whereIn('module_key', $moduleKeys)->update([
+                'status' => 'maintenance', 'last_error_code' => $marker,
+                'revision' => Db::raw('revision+1'), 'updated_at' => $now,
+            ]);
+        });
     }
 
     /** @param list<string> $moduleKeys */
     private function finalizeInstallation(string $packageKey, array $moduleKeys, bool $purge): void
     {
         $now = gmdate('Y-m-d H:i:s.v');
-        $this->pdo->beginTransaction();
-        try {
+        Db::transaction(function () use ($packageKey, $moduleKeys, $purge, $now): void {
             if ($purge) {
-                $statement = $this->pdo->prepare('DELETE FROM pa_module_installation WHERE module_key IN (' . $this->placeholders($moduleKeys) . ')');
-                $statement->execute($moduleKeys);
+                Db::name('module_installation')->whereIn('module_key', $moduleKeys)->delete();
             } else {
-                $statement = $this->pdo->prepare("UPDATE pa_module_installation SET status='maintenance',last_error_code=NULL,revision=revision+1,updated_at=? WHERE module_key IN (" . $this->placeholders($moduleKeys) . ')');
-                $statement->execute([$now, ...$moduleKeys]);
+                Db::name('module_installation')->whereIn('module_key', $moduleKeys)->update([
+                    'status' => 'maintenance', 'last_error_code' => null,
+                    'revision' => Db::raw('revision+1'), 'updated_at' => $now,
+                ]);
             }
-            $plugin = $this->pdo->prepare("UPDATE pa_plugin_installation SET status='uninstalled',last_error_code=NULL,revision=revision+1,uninstalled_at=?,updated_at=? WHERE plugin_key=?");
-            $plugin->execute([$now, $now, $packageKey]);
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
-        }
+            Db::name('plugin_installation')->where('plugin_key', $packageKey)->update([
+                'status' => 'uninstalled', 'last_error_code' => null,
+                'revision' => Db::raw('revision+1'), 'uninstalled_at' => $now, 'updated_at' => $now,
+            ]);
+        });
     }
 
     /** @param array<string,mixed> $plan */
@@ -569,9 +555,8 @@ SQL);
     private function assertResumeScope(array $plan, string $packageKey): void
     {
         $modules = $this->confirmedModuleKeys($plan);
-        $statement = $this->pdo->prepare('SELECT module_key,manifest_digest FROM pa_plugin_module WHERE plugin_key=? ORDER BY module_key');
-        $statement->execute([$packageKey]);
-        $actual = $statement->fetchAll(PDO::FETCH_KEY_PAIR);
+        $actual = Db::name('plugin_module')->where('plugin_key', $packageKey)
+            ->order('module_key')->column('manifest_digest', 'module_key');
         foreach ($plan['affected_modules'] as $module) {
             if (!is_array($module) || !isset($actual[$module['module_key']]) || !hash_equals((string)$actual[$module['module_key']], (string)$module['manifest_digest'])) {
                 throw new PluginLifecycleException('MODULE_UNINSTALL_PLAN_CHANGED', 'Module ownership changed during recovery.');
@@ -599,26 +584,21 @@ SQL);
         if (!$purge) return true;
         $modules = $this->confirmedModuleKeys($plan);
         if ($modules === []) return true;
-        $statement = $this->pdo->prepare('SELECT COUNT(*) FROM pa_module_installation WHERE module_key IN (' . $this->placeholders($modules) . ')');
-        $statement->execute($modules);
-        return (int)$statement->fetchColumn() === 0;
+        return Db::name('module_installation')->whereIn('module_key', $modules)->count() === 0;
     }
 
     /** @return array<string,mixed>|null */
     private function installationState(string $packageKey): ?array
     {
-        $statement = $this->pdo->prepare('SELECT status,last_error_code FROM pa_plugin_installation WHERE plugin_key=?');
-        $statement->execute([$packageKey]);
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-        return is_array($row) ? $row : null;
+        $row = Db::name('plugin_installation')->where('plugin_key', $packageKey)
+            ->field('status,last_error_code')->find();
+        return $row === null ? null : $row;
     }
 
     private function inputBelongsToPackage(string $input, string $packageKey): bool
     {
         if ($input === $packageKey) return true;
-        $statement = $this->pdo->prepare('SELECT COUNT(*) FROM pa_plugin_module WHERE plugin_key=? AND module_key=?');
-        $statement->execute([$packageKey, $input]);
-        return (int)$statement->fetchColumn() === 1;
+        return Db::name('plugin_module')->where('plugin_key', $packageKey)->where('module_key', $input)->count() === 1;
     }
 
     /** @param array<string,mixed> $plan @return list<string> */
@@ -674,9 +654,9 @@ SQL);
     /** @return array<string,mixed> */
     private function cleanPlan(string $key, bool $purge): array
     {
-        $statement = $this->pdo->prepare('SELECT plugin_key FROM pa_plugin_module WHERE plugin_key=? OR module_key=? ORDER BY plugin_key LIMIT 1');
-        $statement->execute([$key, $key]);
-        $package = $statement->fetchColumn();
+        $package = Db::name('plugin_module')->where(function ($query) use ($key): void {
+            $query->where('plugin_key', $key)->whereOr('module_key', $key);
+        })->order('plugin_key')->value('plugin_key');
         return ['schema_version' => 1, 'package_key' => is_string($package) ? $package : $key, 'package_manifest_digest' => '', 'operation' => $purge ? 'purge' : 'retire', 'affected_modules' => [], 'preserved' => [], 'removed' => [], 'blockers' => []];
     }
 
@@ -700,9 +680,6 @@ SQL);
     }
 
     private function codec(): ModuleUninstallPlanCodec { return new ModuleUninstallPlanCodec(); }
-    /** @param list<mixed> $values */
-    private function placeholders(array $values): string { return implode(',', array_fill(0, count($values), '?')); }
-
     private function removeTree(string $path): void
     {
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);

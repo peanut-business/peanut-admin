@@ -8,12 +8,11 @@ use app\common\service\instance\DeploymentMode;
 use app\platform\service\plugin\PluginLockResolver;
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Audit\AuditOutcome;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use PeanutAdmin\Kernel\Module\TenantModuleManager;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use think\facade\Db;
 
 /** Applies explicit application product profiles through the canonical TenantModule runtime. */
 final readonly class ProductTenantModuleProfileService
@@ -41,10 +40,8 @@ final readonly class ProductTenantModuleProfileService
 
     /** @param array<string,mixed> $deploymentConfig */
     public function __construct(
-        private PDO $pdo,
-        private PdoTransactionManager $transactions,
-        private PdoModuleRuntimeRepository $moduleRuntime,
-        private PdoModuleGovernanceProvider $moduleGovernance,
+        private ThinkPhpModuleRuntimeRepository $moduleRuntime,
+        private ThinkPhpModuleGovernanceProvider $moduleGovernance,
         private AuditContractHost $audit,
     ) {
     }
@@ -116,7 +113,7 @@ final readonly class ProductTenantModuleProfileService
         );
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
-        return $this->transactions->run(function () use (
+        return Db::transaction(function () use (
             $profile,
             $definition,
             $repository,
@@ -238,12 +235,8 @@ final readonly class ProductTenantModuleProfileService
     /** @param list<string> $tenantCodes @return list<array{id:int,code:string}> */
     private function tenants(array $tenantCodes): array
     {
-        $placeholders = implode(',', array_fill(0, count($tenantCodes), '?'));
-        $statement = $this->pdo->prepare(
-            "SELECT id,code FROM pa_tenant WHERE code IN ({$placeholders}) AND status='active' ORDER BY code FOR UPDATE"
-        );
-        $statement->execute($tenantCodes);
-        $tenants = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $tenants = Db::name('tenant')->whereIn('code', $tenantCodes)->where('status', 'active')
+            ->field('id,code')->order('code')->lock(true)->select()->toArray();
         $actualCodes = array_column($tenants, 'code');
         $expectedCodes = $tenantCodes;
         sort($expectedCodes, SORT_STRING);

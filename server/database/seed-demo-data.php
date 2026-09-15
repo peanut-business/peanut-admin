@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 require __DIR__ . '/environment-guard.php';
+require __DIR__ . '/../bootstrap/environment.php';
+require __DIR__ . '/../vendor/autoload.php';
+
+use think\App;
+use think\facade\Db;
 
 /** @return array{categories:list<string>,articles:list<array<string,mixed>>,tags:list<string>,members:list<array<string,mixed>>} */
 function demoPlan(): array
@@ -119,118 +124,139 @@ try {
     }
 
     $config = guardedDatabaseConfig();
-    $pdo = guardedConnection($config);
-    $tenant = $pdo->prepare('SELECT id FROM pa_tenant WHERE id = :tenant_id AND status = \'active\'');
-    $tenant->execute(['tenant_id' => $tenantId]);
-    if (!$tenant->fetchColumn()) {
+    (new App(dirname(__DIR__)))->initialize();
+    if (Db::name('tenant')->where('id', $tenantId)->where('status', 'active')->value('id') === null) {
         throw new RuntimeException("active tenant {$tenantId} is not registered");
     }
 
     $now = time();
-    $pdo->beginTransaction();
-
-    $categoryIds = [];
-    $findCategory = $pdo->prepare(
-        'SELECT id FROM pa_article_cate WHERE tenant_id = :tenant_id AND name = :name LIMIT 1'
-    );
-    $insertCategory = $pdo->prepare(
-        'INSERT INTO pa_article_cate (tenant_id, name, sort, is_show, create_time, update_time) '
-        . 'VALUES (:tenant_id, :name, :sort, 1, :create_time, :update_time)'
-    );
-    $updateCategory = $pdo->prepare(
-        'UPDATE pa_article_cate SET sort = :sort, is_show = 1, delete_time = NULL, update_time = :update_time '
-        . 'WHERE id = :id AND tenant_id = :tenant_id'
-    );
-    foreach ($plan['categories'] as $sort => $name) {
-        $findCategory->execute(['tenant_id' => $tenantId, 'name' => $name]);
-        $categoryId = $findCategory->fetchColumn();
-        $categoryValues = [
-            'tenant_id' => $tenantId,
-            'sort' => (count($plan['categories']) - $sort) * 10,
-            'update_time' => $now,
-        ];
-        if ($categoryId === false) {
-            $insertCategory->execute($categoryValues + ['name' => $name, 'create_time' => $now]);
-            $categoryId = (int) $pdo->lastInsertId();
-        } else {
-            $updateCategory->execute($categoryValues + ['id' => (int) $categoryId]);
-        }
-        $categoryIds[$name] = (int) $categoryId;
-    }
-
-    $findArticle = $pdo->prepare('SELECT id FROM pa_article WHERE tenant_id = :tenant_id AND title = :title AND author = :author AND delete_time IS NULL LIMIT 1');
-    $insertArticle = $pdo->prepare(
-        'INSERT INTO pa_article (tenant_id, cid, title, `desc`, abstract, image, author, content, click_virtual, click_actual, sort, is_show, create_time, update_time) '
-        . 'VALUES (:tenant_id, :cid, :title, :description, :abstract, \'\', \'Peanut Admin Demo\', :content, :click_virtual, 0, :sort, 1, :create_time, :update_time)'
-    );
-    $updateArticle = $pdo->prepare(
-        'UPDATE pa_article SET cid = :cid, `desc` = :description, abstract = :abstract, content = :content, click_virtual = :click_virtual, sort = :sort, is_show = 1, update_time = :update_time '
-        . 'WHERE id = :id AND tenant_id = :tenant_id'
-    );
-    foreach ($plan['articles'] as $article) {
-        $findArticle->execute(['tenant_id' => $tenantId, 'title' => $article['title'], 'author' => 'Peanut Admin Demo']);
-        $articleId = $findArticle->fetchColumn();
-        $values = [
-            'tenant_id' => $tenantId, 'cid' => $categoryIds[$article['category']], 'title' => $article['title'],
-            'description' => $article['desc'], 'abstract' => $article['abstract'], 'content' => $article['content'],
-            'click_virtual' => $article['click_virtual'], 'sort' => $article['sort'], 'update_time' => $now,
-        ];
-        if ($articleId === false) {
-            $insertArticle->execute($values + ['create_time' => $now]);
-        } else {
-            $updateArticle->execute([
-                'tenant_id' => $tenantId,
-                'cid' => $values['cid'],
-                'description' => $values['description'],
-                'abstract' => $values['abstract'],
-                'content' => $values['content'],
-                'click_virtual' => $values['click_virtual'],
-                'sort' => $values['sort'],
+    Db::transaction(function () use ($plan, $tenantId, $docsUrl, $now): void {
+        $categoryIds = [];
+        foreach ($plan['categories'] as $sort => $name) {
+            $category = Db::name('article_cate')->where('tenant_id', $tenantId)
+                ->where('name', $name)->lock(true)->field('id')->find();
+            $values = [
+                'sort' => (count($plan['categories']) - $sort) * 10,
+                'is_show' => 1,
+                'delete_time' => null,
                 'update_time' => $now,
-                'id' => (int) $articleId,
+            ];
+            if ($category === null) {
+                $categoryId = Db::name('article_cate')->insertGetId($values + [
+                    'tenant_id' => $tenantId,
+                    'name' => $name,
+                    'create_time' => $now,
+                ]);
+            } else {
+                $categoryId = (int)$category['id'];
+                Db::name('article_cate')->where('tenant_id', $tenantId)->where('id', $categoryId)->update($values);
+            }
+            $categoryIds[$name] = (int)$categoryId;
+        }
+
+        foreach ($plan['articles'] as $article) {
+            $articleId = Db::name('article')->where('tenant_id', $tenantId)
+                ->where('title', $article['title'])->where('author', 'Peanut Admin Demo')
+                ->whereNull('delete_time')->lock(true)->value('id');
+            $values = [
+                'cid' => $categoryIds[$article['category']],
+                'title' => $article['title'],
+                'desc' => $article['desc'],
+                'abstract' => $article['abstract'],
+                'content' => $article['content'],
+                'click_virtual' => $article['click_virtual'],
+                'sort' => $article['sort'],
+                'is_show' => 1,
+                'update_time' => $now,
+            ];
+            if ($articleId === null) {
+                Db::name('article')->insert($values + [
+                    'tenant_id' => $tenantId,
+                    'image' => '',
+                    'author' => 'Peanut Admin Demo',
+                    'click_actual' => 0,
+                    'create_time' => $now,
+                ]);
+            } else {
+                Db::name('article')->where('tenant_id', $tenantId)->where('id', (int)$articleId)->update($values);
+            }
+        }
+
+        $tagIds = [];
+        foreach ($plan['tags'] as $name) {
+            $tagId = Db::name('member_tag')->where('tenant_id', $tenantId)
+                ->where('name', $name)->lock(true)->value('id');
+            $values = [
+                'remark' => 'Peanut Admin Demo synthetic data',
+                'delete_time' => null,
+                'update_time' => $now,
+            ];
+            if ($tagId === null) {
+                $tagId = Db::name('member_tag')->insertGetId($values + [
+                    'tenant_id' => $tenantId,
+                    'name' => $name,
+                    'create_time' => $now,
+                ]);
+            } else {
+                Db::name('member_tag')->where('tenant_id', $tenantId)->where('id', (int)$tagId)->update($values);
+            }
+            $tagIds[$name] = (int)$tagId;
+        }
+
+        foreach ($plan['members'] as $index => $memberData) {
+            $memberId = Db::name('member')->where('tenant_id', $tenantId)
+                ->where('sn', $memberData['sn'])->lock(true)->value('id');
+            $values = [
+                'nickname' => $memberData['nickname'],
+                'channel' => $memberData['channel'],
+                'user_money' => $memberData['user_money'],
+                'points' => $memberData['points'],
+                'status' => 1,
+                'delete_time' => null,
+                'update_time' => $now,
+            ];
+            if ($memberId === null) {
+                $memberId = Db::name('member')->insertGetId($values + [
+                    'tenant_id' => $tenantId,
+                    'sn' => $memberData['sn'],
+                    'account' => $memberData['account'],
+                    'password' => '',
+                    'avatar' => '',
+                    'real_name' => '',
+                    'mobile' => '',
+                    'email' => '',
+                    'sex' => 0,
+                    'is_new_user' => 0,
+                    'total_recharge_amount' => 0,
+                    'create_time' => $now,
+                ]);
+            } else {
+                Db::name('member')->where('tenant_id', $tenantId)->where('id', (int)$memberId)->update($values);
+            }
+            Db::name('member_tag_relation')->insertOrIgnore([
+                'tenant_id' => $tenantId,
+                'member_id' => (int)$memberId,
+                'tag_id' => $tagIds[$index % 2 === 0 ? '演示用户' : '内容爱好者'],
             ]);
         }
-    }
 
-    $tagIds = [];
-    $tag = $pdo->prepare(
-        'INSERT INTO pa_member_tag (tenant_id, name, remark, create_time, update_time) VALUES (:tenant_id, :name, :remark, :create_time, :update_time) '
-        . 'ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), remark = VALUES(remark), delete_time = NULL, update_time = VALUES(update_time)'
-    );
-    foreach ($plan['tags'] as $name) {
-        $tag->execute([
-            'tenant_id' => $tenantId,
-            'name' => $name,
-            'remark' => 'Peanut Admin Demo synthetic data',
-            'create_time' => $now,
-            'update_time' => $now,
-        ]);
-        $tagIds[$name] = (int) $pdo->lastInsertId();
-    }
-
-    $member = $pdo->prepare(
-        'INSERT INTO pa_member (tenant_id, sn, account, password, nickname, avatar, real_name, mobile, channel, email, sex, status, is_new_user, user_money, total_recharge_amount, points, create_time, update_time) '
-        . 'VALUES (:tenant_id, :sn, :account, \'\', :nickname, \'\', \'\', \'\', :channel, \'\', 0, 1, 0, :user_money, 0, :points, :create_time, :update_time) '
-        . 'ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), nickname = VALUES(nickname), channel = VALUES(channel), user_money = VALUES(user_money), points = VALUES(points), status = 1, delete_time = NULL, update_time = VALUES(update_time)'
-    );
-    $relation = $pdo->prepare('INSERT IGNORE INTO pa_member_tag_relation (tenant_id, member_id, tag_id) VALUES (:tenant_id, :member_id, :tag_id)');
-    foreach ($plan['members'] as $index => $memberData) {
-        $member->execute([
-            'tenant_id' => $tenantId, 'sn' => $memberData['sn'], 'account' => $memberData['account'],
-            'nickname' => $memberData['nickname'], 'channel' => $memberData['channel'],
-            'user_money' => $memberData['user_money'], 'points' => $memberData['points'],
-            'create_time' => $now, 'update_time' => $now,
-        ]);
-        $memberId = (int) $pdo->lastInsertId();
-        $relation->execute(['tenant_id' => $tenantId, 'member_id' => $memberId, 'tag_id' => $tagIds[$index % 2 === 0 ? '演示用户' : '内容爱好者']]);
-    }
-
-    $docs = $pdo->prepare(
-        'INSERT INTO pa_config (type, name, value, create_time, update_time) VALUES (\'website\', \'official_url\', :url, :create_time, :update_time) '
-        . 'ON DUPLICATE KEY UPDATE value = VALUES(value), update_time = VALUES(update_time)'
-    );
-    $docs->execute(['url' => $docsUrl, 'create_time' => $now, 'update_time' => $now]);
-    $pdo->commit();
+        $configId = Db::name('config')->where('type', 'website')->where('name', 'official_url')
+            ->lock(true)->value('id');
+        if ($configId === null) {
+            Db::name('config')->insert([
+                'type' => 'website',
+                'name' => 'official_url',
+                'value' => $docsUrl,
+                'create_time' => $now,
+                'update_time' => $now,
+            ]);
+        } else {
+            Db::name('config')->where('id', (int)$configId)->update([
+                'value' => $docsUrl,
+                'update_time' => $now,
+            ]);
+        }
+    });
 
     echo json_encode([
         'status' => 'applied', 'environment' => $config['environment'], 'resource_id' => $config['resource_id'],
@@ -238,8 +264,5 @@ try {
         'articles' => count($plan['articles']), 'tags' => count($plan['tags']), 'members' => count($plan['members']),
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), PHP_EOL;
 } catch (Throwable $exception) {
-    if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     demoFail($exception->getMessage());
 }

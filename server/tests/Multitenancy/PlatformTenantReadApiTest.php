@@ -7,32 +7,27 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 
 use app\platform\service\PlatformOperatorSessionService;
 use app\platform\service\PlatformTenantQueryService;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Authorization\Application\AdminAccessException;
 use PeanutAdmin\Kernel\Authorization\Application\PageRequest;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalogSynchronizer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
+use PeanutAdmin\Kernel\Authorization\Persistence\ThinkPhpAuthorizationCatalogRepository;
 use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 use PeanutAdmin\Kernel\Platform\Application\PlatformWorkspaceQueryService;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function platformTenantReadExpect(bool $condition, string $message): void
 {
@@ -41,26 +36,17 @@ function platformTenantReadExpect(bool $condition, string $message): void
     }
 }
 
-function platformTenantReadBootstrap(PDO $pdo): BootstrapService
+function platformTenantReadBootstrap(): BootstrapService
 {
-    return new BootstrapService(
-        new PdoTransactionManager($pdo),
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        new PasswordHasher()
-    );
+    return new BootstrapService(passwords: new PasswordHasher());
 }
 
-function platformTenantReadSessions(PDO $pdo): PlatformOperatorSessionService
+function platformTenantReadSessions(): PlatformOperatorSessionService
 {
-    $repository = new PdoPlatformAuthorizationRepository($pdo);
+    $repository = new ThinkPhpPlatformAuthorizationRepository();
     return new PlatformOperatorSessionService(
         new PlatformAuthService(
-            new PdoTransactionManager($pdo),
-            new PdoPlatformAuthRepository($pdo),
+            new ThinkPhpPlatformAuthRepository(),
             new PasswordHasher(),
             new SystemClock(),
             new TokenIssuer(),
@@ -131,9 +117,10 @@ try {
     foreach (AuthorizationSchema::tableNames() as $table) {
         $pdo->exec(AuthorizationSchema::createSql($table));
     }
-    (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
+    ThinkPhpTestConnection::fromPdo($pdo);
+    (new CorePermissionCatalogSynchronizer(new ThinkPhpAuthorizationCatalogRepository()))->synchronize();
 
-    $bootstrap = platformTenantReadBootstrap($pdo);
+    $bootstrap = platformTenantReadBootstrap();
     $platform = $bootstrap->bootstrapPlatformOwner(
         'reader@example.test',
         'ReaderPassword2026',
@@ -162,8 +149,8 @@ SQL);
         ]);
     }
 
-    $sessions = platformTenantReadSessions($pdo);
-    $queries = new PlatformTenantQueryService($sessions, new PlatformWorkspaceQueryService($pdo));
+    $sessions = platformTenantReadSessions();
+    $queries = new PlatformTenantQueryService($sessions, new PlatformWorkspaceQueryService());
     $authentication = $sessions->login(
         'reader@example.test',
         'ReaderPassword2026',

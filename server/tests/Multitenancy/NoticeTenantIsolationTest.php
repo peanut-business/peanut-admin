@@ -4,10 +4,10 @@ declare(strict_types=1);
 use app\Modules\Official\Notification\Application\NotificationApplicationService;
 use app\Modules\Official\Notification\Validation\NoticeSceneValidate;
 use app\Modules\Official\Notification\Model\NoticeLog;
+use app\Modules\Official\Notification\Model\NoticeScene;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\context\notice\NoticeTenantContext;
-use app\Modules\Official\Notification\Infrastructure\Persistence\NoticeTenantRepository;
 use PeanutAdmin\NotificationSms\Application\VerificationCodeSecret;
 use PeanutAdmin\NotificationSms\Sms\NoticeSmsSender;
 use app\Modules\Official\Notification\Application\VerificationCodeService;
@@ -15,7 +15,6 @@ use app\common\value\notice\sms\SmsDriverResult;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -285,11 +284,11 @@ SQL);
             $validationErrors[] = $exception->getMessage();
         }
     }
-    expectNoticeTenant(count(array_unique($validationErrors ?? [])) === 1, 'scene validator enumerated cross-Tenant ownership');
+    expectNoticeTenant(count(array_unique($validationErrors)) === 1, 'scene validator enumerated cross-Tenant ownership');
 
     $beforeUntrusted = (int)$pdo->query('SELECT COUNT(*) FROM pa_notice_log')->fetchColumn();
     $sender = new SuccessfulNoticeSender();
-    $service = new VerificationCodeService($sender, new PdoTransactionManager($pdo), $contexts, false);
+    $service = new VerificationCodeService($sender, $contexts, false);
     foreach (['send', 'verify'] as $operation) {
         try {
             $operation === 'send'
@@ -351,7 +350,7 @@ SQL);
     expectNoticeTenant($sender->calls === 1, 'active successful reservation called the Provider again');
 
     $barrierSender = new SuccessfulNoticeSender();
-    $barrierService = new VerificationCodeService($barrierSender, new PdoTransactionManager($pdo), $contexts, false);
+    $barrierService = new VerificationCodeService($barrierSender, $contexts, false);
     $barrierOwner = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-barrier-owner');
     $barrierContender = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-barrier-contender');
     $contendingResult = null;
@@ -381,7 +380,7 @@ SQL);
     );
 
     $failedSender = new OutcomeNoticeSender(SmsDriverResult::OUTCOME_FAILED);
-    $failedService = new VerificationCodeService($failedSender, new PdoTransactionManager($pdo), $contexts, false);
+    $failedService = new VerificationCodeService($failedSender, $contexts, false);
     foreach (['first', 'retry'] as $attempt) {
         $failedContext = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-failed-' . $attempt);
         $failedResult = runNoticeTenant(
@@ -394,7 +393,7 @@ SQL);
     expectNoticeTenant($failedSender->calls === 2, 'explicit Provider failure did not release the reservation');
 
     $unknownSender = new OutcomeNoticeSender(SmsDriverResult::OUTCOME_UNKNOWN);
-    $unknownService = new VerificationCodeService($unknownSender, new PdoTransactionManager($pdo), $contexts, false);
+    $unknownService = new VerificationCodeService($unknownSender, $contexts, false);
     $unknownOwner = noticeTenantContext(202, 2002, 502, 'fresh-notice-beta-unknown-owner');
     $unknownResult = runNoticeTenant(
         $unknownOwner,
@@ -422,12 +421,12 @@ SQL);
     $alphaScene = (int)runNoticeTenant(
         $alpha,
         'test.notice.scenes.alpha.login-code',
-        fn() => NoticeTenantRepository::scenes($contexts, $alpha)->where('code', 'login_code')->value('id'),
+        fn() => NoticeScene::where([])->where('code', 'login_code')->value('id'),
     );
     $betaScene = (int)runNoticeTenant(
         $beta,
         'test.notice.scenes.beta.login-code',
-        fn() => NoticeTenantRepository::scenes($contexts, $beta)->where('code', 'login_code')->value('id'),
+        fn() => NoticeScene::where([])->where('code', 'login_code')->value('id'),
     );
     $logData = static fn(int $sceneId, string $receiver, string $code): array => [
         'template_id' => 0,
@@ -449,17 +448,17 @@ SQL);
     runNoticeTenant(
         $alpha,
         'test.notice.logs.create.alpha.first',
-        fn() => NoticeTenantRepository::createLog($contexts, $alpha, $logData($alphaScene, '13800000002', '4827')),
+        fn() => NoticeLog::create($logData($alphaScene, '13800000002', '4827')),
     );
     runNoticeTenant(
         $beta,
         'test.notice.logs.create.beta',
-        fn() => NoticeTenantRepository::createLog($contexts, $beta, $logData($betaScene, '13800000002', '4827')),
+        fn() => NoticeLog::create($logData($betaScene, '13800000002', '4827')),
     );
     runNoticeTenant(
         $alpha,
         'test.notice.logs.create.alpha.second',
-        fn() => NoticeTenantRepository::createLog($contexts, $alpha, $logData($alphaScene, '13800000003', '5938')),
+        fn() => NoticeLog::create($logData($alphaScene, '13800000003', '5938')),
     );
 
     $alphaVerification = runNoticeTenant(
@@ -472,7 +471,7 @@ SQL);
         (int)runNoticeTenant(
             $beta,
             'test.notice.logs.beta.verification',
-            fn() => NoticeTenantRepository::logs($contexts, $beta)->where('receiver', '13800000002')->value('is_verified'),
+            fn() => NoticeLog::where([])->where('receiver', '13800000002')->value('is_verified'),
         ) === NoticeLog::VERIFIED_NO,
         'Alpha verification consumed Beta code'
     );
@@ -505,7 +504,7 @@ SQL);
     $betaLogId = (int)runNoticeTenant(
         $beta,
         'test.notice.logs.beta.latest',
-        fn() => NoticeTenantRepository::logs($contexts, $beta)->order('id', 'desc')->value('id'),
+        fn() => NoticeLog::where([])->order('id', 'desc')->value('id'),
     );
     expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.cross', fn() => $notifications->logDetail($betaLogId)) === [], 'cross-tenant log detail was visible');
     expectNoticeTenant(runNoticeTenant($alpha, 'test.notice.log.missing', fn() => $notifications->logDetail(999999)) === [], 'missing log detail shape changed');

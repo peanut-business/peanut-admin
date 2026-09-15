@@ -3,14 +3,12 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ContextualCommand;
 use app\common\execution\CurrentExecutionContext;
 use app\common\execution\ExecutionContextStore;
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
 use app\Modules\Official\Task\Contracts\TaskScheduler;
-use PDO;
-use app\platform\service\plugin\ModuleCatalogApplier;
 use think\console\Input;
 use think\console\Output;
 use PeanutAdmin\Kernel\Tenancy\TenantScope;
@@ -20,17 +18,15 @@ use PeanutAdmin\Kernel\Tenancy\TenantScope;
  * 由系统 cron 每分钟调用一次：`* * * * * cd /path/to/server && php think crontab`
  * 每次调用扫描所有「运行中」任务，比对 cron 表达式，派发到期的 console 命令。
  */
-class Crontab extends DatabaseContextualCommand
+class Crontab extends ContextualCommand
 {
     public function __construct(
         ExecutionContextStore $contexts,
         CurrentExecutionContext $executionContext,
-        PDO $pdo,
-        ModuleCatalogApplier $catalogs,
         private readonly TaskScheduler $taskScheduler,
         private readonly AdvisoryLockExecution $locks,
     ) {
-        parent::__construct($contexts, $executionContext, $pdo, $catalogs);
+        parent::__construct($contexts, $executionContext);
     }
 
     protected function configure()

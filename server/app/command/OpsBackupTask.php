@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace app\command;
 
 use app\common\service\audit\AuditContractHost;
-use app\platform\service\ops\PdoBackupTaskExecutionService;
-use app\common\execution\DatabaseContextualCommand;
+use app\platform\service\ops\ThinkPhpBackupTaskExecutionService;
+use app\common\execution\ContextualCommand;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
@@ -13,7 +13,7 @@ use think\console\Output;
 use Throwable;
 
 /** Deployment-only bridge for claiming and finalizing trusted backup tasks. */
-final class OpsBackupTask extends DatabaseContextualCommand
+final class OpsBackupTask extends ContextualCommand
 {
     protected function configure(): void
     {
@@ -28,9 +28,8 @@ final class OpsBackupTask extends DatabaseContextualCommand
     protected function handle(Input $input, Output $output): int
     {
         try {
-            $pdo = $this->database();
-            $audit = AuditContractHost::fromPdo($pdo);
-            $service = new PdoBackupTaskExecutionService($pdo, $audit);
+            $audit = app(AuditContractHost::class);
+            $service = new ThinkPhpBackupTaskExecutionService($audit);
             $action = trim((string)$input->getArgument('action'));
             $result = match ($action) {
                 'claim' => $service->claim(),

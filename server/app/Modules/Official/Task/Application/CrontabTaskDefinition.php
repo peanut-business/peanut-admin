@@ -9,7 +9,7 @@ use app\common\execution\ExecutionContextStore;
 use app\common\execution\SystemExecutionContext;
 use app\common\execution\SystemExecutionMetadata;
 use app\common\services\CrontabCommandService;
-use app\Modules\Official\Task\Infrastructure\Persistence\CrontabTenantRepository;
+use app\Modules\Official\Task\Model\Crontab;
 use app\common\service\module\ModuleExecutionBoundary;
 use app\common\service\org\AdminDirectoryQuery;
 use app\Modules\Official\Task\Contracts\TaskWorkerDefinition;
@@ -126,7 +126,7 @@ final class CrontabTaskDefinition implements TaskSubmissionProvider, TaskWorkerD
         $contextIdentity = trim((string)($execution->payload['context_identity'] ?? ''));
         self::assertContextIdentity($contextIdentity, $context->tenantContext->tenantId, $scheduleId);
         $scope = TenantScope::fromTrustedContext($context->tenantContext->tenantId, $contextIdentity);
-        $item = CrontabTenantRepository::find($scheduleId);
+        $item = Crontab::find($scheduleId);
         if ($item === null || (int)$item->status !== CrontabEnum::START) {
             return;
         }

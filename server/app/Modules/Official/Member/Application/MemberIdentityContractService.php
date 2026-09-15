@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace app\Modules\Official\Member\Application;
 
+use app\Modules\Official\Member\Model\Member;
 use app\Modules\Official\Member\Contracts\Dto\MemberIdentitySnapshot;
 use app\Modules\Official\Member\Contracts\MemberIdentityCommands;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
-use app\Modules\Official\Member\Infrastructure\Persistence\MemberTenantRepository;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Context\TenantSystemContext;
 
@@ -15,11 +15,11 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 {
     public function register(TenantSystemContext $context, string $account, string $password, string $avatar): void
     {
-        if (MemberTenantRepository::members($context)->where('account', $account)->count() > 0) {
+        if (Member::where([])->where('account', $account)->count() > 0) {
             throw new \RuntimeException('账号已被注册');
         }
-        $sn = MemberTenantRepository::nextMemberSn($context);
-        MemberTenantRepository::createMember($context, [
+        $sn = Member::generateSn($context);
+        Member::create([
             'sn' => $sn,
             'account' => $account,
             'password' => $this->passwordHash($password),
@@ -31,7 +31,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 
     public function login(TenantSystemContext $context, string $identifier, string $password, string $loginIp): MemberIdentitySnapshot
     {
-        $member = MemberTenantRepository::members($context)->where(function ($query) use ($identifier): void {
+        $member = Member::where([])->where(function ($query) use ($identifier): void {
             $query->where('account', $identifier)->whereOr('mobile', $identifier);
         })->findOrEmpty();
         if ($member->isEmpty()) {
@@ -59,10 +59,10 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         string $avatar,
         string $loginIp,
     ): MemberIdentitySnapshot {
-        $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
+        $member = Member::where([])->where('mobile', $mobile)->findOrEmpty();
         if ($member->isEmpty()) {
-            $sn = MemberTenantRepository::nextMemberSn($context);
-            $member = MemberTenantRepository::createMember($context, [
+            $sn = Member::generateSn($context);
+            $member = Member::create([
                 'sn' => $sn,
                 'account' => $mobile,
                 'password' => '',
@@ -86,7 +86,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         string $mobile,
         string $password,
     ): void {
-        $member = MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty();
+        $member = Member::where([])->where('mobile', $mobile)->findOrEmpty();
         if ($member->isEmpty()) {
             throw new \RuntimeException('手机号未绑定账号');
         }
@@ -96,7 +96,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 
     public function assertMobileBound(TenantContext|TenantSystemContext $context, string $mobile): void
     {
-        if (MemberTenantRepository::members($context)->where('mobile', $mobile)->findOrEmpty()->isEmpty()) {
+        if (Member::where([])->where('mobile', $mobile)->findOrEmpty()->isEmpty()) {
             throw new \RuntimeException('手机号未绑定账号');
         }
     }
@@ -106,7 +106,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
         int $memberId,
         string $mobile,
     ): void {
-        if (!MemberTenantRepository::members($context)->where('mobile', $mobile)
+        if (!Member::where([])->where('mobile', $mobile)
             ->where('id', '<>', $memberId)->lock(true)->findOrEmpty()->isEmpty()) {
             throw new \RuntimeException('手机号已被其他账号绑定');
         }
@@ -114,7 +114,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 
     public function changePassword(AuthenticatedMemberContext $context, int $memberId, string $oldPassword, string $newPassword): void
     {
-        $member = MemberTenantRepository::members($context)->where('id', $memberId)->findOrEmpty();
+        $member = Member::where([])->where('id', $memberId)->findOrEmpty();
         if ($member->isEmpty()) {
             throw new \RuntimeException('用户不存在');
         }
@@ -128,18 +128,18 @@ final class MemberIdentityContractService implements MemberIdentityCommands
     public function bindVerifiedMobile(AuthenticatedMemberContext|TenantContext|TenantSystemContext $context, int $memberId, string $mobile): void
     {
         $this->assertMobileAvailable($context, $memberId, $mobile);
-        if (MemberTenantRepository::members($context)->where('id', $memberId)->update(['mobile' => $mobile]) !== 1) {
+        if (Member::where([])->where('id', $memberId)->update(['mobile' => $mobile]) !== 1) {
             throw new \RuntimeException('用户不存在');
         }
     }
 
     public function createOAuthMember(TenantContext|TenantSystemContext $context, array $profile): MemberIdentitySnapshot
     {
-        $sn = MemberTenantRepository::nextMemberSn($context);
+        $sn = Member::generateSn($context);
         do {
             $account = 'wx_' . strtolower(bin2hex(random_bytes(6)));
-        } while (MemberTenantRepository::members($context)->withTrashed()->where('account', $account)->count() > 0);
-        $member = MemberTenantRepository::createMember($context, [
+        } while (Member::where([])->withTrashed()->where('account', $account)->count() > 0);
+        $member = Member::create([
             'sn' => $sn,
             'account' => $account,
             'password' => '',
@@ -159,7 +159,7 @@ final class MemberIdentityContractService implements MemberIdentityCommands
 
     public function recordLogin(TenantContext|TenantSystemContext $context, int $memberId, string $loginIp): void
     {
-        if (MemberTenantRepository::members($context)->where('id', $memberId)->update([
+        if (Member::where([])->where('id', $memberId)->update([
             'login_time' => time(),
             'login_ip' => $loginIp,
         ]) !== 1) {

@@ -5,7 +5,6 @@ namespace app\platform\service\ops;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use PDO;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\OpsConsole\Application\OpsConsoleException;
 use PeanutAdmin\OpsConsole\Application\PlatformPermissionChecker;
@@ -13,6 +12,7 @@ use PeanutAdmin\OpsConsole\Package;
 use PeanutAdmin\OpsConsole\Task\BackupRestoreProviderRegistry;
 use PeanutAdmin\OpsConsole\Task\OpsTaskService;
 use Throwable;
+use think\facade\Db;
 
 /** Read-only projection for recent operations tasks and the latest verified backup pair. */
 final readonly class PlatformBackupCenterService
@@ -20,7 +20,6 @@ final readonly class PlatformBackupCenterService
     private const TASK_LIMIT = 20;
 
     public function __construct(
-        private PDO $pdo,
         private BackupRestoreProviderRegistry $backupProviders,
         private OpsTaskService $tasks,
         private PlatformPermissionChecker $permissions,
@@ -54,20 +53,10 @@ final readonly class PlatformBackupCenterService
     /** @return list<array<string,mixed>> */
     private function recentTasks(PlatformContext $context): array
     {
-        $statement = $this->pdo->prepare(<<<'SQL'
-SELECT task_key
-FROM pa_ops_task
-WHERE task_type IN (:backup_task_type, :restore_task_type)
-ORDER BY id DESC
-LIMIT 20
-SQL);
-        $statement->execute([
-            'backup_task_type' => Package::BACKUP_TASK_TYPE,
-            'restore_task_type' => Package::RESTORE_TASK_TYPE,
-        ]);
-
         $tasks = [];
-        foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $taskKey) {
+        $taskKeys = Db::name('ops_task')->whereIn('task_type', [Package::BACKUP_TASK_TYPE, Package::RESTORE_TASK_TYPE])
+            ->order('id', 'desc')->limit(self::TASK_LIMIT)->column('task_key');
+        foreach ($taskKeys as $taskKey) {
             $tasks[] = $this->tasks
                 ->task($context, (string)$taskKey)
                 ->toPublicArray();
@@ -78,15 +67,9 @@ SQL);
     /** @return array<string,mixed>|null */
     private function latestVerified(string $runtimeCommit): ?array
     {
-        $statement = $this->pdo->query(<<<'SQL'
-SELECT backup_reference_key, task_key, provider_key, manifest_sha256,
-       source_commit, source_tree, source_release_key,
-       consistency_started_at, consistency_completed_at, verified_at, manifest_json
-FROM pa_ops_backup_evidence
-ORDER BY verified_at DESC, id DESC
-LIMIT 1
-SQL);
-        $row = $statement === false ? false : $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_backup_evidence')
+            ->field('backup_reference_key,task_key,provider_key,manifest_sha256,source_commit,source_tree,source_release_key,consistency_started_at,consistency_completed_at,verified_at,manifest_json')
+            ->order('verified_at', 'desc')->order('id', 'desc')->find();
         if (!is_array($row)) {
             return null;
         }
@@ -126,15 +109,9 @@ SQL);
     /** @return array<string,mixed>|null */
     private function latestRestoreVerified(): ?array
     {
-        $statement = $this->pdo->query(<<<'SQL'
-SELECT backup_reference_key, target_key, evidence_sha256, table_count,
-       schema_migration_count, account_count, tenant_count, tenant_member_count,
-       storage_file_count, verified_at
-FROM pa_ops_restore_evidence
-ORDER BY verified_at DESC, id DESC
-LIMIT 1
-SQL);
-        $row = $statement === false ? false : $statement->fetch(PDO::FETCH_ASSOC);
+        $row = Db::name('ops_restore_evidence')
+            ->field('backup_reference_key,target_key,evidence_sha256,table_count,schema_migration_count,account_count,tenant_count,tenant_member_count,storage_file_count,verified_at')
+            ->order('verified_at', 'desc')->order('id', 'desc')->find();
         if (!is_array($row)) {
             return null;
         }

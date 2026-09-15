@@ -5,7 +5,7 @@ namespace app\platform\service\plugin;
 
 use app\common\persistence\AdvisoryLockExecution;
 use app\common\persistence\AdvisoryLockUnavailable;
-use PDO;
+use think\facade\Db;
 
 /** Promotes one verified package overlay, rebuilds the canonical lock, then invokes the shared lifecycle. */
 final class PluginPackageInstaller
@@ -15,7 +15,6 @@ final class PluginPackageInstaller
      * @param array<string,string> $trustedPublicKeys key_id => raw Ed25519 public key
      */
     public function __construct(
-        private readonly PDO $pdo,
         private readonly string $serverRoot,
         private readonly array $moduleConfig,
         private readonly array $trustedPublicKeys,
@@ -79,7 +78,7 @@ final class PluginPackageInstaller
         $plan = null;
         $lockName = 'pa:module-runtime:' . substr(hash('sha256', $package->packageKey), 0, 40);
         try {
-            return (new AdvisoryLockExecution($this->pdo))->run($lockName, 0, function () use (
+            return (new AdvisoryLockExecution())->run($lockName, 0, function () use (
                 $operation,
                 $package,
                 &$promoted,
@@ -149,11 +148,11 @@ final class PluginPackageInstaller
             (new PluginArtifactWriter($this->serverRoot))->writeLock();
             $resolver = new PluginLockResolver($this->serverRoot, '../plugins.lock');
             $lifecycle = new PluginLifecycleService(
-                $this->pdo,
                 $resolver,
-                new PluginModuleRegistryFactory($this->pdo, $this->serverRoot),
+                new PluginModuleRegistryFactory($this->serverRoot),
                 $this->moduleConfig,
                 $this->catalogs,
+                new ModuleMigrationSqlExecutor(),
             );
             $lifecycleStarted = true;
             $result = $operation === 'update'
@@ -225,12 +224,9 @@ final class PluginPackageInstaller
         if (!$descriptor instanceof PluginDescriptor) {
             throw new PluginPackageException('PLUGIN_NOT_INSTALLED', 'Package must be installed before update.');
         }
-        $statement = $this->pdo->prepare(
-            'SELECT installed_version,status,artifact_sha256,lock_digest FROM pa_plugin_installation WHERE plugin_key=?'
-        );
-        $statement->execute([$package->packageKey]);
-        $installation = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($installation)) {
+        $installation = Db::name('plugin_installation')->where('plugin_key', $package->packageKey)
+            ->field('installed_version,status,artifact_sha256,lock_digest')->find();
+        if ($installation === null) {
             throw new PluginPackageException('PLUGIN_NOT_INSTALLED', 'Package must be installed before update.');
         }
         if (!in_array($installation['status'] ?? null, ['active', 'failed'], true)) {
@@ -395,10 +391,9 @@ final class PluginPackageInstaller
     {
         $descriptor = $current[$package->packageKey] ?? null;
         if (!$descriptor instanceof PluginDescriptor) return false;
-        $statement = $this->pdo->prepare('SELECT installed_version,status FROM pa_plugin_installation WHERE plugin_key=?');
-        $statement->execute([$package->packageKey]);
-        $installation = $statement->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($installation)
+        $installation = Db::name('plugin_installation')->where('plugin_key', $package->packageKey)
+            ->field('installed_version,status')->find();
+        if ($installation === null
             || !in_array($installation['status'] ?? null, ['failed', 'installing'], true)
             || version_compare($package->packageVersion, (string)$installation['installed_version'], '<=')) {
             return false;

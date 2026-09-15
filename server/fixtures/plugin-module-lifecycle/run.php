@@ -10,9 +10,13 @@ use app\platform\service\plugin\PluginLifecycleException;
 use app\platform\service\plugin\PluginLifecycleService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginModuleRegistryFactory;
+use app\platform\service\plugin\ModuleCatalogApplier;
+use app\platform\service\plugin\ModuleMigrationSqlExecutor;
 use PeanutAdmin\Kernel\Auth\TenantContext;
 use PeanutAdmin\Kernel\Auth\ValidatedTenantSession;
 use PeanutAdmin\Kernel\Module\ModuleException;
+use PeanutAdmin\Settings\Definition\SettingDefinitionSynchronizer;
+use think\App;
 
 require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
@@ -207,6 +211,7 @@ $name = getenv('DB_NAME') ?: '';
 $user = getenv('DB_USER') ?: '';
 $pass = getenv('DB_PASS') ?: '';
 pluginLifecycleExpect($host !== '' && $port !== '' && $name !== '' && $user !== '', 'registered database environment is required');
+(new App($serverRoot))->initialize();
 $pdo = new PDO(
     "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
     $user,
@@ -237,15 +242,17 @@ $config = [
     'kernel_version' => '1.0.0',
     'registered_client_keys' => ['admin-web', 'platform-web'],
 ];
+$catalogs = new ModuleCatalogApplier(new SettingDefinitionSynchronizer());
 $artifact = null;
 $repairArtifact = null;
 try {
     $resolver = new PluginLockResolver($serverRoot, '../plugins.lock');
     $service = new PluginLifecycleService(
-        $pdo,
         $resolver,
-        new PluginModuleRegistryFactory($pdo, $serverRoot),
-        $config
+        new PluginModuleRegistryFactory($serverRoot),
+        $config,
+        $catalogs,
+        new ModuleMigrationSqlExecutor(),
     );
     $first = $service->install('fixture.delivery-record');
     pluginLifecycleExpect(($first['status'] ?? null) === 'active', 'Plugin did not activate');
@@ -291,8 +298,8 @@ SQL)->fetch();
     ), 'plugin-module-fixture');
     $executionContexts = new ExecutionContextStore();
     $executionContext = new CurrentExecutionContext($executionContexts);
-    $commands = (new ModuleProvider())->commands($pdo, $executionContext);
-    $modules = new ModuleExecutionBoundary($pdo, $executionContext);
+    $commands = (new ModuleProvider())->commands($executionContext);
+    $modules = new ModuleExecutionBoundary($executionContext);
     $record = static fn(string $reference): array => $executionContexts->run(
         new AdminExecutionContext($context, 'fixture.delivery-record.record'),
         static function () use ($modules, $commands, $reference): array {
@@ -356,10 +363,11 @@ SQL);
     $artifact = pluginLifecycleFailureArtifact($projectRoot);
     $failureResolver = new PluginLockResolver($serverRoot, $artifact['lock']);
     $failureService = new PluginLifecycleService(
-        $pdo,
         $failureResolver,
-        new PluginModuleRegistryFactory($pdo, $serverRoot),
-        $config + ['plugin_lock' => $artifact['lock']]
+        new PluginModuleRegistryFactory($serverRoot),
+        $config + ['plugin_lock' => $artifact['lock']],
+        $catalogs,
+        new ModuleMigrationSqlExecutor(),
     );
     try {
         $failureService->install('fixture.delivery-record');
@@ -382,10 +390,11 @@ SQL);
     $repairArtifact = pluginLifecycleRepairArtifact($projectRoot);
     $repairResolver = new PluginLockResolver($serverRoot, $repairArtifact['lock']);
     $repairService = new PluginLifecycleService(
-        $pdo,
         $repairResolver,
-        new PluginModuleRegistryFactory($pdo, $serverRoot),
+        new PluginModuleRegistryFactory($serverRoot),
         $config + ['plugin_lock' => $repairArtifact['lock']],
+        $catalogs,
+        new ModuleMigrationSqlExecutor(),
     );
     $recovered = $repairService->install('fixture.delivery-record');
     pluginLifecycleExpect(($recovered['operation'] ?? null) === 'recovered', 'higher repair package did not recover the install');

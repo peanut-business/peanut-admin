@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\common\http\middleware;
 
 use app\common\service\installation\InstallationExecutionHost;
+use think\facade\Config;
 
 /** Keeps every business API closed while a guided fresh installation is incomplete. */
 final class InstallationStateMiddleware
@@ -14,7 +15,7 @@ final class InstallationStateMiddleware
 
     public function handle($request, \Closure $next)
     {
-        if (trim((string)(getenv('PEANUT_INSTALLATION_MODE') ?: 'automatic')) !== 'guided') {
+        if (trim((string)Config::get('peanut.installation.mode', 'automatic')) !== 'guided') {
             return $next($request);
         }
 

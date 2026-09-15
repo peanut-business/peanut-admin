@@ -8,31 +8,26 @@ require dirname(__DIR__, 2) . '/bootstrap/environment.php';
 use app\platform\context\PlatformOperatorContext;
 use app\platform\identity\CorePlatformOperatorIdentityPort;
 use app\platform\service\PlatformOperatorSessionService;
-use PeanutAdmin\Kernel\Auth\Persistence\PdoPlatformAuthRepository;
+use PeanutAdmin\Kernel\Auth\Persistence\ThinkPhpPlatformAuthRepository;
 use PeanutAdmin\Kernel\Auth\PlatformAuthService;
 use PeanutAdmin\Kernel\Auth\SystemClock;
 use PeanutAdmin\Kernel\Auth\TokenIssuer;
 use PeanutAdmin\Kernel\Auth\ValidatedPlatformSession;
 use PeanutAdmin\Kernel\Authorization\CorePermissionCatalogSynchronizer;
-use PeanutAdmin\Kernel\Authorization\Persistence\PdoAuthorizationCatalogRepository;
+use PeanutAdmin\Kernel\Authorization\Persistence\ThinkPhpAuthorizationCatalogRepository;
 use PeanutAdmin\Kernel\Authorization\Persistence\Schema\AuthorizationSchema;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
 use PeanutAdmin\Kernel\Context\PlatformContext;
 use PeanutAdmin\Kernel\Identity\PasswordHasher;
 use PeanutAdmin\Kernel\Migration\ModuleSchema;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoAuditRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoIdentityRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoMembershipRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoPlatformRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTenantRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
 use PeanutAdmin\Kernel\Persistence\Schema\KernelSchema;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\Kernel\Platform\Bootstrap\BootstrapService;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 require __DIR__ . '/../Support/IsolatedBackendEnvironment.php';
+require __DIR__ . '/../Support/ThinkPhpTestConnection.php';
 
 function poExpect(bool $condition, string $message): void
 {
@@ -52,26 +47,17 @@ function poRejected(Closure $operation, string $expected): void
     throw new RuntimeException("expected rejection: {$expected}");
 }
 
-function poBootstrap(PDO $pdo): BootstrapService
+function poBootstrap(): BootstrapService
 {
-    return new BootstrapService(
-        new PdoTransactionManager($pdo),
-        new PdoIdentityRepository($pdo),
-        new PdoTenantRepository($pdo),
-        new PdoMembershipRepository($pdo),
-        new PdoPlatformRepository($pdo),
-        new PdoAuditRepository($pdo),
-        new PasswordHasher()
-    );
+    return new BootstrapService(passwords: new PasswordHasher());
 }
 
-function poSessions(PDO $pdo): PlatformOperatorSessionService
+function poSessions(): PlatformOperatorSessionService
 {
-    $repository = new PdoPlatformAuthorizationRepository($pdo);
+    $repository = new ThinkPhpPlatformAuthorizationRepository();
     return new PlatformOperatorSessionService(
         new PlatformAuthService(
-            new PdoTransactionManager($pdo),
-            new PdoPlatformAuthRepository($pdo),
+            new ThinkPhpPlatformAuthRepository(),
             new PasswordHasher(),
             new SystemClock(),
             new TokenIssuer(),
@@ -117,16 +103,17 @@ try {
         $pdo->exec(AuthorizationSchema::createSql($table));
     }
     $pdo->exec('CREATE TABLE pa_admin_session (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, token VARCHAR(128) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB');
-    (new CorePermissionCatalogSynchronizer(new PdoAuthorizationCatalogRepository($pdo)))->synchronize();
+    ThinkPhpTestConnection::fromPdo($pdo);
+    (new CorePermissionCatalogSynchronizer(new ThinkPhpAuthorizationCatalogRepository()))->synchronize();
 
-    $bootstrap = poBootstrap($pdo);
+    $bootstrap = poBootstrap();
     $platform = $bootstrap->bootstrapPlatformOwner(
         'platform-only@example.test',
         'PlatformPassword2026',
         'Platform Only',
         'pm01-operator-bootstrap'
     );
-    $sessions = poSessions($pdo);
+    $sessions = poSessions();
     $authentication = $sessions->login(
         'platform-only@example.test',
         'PlatformPassword2026',

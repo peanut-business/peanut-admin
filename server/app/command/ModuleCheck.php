@@ -9,6 +9,7 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
+use think\facade\Config;
 
 final class ModuleCheck extends ContextualCommand
 {
@@ -26,8 +27,8 @@ final class ModuleCheck extends ContextualCommand
         try {
             $kernelVersion = trim((string)$input->getOption('kernel-version'));
             if ($kernelVersion === '') {
-                $configured = getenv('PEANUT_MODULE_KERNEL_VERSION');
-                $kernelVersion = is_string($configured) && trim($configured) !== '' ? trim($configured) : '1.0.0';
+                $configured = trim((string)Config::get('modules.kernel_version', '1.0.0'));
+                $kernelVersion = $configured === '' ? '1.0.0' : $configured;
             }
             $result = (new ModuleAuthorCheckHost(dirname(__DIR__, 3), $kernelVersion))->inspect(
                 (string)$input->getArgument('module_key'),

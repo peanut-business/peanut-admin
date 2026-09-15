@@ -3,23 +3,22 @@ declare(strict_types=1);
 
 namespace app\command;
 
-use app\common\execution\DatabaseContextualCommand;
+use app\common\execution\ModuleContextualCommand;
 use app\common\service\audit\AuditContractHost;
 use app\common\service\instance\DeploymentMode;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use app\platform\service\module\ProductTenantModuleProfileService;
 use app\platform\service\plugin\PluginLockResolver;
 use app\platform\service\plugin\PluginLifecycleException;
 use PeanutAdmin\Kernel\Module\ModuleException;
-use PeanutAdmin\Kernel\Module\Persistence\PdoModuleRuntimeRepository;
-use PeanutAdmin\Kernel\Persistence\Pdo\PdoTransactionManager;
+use PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository;
 use think\console\Input;
 use think\console\Output;
 use think\console\input\Option;
 use think\facade\Config;
 
 /** Explicit Standalone deployment-owner opening of installed, locked private Modules, without RBAC grants. */
-final class TenantModuleEnableLockedPrivate extends DatabaseContextualCommand
+final class TenantModuleEnableLockedPrivate extends ModuleContextualCommand
 {
     protected function configure()
     {
@@ -37,12 +36,11 @@ final class TenantModuleEnableLockedPrivate extends DatabaseContextualCommand
             if (!is_array($config) || !is_string($config['plugin_lock'] ?? null) || $config['plugin_lock'] === '') {
                 throw new ModuleException('MODULE_REGISTRY_UNAVAILABLE', 'Explicit Plugin lock configuration is required.');
             }
-            $pdo = $this->database();
             $root = dirname(__DIR__, 2);
-            $service = new ProductTenantModuleProfileService($pdo, new PdoTransactionManager($pdo),
-                new PdoModuleRuntimeRepository($pdo, true),
-                new PdoModuleGovernanceProvider($pdo, $root, $config, $this->moduleCatalogs()),
-                AuditContractHost::fromPdo($pdo));
+            $service = new ProductTenantModuleProfileService(
+                new ThinkPhpModuleRuntimeRepository(true),
+                new ThinkPhpModuleGovernanceProvider($root, $config, $this->moduleCatalogs()),
+                app(AuditContractHost::class));
             $result = $service->applyAdditionalInstallationSelection($input->getOption('module'), $mode, new PluginLockResolver($root, $config['plugin_lock']));
             $output->writeln(json_encode($result + ['rbac_granted' => false], JSON_THROW_ON_ERROR));
             return 0;

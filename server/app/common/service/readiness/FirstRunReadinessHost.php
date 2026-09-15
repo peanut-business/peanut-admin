@@ -11,7 +11,7 @@ use app\common\service\config\WebsiteConfigService;
 use PeanutAdmin\Kernel\Context\AuthenticatedMemberContext;
 use app\common\services\storage\StorageConfigurationService;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use PDO;
+use think\facade\Db;
 
 /**
  * Read-only first-run readiness projection.
@@ -25,7 +25,6 @@ final class FirstRunReadinessHost
         private readonly NotificationQueries $notifications,
         private readonly CoreTenantModuleAdminBridge $modules,
         private readonly StorageConfigurationService $storage,
-        private readonly PDO $pdo,
         private readonly WebsiteConfigService $website,
     ) {
     }
@@ -160,11 +159,9 @@ final class FirstRunReadinessHost
         $ledgerAvailable = false;
         $verifiedAt = null;
         try {
-            $statement = $this->pdo->query(
-                'SELECT verified_at FROM pa_ops_backup_evidence ORDER BY verified_at DESC, id DESC LIMIT 1'
-            );
-            $ledgerAvailable = $statement !== false;
-            $value = $statement === false ? false : $statement->fetchColumn();
+            $value = Db::name('ops_backup_evidence')->order('verified_at', 'desc')->order('id', 'desc')
+                ->value('verified_at');
+            $ledgerAvailable = true;
             $verifiedAt = is_string($value) && $value !== ''
                 ? (new \DateTimeImmutable($value, new \DateTimeZone('UTC')))
                     ->format('Y-m-d\TH:i:s.v\Z')

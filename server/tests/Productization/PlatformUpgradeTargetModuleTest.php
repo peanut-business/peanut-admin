@@ -4,16 +4,16 @@ declare(strict_types=1);
 use app\platform\service\ops\PlatformUpgradeReadinessService;
 use app\platform\service\ops\PlatformUpgradeTarget;
 use app\platform\service\ops\PairedBackupProvider;
-use app\platform\service\ops\PdoMaintenanceWindowStore;
-use app\platform\service\ops\PdoOpsTaskDispatcher;
+use app\platform\service\ops\ThinkPhpMaintenanceWindowStore;
+use app\platform\service\ops\ThinkPhpOpsTaskDispatcher;
 use app\platform\service\ops\PlatformBackupCenterService;
 use app\platform\service\ops\PlatformOpsPermissionChecker;
 use app\common\service\audit\AuditContractHost;
-use app\platform\service\module\PdoModuleGovernanceProvider;
+use app\platform\service\module\ThinkPhpModuleGovernanceProvider;
 use app\platform\service\plugin\PluginLockResolver;
 use PeanutAdmin\Kernel\Module\ManifestLoader;
 use PeanutAdmin\Kernel\Authorization\RevisionPermissionCache;
-use PeanutAdmin\Kernel\Platform\Authorization\PdoPlatformAuthorizationRepository;
+use PeanutAdmin\Kernel\Platform\Authorization\ThinkPhpPlatformAuthorizationRepository;
 use PeanutAdmin\Kernel\Platform\Authorization\PlatformAuthorizationEvaluator;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceReasonRegistry;
 use PeanutAdmin\OpsConsole\Maintenance\MaintenanceService;
@@ -414,28 +414,26 @@ SQL);
 
     $moduleConfig = Config::get('modules', []);
     upgradeTargetExpect(is_array($moduleConfig), 'Module fixture configuration is unavailable');
-    $audit = AuditContractHost::fromPdo($pdo);
+    $audit = new AuditContractHost(null);
     $permissions = new PlatformOpsPermissionChecker(new PlatformAuthorizationEvaluator(
-        new PdoPlatformAuthorizationRepository($pdo),
+        new ThinkPhpPlatformAuthorizationRepository(),
         new RevisionPermissionCache(),
     ));
     $providers = new BackupRestoreProviderRegistry([new PairedBackupProvider()]);
-    $tasks = new OpsTaskService($permissions, $providers, new PdoOpsTaskDispatcher($pdo, $audit));
+    $tasks = new OpsTaskService($permissions, $providers, new ThinkPhpOpsTaskDispatcher($audit));
     $maintenance = new MaintenanceService(
         $permissions,
         new MaintenanceReasonRegistry(['planned-upgrade']),
-        new PdoMaintenanceWindowStore($pdo, $audit),
+        new ThinkPhpMaintenanceWindowStore($audit),
     );
     $service = new PlatformUpgradeReadinessService(
-        $pdo,
         $projectRoot,
-        new PdoModuleGovernanceProvider(
-            $pdo,
+        new ThinkPhpModuleGovernanceProvider(
             $projectRoot . '/server',
             $moduleConfig,
             ThinkPhpTestConnection::moduleCatalogs($pdo),
         ),
-        new PlatformBackupCenterService($pdo, $providers, $tasks, $permissions),
+        new PlatformBackupCenterService($providers, $tasks, $permissions),
         $maintenance,
         $permissions,
     );

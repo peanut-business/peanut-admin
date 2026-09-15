@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace app\adminapi\service;
 
-use app\common\service\runtime\ApplicationCache;
+use think\facade\Cache;
 
 class AdminLoginAttemptService
 {
@@ -14,20 +14,20 @@ class AdminLoginAttemptService
 
     public function isLocked(string $ip): bool
     {
-        return (int)ApplicationCache::get(self::cacheKey($ip), 0) >= $this->maxAttempts();
+        return (int)Cache::get(self::cacheKey($ip), 0) >= $this->maxAttempts();
     }
 
     public function recordFailure(string $ip): int
     {
         $key   = self::cacheKey($ip);
-        $count = (int)ApplicationCache::get($key, 0) + 1;
-        ApplicationCache::set($key, $count, $this->lockSeconds());
+        $count = (int)Cache::get($key, 0) + 1;
+        Cache::tag('application:v1')->set($key, $count, $this->lockSeconds());
         return $count;
     }
 
     public function clear(string $ip): void
     {
-        ApplicationCache::delete(self::cacheKey($ip));
+        Cache::delete(self::cacheKey($ip));
     }
 
     public function lockedMessage(): string
@@ -41,7 +41,7 @@ class AdminLoginAttemptService
 
     private static function cacheKey(string $ip): string
     {
-        return 'admin_login_fail_' . sha1($ip);
+        return 'application:v1:admin-login:' . hash('sha256', $ip);
     }
 
     private function maxAttempts(): int

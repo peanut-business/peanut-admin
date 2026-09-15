@@ -7,11 +7,11 @@ use app\common\http\PageResult;
 use app\adminapi\service\OperationLogService;
 use app\common\services\FileService;
 use app\common\services\XlsxExportService;
-use app\common\service\audit\OperationLogTenantRepository;
+use app\common\model\log\OperationLog;
 use app\common\support\ExportPageInfo;
 use app\common\support\PaginationInput;
 use PeanutAdmin\Kernel\Auth\TenantContext;
-use app\common\persistence\TransactionalExecution;
+use think\facade\Db;
 
 class OperationLogApplicationService
 {
@@ -20,7 +20,6 @@ class OperationLogApplicationService
 
     public function __construct(
         private readonly XlsxExportService $xlsxExport,
-        private readonly TransactionalExecution $transactions,
         private readonly OperationLogService $operationLogs,
     ) {}
 
@@ -43,12 +42,17 @@ class OperationLogApplicationService
 
     public function detail(TenantContext $context, int $id): array
     {
-        return OperationLogTenantRepository::detail($id);
+        $row = OperationLog::find($id);
+        if (!$row instanceof OperationLog) {
+            throw new \InvalidArgumentException('操作日志不存在');
+        }
+
+        return $row->toArray();
     }
 
     private static function buildQuery(TenantContext $context, array $params)
     {
-        $query = OperationLogTenantRepository::query();
+        $query = OperationLog::where([]);
         if (!empty($params['username'])) {
             $query->where('username', 'like', '%' . trim((string)$params['username']) . '%');
         }
@@ -122,9 +126,9 @@ class OperationLogApplicationService
     /** 清空旧日志并原子保留本次清理审计；审计写入失败时删除整体回滚。 */
     public function clear(TenantContext $context, int $adminId, string $username, string $ip): int
     {
-        return $this->transactions->run(function () use ($context, $adminId, $username, $ip): int {
-            $count = (int)OperationLogTenantRepository::query()->count();
-            OperationLogTenantRepository::query()->delete();
+        return Db::transaction(function () use ($context, $adminId, $username, $ip): int {
+            $count = (int)OperationLog::where([])->count();
+            OperationLog::where([])->delete();
             $this->operationLogs->record(
                 $context,
                 $adminId,
