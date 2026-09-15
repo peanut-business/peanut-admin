@@ -1,5 +1,9 @@
 # Peanut Admin 原生多租户干净基线
 
+Module 与 Application 的目录、namespace 和 `services/` 归属统一由
+[`application-module-blueprint/coding-standards.md`](application-module-blueprint/coding-standards.md) 决定；
+本文件只定义多租户行为基线，不能用当前旧目录反推目标结构。
+
 > 状态：current（3.0 fresh-only 基线）
 >
 > 授权日期：2026-08-16

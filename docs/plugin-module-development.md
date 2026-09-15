@@ -1,6 +1,7 @@
 # 用 Module 开发独立业务
 
-> 本文描述当前源码与生成器真实支持的 Module 结构。发布状态和交付门禁见
+> 本文描述已冻结的 Module 目标结构。当前源码、生成器、autoload、manifest、加载与打包工具仍使用旧结构，
+> 须在 S2 完成影响映射后由 S3 同批切换。发布状态和交付门禁见
 > 公开使用路径见 [Application 与 Module 生命周期](/guide/application-module-lifecycle)；维护者的完整状态机与制品门禁见仓库内 `docs/architecture/module-publication-contract.md`。
 
 ## 1. Module、Plugin 与租户授权
@@ -15,22 +16,23 @@ Peanut Admin 把四层事实分开：
 安装 Package 不会自动开通 TenantModule，也不会授予 RBAC。受保护 HTTP 路由必须经过宿主登录、
 Module 生命周期和权限中间件，不能把 `module.json` 中的权限声明当作运行时鉴权。
 
-## 2. 当前真实目录
+## 2. 目标目录
 
-`module:create` 使用 `ModuleHostLayout` 生成三个 key 派生根目录。以 `official.article` 为例：
+Module 的三个根目录必须由同一个 key 派生。以 `official.article` 为例：
 
 ```text
-server/app/Modules/Official/Article/
+server/app/modules/official/article/
 ├── module.json
 ├── ModuleProvider.php
-├── Contracts/
-├── Http/routes.php
-├── Http/Controller/
-├── Services/
-├── Infrastructure/Persistence/
-├── Model/
-├── Resources/
-├── Database/Migrations/
+├── route/app.php
+├── controller/
+├── services/
+├── validate/
+├── contracts/                 # 有真实跨 Module 消费者时
+├── infrastructure/            # 有外部系统适配时
+├── model/
+├── resources/
+├── database/migrations/
 └── composer.json
 
 web/src/modules/official-article/
@@ -39,30 +41,30 @@ web/src/modules/official-article/
 ├── views/
 └── package.json
 
-server/tests/Modules/<Vendor>/<Module>/
-├── TenantSecurityDriver.php
-└── TenantSecurityTest.php
 ```
 
 Plugin 身份另存于 `plugins/<module.key>/plugin.json`，bundled 部署身份由根目录 `plugins.lock`
-固定。当前 Runtime 不使用 `modules/<slug>/{server,web}` 布局，也不使用全小写 PHP namespace。
+固定。PHP namespace 为 `app\\modules\\official\\article`，逐段匹配小写目录；多词 PHP 目录使用
+`snake_case`，类名和类文件名仍按 PHP 类命名规则。当前 `module:create`、`module:check`、
+`module:pack` 与 Runtime 仍按 `server/app/Modules/`、`Http/` 和 PascalCase namespace 工作，S3
+完成前不得把上述目标目录描述成已经可运行。
 
 ## 3. 实现边界
 
-- Controller 只负责 HTTP 输入输出；Module 的 `Services/` 承载用例和事务边界；Model 继承适用的
+- Controller 只负责 HTTP 输入输出；Module 的 `services/` 承载用例和事务边界；Model 继承适用的
   `TenantOwnedModel` 并依赖全局 TenantScope。
 - 应用服务直接使用 ThinkPHP Model、Query 和 Scope，并通过组合根完成构造函数注入。不得仅为了
   隔离 ThinkPHP 而新增 Repository、Port、Persistence Adapter 或兼容桥。
-- 新 Module 只使用复数 `Services/`；不要由生成器创建 `Application/`，也不要手工以 PDO 或
+- 新 Module 只使用复数 `services/`；不要由生成器创建 `application/`，也不要手工以 PDO 或
   Factory 作为业务装配替代品。Peanut Admin 源仓中的存量业务服务仍属待迁移范围，完成条件见
-  `docs/architecture/application-module-blueprint/coding-standards.md`；已有派生应用由各自维护者决定采用范围。
-- `Contracts/` 只用于 Module 对外公开且确有跨 Module 消费者的稳定命令/查询合同；不得把每个内部
+  `docs/architecture/application-module-blueprint/coding-standards.md`。官方、应用私有和第三方 Module 使用同一目录与职责规则。
+- `contracts/` 只用于 Module 对外公开且确有跨 Module 消费者的稳定命令/查询合同；不得把每个内部
   Service 镜像成 Interface。
-- `Infrastructure/` 只容纳确有必要的外部系统或技术适配。Module 自有表仍由本 Module 的 Model/Scope
+- `infrastructure/` 只容纳确有必要的外部系统或技术适配。Module 自有表仍由本 Module 的 Model/Scope
   管理，不通过通用 Repository 包装。
 - 业务代码不得手写 `where('tenant_id', ...)`、`forTenant()` 或绕过全局 Scope；可信 Tenant 上下文
   缺失时必须 fail-closed。
-- `Http/routes.php` 是可执行的 ThinkPHP 路由文件，并负责挂载宿主要求的中间件。当前管理端接口形如
+- `route/app.php` 是目标可执行 ThinkPHP 路由文件，并负责挂载宿主要求的中间件。当前管理端接口形如
   `/adminapi/official.article.list`；URL 不要求与物理目录逐段同名。
 
 ## 4. 开发工作流
@@ -73,6 +75,9 @@ php think module:create <module.key> [--vendor=<Vendor>]
 php think module:check <module.key>
 php think module:sync --module=<module.key>
 ```
+
+这组命令当前仍实现旧目录合同。S3 同批更新生成器、检查器、加载器和打包器后才按本节目标使用；
+切换前不要手工建立第二棵小写 Module 根或用兼容 autoload 同时加载两套路径。
 
 `module:check` 是只读作者预检，覆盖 manifest、版本、依赖、权限、菜单、migration、前端入口和
 Package。它不是业务行为、Tenant 隔离、浏览器或厂商集成测试的替代品。

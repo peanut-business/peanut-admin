@@ -16,25 +16,31 @@ Module 只回答三个问题：
 
 ## 2. 标准 Module 目录
 
-目录矩阵以[核心代码规范与认知模型统一指南](coding-standards.md)为唯一入口：Module 根为 `server/app/Modules/<Vendor>/<Module>/`，namespace 为 `app\\Modules\\<Vendor>\\<Module>`，前端为 `web/src/modules/<module-slug>/`。现行根内包含 `module.json`、`ModuleProvider.php`、`Http/routes.php`、`Http/Controller/`；按需使用 `Services/`、`Contracts/`、`Model/`、`Infrastructure/`、`Resources/`、`Database/Migrations/`。
+目录矩阵以[核心代码规范与认知模型统一指南](coding-standards.md)为唯一入口：Module 根为
+`server/app/modules/<vendor>/<module>/`，namespace 为 `app\\modules\\<vendor>\\<module>`，前端为
+`web/src/modules/<module-slug>/`。目标根保留 `module.json`、`ModuleProvider.php`、`composer.json`，使用
+`controller/`、`validate/`、`route/app.php`、`services/`、`contracts/`、`model/`、`infrastructure/`、
+`database/migrations/` 和 `resources/`。现行源码和工具仍使用旧 PascalCase 根及 `Http/` 布局，属于
+S2 影响映射与 S3 同批切换范围。
 
 ## 3. 哪些目录必须有，哪些按需增加
 
 | 目录/文件 | 默认 | 放什么 | 不放什么 |
 | --- | --- | --- | --- |
 | `module.json` | 必须 | key、version、依赖、权限资源、公开 Contract、自有表 | Runtime 状态、`backend.routes`、重复路由表 |
-| `Http/routes.php` | 必须 | 可执行 ThinkPHP 路由，接入 Host 认证、Module、RBAC 中间件 | 绕过宿主安全链 |
-| `Http/Controller/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
-| `Services/` | 生成；有用例时使用 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
-| `Model/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
-| `Database/Migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
-| `Resources/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
-| `Contracts/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
-| `Infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
+| `route/app.php` | 必须 | 可执行 ThinkPHP 路由，接入 Host 认证、Module、RBAC 中间件 | 绕过宿主安全链 |
+| `controller/` | 必须 | 各端口出入参处理 | 业务逻辑、写死租户上下文 |
+| `validate/` | 按输入需要使用 | ThinkPHP 输入验证 | 业务规则、授权判断 |
+| `services/` | 生成；有用例时使用 | 业务逻辑、用例、事务边界 | Request/Response 解析、万能 helper |
+| `model/` | 有表时必须 | 只映射本 Module 自有表 | 跨 Module relation 自动写入 |
+| `database/migrations/` | 有 Schema 时必须 | 自有 migration | 修改其他 Module 的表 |
+| `resources/` | 有贡献时必须 | 权限、菜单、设置声明 | 第二份 module identity |
+| `contracts/` | 有外部调用者时增加 | 最小公开类型和能力 | 对内部类做镜像接口 |
+| `infrastructure/` | 有外部 SDK/复杂 adapter 时增加 | Provider client | 业务规则 |
 | `web/src/modules/<module-slug>/` | 必须 | 插件完整前端资产（含 vue 和路由贡献脚本）| - |
 
 不为未列职责额外创建空层；生成器合同中的骨架目录可以用 `.gitkeep` 保留。简单字典 CRUD 按需使用
-`Http/routes.php + Http/Controller + Services + Model + Database/Migrations`。所有 Module 使用同一允许清单，
+`route/app.php + controller + services + model + database/migrations`。所有 Module 使用同一允许清单，
 心智模型稳定。`ModuleProvider.php` 保留为真实启动装配合同，不给内部 Service 镜像 interface。
 
 ## 4. 宿主 Application 内部目录
@@ -57,9 +63,11 @@ adminapi/
 └── middleware.php
 ```
 
-业务 Module（如 `article`、`payment`）的 Controller 已经全部回归 Module 自身，`adminapi/controller/` 将变得非常轻量，**仅保留与核心鉴权、基础宿主配置相关的功能**。
+业务 Module（如 `article`、`payment`）的 Controller 目标归属 Module 自身；S3 完成后
+`adminapi/controller/` 仅保留核心鉴权、基础宿主配置等 Host 功能。当前存量是否已经归位须以 S2 映射为准。
 
-`adminapi/services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的请求已经直接由 Module 的 `Http/Controller/` 接管。Host 编排不得接管 owner Module 的业务事务。
+`adminapi/services/` 仅在工作台需要协调多个 Module 时才增加 Host Service。单一 Article CRUD 的目标入口由
+Module 的 `controller/` 接管；Host 编排不得接管 owner Module 的业务事务。
 
 ## 5. Controller、Service、Model、Infrastructure 的职责
 
@@ -98,14 +106,14 @@ adminapi/
 Module 公开面越小越好：
 
 ```text
-Contracts/
-├── Dto/
+contracts/
+├── dto/
 │   └── MemberBalanceSnapshot.php
 ├── MemberQueries.php
 └── MemberBalanceCommands.php
 ```
 
-只有真实提交后事实已经有具体消费者并另行冻结交付语义时，才在 `Contracts/` 增加对应 fact 类型；本蓝图明确
+只有真实提交后事实已经有具体消费者并另行冻结交付语义时，才在 `contracts/` 增加对应 fact 类型；本蓝图明确
 排除 `Events/`、Event Bus 和 Outbox。未来如需可靠事件交付，必须以新的架构决定显式取代本合同。
 
 公开 DTO 使用标量、值对象和稳定枚举，不暴露 ThinkORM Model、PDO、Request、Response 或内部表字段。每个端口只
@@ -126,11 +134,11 @@ Contracts/
 不是每个 Service 都需要“一接口一实现”。按以下规则：
 
 - 同一 Module 内部调用 final class，直接构造器注入；
-- 强绑定且必装的官方 Module 之间，可以注入对方 `Contracts` 命名空间下的 final Query/Command facade；
+- 强绑定且必装的官方 Module 之间，可以注入对方 `contracts` 命名空间下的 final Query/Command facade；
 - 可选 Module、可替换 Provider、Core/Application 跨仓边界，使用接口并由容器绑定；
 - 测试需要替身本身不是创建接口的理由，真实替换边界才是。
 
-`Contracts` 表示稳定公开面，不等于每个文件必须是 PHP interface。
+`contracts` 表示稳定公开面，不等于每个文件必须是 PHP interface。
 
 ### 6.4 防止循环依赖
 
@@ -291,7 +299,8 @@ Attempt 新建 `SystemExecutionContext`，提交者只保留为 causation，完�
 ## 12. 命名规则
 
 - Application 目录使用稳定小写身份：`adminapi`、`api`、`platform`、`integrationapi`、`installation`；
-- Module 路径使用 `Modules/<Vendor>/<Name>`，key 使用 `<vendor>.<name>`；
+- Module 路径使用 `modules/<vendor>/<module>`，namespace 逐段采用对应小写名称，key 使用 `<vendor>.<name>`；
+- PHP 业务目录统一小写，多词目录使用 `snake_case`；类名和类文件名继续遵循 PHP 类命名规则；
 - 用例类名使用业务动词和对象：`CreateArticle`、`RefundRechargeOrder`、`ListMembers`；若保留现有 Service 风格，
   使用 `ArticleAdministrationService`，禁止 `CommonService`、`DataService`、`UtilsService`；
 - Query 不产生业务写入，Command 不以返回任意数组作为公共合同；
@@ -302,9 +311,11 @@ Attempt 新建 `SystemExecutionContext`，提交者只保留为 causation，完�
 
 ## 13. 生成器应该生成什么
 
-Module 生成器只生成最低骨架：manifest、可执行 `Http/routes.php` 模板、各端基础 Controller、`Services/` 目录、Model/migration/web 前端脚手架，并保留 `ModuleProvider.php`。
+目标 Module 生成器只生成最低骨架：manifest、可执行 `route/app.php` 模板、基础 `controller/`、
+`validate/`、`services/`、`model/`、`database/migrations/`、`resources/`、web 前端脚手架，并保留
+`ModuleProvider.php` 与 `composer.json`。现行生成器仍属 S3 待切换对象。
 
-目标生成器必须遵循新版架构规范（即 Controller 与路由全栈回到 Module 目录中，并接入认证、Module、RBAC 中间件）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑收敛在 `Services/` 目录下。真实需求出现后再增加其它。
+目标生成器必须遵循新版架构规范（即 Controller 与路由全栈回到 Module 目录中，并接入认证、Module、RBAC 中间件）。它坚决不自动创建 Repository interface、Domain entity、Event、Factory、Presenter 等 DDD 概念结构。核心业务逻辑收敛在 `services/` 目录下。真实需求出现后再增加其它。
 
 ## 14. 生命周期、升级和发布稳定面
 

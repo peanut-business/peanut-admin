@@ -29,12 +29,16 @@ Composer 与 npm Registry、Marketplace 不是当前已开放的独立交付通�
 
 | 内容 | 权威路径 | 是否进入单 Module tar | 规则 |
 | --- | --- | --- | --- |
-| Module 身份、依赖、owned tables、资源入口 | `server/app/Modules/<Vendor>/<Module>/module.json` | 是 | key、version、Kernel 约束和派生路径必须通过 schema/preflight |
+| Module 身份、依赖、owned tables、资源入口 | `server/app/modules/<vendor>/<module>/module.json` | 是 | key、version、Kernel 约束和派生路径必须通过 schema/preflight |
 | 后端实现、migration、权限、菜单 | 同一后端 Module 根目录 | 是 | 不得包含环境密钥、私钥、Host/依赖/工作区目录；migration identity/checksum 不可漂移 |
 | 前端贡献与组件 | `web/src/modules/<slug>/` | 有 `frontend.entry` 时是 | `contribution.ts` 路径由 Module key 派生；不得打包 `node_modules`、构建或缓存目录 |
 | PHP/npm 组件身份 | Module 内 `composer.json`、前端 `package.json` | 是 | 只描述包内组件，不表示 Registry 已发布 |
 | Plugin 交付身份 | `plugins/<package.key>/plugin.json` | 打包时重新生成并纳入 inventory | bundled 身份另由根 `plugins.lock` 固定 |
 | 测试、临时脚本、工作区证据 | `server/tests/`、临时目录 | 否 | 测试和证据不进入交付 tar；不得把临时脚本提交为 Runtime |
+
+该表冻结目标制品路径。当前 `module:pack`、`bundle:pack`、preflight、manifest 和加载工具仍读取旧
+`server/app/Modules/` 根；S3 必须与源码、autoload、检查器和生成器同批切换，完成前不能从本表推断
+目标 Package 已可生成，也不能并行保留两个 canonical root。
 
 Bundled 与独立 Package 使用不同的不可变身份。Bundled Module 的最终身份是完整应用 Release 的
 commit/tree、根 `plugins.lock` digest 和其中的 canonical contents digest；在它尚未签发独立 Package 时，

@@ -44,9 +44,10 @@ manifest、lock、不可变包引用或兼容验证，共同版本号也不能�
 
 ## 2. 创建并检查 Module
 
-新建 Module 的业务用例放在后端复数 `Services/` 目录；生成器不会创建旧的 `Application/` 骨架。
-已有派生应用是否迁移旧目录，由应用 owner 按自身采用范围决定；如采用新规范，应完整更新调用、namespace
-和装配，不保留兼容桥。普通 App 服务继续使用小写 `services/`。
+目标 Module 位于 `server/app/modules/<vendor>/<module>/`，业务用例放在小写复数 `services/`，路由使用
+`route/app.php`。既有业务服务中的 `Application/application` 属于已确认整改范围，按原 owner 认领的
+完整业务切片退出；每一切片须同步更新真实调用、namespace、装配、生成器及受影响路径检查。非业务类按
+职责归属，不能全量盲改或新增兼容桥；未完成不得称全库统一。普通 App 服务同样使用小写 `services/`。
 
 在生成应用的 `server/` 目录运行：
 
@@ -55,8 +56,11 @@ php think module:create acme.inventory --vendor=Acme
 php think module:check acme.inventory
 ```
 
-完成生成的 backend、frontend、manifest、权限、菜单、migration 和 Tenant 安全骨架后，重复
-`module:check`。只有结果为 `status=ready` 且八项检查全部通过才能打包。检查只读且不连接数据库；
+当前命令仍按旧 `server/app/Modules/`、PascalCase namespace 和 `Http/` 布局工作。S3 将生成器、检查器、
+autoload、manifest、加载和打包路径同批切换前，不要手工创建第二棵小写目录；当前命令输出也不能作为目标
+结构已经落地的证据。
+
+完成生成的 backend、frontend、manifest、权限、菜单、migration 和 Tenant 安全骨架后，按适用开发检查策略核对；发布前须满足实际质量门槛。检查只读且不连接数据库；
 详细结构见 [Module 开发教程](/guide/module-development)。
 
 ## 3. 打包并固定信任身份
@@ -98,7 +102,7 @@ archive 路径、URL 或命令。现有受限 worker 只证明 Module 源码和�
 锁定依赖、构建和验收，再随应用自己的完整 Release 部署。
 
 Package 安装只改变 Package/ModuleInstallation 层，不会自动开通任何 TenantModule，也不会给
-成员授予权限。private Package 内可以包含自己的 `Http/routes.php`，但安装命令不会自动注册它；
+成员授予权限。目标 private Package 内可以包含自己的 `route/app.php`，但安装命令不会自动注册它；
 应用 owner 必须在 app-owned 路由装配中显式引入该文件，并沿用认证、Module 与权限 middleware。
 卸载时由同一 owner 去除接线；不要复制业务 handler 或增加在线动态路由 loader。
 
@@ -145,7 +149,7 @@ app-owned 文件不在写集后，去掉 `--dry-run` 执行。降级、相同版
 前端构建或服务重启，因此 CLI/数据库成功不能单独证明 Module 已可部署。
 
 版本升级后还要用应用自己的路由装配和 middleware 实际验证 private HTTP 入口：未认证请求应拒绝，
-合格非 root 身份只能访问获授权的 Module 行为。只看到 archive 中存在 `Http/routes.php` 或 CLI/DB
+合格非 root 身份只能访问获授权的 Module 行为。只看到 archive 中存在 `route/app.php` 或 CLI/DB
 升级成功，不代表该入口已经接入应用。
 
 当前管理端也不是运行时动态加载 Module 前端：构建配置从 `plugins.lock` 生成指向本仓

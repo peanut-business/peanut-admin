@@ -1,33 +1,36 @@
 # Application 与 Module 代码规范
 
-本文是 Application 与 Module 目录和代码职责的统一规范入口，遵循最新有效用户决定及
-`AGENT_EXECUTION_RULES.md` §6 的适用架构要求。`ModuleHostLayout`、`module:create` 生成器和
-现行源码用于核对实现情况；存量实现不能反向改变已确认目标，也不能把未完成的迁移写成已落地事实。
+本文是 Application 与 Module 目录和代码职责的唯一规范入口，遵循最新有效用户决定及
+`AGENT_EXECUTION_RULES.md` §6 的适用架构要求。本文先冻结目标；现行 `ModuleHostLayout`、
+`module:create`、源码、manifest、autoload、加载与打包工具仍反映旧结构，须在 S2 完成影响映射后由
+S3 同批切换，不能把未完成迁移写成已落地事实。
 
 ## 1. 目录、namespace 与 key
 
-- 后端根目录：`server/app/Modules/<Vendor>/<Module>/`；
-- PHP namespace：`app\\Modules\\<Vendor>\\<Module>`，遵循 PSR-4 大小写；
+- 后端根目录：`server/app/modules/<vendor>/<module>/`；
+- PHP namespace：`app\\modules\\<vendor>\\<module>`，逐段与小写目录一致；
 - 前端根目录：`web/src/modules/<module-slug>/`；
-- 测试根目录：`server/tests/Modules/<Vendor>/<Module>/`；
-- Module 业务服务目录：`server/app/Modules/<Vendor>/<Module>/Services/`；
+- Module 业务服务目录：`server/app/modules/<vendor>/<module>/services/`；
 - Module key 使用小写命名空间，如 `official.rich-text`。
 
-目录只由 key 通过 `ModuleHostLayout` 派生。不要手写第二套 `modules/<slug>/{server,web}` 布局，
-也不要把 PHP namespace 全部改为小写；这两种写法都与当前 autoload 和生成器合同不一致。
+PHP 业务目录统一小写，多词目录使用 `snake_case`；类文件名仍按类名大小写。Module key 必须经唯一规范实现
+派生目录、namespace 与前端 slug。S3 必须同时更新 Core 与 App 的派生、autoload、manifest、发现、加载、
+预检、打包和路径拒绝规则，不保留 `Modules/` 与 `modules/` 双根，也不新增第二套 App 路径算法。
+`web/src/modules/<module-slug>/` 与插件 `<key>` 继续遵循各自现有语言和身份规则。
 
 ## 2. ThinkPHP 原生应用层
 
-- Controller 负责 HTTP 映射，Module `Services/` 负责用例与事务，Model/Query/Scope 负责数据访问；
+- Controller 负责 HTTP 映射，Module `services/` 负责用例与事务，Model/Query/Scope 负责数据访问；
 - Application Service 直接使用 ThinkPHP Model、Query 和 Scope 是冻结的正常实现；
 - 运行时依赖由组合根构造注入，业务方法内不得使用 `app()`、Facade 或零参数静态工厂定位依赖；
 - 不得仅为了隔离框架而新增 Interface、Port、Repository Contract、Persistence Adapter、镜像实现或
   兼容桥；
-- `Contracts/` 只在存在真实跨 Module 消费者时定义稳定业务合同，且不能暴露 PDO、ORM Model 或
+- `contracts/` 只在存在真实跨 Module 消费者时定义稳定业务合同，且不能暴露 PDO、ORM Model 或
   Module-owned 表名。
-- 新 Module 不生成 `Application/`。Module 业务服务统一进入大写复数 `Services/`；普通 App 的业务服务
-  统一进入小写复数 `services/`。非业务类按合同、值对象、策略等真实职责归属，保持所属 App 或 Module
-  的目录及 namespace 大小写约定。既有业务服务中的 `Application/application` 属于已确认整改范围，按原 owner
+- 新 Module 不生成 `application/`。Application 与 Module 的业务服务统一进入小写复数 `services/`；
+  `controller`、`validate`、`contracts`、`model`、`infrastructure`、`database/migrations` 和 `resources`
+  同样使用小写目录。非业务类按合同、值对象、策略等真实职责归属。既有业务服务中的
+  `Application/application` 属于已确认整改范围，按原 owner
   认领的完整业务切片退出；每一切片同步更新真实调用、namespace、装配、生成器及受影响路径检查，不做
   全量盲改，也不新增兼容桥。这里保留 Application Service 作为语义术语。
 
@@ -41,8 +44,10 @@
 
 ## 4. 路由与前端贡献
 
-`Http/routes.php` 是可执行 ThinkPHP 路由，不是纯数组描述。当前路由可使用点分业务动作，例如
-`/adminapi/official.article.list`；路径不要求与 Controller 的物理目录逐段同名。前端由
+Module 的目标路由入口是 `route/app.php`，它是可执行 ThinkPHP 路由，不是纯数组描述。当前源码仍使用
+`Http/routes.php` 和 `Http/Controller/`；这属于 S2 映射、S3 同批切换范围，不是目标结构的例外。
+路由可使用点分业务动作，例如 `/adminapi/official.article.list`；路径不要求与 Controller 的物理目录逐段同名。
+受保护路由仍须经过登录、TenantModule 生命周期和 RBAC 链。前端由
 `contribution.ts` 声明路由和权限，并由 `module.json.frontend.entry` 固定其 key 派生路径。
 
 ## 5. 存量退出、验证与发布
@@ -52,7 +57,7 @@
 生成器改好不等于存量迁移完成，旧业务目录剩余项沿用现有问题登记，不建立第二套总账。Peanut 本仓开发期间只做直接必要的语法/类型/构建/启动与实际操作；
 自动测试须用户明确授权后运行，未授权不等于普通开发 blocked。发布资格测试和人工 Gate 仍保留。
 
-`module:check` 只负责作者静态预检；真实行为、Tenant/RBAC、migration、浏览器和外部 Provider 仍由
+当前 `module:check` 仍按旧目录实现，S3 应随生成、加载与打包合同切换；它只负责作者静态预检。真实行为、Tenant/RBAC、migration、浏览器和外部 Provider 仍由
 对应聚焦测试负责。开发期自动测试仅在用户明确授权后运行；已存在或已授权的测试不得用输出 `PASSED`
 后提前退出的占位实现冒充通过。Module 交付制品、状态和门禁见
 [Module 发布与制品合同](../module-publication-contract.md)。

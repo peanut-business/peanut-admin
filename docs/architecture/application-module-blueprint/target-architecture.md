@@ -63,7 +63,7 @@ server/
     ├── installation/             # ThinkPHP Application：一次性安装入口
     ├── command/                  # Console/Worker adapter
     ├── common/                   # 真正跨入口且无业务 owner 的少量共享能力
-    └── Modules/<Vendor>/<Module>/ # 插件化业务模块（全栈自闭环）
+    └── modules/<vendor>/<module>/ # 插件化业务模块（全栈自闭环）
 ```
 
 目录不要求为空也提前创建。目录归属与命名以 [核心代码规范与认知模型统一指南](coding-standards.md) 为准；当某个 Application 首次需要 `services/` 或
@@ -114,8 +114,8 @@ public/index.php
 
 `server/app/AppService.php` 不是某个业务的 App Service。它是整个根应用的容器启动服务，集中绑定 Context、
 审计、授权、Module Contracts、组织 Runtime、外部 HTTP 等大量对象。与此同时，很多调用点又绕过容器，临时
-`new MemberModuleProvider()`、`new ArticleModuleProvider()`。Module 自己还拥有 `Http/routes.php` 和
-Controller。
+`new MemberModuleProvider()`、`new ArticleModuleProvider()`。Module 当前还使用 `Http/routes.php` 和
+`Http/Controller/`；目标在同批结构切换后使用 `route/app.php` 与 `controller/`。
 
 因此路径无法回答：当前究竟属于哪个 ThinkPHP Application，Provider 是否是单例，Tenant Context 从哪来，
 同一业务为何既有 API Application Service 又有 Module Application。目标架构不会再用一份根路由和一份大型
