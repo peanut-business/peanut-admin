@@ -71,6 +71,32 @@
             "source_sha256": "1180e468df50ba1387571e7426197614268683d8f6bb64e32d782401bca4e1ce"
         },
         {
+            "path": ".githooks/pre-commit",
+            "target": ".githooks/pre-commit",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
+            "path": ".githooks/pre-push",
+            "target": ".githooks/pre-push",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 493,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
+        },
+        {
             "path": ".github/pull_request_template.md",
             "target": ".github/pull_request_template.md",
             "classification": "excluded",
@@ -161,7 +187,20 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "884f9dbc847d1ea8238c21b98e2310a8fc00cce9a7381d8bd5d60551aa959dfb"
+            "source_sha256": "21b9ca76bd2026502b9ce1a4c03b42f3881b086be096b94db65417ab174c50b1"
+        },
+        {
+            "path": ".vscode/settings.json",
+            "target": ".vscode/settings.json",
+            "classification": "excluded",
+            "owner": "template-source-only",
+            "transform": "copy",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ]
         },
         {
             "path": "AGENTS.md",
@@ -515,7 +554,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "23bb1641731922271fa83900325d5b334719bcedbcbd9762db4c8b38be675a6f"
+            "source_sha256": "ea5f6b759e26274dcc861a95702b07dc249ffc00ea518d324358ec447e47024b"
         },
         {
             "path": "docs-site/.vitepress/config.ts",
@@ -3039,7 +3078,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "a22ff545f8fa8a475cefaee01bc32ba7cec1348f3c9214fa26fda993a676725f"
+            "source_sha256": "0cefbdcf6209d5e047696240260ecd16da72ce29fecfbe3b3c073765ced690c8"
         },
         {
             "path": "pc/api/article.ts",
@@ -3558,7 +3597,7 @@
             "profiles": [
                 "full"
             ],
-            "source_sha256": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910"
+            "source_sha256": "a5d8accdeb680a42b9171adefaff2eb89b463d8215ad655a5d1dd38c3e058027"
         },
         {
             "path": "platform/index.html",
@@ -4760,7 +4799,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "c0c4a53c9ed516cf97c7cdecb453a140f94a3d619fb02a7851a42d956b63bca4"
+            "source_sha256": "9473f6631d338ef3ce299a31a603cd210212e429261f48247791755264f558c3"
         },
         {
             "path": "server/.travis.yml",
@@ -17822,7 +17861,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "cca193d0074f3692f1373521057eff78f2889672e3bc80704834d91b75cbabe5"
+            "source_sha256": "f5a54410065b8ee7af171b97bb385825add8df69092f975fddcad164c1470047"
         },
         {
             "path": "uniapp/index.html",
@@ -18686,7 +18725,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "519e334a031a31da20aa9a903fdac291e0c50a9c4f223b664a08d1af90075a54"
+            "source_sha256": "c066bb72b9e5c0945ecd752f41230948438ee5d864dc749074206144f018b938"
         },
         {
             "path": "web/.husky/commit-msg",

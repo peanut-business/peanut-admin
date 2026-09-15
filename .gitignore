@@ -1,13 +1,7 @@
 # Git ignore for Peanut Admin
 
-# Server
-server/.env
-server/.env.*
-!server/.env.example
-server/runtime/*
-!server/runtime/.gitkeep
-server/vendor/
-server/public/uploads/
+# Each subproject owns its dependencies, build output and local configuration
+# in its own .gitignore, including when that subproject is opened separately.
 
 # Production deployment secrets
 deploy/production.env
@@ -16,10 +10,7 @@ deploy/production.env
 /docs/maintenance/fact-audit-2026-09-09/conversation-coverage.json
 /docs/maintenance/fact-audit-2026-09-09/execution-state.json
 
-# Web
-web/node_modules/
-web/dist/
-web/.eslintcache
+# Shared package-manager cache
 **/.pnpm-store/
 
 # System
@@ -29,7 +20,8 @@ web/.eslintcache
 # Claude / AI tooling
 .claude/
 web/.claude/
-.vscode/
+/.vscode/*
+!/.vscode/settings.json
 
 # Generated indexes & tool caches (regenerable — not source)
 .codegraph/
@@ -39,13 +31,3 @@ web/.claude/
 # Ad-hoc comparison screenshots (not referenced by docs)
 /likeadmin-dept-list.png
 /peanut-dept-list.png
-
-# UniApp generated dependencies and build output
-uniapp/node_modules/
-uniapp/dist/
-
-# Runtime-generated storage (uploads/exports)
-server/public/storage/*
-!server/public/storage/.gitkeep
-server/private/storage/*
-!server/private/storage/.gitkeep
