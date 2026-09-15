@@ -24,7 +24,7 @@ claim 资源、连接数据库、启动端口/容器/浏览器、运行 P0-E、�
 
 ## 当前功能
 
-新候选使用 `peanut.release-versions.v2` 和 `peanut.release-metadata.v2`，显式核对 `source_product_version` 与 `instance_version`。产品根的实例字段为 null，产品、scaffold、Core PHP/Web 同号；四个前端及实际 Core locks 也必须匹配。历史 V1 的旧 tag 可由 release consistency 只读核验，但不能用于准备新候选。版本对象定义见[版本身份 ADR](../architecture/product-version-identity-adr.md)。
+新候选使用 `peanut.release-versions.v2` 和 `peanut.release-metadata.v2`，显式核对 `source_product_version` 与 `instance_version`。产品根的实例字段为 null，产品、scaffold、Core PHP/Web 同号。`prepare` 允许已发布 metadata、正式 Core locks、scaffold 与资格 fixture 暂时停留在上一正式版本，并把这些差异报告为 pending；它们在 `seal` 前必须全部更新为目标版本。`seal`、`qualify` 和 `release` 仍要求四个前端及实际 Core locks 精确匹配，不接受本地 path/link 代替正式包。历史 V1 的旧 tag 可由 release consistency 只读核验，但不能用于准备新候选。版本对象定义见[版本身份 ADR](../architecture/product-version-identity-adr.md)。
 
 控制器提供一个命令和四个检查阶段：
 
@@ -58,7 +58,7 @@ scripts/consumer-ready-control preflight --phase release --check-remote \
 控制器是准备门禁，不是执行器：
 
 - `ready` 不等于 qualified、release-ready 或已发布；
-- `prepare ready` 只证明当次 prepare 合同成立；已知变更结束后仍须分别以只读方式通过
+- `prepare ready` 只证明开发目标合同有效；输出中的 pending 是进入 seal 前必须关闭的发布工作，不阻塞普通开发。已知变更结束后仍须分别以只读方式通过
   `build-application-template-inventory --check`、对应未发布 scaffold release 的
   `build-scaffold-release --check` 与 `preflight --phase seal --check-remote`，不能用 prepare 结果替代；
 - 它不能替代 `scripts/project-resource-lease claim`；

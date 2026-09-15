@@ -35,9 +35,10 @@ The candidate mode is the pre-tag release preflight. The tag mode verifies the
 immutable release identity. --require-main is the final-release gate and
 requires the candidate to be the current origin/main commit. --write-lock
 requires qualification evidence and creates an external, non-self-referential
-candidate lock. --static-only reads the current checkout, performs no network,
-resource, qualification or lock operation, and reports evidence completeness;
-it never establishes release readiness.`)
+candidate lock. --static-only without evidence is the development check: it
+reports unpublished Core/lock/scaffold closure as pending. With supplied seal
+evidence it validates that evidence strictly. It performs no publication and
+never establishes release readiness.`)
     process.exit(0)
   }
   if (argument === '--tag' && value) options.tag = value
@@ -97,8 +98,105 @@ const gitSucceeds = (command) => {
   try { execFileSync('git', command, { stdio: 'ignore' }); return true } catch { return false }
 }
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
+const versionCompare = (left, right) => {
+  const leftParts = left.split('.').map(Number)
+  const rightParts = right.split('.').map(Number)
+  for (let index = 0; index < 3; index += 1) {
+    if (leftParts[index] !== rightParts[index]) return leftParts[index] - rightParts[index]
+  }
+  return 0
+}
 const failures = []
 const reference = options.staticOnly ? 'working-tree' : (options.tag || options.candidate)
+
+// Daily development may name the next product version before its Core packages
+// exist in public registries.  Keep this no-evidence static check structural and
+// report release-only closure as pending; candidate/tag modes below remain strict.
+if (options.staticOnly && options.editionManifests.length === 0 && !options.releaseEvidence) {
+  const pending = []
+  const developmentFailures = []
+  const readJson = (path) => {
+    try { return JSON.parse(readFileSync(path, 'utf8')) }
+    catch (error) { developmentFailures.push(`${path} is invalid: ${error.message}`); return {} }
+  }
+  const versions = readJson('release-versions.json')
+  const metadata = readJson('RELEASE_METADATA.json')
+  const inventory = readJson('scaffold/application-template-inventory.json')
+  const fixture = readJson('server/tests/fixtures/p0e-runtime-qualification/matrix.json')
+  const target = versions.source_product_version ?? ''
+  const baseline = metadata.source_product_version ?? ''
+  const stableVersion = /^\d+\.\d+\.\d+$/
+  if (versions.schema_version !== 2 || versions.protocol !== 'peanut.release-versions.v2'
+    || !stableVersion.test(target)
+    || versions.instance_version !== null
+    || versions.scaffold_template !== target
+    || versions.core_php !== target
+    || versions.core_web !== target) {
+    developmentFailures.push('development version contract is invalid')
+  }
+  if (metadata.schema_version !== 2 || metadata.protocol !== 'peanut.release-metadata.v2'
+    || !stableVersion.test(baseline) || metadata.instance_version !== null
+    || metadata.expected_tag !== `v${baseline}` || versionCompare(baseline, target) > 0) {
+    developmentFailures.push('published release metadata is invalid or newer than the development target')
+  }
+
+  const sourceVersions = {
+    composer: readJson('server/composer.json')?.require?.['peanut-admin/core'] ?? '',
+    ...Object.fromEntries(['web', 'platform', 'pc', 'uniapp'].map((client) => {
+      const manifest = readJson(`${client}/package.json`)
+      return [client, `${manifest.version ?? ''}|${manifest.dependencies?.['@peanut-admin/admin'] ?? ''}`]
+    })),
+  }
+  if (sourceVersions.composer !== target
+    || Object.values(sourceVersions).slice(1).some((identity) => identity !== `${target}|${target}`)) {
+    developmentFailures.push('development source manifests do not name the target product/Core version')
+  }
+
+  const composerLock = readJson('server/composer.lock')
+  const locked = {
+    composer: composerLock?.packages?.find((pkg) => pkg?.name === 'peanut-admin/core')?.version ?? '',
+  }
+  const webLock = readFileSync('web/pnpm-lock.yaml', 'utf8')
+    .match(/      '@peanut-admin\/admin':\n        specifier: ([^\n]+)\n        version: ([^\n(]+)/)
+  locked.web = webLock?.[2] ?? ''
+  for (const client of ['platform', 'pc', 'uniapp']) {
+    locked[client] = readJson(`${client}/package-lock.json`)
+      ?.packages?.['node_modules/@peanut-admin/admin']?.version ?? ''
+  }
+  for (const [consumer, lockedVersion] of Object.entries(locked)) {
+    if (!stableVersion.test(lockedVersion) || versionCompare(lockedVersion, target) > 0) {
+      developmentFailures.push(`${consumer} Core lock is invalid for development target ${target}: ${lockedVersion || 'missing'}`)
+    } else if (lockedVersion !== target) {
+      pending.push(`${consumer} Core lock ${lockedVersion} -> ${target} after the real Core package is published`)
+    }
+  }
+  if (baseline !== target) pending.push(`release metadata ${baseline} -> ${target} during candidate sealing`)
+  if (inventory.template_version !== target) pending.push(`application inventory -> ${target}`)
+  if (fixture.target_release?.version !== target) pending.push(`P0-E fixture -> ${target}`)
+  if (!gitSucceeds(['cat-file', '-e', `HEAD:scaffold/releases/v${target}/scaffold-manifest.json`])) {
+    pending.push(`sealed scaffold v${target}`)
+  }
+  if (!(readFileSync('CHANGELOG.md', 'utf8')).includes(`## [${target}]`)) pending.push(`CHANGELOG ${target} section`)
+  const ledger = readJson('docs/product-status/capability-ledger.json')
+  if (!String(ledger.overall?.summary ?? '').includes(target)) pending.push(`capability ledger ${target} summary`)
+
+  if (developmentFailures.length) {
+    console.error('check-release-consistency: FAIL development working-tree')
+    developmentFailures.forEach((failure) => console.error(`- ${failure}`))
+    process.exit(1)
+  }
+  console.log(JSON.stringify({
+    status: 'passed',
+    mode: 'development-static',
+    target_version: target,
+    published_baseline: baseline,
+    release_dependency_closure: pending.length === 0 ? 'closed' : 'pending',
+    product_release_ready: false,
+    pending,
+    limitation: 'Development validation does not publish Core packages, rewrite locks, qualify a candidate, create a tag, or publish a Release.',
+  }, null, 2))
+  process.exit(0)
+}
 
 if (options.tag && gitOptional(['cat-file', '-t', options.tag]) !== 'tag') {
   failures.push(`tag is not annotated: ${options.tag}`)
