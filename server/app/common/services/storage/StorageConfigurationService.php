@@ -6,7 +6,9 @@ namespace app\common\services\storage;
 use app\common\exception\BusinessException;
 use app\common\infrastructure\storage\StorageAccess;
 use app\common\infrastructure\storage\StorageCredentialCipher;
-use app\common\infrastructure\storage\StorageRepository;
+use app\common\model\storage\StorageAccount;
+use app\common\model\storage\StorageRoute;
+use app\common\model\storage\StorageSpace;
 use app\common\services\audit\AuditContractHost;
 use app\common\value\storage\StoragePurpose;
 use app\platform\context\PlatformOperatorContext;
@@ -19,16 +21,23 @@ final readonly class StorageConfigurationService
     private const MUTATION_PERMISSION = 'platform.ops.maintenance.manage';
 
     public function __construct(
-        private StorageRepository $repo,
         private AuditContractHost $audit,
     ) {}
 
     public function snapshot(): array
     {
         return [
-            'accounts' => $this->repo->accounts(),
-            'spaces' => $this->repo->spaces(),
-            'routes' => $this->repo->routes(),
+            'accounts' => StorageAccount::field('id,account_key,driver,name,credential_key_version,credential_rotated_at,status,created_at,updated_at')
+                ->fieldRaw("CASE WHEN credential_ciphertext IS NULL THEN NULL ELSE '********' END AS credential_masked")
+                ->order('id')->select()->toArray(),
+            'spaces' => StorageSpace::alias('s')
+                ->join('storage_account a', 'a.id=s.account_id')
+                ->field('s.*,a.account_key,a.driver')->order('s.id')->select()->toArray(),
+            'routes' => StorageRoute::alias('r')
+                ->join('storage_space s', 's.id=r.space_id')
+                ->join('storage_account a', 'a.id=s.account_id')
+                ->field('r.*,s.space_key,s.name AS space_name,a.driver')
+                ->order('r.route_key')->select()->toArray(),
             'purposes' => ['material.image', 'material.video', 'material.file', 'export.xlsx', 'export.csv'],
         ];
     }
@@ -40,13 +49,14 @@ final readonly class StorageConfigurationService
         ], function () use ($value): int {
             $this->assertKeys($value, ['account_key', 'driver', 'name', 'credentials', 'credential_ref']);
             $account = $this->account($value, true);
-            return Db::name('storage_account')->insertGetId([
+            $created = StorageAccount::create([
                 'account_key' => $account['account_key'], 'driver' => $account['driver'],
                 'name' => $account['name'], 'credential_ciphertext' => $account['credential']['ciphertext'],
                 'credential_key_version' => $account['credential']['key_version'],
                 'credential_rotated_at' => $account['credential']['rotated_at'], 'status' => 'active',
-                'created_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'created_at' => StorageAccount::raw('UTC_TIMESTAMP(3)'), 'updated_at' => StorageAccount::raw('UTC_TIMESTAMP(3)'),
             ]);
+            return (int)$created->id;
         });
     }
 
@@ -57,17 +67,17 @@ final readonly class StorageConfigurationService
         ], function () use ($value): void {
             $this->assertKeys($value, ['id', 'name', 'status', 'credentials', 'credential_ref']);
             $id = $this->id($value['id'] ?? 0);
-            $existing = Db::name('storage_account')->where('id', $id)->field('account_key,driver')->find();
+            $existing = StorageAccount::where('id', $id)->field('account_key,driver')->find();
             if ($existing === null) throw new \InvalidArgumentException('存储账号不存在');
             $account = $this->account([
-                'account_key' => $existing['account_key'], 'driver' => $existing['driver'],
+                'account_key' => $existing->account_key, 'driver' => $existing->driver,
                 'name' => $value['name'] ?? '', 'credentials' => $value['credentials'] ?? null,
                 'credential_ref' => $value['credential_ref'] ?? null,
             ], false);
             $data = [
                 'name' => $account['name'],
                 'status' => $this->status((string)($value['status'] ?? 'active'), ['active', 'disabled']),
-                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'updated_at' => StorageAccount::raw('UTC_TIMESTAMP(3)'),
             ];
             if ($account['credential'] !== null) {
                 $data += [
@@ -76,7 +86,7 @@ final readonly class StorageConfigurationService
                     'credential_rotated_at' => $account['credential']['rotated_at'],
                 ];
             }
-            Db::name('storage_account')->where('id', $id)->update($data);
+            StorageAccount::where('id', $id)->update($data);
         });
     }
 
@@ -88,14 +98,15 @@ final readonly class StorageConfigurationService
                 'region', 'endpoint', 'access_domain', 'local_path',
             ]);
             $space = $this->space($value + ['status' => 'active']);
-            return Db::name('storage_space')->insertGetId([
+            $created = StorageSpace::create([
                 'space_key' => $space['space_key'], 'account_id' => $space['account_id'],
                 'name' => $space['name'], 'access_type' => $space['access_type'],
                 'bucket' => $space['bucket'], 'region' => $space['region'],
                 'endpoint' => $space['endpoint'], 'access_domain' => $space['access_domain'],
                 'local_path' => $space['local_path'], 'status' => 'active',
-                'created_at' => Db::raw('UTC_TIMESTAMP(3)'), 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'created_at' => StorageSpace::raw('UTC_TIMESTAMP(3)'), 'updated_at' => StorageSpace::raw('UTC_TIMESTAMP(3)'),
             ]);
+            return (int)$created->id;
         });
     }
 
@@ -104,18 +115,18 @@ final readonly class StorageConfigurationService
         $this->mutate($context, 'storage.space.updated', 'STORAGE_SPACE_UPDATE', [], function () use ($value): void {
             $this->assertKeys($value, ['id', 'name', 'access_domain', 'status']);
             $id = $this->id($value['id'] ?? 0);
-            $existing = Db::name('storage_space')->where('id', $id)
+            $existing = StorageSpace::where('id', $id)
                 ->field('account_id,space_key,access_type,bucket,region,endpoint,local_path')->find();
             if ($existing === null) throw new \InvalidArgumentException('Space 不存在');
             $space = $this->space([
-                ...$existing,
+                ...$existing->toArray(),
                 'name' => $value['name'] ?? '',
                 'access_domain' => $value['access_domain'] ?? '',
                 'status' => $value['status'] ?? 'active',
             ]);
-            Db::name('storage_space')->where('id', $id)->update([
+            StorageSpace::where('id', $id)->update([
                 'name' => $space['name'], 'access_domain' => $space['access_domain'],
-                'status' => $space['status'], 'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'status' => $space['status'], 'updated_at' => StorageSpace::raw('UTC_TIMESTAMP(3)'),
             ]);
         });
     }
@@ -132,12 +143,12 @@ final readonly class StorageConfigurationService
                 throw new \InvalidArgumentException('用途路由属性不匹配');
             }
             $space = $this->id($value['space_id'] ?? 0);
-            if (!Db::name('storage_space')->where('id', $space)->where('access_type', $access)->where('status', 'active')->find()) {
+            if (!StorageSpace::where('id', $space)->where('access_type', $access)->where('status', 'active')->find()) {
                 throw new \InvalidArgumentException('路由目标 Space 不可用');
             }
-            Db::name('storage_route')->duplicate(['access_type', 'space_id', 'updated_at'])->insert([
+            StorageRoute::duplicate(['access_type', 'space_id', 'updated_at'])->insert([
                 'route_key' => $key, 'access_type' => $access, 'space_id' => $space,
-                'updated_at' => Db::raw('UTC_TIMESTAMP(3)'),
+                'updated_at' => StorageRoute::raw('UTC_TIMESTAMP(3)'),
             ]);
         });
     }
@@ -157,7 +168,7 @@ final readonly class StorageConfigurationService
     private function space(array $value): array
     {
         $accountId = $this->id($value['account_id'] ?? 0);
-        $driver = Db::name('storage_account')->where('id', $accountId)->value('driver');
+        $driver = StorageAccount::where('id', $accountId)->value('driver');
         if (!is_string($driver)) throw new \InvalidArgumentException('存储账号不存在');
         $driver = $this->driver($driver);
         $access = StorageAccess::assertType((string)($value['access_type'] ?? ''));

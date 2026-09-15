@@ -5,17 +5,26 @@ namespace app\common\services\storage;
 
 use app\common\exception\BusinessException;
 use app\common\composition\storage\StorageDriverFactory;
-use app\common\infrastructure\storage\StorageRepository;
+use app\common\infrastructure\storage\StorageAccess;
+use app\common\tenancy\DataScopePolicy;
 use app\common\value\storage\StoragePath;
 use app\common\value\storage\StoragePurpose;
+use app\common\model\storage\StorageAccount;
+use app\common\model\storage\FileObject;
+use app\common\model\storage\StorageRoute;
+use app\common\model\storage\StorageSpace;
+use PeanutAdmin\FileMedia\Storage\StorageObjectKey;
+use PeanutAdmin\Kernel\Tenancy\DefaultTenantContextResolver;
+use think\db\BaseQuery;
 
 final readonly class StorageService
 {
     public const DELIVERY_URL_TTL = 600;
 
     public function __construct(
-        private StorageRepository $repository,
         private StorageDriverFactory $drivers,
+        private DataScopePolicy $dataScopePolicy,
+        private DefaultTenantContextResolver $defaultTenant,
         private string $signingSecret,
         private string $applicationOrigin,
     ) {
@@ -44,16 +53,15 @@ final readonly class StorageService
             $fileKey,
             (string)pathinfo($originalName, PATHINFO_EXTENSION),
         );
-        $route = $this->repository->route($purpose, $access);
+        $route = $this->route($purpose, $access);
         $driver = $this->drivers->make($route, $route);
         $size = filesize($sourcePath);
         $sha256 = hash_file('sha256', $sourcePath);
         if (!is_int($size) || !is_string($sha256)) {
             throw new \RuntimeException('文件信息读取失败');
         }
-        $this->repository->reserveObject([
+        $this->reserveObject($tenantId, [
             'file_key' => $fileKey,
-            'tenant_id' => $tenantId,
             'purpose' => $purpose,
             'access_type' => $access,
             'storage_space_id' => (int)$route['space_id'],
@@ -67,7 +75,7 @@ final readonly class StorageService
         ]);
         try {
             $driver->put($objectKey, $sourcePath);
-            if (!$this->repository->markObjectReady($tenantId, $fileKey)) {
+            if (!$this->markObjectReady($tenantId, $fileKey)) {
                 throw new \RuntimeException('文件对象账本未能切换到 ready');
             }
         } catch (\Throwable $error) {
@@ -77,7 +85,7 @@ final readonly class StorageService
             } catch (\Throwable $exception) {
                 $deleteFailure = $exception;
             }
-            if (!$this->repository->markObjectWriteFailed($tenantId, $fileKey)) {
+            if (!$this->markObjectWriteFailed($tenantId, $fileKey)) {
                 throw new \RuntimeException('文件对象账本未能记录 write_failed', 0, $error);
             }
             if ($deleteFailure !== null) {
@@ -86,7 +94,7 @@ final readonly class StorageService
             throw $error;
         }
 
-        $object = $this->repository->deliverableObjectForTenant($tenantId, $fileKey);
+        $object = $this->deliverableObjectForTenant($tenantId, $fileKey);
         if ($object === null) {
             throw new \RuntimeException('文件对象当前不可交付');
         }
@@ -107,13 +115,13 @@ final readonly class StorageService
         }
         $internal = $this->internalReference($reference);
         if ($internal !== null) {
-            $object = $this->repository->publicObject($internal);
+            $object = $this->publicObject($internal);
             return $object === null ? '' : $this->url($object);
         }
         if (preg_match('#^https?://#i', $reference) === 1) {
             return $reference;
         }
-        $object = $this->repository->publicObject($reference);
+        $object = $this->publicObject($reference);
         return $object === null ? '' : $this->url($object);
     }
 
@@ -125,7 +133,7 @@ final readonly class StorageService
         }
         $internal = $this->internalReference($reference) ?? $reference;
         if (preg_match('/^file_[0-9a-f]{32}$/D', $internal) === 1) {
-            $object = $this->repository->deliverableObjectForTenant($tenantId, $internal);
+            $object = $this->deliverableObjectForTenant($tenantId, $internal);
             if ($object === null || $object['access_type'] !== 'public') {
                 throw new \RuntimeException('素材对象不属于当前租户');
             }
@@ -137,7 +145,7 @@ final readonly class StorageService
         if (str_starts_with($path, 'storage/')) {
             $path = substr($path, 8);
         }
-        $object = $this->repository->publicObject($path);
+        $object = $this->publicObject($path);
         if ($object !== null) {
             if ((int)$object['tenant_id'] !== $tenantId || $path !== (string)$object['object_key']) {
                 throw new \RuntimeException('素材对象不属于当前租户');
@@ -152,24 +160,24 @@ final readonly class StorageService
 
     public function delete(int $tenantId, string $fileKey): void
     {
-        $object = $this->repository->objectForTenant($tenantId, $fileKey);
+        $object = $this->objectForTenant($tenantId, $fileKey);
         if ($object === null) {
             throw new \RuntimeException('文件对象不存在');
         }
-        if (!$this->repository->archive($tenantId, $fileKey)) {
+        if (!$this->archive($tenantId, $fileKey)) {
             throw new \RuntimeException('文件对象状态更新失败');
         }
         try {
             $this->drivers->make($object, $object)->delete((string)$object['object_key']);
         } catch (\Throwable $error) {
-            $this->repository->restore($tenantId, $fileKey);
+            $this->restore($tenantId, $fileKey);
             throw $error;
         }
     }
 
     public function accessUrlForTenant(int $tenantId, string $fileKey): string
     {
-        $object = $this->repository->deliverableObjectForTenant($tenantId, $fileKey);
+        $object = $this->deliverableObjectForTenant($tenantId, $fileKey);
         if ($object === null) {
             throw new \RuntimeException('文件对象不存在或不可用');
         }
@@ -188,7 +196,7 @@ final readonly class StorageService
                 '文件链接无效或已过期',
             );
         }
-        $object = $this->repository->deliverableObjectForTenant($tenantId, $fileKey);
+        $object = $this->deliverableObjectForTenant($tenantId, $fileKey);
         if ($object === null) {
             throw BusinessException::notFound('STORAGE_DELIVERY_NOT_FOUND', '文件不存在或不可用');
         }
@@ -223,6 +231,203 @@ final readonly class StorageService
             'disposition' => (string)$object['disposition'],
             'temporary' => $temporary,
         ];
+    }
+
+    private function route(string $purpose, string $access): array
+    {
+        $access = StorageAccess::assertType($access);
+        $row = $this->routeRow($purpose, $access) ?? $this->routeRow('default.' . $access, $access);
+        if ($row === null) {
+            throw new \RuntimeException('文件用途没有可用的存储路由');
+        }
+        return $row;
+    }
+
+    private function objectForTenant(int $tenantId, string $fileKey, bool $readyOnly = true): ?array
+    {
+        $query = $this->objectQuery($this->logicalTenantId($tenantId))->where('f.file_key', $fileKey);
+        if ($readyOnly) {
+            $query->where('f.status', 'ready');
+        }
+        return $this->find($query);
+    }
+
+    private function deliverableObjectForTenant(int $tenantId, string $fileKey): ?array
+    {
+        return $this->find(
+            $this->objectQuery($this->logicalTenantId($tenantId))
+                ->where('f.file_key', $fileKey)
+                ->where('f.status', 'ready')
+                ->where('t.status', 'active'),
+        );
+    }
+
+    private function publicObject(string $reference): ?array
+    {
+        $reference = trim($reference);
+        $field = 'f.file_key';
+        $tenantId = $this->dataScopePolicy->usesTenantColumn() ? null : $this->standaloneTenantId();
+        if (preg_match('/^file_[0-9a-f]{32}$/D', $reference) !== 1) {
+            $reference = ltrim($reference, '/');
+            if (str_starts_with($reference, 'storage/')) {
+                $reference = substr($reference, 8);
+            }
+            if (preg_match('#^tenants/v1/([1-9][0-9]*)/#D', $reference, $matches) !== 1) {
+                return null;
+            }
+            $reference = StorageObjectKey::assert($reference);
+            $field = 'f.object_key';
+            $referenceTenantId = (int)$matches[1];
+            if ($tenantId !== null && $referenceTenantId !== $tenantId) {
+                return null;
+            }
+            $tenantId = $referenceTenantId;
+        }
+        return $this->find(
+            $this->objectQuery($tenantId)
+                ->where($field, $reference)
+                ->where('f.access_type', 'public')
+                ->where('f.status', 'ready')
+                ->where('t.status', 'active'),
+        );
+    }
+
+    private function reserveObject(int $tenantId, array $data): void
+    {
+        $tenantId = $this->logicalTenantId($tenantId);
+        if (!str_starts_with((string)($data['object_key'] ?? ''), $this->ownerPrefix($tenantId))) {
+            throw new \DomainException('STORAGE_OBJECT_OWNER_MISMATCH');
+        }
+        FileObject::create([
+            ...$data,
+            'status' => 'pending_write',
+            'revision' => 1,
+            'created_at' => FileObject::raw('UTC_TIMESTAMP(3)'),
+            'updated_at' => FileObject::raw('UTC_TIMESTAMP(3)'),
+            'archived_at' => null,
+        ]);
+    }
+
+    private function markObjectReady(int $tenantId, string $fileKey): bool
+    {
+        return $this->changeStatus($tenantId, $fileKey, 'pending_write', 'ready');
+    }
+
+    private function markObjectWriteFailed(int $tenantId, string $fileKey): bool
+    {
+        return $this->changeStatus($tenantId, $fileKey, 'pending_write', 'write_failed');
+    }
+
+    private function archive(int $tenantId, string $fileKey): bool
+    {
+        return $this->ownedObjects($this->logicalTenantId($tenantId))
+            ->where('file_key', $fileKey)->where('status', 'ready')
+            ->update([
+                'status' => 'archived',
+                'archived_at' => FileObject::raw('UTC_TIMESTAMP(3)'),
+                'updated_at' => FileObject::raw('UTC_TIMESTAMP(3)'),
+                'revision' => FileObject::raw('revision+1'),
+            ]) === 1;
+    }
+
+    private function restore(int $tenantId, string $fileKey): void
+    {
+        $this->ownedObjects($this->logicalTenantId($tenantId))
+            ->where('file_key', $fileKey)->where('status', 'archived')
+            ->update([
+                'status' => 'ready',
+                'archived_at' => null,
+                'updated_at' => FileObject::raw('UTC_TIMESTAMP(3)'),
+                'revision' => FileObject::raw('revision+1'),
+            ]);
+    }
+
+    private function routeRow(string $routeKey, string $access): ?array
+    {
+        return $this->find(
+            StorageRoute::alias('r')
+                ->join('storage_space s', 's.id=r.space_id')
+                ->join('storage_account a', 'a.id=s.account_id')
+                ->where('r.route_key', $routeKey)->where('r.access_type', $access)
+                ->where('s.access_type', $access)->where('s.status', 'active')->where('a.status', 'active')
+                ->field('a.id AS account_id,a.account_key,a.driver,a.name AS account_name,a.credential_ciphertext,a.credential_key_version,a.status AS account_status')
+                ->field('s.id AS space_id,s.space_key,s.name AS space_name,s.access_type,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status AS space_status'),
+        );
+    }
+
+    private function changeStatus(int $tenantId, string $fileKey, string $from, string $to): bool
+    {
+        return $this->ownedObjects($this->logicalTenantId($tenantId))
+            ->where('file_key', $fileKey)->where('status', $from)
+            ->update([
+                'status' => $to,
+                'updated_at' => FileObject::raw('UTC_TIMESTAMP(3)'),
+                'revision' => FileObject::raw('revision+1'),
+            ]) === 1;
+    }
+
+    private function ownedObjects(int $tenantId): BaseQuery
+    {
+        return FileObject::where([])
+            ->whereLike('object_key', $this->ownerPrefix($tenantId) . '%');
+    }
+
+    private function logicalTenantId(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            throw new \DomainException('STORAGE_TENANT_INVALID');
+        }
+        if ($this->dataScopePolicy->usesTenantColumn()) {
+            return $tenantId;
+        }
+        $defaultTenantId = $this->standaloneTenantId();
+        if ($tenantId !== $defaultTenantId) {
+            throw new \DomainException('STORAGE_OBJECT_OWNER_MISMATCH');
+        }
+        return $defaultTenantId;
+    }
+
+    private function standaloneTenantId(): int
+    {
+        return $this->defaultTenant->system(
+            'storage-service',
+            'storage.resolve-default-tenant',
+            'storage-service-default-tenant',
+        )->tenantId;
+    }
+
+    private function ownerPrefix(int $tenantId): string
+    {
+        return 'tenants/v1/' . $tenantId . '/';
+    }
+
+    private function objectQuery(?int $tenantId): BaseQuery
+    {
+        $query = FileObject::alias('f')
+            ->join('storage_space s', 's.id=f.storage_space_id')
+            ->join('storage_account a', 'a.id=s.account_id')
+            ->field('f.*,a.id AS account_id,a.account_key,a.driver,a.name AS account_name,a.credential_ciphertext,a.credential_key_version,a.status AS account_status')
+            ->field('s.space_key,s.name AS space_name,s.bucket,s.region,s.endpoint,s.access_domain,s.local_path,s.status AS space_status');
+        if ($tenantId !== null) {
+            $query->whereLike('f.object_key', $this->ownerPrefix($tenantId) . '%');
+        }
+        if (!$this->dataScopePolicy->usesTenantColumn()) {
+            if (!is_int($tenantId) || $tenantId < 1) {
+                throw new \LogicException('STORAGE_STANDALONE_TENANT_UNAVAILABLE');
+            }
+            $query->join('tenant t', 't.id=' . $tenantId)
+                ->where('t.code', 'default')
+                ->fieldRaw($tenantId . ' AS tenant_id');
+        } else {
+            $query->join('tenant t', 't.id=f.tenant_id');
+        }
+        return $query;
+    }
+
+    private function find(BaseQuery $query): ?array
+    {
+        $row = $query->find();
+        return $row === null ? null : (is_array($row) ? $row : $row->toArray());
     }
 
     private function url(array $object): string

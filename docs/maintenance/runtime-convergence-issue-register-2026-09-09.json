@@ -61,28 +61,31 @@
       "category": "application-pdo-repositories",
       "source": [
         "docs/architecture/core-thinkphp-runtime-direction-adr.md",
-        "server/app/Modules"
+        "server/app/modules",
+        "server/app/common/services/storage/StorageService.php"
       ],
       "evidence": [
-        "server/app/Modules/Official/Article/Infrastructure/Authorization/PdoArticleModuleAccess.php",
-        "server/app/Modules/Official/Task/Infrastructure/Runtime/PdoTaskJobRuntime.php",
-        "server/app/Modules/Official/ImportExport/ModuleProvider.php"
+        "server/app/common/model/storage/FileObject.php",
+        "server/app/common/model/storage/StorageAccount.php",
+        "server/app/common/model/storage/StorageSpace.php",
+        "server/app/common/model/storage/StorageRoute.php",
+        "server/app/common/infrastructure/storage/StorageRepository.php removed with no production references"
       ],
       "impact": "long-lived duplicate persistence graph",
       "owner": "application-runtime",
       "historical_status": "open",
       "historical_verification": "not re-executed by this continuation",
       "historical_ruling": "migrate one domain at a time and delete its PDO path",
-      "current_status": "pending-current-verification",
-      "classification": "historical-claim-pending-current-verification",
+      "current_status": "file-storage-native-persistence-implemented-other-domains-pending",
+      "classification": "current-partial-implementation",
       "effective_requirement": "领域迁移同时替换调用者并删除旧 PDO 路径，不长期双实现、兼容桥或双写。",
       "pending_decision": null,
       "related_issue_ids": [
         "RUNTIME-APP-001",
         "BOOTSTRAP-001"
       ],
-      "next_current_source_check": "Inspect each named current domain path and its callers; establish whether a duplicate persistence graph remains before proposing a domain-sized repair.",
-      "source_limit": "沿用已有报告、保存回执和源码定位；本阶段未重读原始聊天或当前源码，未定位的原始记录不作为直接证据。",
+      "next_current_source_check": "Select the next current domain from production callers; File/Storage no longer has a single-implementation persistence repository to revisit.",
+      "source_limit": "2026-09-15 已读取 File/Storage 的完整生产调用者、AppService 装配、Module manifest、service registry 与锁定 ThinkORM Model/Query 能力；未运行自动化测试或双 Edition 资格。",
       "decision_refs": [
         "DEC-01",
         "DEC-02"
@@ -93,15 +96,14 @@
       "knowledge_refs": [
         "KNOW-02"
       ],
-      "stage2_disposition": "要求与证据去向已裁定；实现/故障现状待阶段3，不据历史状态直接修复或跳过。",
+      "stage2_disposition": "File/Storage 已以 Tenant-owned FileObject Model 和 Instance-owned Account/Space/Route Models 替代单实现 StorageRepository；Driver 多实现、对象账本、补偿、签名交付和审计事务保留。其他领域继续按真实调用逐域核对。",
       "proposed_write_set": [
-        "domain implementation",
-        "actual callers",
-        "provider",
-        "old PDO files"
+        "next selected domain implementation",
+        "its actual callers and provider",
+        "its obsolete persistence path"
       ],
       "required_future_checks": [
-        "domain Tenant/transaction/concurrency tests",
+        "File/Storage Tenant and compensation tests when the user authorizes automated tests",
         "two Edition gate"
       ]
     },

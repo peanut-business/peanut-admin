@@ -55,7 +55,6 @@ use app\common\infrastructure\storage\QiniuStorageHttpTransport;
 use app\common\contract\storage\StorageCredentialResolver;
 use app\common\services\storage\StorageConfigurationService;
 use app\common\composition\storage\StorageDriverFactory;
-use app\common\infrastructure\storage\StorageRepository;
 use app\common\services\storage\StorageService;
 use app\common\tenancy\DataScopePolicy;
 use app\common\tenancy\MultiTenantDataScopePolicy;
@@ -315,10 +314,6 @@ class AppService extends Service
     private function registerStorage(): void
     {
         $this->app->bind(StorageCredentialResolver::class, FailClosedStorageCredentialResolver::class);
-        $this->app->bind(StorageRepository::class, fn(): StorageRepository => new StorageRepository(
-            $this->app->make(DataScopePolicy::class),
-            $this->app->make(DefaultTenantContextResolver::class),
-        ));
         $this->app->bind(StorageDriverFactory::class, fn(): StorageDriverFactory => new StorageDriverFactory(
             $this->app->make(StorageCredentialResolver::class),
             new QiniuStorageHttpTransport($this->app->make(OutboundHttpTransport::class)),
@@ -328,8 +323,9 @@ class AppService extends Service
             $this->app,
         ));
         $this->app->bind(StorageService::class, fn(): StorageService => new StorageService(
-            $this->app->make(StorageRepository::class),
             $this->app->make(StorageDriverFactory::class),
+            $this->app->make(DataScopePolicy::class),
+            $this->app->make(DefaultTenantContextResolver::class),
             (string)Config::get('jwt.secret', ''),
             (string)$this->app->request->domain(),
         ));
@@ -342,7 +338,6 @@ class AppService extends Service
             (string)$this->app->request->domain(),
         ));
         $this->app->bind(StorageConfigurationService::class, fn(): StorageConfigurationService => new StorageConfigurationService(
-            $this->app->make(StorageRepository::class),
             $this->app->make(AuditContractHost::class),
         ));
     }

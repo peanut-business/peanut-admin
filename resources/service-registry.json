@@ -391,9 +391,12 @@
       "current_implementation": [
         "server/app/modules/official/file/module.json",
         "server/app/modules/official/file/ModuleProvider.php",
+        "server/app/common/model/storage/FileObject.php",
         "server/app/common/services/FileService.php",
         "server/app/common/services/storage/StorageService.php",
-        "server/app/common/infrastructure/storage/StorageRepository.php",
+        "server/app/common/model/storage/StorageAccount.php",
+        "server/app/common/model/storage/StorageSpace.php",
+        "server/app/common/model/storage/StorageRoute.php",
         "server/app/common/composition/storage/StorageDriverFactory.php"
       ],
       "actual_callers": [

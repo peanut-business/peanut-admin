@@ -13,11 +13,13 @@
     "shared": "Immutable or product-wide reference data is shared by design."
   },
   "model_owners": [
+    {"model": "app\\modules\\fixture\\delivery_record\\model\\DeliveryRecord", "table": "pa_fixture_delivery_record", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\article\\model\\Article", "table": "pa_article", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\article\\model\\ArticleCate", "table": "pa_article_cate", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\article\\model\\ArticleCollect", "table": "pa_article_collect", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\file\\model\\File", "table": "pa_file", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\file\\model\\FileCate", "table": "pa_file_cate", "owner": "tenant-orm"},
+    {"model": "app\\common\\model\\storage\\FileObject", "table": "pa_file_object", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\member\\model\\Member", "table": "pa_member", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\member\\model\\MemberBalanceLog", "table": "pa_member_balance_log", "owner": "tenant-orm"},
     {"model": "app\\modules\\official\\member\\model\\MemberTag", "table": "pa_member_tag", "owner": "tenant-orm"},
@@ -48,7 +50,10 @@
     {"model": "app\\common\\model\\auth\\SystemMenu", "table": "pa_system_menu", "owner": "shared"},
     {"model": "app\\common\\model\\generator\\GeneratorColumn", "table": "pa_generator_column", "owner": "instance"},
     {"model": "app\\common\\model\\generator\\GeneratorDownload", "table": "pa_generator_download", "owner": "instance"},
-    {"model": "app\\common\\model\\generator\\GeneratorTable", "table": "pa_generator_table", "owner": "instance"}
+    {"model": "app\\common\\model\\generator\\GeneratorTable", "table": "pa_generator_table", "owner": "instance"},
+    {"model": "app\\common\\model\\storage\\StorageAccount", "table": "pa_storage_account", "owner": "instance"},
+    {"model": "app\\common\\model\\storage\\StorageSpace", "table": "pa_storage_space", "owner": "instance"},
+    {"model": "app\\common\\model\\storage\\StorageRoute", "table": "pa_storage_route", "owner": "instance"}
   ],
   "tenant_tables": [
     {"table": "pa_operation_log", "owner": "tenant-orm", "access_entry": "app\\common\\model\\log\\OperationLog"},
@@ -89,7 +94,7 @@
     {"table": "pa_task_job_event", "owner": "tenant-gateway", "access_entry": "PeanutAdmin\\TaskJob\\Persistence\\PdoTaskJobRepository"},
     {"table": "pa_import_export_operation", "owner": "tenant-gateway", "access_entry": "PeanutAdmin\\ImportExport\\Persistence\\PdoImportExportRepository"},
     {"table": "pa_import_export_row_error", "owner": "tenant-gateway", "access_entry": "PeanutAdmin\\ImportExport\\Persistence\\PdoImportExportRepository"},
-    {"table": "pa_file_object", "owner": "tenant-gateway", "access_entry": "app\\common\\infrastructure\\storage\\StorageRepository"},
+    {"table": "pa_file_object", "owner": "tenant-orm", "access_entry": "app\\common\\model\\storage\\FileObject"},
     {"table": "pa_transaction_setting", "owner": "tenant-orm", "access_entry": "app\\common\\model\\setting\\TransactionSetting"},
     {"table": "pa_external_channel_binding", "owner": "tenant-gateway", "access_entry": "app\\common\\services\\external\\ExternalChannelBindingService"},
     {"table": "pa_setting_tenant_value", "owner": "tenant-gateway", "access_entry": "app\\platform\\infrastructure\\plugin\\ModuleCatalogMutationRepository"},
@@ -98,13 +103,13 @@
     {"table": "pa_oauth_completion_ticket", "owner": "tenant-orm", "access_entry": "app\\modules\\official\\oauth\\model\\OAuthCompletionTicket"},
     {"table": "pa_payment_tenant_channel_grant", "owner": "tenant-orm", "access_entry": "app\\modules\\official\\payment\\model\\PaymentTenantChannelGrant"},
     {"table": "pa_provider_qualification_evidence", "owner": "tenant-gateway", "access_entry": "app\\platform\\infrastructure\\provider\\ThinkPhpProviderQualificationEvidenceRepository"},
-    {"table": "pa_fixture_delivery_record", "owner": "tenant-gateway", "access_entry": "app\\modules\\fixture\\delivery_record\\model\\DeliveryRecord"}
+    {"table": "pa_fixture_delivery_record", "owner": "tenant-orm", "access_entry": "app\\modules\\fixture\\delivery_record\\model\\DeliveryRecord"}
   ],
   "counts": {
-    "concrete_models": 36,
-    "tenant_models": 31,
-    "non_tenant_models": 5,
+    "concrete_models": 41,
+    "tenant_models": 33,
+    "non_tenant_models": 8,
     "tenant_tables": 48,
-    "tenant_tables_without_model": 17
+    "tenant_tables_without_model": 15
   }
 }

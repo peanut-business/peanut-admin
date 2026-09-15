@@ -40,7 +40,7 @@
 
 ## 存储合入后的受影响路径回归
 
-- `PB04-FILE-MEDIA-HOST-001`：通过；上传、删除和 public/private 用途仍由统一 `StorageService`、`StorageRepository` 和对象账本负责。
+- `PB04-FILE-MEDIA-HOST-001`：通过；上传、删除和 public/private 用途仍由统一 `StorageService`、Tenant-owned `FileObject` Model 和对象账本负责；单实现 `StorageRepository` 已退出。
 - `PB07-OAUTH-CHANNEL-HOST-001` 与 `OAuthTenantIsolationTest.php`：通过；state/ticket、Provider 绑定和 Tenant 隔离未因存储合入改变。
 - `TaskImportExportTenantIsolationTest.php`：通过；在登记 P0-E 隔离库上应用存储迁移并设置测试 JWT 密钥后，CSV 结果对象进入 `ready`，私有 URL 可生成，跨 Tenant 下载被拒绝。原子失败注入不再依赖 `SUPER`/`CREATE TRIGGER` 权限：测试使用临时 CHECK 约束确定性触发失败，验证事务回滚后删除约束，不允许 privilege-based skip。
 - `MemberUploadTenantWiringTest.php`：已正式重写为现行 `ConsumerExecutionContext` 与容器 Controller 路径，校验 Local Driver、Tenant/Member owner、`pa_file.file_key`、`pa_file_object=ready` 及私有路由；`scripts/p0e-runtime-qualification` 在新建的精确 Plugin lifecycle 数据库中执行它，不再使用旧路由、旧字段或未登记 root 账号。

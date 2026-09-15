@@ -4127,7 +4127,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "ddb7616c2db85dc145413e30e3329a58b6d1f8842de8d03a4cc5cc1e031c9f10"
+            "source_sha256": "472834efa9a87fa7d03f97bf01d6c0896195a1092c801885218203461a5e0814"
         },
         {
             "path": "scripts/ci-server-check.sh",
@@ -4830,7 +4830,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "84378b90846b33bd42e1bff6a55b5ddb7c4743b6060a44a8b99ef03e3dacdb5e"
+            "source_sha256": "0046a74d7465900768196c183696b4c10a4d6e52414dcfbfcdf0451b9be50766"
         },
         {
             "path": "server/app/BaseController.php",
@@ -8527,20 +8527,6 @@
             "source_sha256": "5a9a7a70c24c966aeecf3ec9104102a082de526779338f54d34440b14c4b7d08"
         },
         {
-            "path": "server/app/common/infrastructure/storage/StorageRepository.php",
-            "target": "server/app/common/infrastructure/storage/StorageRepository.php",
-            "classification": "app-owned",
-            "owner": "application",
-            "transform": "text",
-            "mode": 420,
-            "profiles": [
-                "minimal",
-                "standard",
-                "full"
-            ],
-            "source_sha256": "234a2eb1337a494e9ce7510366d4518e9e1affca9b993ea2328f0f0365404bb7"
-        },
-        {
             "path": "server/app/common/infrastructure/tenant/ThinkPhpTenantSettingsProvider.php",
             "target": "server/app/common/infrastructure/tenant/ThinkPhpTenantSettingsProvider.php",
             "classification": "app-owned",
@@ -8805,6 +8791,62 @@
                 "full"
             ],
             "source_sha256": "517e0b5de88ba3ec4b3e8f305de875dbdcc6ba7320f4b3979cb4fc3ed21739f9"
+        },
+        {
+            "path": "server/app/common/model/storage/FileObject.php",
+            "target": "server/app/common/model/storage/FileObject.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "9c36a9a975d7582c1104ba5657707f3fdacb7206b2b38bfdeca71819cb7aa663"
+        },
+        {
+            "path": "server/app/common/model/storage/StorageAccount.php",
+            "target": "server/app/common/model/storage/StorageAccount.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "43118eb06266a219402fc86b849aeebb203f77f547636c5d0cbb9ffea0b64564"
+        },
+        {
+            "path": "server/app/common/model/storage/StorageRoute.php",
+            "target": "server/app/common/model/storage/StorageRoute.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "69748c4af7c62721a07b7efcfb5b5bd8707ce36a5204abbd21645c39fcc9ecb0"
+        },
+        {
+            "path": "server/app/common/model/storage/StorageSpace.php",
+            "target": "server/app/common/model/storage/StorageSpace.php",
+            "classification": "app-owned",
+            "owner": "application",
+            "transform": "text",
+            "mode": 420,
+            "profiles": [
+                "minimal",
+                "standard",
+                "full"
+            ],
+            "source_sha256": "2c74f07f531b0b0a7e1656485e23cd77828a6b6226bf58ac5caffe1e17afd185"
         },
         {
             "path": "server/app/common/persistence/AdvisoryLockExecution.php",
@@ -9270,7 +9312,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2d9bcdcaaae49d831ab4971be53858e98be74516eacee9f0a11d4a3957faab6b"
+            "source_sha256": "d25ae9caad1c37afef410821982180f3ad823642d71903bbe574f88b332084df"
         },
         {
             "path": "server/app/common/services/storage/StorageService.php",
@@ -9284,7 +9326,7 @@
                 "standard",
                 "full"
             ],
-            "source_sha256": "2ba962524383d4641e0ad3e247ab5cae8a81bcfb2ed58eaccb34560c7bb20f41"
+            "source_sha256": "896b66594e359a3c14efb95a756fad038e657d3023c5e0c6366b468660287d81"
         },
         {
             "path": "server/app/common/services/tenant/TenantIdentityQuery.php",

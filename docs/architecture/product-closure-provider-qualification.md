@@ -8,7 +8,8 @@ Owner: `product-operations`
 
 Audience: `maintainer, architect, ai`
 
-Upstream: `server/app/platform/service/provider/`、
+Upstream: `server/app/platform/services/provider/`、`server/app/platform/contract/provider/`、
+`server/app/platform/infrastructure/provider/`、
 `server/database/migrations/20260828-provider-qualification-evidence.sql`、官方 Payment、Notification、
 OAuth Module 与应用统一 Storage 服务。
 

@@ -76,7 +76,7 @@ TRUSTED_TENANT_KEY_PATHS = (
     "server/app/common/service/configuration_transfer/",
     "server/app/common/service/external/",
     "server/app/common/service/payment/",
-    "server/app/common/service/storage/",
+    "server/app/common/services/storage/",
     "server/app/common/service/tenant/",
     "server/app/common/service/authorization/",
     "server/app/common/service/capability/",
@@ -124,6 +124,9 @@ TENANT_JOIN_GLOBAL_TABLES = {
     "system_dict_data",
     "permission",
     "tenant",
+    "storage_account",
+    "storage_space",
+    "storage_route",
 }
 
 TENANT_JOIN_PATTERN = re.compile(

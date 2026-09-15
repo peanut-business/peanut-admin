@@ -40,23 +40,21 @@ Peanut Admin Application 的 `server/composer.json` 已直接声明 `topthink/fr
 
 因此，“Core 没有任何 ThinkPHP 事实”不是现行仓库事实；更准确的说法是：发布子包当前仍把 PDO 当作公共 persistence 入口，而 Core 根项目和参考宿主已经是 ThinkPHP 8。Core 的 migration/owned-migration 由宿主执行，根项目和 starter 对 `topthink/think-migration` 的声明是该事实的依赖证据。后续应把 migration 执行也收敛到正式 ThinkPHP bootstrap，而不是继续扩展裸 PDO runner。
 
-### 2.2 Application 从 ThinkPHP 连接取得 PDO 的现状
+### 2.2 Application 原生 ThinkPHP 连接边界的现状
 
-`server/app/AppService.php` 的 `database()` 调用 `Db::connect()->connect()`，确认返回 `PDO`，再以 `PDO::class` 绑定到 ThinkPHP 容器。随后 `AppService` 通过 `$this->app->make(PDO::class)` 构造 `PdoTransactionManager`、Core `Pdo*Repository`、认证/授权服务、StorageRepository 以及多个 RuntimeFactory。CLI 的 `DatabaseContextualCommand` 也把 PDO 作为构造依赖提供给命令。
+`server/app/AppService.php` 已不再导出 `PDO::class` 或装配 `PdoTransactionManager`。HTTP、CLI 与 Worker 的业务服务由 ThinkPHP 容器注入，Tenant-owned 数据通过 `TenantOwnedModel` 全局 Scope 和写入 Hook 访问，领域原子边界直接使用 `Db::transaction()`。File/Storage 已删除单实现 `StorageRepository`：`pa_file_object` 使用 `FileObject` Tenant Model，Account/Space/Route 使用 Instance Model；外部 Driver factory 仍因本地、Aliyun、Qcloud、Qiniu 四个真实实现而保留。
 
-典型当前调用链是：
+当前业务调用链是：
 
 ```text
 ThinkPHP HTTP/CLI bootstrap
   -> AppService::register()
-  -> Db::connect()->connect() -> PDO::class binding
-  -> ModuleProvider/AppService binding closure
-  -> RuntimeFactory 或 Module Runtime
-  -> Core PdoRepository/PdoTransactionManager
+  -> constructor-injected Application/Module service
+  -> TenantOwnedModel / Query / Db::transaction()
   -> Core service / Application service
 ```
 
-这条链路说明当前行为，不是目标 API。迁移完成前必须以同一 ThinkPHP 连接、事务和上下文保持现有 Tenant、事务、并发与双 Edition 语义。
+安装前 Schema 探测和 Module SQL migration executor 仍可在其窄生命周期内取得底层 PDO；这不构成业务容器公开依赖。其他尚存持久化包装继续按真实生产调用逐域退出，并保持同一 ThinkPHP 连接、事务、Tenant 上下文、并发与双 Edition 语义。
 
 ### 2.3 Provider、容器、合同和 Factory 的规模
 

@@ -2786,7 +2786,9 @@
       "content_type": "architecture",
       "authority": "interpretation",
       "canonical_sources": [
-        "server/app/platform/service/provider/",
+        "server/app/platform/services/provider/",
+        "server/app/platform/contract/provider/",
+        "server/app/platform/infrastructure/provider/",
         "server/database/migrations/20260828-provider-qualification-evidence.sql",
         "server/app/modules/official/payment/module.json",
         "server/app/modules/official/notification/module.json",
