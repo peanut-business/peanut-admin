@@ -8,13 +8,13 @@
 
 应用产品源码唯一在 `peanut-admin`；业务无关复用包在 `peanut-admin-core`。Standalone 与 Multi-tenant 两 Edition 必须由同一份应用冻结源码确定性生成。禁止建立独立单租户人工源码仓，也不以构建产物、路径仓或复制源码制造第二条业务实现。
 
-Core 拥有产品无关机制及明示技术状态，但正式 PHP 运行时只支持 ThinkPHP 8；Core 的 persistence 逐步使用 ThinkPHP Model/Query/Db/Transaction，不把 PDO Repository 作为长期公共 API。应用拥有业务规则、业务表、业务 UI 和宿主装配。每张表、每个状态机和每项业务规则只有一个 owner；是否属于 Core 由语义和真实调用决定，不由“所有 UI/数据库归应用”或同名目录一刀切。
+Core 拥有产品无关机制及明示技术状态，正式 PHP 运行时只支持 ThinkPHP 8；Core 的生产 persistence 已收敛到 ThinkPHP Model/Query/Db/Transaction，不把 PDO Repository 暴露为公共 Runtime API。应用拥有业务规则、业务表、业务 UI 和宿主装配。每张表、每个状态机和每项业务规则只有一个 owner；是否属于 Core 由语义和真实调用决定，不由“所有 UI/数据库归应用”或同名目录一刀切。
 
 ## 2. 五域职责原则
 
 | 域 | Core | 应用 | 本轮状态 |
 | --- | --- | --- | --- |
-| Settings | typed、secret、scope、产品无关 Settings Schema 与服务合同；当前 Alpha.13 仍有 PDO persistence 过渡实现 | setting definition 的 key/value schema/default、业务设置含义和 ThinkPHP 宿主装配 | 按 ADR 微批次迁移，不保留长期 PDO 双实现 |
+| Settings | typed、secret、scope、产品无关 Settings Schema 与服务合同；生产 persistence 使用 ThinkPHP Model/Query | setting definition 的 key/value schema/default、业务设置含义和 ThinkPHP 宿主装配 | S4 development source complete；动态与双 Edition 资格待后续授权 |
 | Storage | `StorageDriver`、对象 key 规则和低层文件传输机制 | Provider SDK 装配、凭据解密、用途、授权、对象账本、补偿和产品生命周期 | Core Alpha.13 已发布；应用收敛候选已采用，待应用固定候选资格与 Release |
 | Crontab | 产品无关执行机制与 `TaskJob` | Cron 业务规则、授权和宿主装配 | 共用 `TaskJob`，不建第二套队列 |
 | ImportExport | 产品无关导入导出机制与 `TaskJob` | 格式、业务授权和宿主装配 | 共用 `TaskJob`，不建第二套队列 |
@@ -22,13 +22,17 @@ Core 拥有产品无关机制及明示技术状态，但正式 PHP 运行时只�
 
 应用层沿用 ThinkPHP 原生 Model/Scope 构造注入；Core/Application 的正式数据边界同样收敛到 ThinkPHP，不为隔离 ThinkPHP 增加 Repository 或洋葱式包装。本轮必要的 Core 技术接口及应用宿主 adapter 属于跨仓合同装配，不是应用 persistence 镜像层。可信 Tenant 必须由宿主 HTTP 请求或 Worker 上下文建立，缺失时 fail-closed。
 
-本轮开发分支已经完成事务边界的第一步：Core `61287a9` 提供原生 `ThinkPhpTransactionManager`，Application `14ce7b1b` 在主组合根改为使用该实现。现存领域 PDO Repository 和直接 `PdoTransactionManager` 调用仍须按领域退出，因此这只是后续迁移的事务基础，不表示 Runtime 收敛、消费资格或 3.1.1 候选已经完成。
+S4 的开发源码出口已固定为 Application `2ef59dade5f6af06b70867940347fe75893d947e` 与 Core
+`dcdf8c6a3b09499447c57a685114150d84e4d647`：生产调用中的普通业务 PDO Repository、RuntimeFactory、
+请求期 ModuleProvider 构造和旧事务包装已退出；ReferenceCodes、DataPermission、Settings、身份、
+RBAC、Audit、Task/ImportExport/FileMedia 等现行路径由 ThinkPHP 原生 Model/Query/Scope/Transaction
+及构造注入承载。Application 字典仍由本仓 Model/Scope 拥有，不 deep import Core ReferenceCodes；
+Storage Driver、Tenant/Context、RBAC、Audit、事务和真实跨 Module 端口继续作为业务或技术边界保留。
 
-跨仓开发验证使用 [`scripts/local-core-composer`](../development/local-core-composer.md) 将 Application 的忽略目录与 `vendor/peanut-admin/core` 指向所选 Core 工作树，并记录其精确 commit/tree；这不会修改正式 Composer manifest/lock，也不构成已发布 Core 身份。本轮该入口已验证完整 Application 初始化、容器解析以及同一 ThinkPHP/PDO 连接的外层、嵌套和异常回滚；正式采用、候选资格和发布仍必须回到固定包版本及 lock。
-
-Core 开发提交 `cab7415` 已完成 ReferenceCodes 源码切片：删除 `PdoReferenceCodeRepository`，由注入的 ThinkPHP `PDOConnection` 承载 definition sync、读取、写入、revision/ETag，并让 Host 原子操作使用同连接的 `ThinkPhpTransactionManager`；安装和升级组合根也不再为该领域构造 PDO。Application 字典仍由本仓原生 Model/Scope 独立拥有，不 deep import Core ReferenceCodes。该切片的静态、Unit、Host 安全与 HTTP 合同已通过；因资源登记没有 ReferenceCodes 专用数据库，MySQL Tenant 隔离、并发及双 Edition 资格仍是明确停止点，不能借用其他领域数据库或旧候选证据。
-
-Core 开发提交 `e1ca91c` 已完成 DataPermission 源码切片：策略、资源操作目录、部门层级和目标集合的数据访问改由调用方注入的 ThinkPHP `PDOConnection` 承载，策略替换与有效权限预览通过 `ThinkPhpTransactionManager` 保持原子边界，Module Provider 注册合同不再传递裸 PDO。Kernel 身份、功能 RBAC 和审计仓储仍按 C12 顺序后续退出，因此 Core Host 只在该明确边界内临时从同一 ThinkPHP 连接取得底层 PDO。Application 全仓真实调用核对没有发现 DataPermission 引擎的生产消费者，不为形式统一强行接入；应用继续以原生 RBAC、`TenantOwnedModel` 和 `TenantScope` 承担现有授权边界。该切片的静态检查和无数据库单测已通过；DataPermission 动态 Tenant 隔离与双 Edition 资格因缺少登记资源仍未通过。
+该状态只表示 development source complete。跨仓本地源码可通过
+[`scripts/local-core-composer`](../development/local-core-composer.md) 进行开发运行核对，但它不是正式
+Composer 包或 lock 身份；动态数据库、Standalone/Multi-tenant、完整产品测试、3.1.1 固定候选、
+消费资格和发布仍须分别取得对应资源、真实包与授权，不能继承旧切片证据。
 
 ## 3. 存储驱动候选合同与仓库事实
 

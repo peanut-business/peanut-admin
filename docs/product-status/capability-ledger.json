@@ -1281,7 +1281,7 @@
       "name": "Core/Application ThinkPHP 8 Runtime 全面收敛",
       "area": "architecture",
       "status": "planned",
-      "summary": "方向已接受，十二个领域的主要开发切片已在 Application dev@f0f15af 与 Core dev@7d4ebac 落地，事务、Settings、ReferenceCodes、TaskJob、ImportExport、FileMedia、DataPermission、Kernel 等路径已迁入 ThinkPHP/ThinkORM 边界并删除对应旧实现。但当前生产源码仍可见保留或待审的 PDO/RuntimeFactory/手工组合路径，动态数据库、双 Edition 与完整 Core 3.1.1 候选资格尚未闭合；因此全面收敛仍保持 planned，不能以已提交批次替代完成。",
+      "summary": "方向已接受，S4 开发源码出口已固定在 Application 2ef59dade5f6af06b70867940347fe75893d947e 与 Core dcdf8c6a3b09499447c57a685114150d84e4d647；生产调用中的普通业务 PDO Repository、RuntimeFactory、请求期 ModuleProvider 构造和旧事务包装已退出，现行路径由 ThinkPHP Model/Query/Scope/Transaction 与构造注入承载。动态数据库、双 Edition、产品测试、真实 3.1.1 包/lock 与固定候选资格尚未闭合；因此整体能力仍保持 planned，不能把 development source complete 写成 qualified 或 released。",
       "acceptance": [
         "Core 公共 Runtime API 与 Application 容器不再暴露或绑定 PDO，PdoTransactionManager 和 PDO Repository 按领域删除",
         "Core/Application 使用 ThinkPHP Model、Query、Db、Transaction 和正式 TenantScope，同时保持明确的表 owner",
@@ -1297,11 +1297,11 @@
         },
         {
           "kind": "git",
-          "ref": "f0f15af4676d7fd3b69b9e1a32ef2dd848dd05c2"
+          "ref": "2ef59dade5f6af06b70867940347fe75893d947e"
         },
         {
           "kind": "git",
-          "ref": "peanut-admin-core@7d4ebac64800cfd986af62b35490c54cf9b6bdaa"
+          "ref": "peanut-admin-core@dcdf8c6a3b09499447c57a685114150d84e4d647"
         },
         {
           "kind": "document",

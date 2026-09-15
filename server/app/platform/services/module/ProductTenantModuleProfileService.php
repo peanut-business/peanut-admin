@@ -62,16 +62,17 @@ final readonly class ProductTenantModuleProfileService
      * @param list<string> $moduleKeys
      * @return array{profile:string,tenant_count:int,module_count:int,binding_count:int}
      */
-    public function applyInstallationSelection(array $moduleKeys): array
+    public function applyInstallationSelection(array $moduleKeys, string $tenantCode): array
     {
         if (!array_is_list($moduleKeys)
-            || array_filter($moduleKeys, static fn(mixed $key): bool => !is_string($key)) !== []) {
+            || array_filter($moduleKeys, static fn(mixed $key): bool => !is_string($key)) !== []
+            || preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $tenantCode) !== 1) {
             throw new ModuleException('PRODUCT_PROFILE_INVALID', 'Installation Module selection is invalid.');
         }
         $moduleKeys = array_values(array_unique($moduleKeys));
         sort($moduleKeys, SORT_STRING);
         return $this->applyDefinition('installation', [
-            'tenant_codes' => ['default'],
+            'tenant_codes' => [$tenantCode],
             'modules' => $moduleKeys,
         ]);
     }

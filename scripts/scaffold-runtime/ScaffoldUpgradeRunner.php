@@ -69,6 +69,7 @@ final class ScaffoldUpgradeRunner
         $identity = [
             'from' => $this->releaseIdentity($from),
             'to' => $this->releaseIdentity($to),
+            'edition' => $to->data['edition'],
             'application_version' => $instanceVersion,
             'adoption_application_version' => $application['application']['version'],
             'version_contract' => $versionContract,
@@ -293,7 +294,8 @@ final class ScaffoldUpgradeRunner
             if (($application['template']['version'] ?? null) !== $to->version()
                 || ($application['template']['source_commit'] ?? null) !== $to->release()['source_commit']
                 || ($application['template']['source_tree'] ?? null) !== $to->release()['source_tree']
-                || ($application['application']['version'] ?? null) !== $plan['identity']['application_version']) {
+                || ($application['application']['version'] ?? null) !== $plan['identity']['application_version']
+                || ($application['edition'] ?? null) !== ($plan['identity']['edition'] ?? null)) {
                 throw new RuntimeException('SCAFFOLD_VERIFY_APPLICATION_IDENTITY_MISMATCH');
             }
             $actualAppOwned = $this->ownershipState($root, ['files' => array_values(array_filter($application['files'], static fn(array $file): bool => $file['classification'] === 'app-owned'))], 'app-owned');
@@ -356,6 +358,31 @@ final class ScaffoldUpgradeRunner
             || ($application['template']['source_tree'] ?? null) !== $from->release()['source_tree']) {
             throw new RuntimeException('SCAFFOLD_RELEASE_CHAIN_INVALID');
         }
+        $applicationEdition = $application['edition'] ?? null;
+        $fromEdition = $from->data['edition'] ?? null;
+        $toEdition = $to->data['edition'] ?? null;
+        $name = $application['application']['edition'] ?? null;
+        $expectedBootstrap = [
+            'kind' => 'real-default-tenant',
+            'code' => 'default',
+            'tenant_identity' => 'required',
+            'rbac' => 'required',
+            'execution_context' => 'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+            'module_lifecycle' => 'required',
+        ];
+        if (!in_array($name, ['standalone', 'multi-tenant'], true)
+            || !is_array($applicationEdition) || ($applicationEdition['name'] ?? null) !== $name
+            || !is_array($fromEdition) || ($fromEdition['name'] ?? null) !== $name
+            || !is_array($toEdition) || ($toEdition['name'] ?? null) !== $name
+            || ($toEdition['deployment_mode'] ?? null) !== $name
+            || ($toEdition['module_profile'] ?? null) !== 'official-default'
+            || ($toEdition['tenant_bootstrap'] ?? null) !== $expectedBootstrap
+            || (isset($applicationEdition['tenant_bootstrap'])
+                && $applicationEdition['tenant_bootstrap'] !== $expectedBootstrap)
+            || (isset($fromEdition['tenant_bootstrap'])
+                && $fromEdition['tenant_bootstrap'] !== $expectedBootstrap)) {
+            throw new RuntimeException('SCAFFOLD_EDITION_CHAIN_INVALID');
+        }
     }
 
     /** @param array<string,mixed> $prepared */
@@ -411,7 +438,8 @@ final class ScaffoldUpgradeRunner
         $identity = [
             'from' => $adoption['source'],
             'to' => $this->releaseIdentity($to),
-            'edition' => $application['application']['edition'] ?? $application['edition']['name'] ?? null,
+            'edition' => $to->data['edition'],
+            'source_edition' => $application['edition'],
             'application_manifest_sha256' => $applicationDigest,
             'version_contract_sha256' => $versionContractDigest,
             'managed_pre_sha256' => $managedState['digest'],
@@ -1361,13 +1389,20 @@ final class ScaffoldUpgradeRunner
         $appOwned = array_values(array_filter($files, static fn(array $f): bool => $f['classification']==='app-owned'));
         $application['template'] = ['version'=>$to->version(),'inventory_sha256'=>$to->release()['inventory_sha256'],
             'source_commit'=>$to->release()['source_commit'],'source_tree'=>$to->release()['source_tree']];
+        $application['edition'] = $plan['identity']['edition'];
         $application['schema_version'] = 2;
         $application['protocol'] = 'peanut.application-scaffold.v2';
         $application['application']['version'] = $plan['identity']['application_version'];
         $application['ownership']['baseline_root'] = '.peanut/scaffold-baseline/' . $to->version() . '/files';
         $application['digests'] = ['managed_tree_sha256'=>$this->manifestTreeDigest($managed),'app_owned_tree_sha256'=>$this->manifestTreeDigest($appOwned)];
         $application['files'] = $files;
-        $application['last_scaffold_upgrade'] = ['candidate'=>$plan['candidate'],'from'=>$plan['identity']['from']['version'],'to'=>$to->version()];
+        $application['last_scaffold_upgrade'] = [
+            'candidate'=>$plan['candidate'],
+            'from'=>$plan['identity']['from']['version'],
+            'to'=>$to->version(),
+            'edition_profile_sha256'=>$plan['identity']['edition']['source_sha256'],
+            'tenant_bootstrap'=>$plan['identity']['edition']['tenant_bootstrap'],
+        ];
         return $application;
     }
 

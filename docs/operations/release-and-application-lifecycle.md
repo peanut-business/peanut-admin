@@ -77,6 +77,8 @@ Tenant 解释为业务查询 fallback。应用 owner 随后初始化自己的 Gi
 
 1. 下载并验证与当前 Edition 相同的签名 scaffold 升级包，用包内
    `scaffold-upgrade preflight/apply/verify` 更新受管源码；发生冲突时解决或 `recover`，不能重生成。
+   包内签名身份同时固定部署模式、Module profile、Schema projection 与 `tenant_bootstrap`；apply
+   把完整目标 Edition 身份推进到 application manifest，禁止跨 Edition 或缺真实 Tenant 合同的采用。
 2. 按兼容信息更新应用自己的 Composer/npm manifest 与 lock，并用锁定安装验证 Core 依赖。
 3. Module 如需升级，先在应用仓采用它自己的签名 archive、固定版本与依赖，再安装依赖、构建并
    验收。private Module 的 `route/app.php` 不会由安装命令自动注册；应用 owner 在 app-owned 路由
@@ -105,7 +107,8 @@ Package 安装/版本更新与 TenantModule 开通/停用是两件事。前者�
 lock、migration 和 catalog；后者只让某个 Tenant 使用或停止使用已经随应用部署的 Module，不需要
 重新下载前端。Standalone 首次安装选择和 `tenant-module:apply-profile standalone` 只处理应用固定
 的 official 集；本次 private Module 由授权部署 owner 在受控应用安装/部署步骤中调用
-`ProductTenantModuleProfileService::applyInstallationSelection()`，为 default Tenant 显式开通已经锁定
+`ProductTenantModuleProfileService::applyInstallationSelection()`，以安装 manifest 的
+`tenant_bootstrap.code` 为唯一 Tenant 输入，显式开通已经锁定
 的 Module，再由 Tenant 管理员分配角色权限。Standalone 安装不创建 Platform 初始身份，当前也没有
 private 选择的完整用户 CLI/UI 包装；源仓存在的 Platform API 不能当成 fresh Standalone 登录入口。
 Multi-tenant 则由 PlatformOperator 对每个目标 Tenant 开通/停用，成员授权仍由各 Tenant 管理员负责。

@@ -36,6 +36,12 @@ preflight 会先验 Ed25519 authority、完整文件 inventory、目标 manifest
 缺 migration、文件篡改或不受支持的源版本都在写应用前停止。解压目录必须保留到 apply/verify
 结束，因为 plan 固定其中目标 manifest 和逐文件摘要。
 
+正式升级包把 Edition 名称、部署模式、profile 摘要、Module profile、Schema projection 和
+`tenant_bootstrap` 作为一个不可拆分身份签名；preflight 只允许当前应用、旧 baseline 与目标
+manifest 属于同一 Edition。旧应用 manifest 尚未携带 `tenant_bootstrap` 时，同 Edition 升级可由
+受信目标补入该合同；若已有合同却与目标不一致则 fail-closed。apply 将完整目标 Edition 身份与
+profile 摘要写回 application manifest，verify 再逐字核对，不能靠运行时开关转换 Edition。
+
 plan 的 `impact` 用 `will_change`、`will_preserve` 与 `must_resolve` 分组列出路径、动作和原因。
 存在冲突时 message 明确说明零文件写入；impact 由 actions 重新计算，手工改写说明会在 apply
 前被 `SCAFFOLD_PLAN_IMPACT_DRIFT` 拒绝。
@@ -69,7 +75,9 @@ Core 是 package-managed 外部依赖；业务/第三方 Module、配置、秘�
 应用 owner 先审阅 `adoption-plan` 输出的每一路径 old/current/target SHA-256、mode 和全部 metadata
 写集，再把计划摘要和输出的 25 个路径逐字回传给 `adoption-apply`。采用只安装可信旧 baseline、
 把对应 application manifest 记录改为 managed，并保留 live/custom 字节、产品/实例版本和
-`generation_source`。如果当前字节已被应用修改且目标也变化，随后同一签名包的普通 preflight
+`generation_source`。采用 plan 同时固定源与目标 Edition 以及目标 `tenant_bootstrap`，但 adoption
+本身只改变 ownership/baseline metadata，不提前推进 scaffold 或 Edition 版本。如果当前字节已被
+应用修改且目标也变化，随后同一签名包的普通 preflight
 仍报告 `both_project_and_upstream_modified`，不会自动解冲突。
 
 ```bash
@@ -125,7 +133,8 @@ baseline，并把当前发布版本、版本合同全文与 SHA-256、旧/目标
 原生成值，目标 scaffold/Core 字段来自目标不可变 artifact；应用自行改过 Core 合同或其他字段
 且上游也变化时仍按现有三方比较报告冲突。成功 apply 后 manifest 的 `application.version` 更新为
 本次冻结的 `product_release`，使下一次升级可以逐字重现这次生成的目标 baseline；最初的
-`generation_source` 继续保持不变。
+`generation_source` 继续保持不变；`last_scaffold_upgrade` 记录本次受信目标的 Edition profile 摘要
+和 `tenant_bootstrap`，供首次安装入口区分初次生成来源与后续采用来源。
 
 应用采用 scaffold 与部署应用 Release 是两个阶段。签名 scaffold 包只在开发分支提供受管源码
 采用输入；应用随后更新并锁定 Core/Module 依赖，在隔离 staging 完成依赖安装、前端构建和应用

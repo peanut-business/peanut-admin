@@ -261,7 +261,9 @@ function installationTenantBootstrapContract(string $serverDir): array
             || !is_string($manifest['edition']['source_sha256'] ?? null)
             || !hash_equals(
                 $manifest['edition']['source_sha256'],
-                (string)($manifest['generation_source']['edition_profile_sha256'] ?? ''),
+                (string)(isset($manifest['last_scaffold_upgrade'])
+                    ? ($manifest['last_scaffold_upgrade']['edition_profile_sha256'] ?? '')
+                    : ($manifest['generation_source']['edition_profile_sha256'] ?? '')),
             )) {
             throw new RuntimeException('INSTALL_EDITION_MANIFEST_INVALID');
         }

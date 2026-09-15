@@ -168,7 +168,10 @@ final class InstallationExecutionHost
                     $this->serverRoot,
                     $this->migrationTargetVersion(),
                 );
-                $modules = $this->installModules($moduleKeys);
+                $modules = $this->installModules(
+                    $moduleKeys,
+                    \installationTenantBootstrapContract($this->serverRoot),
+                );
                 $health = $this->health($moduleKeys);
                 $this->writeCompletionMarker($moduleKeys);
                 @unlink($this->progressMarker());
@@ -284,8 +287,12 @@ final class InstallationExecutionHost
         return $modules;
     }
 
-    /** @param list<string> $moduleKeys @return array<string,mixed> */
-    private function installModules(array $moduleKeys): array
+    /**
+     * @param list<string> $moduleKeys
+     * @param array{kind:string,code:string,tenant_identity:string,rbac:string,execution_context:string,module_lifecycle:string} $tenantBootstrap
+     * @return array<string,mixed>
+     */
+    private function installModules(array $moduleKeys, array $tenantBootstrap): array
     {
         $config = $this->moduleConfig();
         $lifecycle = (new ThinkPhpModuleGovernanceProvider(
@@ -305,7 +312,7 @@ final class InstallationExecutionHost
             new \PeanutAdmin\Kernel\Module\Persistence\ThinkPhpModuleRuntimeRepository(true),
             new ThinkPhpModuleGovernanceProvider($this->serverRoot, $config, $this->catalogs),
             app(\app\common\services\audit\AuditContractHost::class),
-        ))->applyInstallationSelection($moduleKeys);
+        ))->applyInstallationSelection($moduleKeys, $tenantBootstrap['code']);
         return ['operations' => $operations, 'profile' => $profile];
     }
 

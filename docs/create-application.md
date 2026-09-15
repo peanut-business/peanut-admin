@@ -27,6 +27,12 @@ TenantModule 生命周期。Standalone 只移除无业务意义的 Platform bund
 `DEPLOYMENT_MODE` 与这份合同完全一致后才允许写入空库。Multi-tenant 沿用同一真实 Tenant
 bootstrap，并另外保留 Platform 控制面。
 
+安装器的 official Module 选择也绑定这份合同：Module lifecycle 使用
+`tenant_bootstrap.code` 定位要开通的真实 Tenant，健康检查再核对同一 Tenant 的安装与 opening，
+不在业务服务内另写默认 Tenant fallback。签名同 Edition 升级会把完整 `tenant_bootstrap` 和目标
+Edition profile 摘要推进到 application manifest；Edition 不匹配或已有 bootstrap 合同漂移时在
+修改应用前停止。
+
 四种版本身份各自拥有事实源：
 
 | 版本轴 | 事实源 | 用途 |

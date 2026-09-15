@@ -190,8 +190,11 @@ try {
             'product' => ['name' => 'Peanut Admin'],
             'edition' => [
                 'name' => $edition,
+                'deployment_mode' => $targetManifest['edition']['deployment_mode'],
                 'profile_sha256' => $targetManifest['edition']['source_sha256'],
                 'generator_version' => $targetManifest['edition']['generator_version'],
+                'module_profile' => $targetManifest['edition']['module_profile'],
+                'tenant_bootstrap' => $targetManifest['edition']['tenant_bootstrap'],
                 'schema_projection' => $targetManifest['edition']['schema']['projection'],
             ],
             'compatibility' => [
@@ -263,7 +266,7 @@ try {
             'schema_version' => 1,
             'protocol' => 'peanut.edition-upgrade-artifact.v1',
             'product' => ['name' => 'Peanut Admin', 'version' => $options['version']],
-            'edition' => $edition,
+            'edition' => $manifest['edition'],
             'compatibility' => $manifest['compatibility'],
             'source' => $manifest['build_source'],
             'package' => [

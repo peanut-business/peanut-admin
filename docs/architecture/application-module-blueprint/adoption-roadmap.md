@@ -177,7 +177,7 @@ lease/fencing/retry/dead 和异常清理；外部 HTTP 明确位于 DB 事务外
 
 **结构关闭**：
 
-1. 最后一个域迁完后删除根业务 route 中的重复入口与独立 `tenant` Application；Module 保留 owner `Http/`，旧的额外 `Validation/` 退出；
+1. 最后一个域迁完后删除根业务 route 中的重复入口与独立 `tenant` Application；Module 保留 owner `controller/`、`route/app.php` 与 `services/`，旧的 `Http/`、`Application/` 和额外 `Validation/` 退出；
 2. 所有 manifest 删除 `backend.routes`，所有 Module migration 只修改 `owned_tables`；
 3. 删除请求期 Provider accessor、业务 Service Locator、第二 root、静态 Runtime factory、union Context/attributes；
 4. 删除业务回流 `common`、跨 Module Model/Infrastructure import、宽泛万能 CRUD 和旧生成器路径；

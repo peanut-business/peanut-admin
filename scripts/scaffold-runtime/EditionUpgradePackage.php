@@ -93,10 +93,13 @@ final class EditionUpgradePackage
         }
 
         $application = $this->applicationManifest($project);
-        $edition = (string)($manifest['edition']['name'] ?? '');
+        $packageEdition = $this->packageEdition($manifest['edition'] ?? null);
+        $edition = $packageEdition['name'];
         if (!in_array($edition, ['standalone', 'multi-tenant'], true)
             || ($application['application']['edition'] ?? null) !== $edition
-            || ($application['edition']['name'] ?? null) !== $edition) {
+            || ($application['edition']['name'] ?? null) !== $edition
+            || (isset($application['edition']['tenant_bootstrap'])
+                && $application['edition']['tenant_bootstrap'] !== $packageEdition['tenant_bootstrap'])) {
             throw new RuntimeException('EDITION_UPGRADE_EDITION_MISMATCH');
         }
         if (($manifest['signing']['algorithm'] ?? null) !== 'ed25519'
@@ -130,10 +133,18 @@ final class EditionUpgradePackage
         $targetManifest = ScaffoldManifest::load($targetPath);
         $targetDigest = hash_file('sha256', $targetPath);
         $release = $targetManifest->release();
-        if (!is_string($targetDigest)
+        $targetEdition = $targetManifest->data['edition'] ?? null;
+        if (!is_array($targetEdition)
+            || !is_string($targetDigest)
             || !hash_equals((string)($manifest['target']['scaffold_manifest_sha256'] ?? ''), $targetDigest)
             || $targetManifest->version() !== $target
-            || ($targetManifest->data['edition']['name'] ?? null) !== $edition
+            || ($targetEdition['name'] ?? null) !== $packageEdition['name']
+            || ($targetEdition['deployment_mode'] ?? null) !== $packageEdition['deployment_mode']
+            || ($targetEdition['source_sha256'] ?? null) !== $packageEdition['profile_sha256']
+            || ($targetEdition['generator_version'] ?? null) !== $packageEdition['generator_version']
+            || ($targetEdition['module_profile'] ?? null) !== $packageEdition['module_profile']
+            || ($targetEdition['tenant_bootstrap'] ?? null) !== $packageEdition['tenant_bootstrap']
+            || ($targetEdition['schema']['projection'] ?? null) !== $packageEdition['schema_projection']
             || ($release['source_commit'] ?? null) !== ($manifest['build_source']['commit'] ?? null)
             || ($release['source_tree'] ?? null) !== ($manifest['build_source']['tree'] ?? null)
             || ($release['inventory_sha256'] ?? null) !== ($manifest['build_source']['inventory_sha256'] ?? null)
@@ -156,6 +167,35 @@ final class EditionUpgradePackage
                 'manifest_sha256' => hash_file('sha256', $manifestPath),
             ],
         ];
+    }
+
+    /** @return array{name:string,deployment_mode:string,profile_sha256:string,generator_version:int,module_profile:string,tenant_bootstrap:array<string,string>,schema_projection:string} */
+    private function packageEdition(mixed $edition): array
+    {
+        $expectedBootstrap = [
+            'kind' => 'real-default-tenant',
+            'code' => 'default',
+            'tenant_identity' => 'required',
+            'rbac' => 'required',
+            'execution_context' => 'PeanutAdmin\\Kernel\\Context\\TenantSystemContext',
+            'module_lifecycle' => 'required',
+        ];
+        if (!is_array($edition)
+            || array_keys($edition) !== [
+                'name', 'deployment_mode', 'profile_sha256', 'generator_version',
+                'module_profile', 'tenant_bootstrap', 'schema_projection',
+            ]
+            || !in_array($edition['name'] ?? null, ['standalone', 'multi-tenant'], true)
+            || ($edition['deployment_mode'] ?? null) !== $edition['name']
+            || preg_match('/^[a-f0-9]{64}$/D', (string)($edition['profile_sha256'] ?? '')) !== 1
+            || !is_int($edition['generator_version'] ?? null)
+            || ($edition['module_profile'] ?? null) !== 'official-default'
+            || ($edition['tenant_bootstrap'] ?? null) !== $expectedBootstrap
+            || !in_array($edition['schema_projection'] ?? null, ['single-organization-v1', 'tenant-owned-v1'], true)
+            || (($edition['name'] === 'standalone') !== ($edition['schema_projection'] === 'single-organization-v1'))) {
+            throw new RuntimeException('EDITION_UPGRADE_EDITION_CONTRACT_INVALID');
+        }
+        return $edition;
     }
 
     /** @return array<string,mixed>|null */
@@ -382,6 +422,7 @@ final class EditionUpgradePackage
             'schema_version' => 3,
             'protocol' => 'peanut.scaffold-release.v3',
             'application' => ['version' => (string)$application['application']['version']],
+            'edition' => $application['edition'],
             'release' => [
                 'version' => $version,
                 'source_commit' => $application['template']['source_commit'],
