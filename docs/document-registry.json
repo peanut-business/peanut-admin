@@ -701,8 +701,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/docs/operations/consumer-ready-control.md",
         "locator": "## 输入与权限边界",
-        "revision": "sha256:405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0",
-        "sha256": "405c1d87ff9fdc22e72e03d404c531abc65a052a89729116ad08364425290ba0"
+      "revision": "sha256:882d99217bc041566456c34ad7fe1d1df1132376bb28d76ddb9af99a34eb198b",
+      "sha256": "882d99217bc041566456c34ad7fe1d1df1132376bb28d76ddb9af99a34eb198b"
       },
       "owner": "release-maintainers",
       "source_span": "#输入与权限边界",
