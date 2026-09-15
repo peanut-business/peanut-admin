@@ -79,8 +79,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "<a id=\"rule-priority\"></a>",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "#rule-priority",
@@ -141,8 +141,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "<a id=\"current-control-state\"></a>",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "#current-control-state",
@@ -196,8 +196,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "<a id=\"rule-metadata-routing\"></a>",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "#rule-metadata-routing",
@@ -254,8 +254,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "## 2. 授权、风险和停止线",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "§2",
@@ -300,8 +300,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "### 2.1 高速开发期 development 数据库迁移临时授权",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "§2.1",
@@ -351,8 +351,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "## 4. 验证与状态更新",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "§4",
@@ -399,8 +399,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "### 5.1 本地批处理、资源租约与远程推送门禁",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "§5.1",
@@ -452,8 +452,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "### 6.2 租户隔离、单事实源与平滑升级长效红线",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "product-architecture",
       "source_span": "§6.2",
@@ -499,8 +499,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "### 7.2 固定候选冻结与封存顺序",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "release-qualification",
       "source_span": "§7.2",
@@ -552,8 +552,8 @@
         "kind": "repository-file",
         "uri": "repo://peanut-admin/AGENT_EXECUTION_RULES.md",
         "locator": "### 0.3 最小启动包与本地检查",
-        "revision": "sha256:d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd",
-        "sha256": "d8c4eedd77677a46773e9cff2aac1eeb64d82dd1ee56a51ca43b417f0ad634bd"
+        "revision": "sha256:2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59",
+        "sha256": "2af5d9de11ec205998bff2514f81be0495a958870f78e55d758cdcbf77375a59"
       },
       "owner": "application-maintainers",
       "source_span": "§0.3",
