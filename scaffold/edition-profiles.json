@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "protocol": "peanut.edition-profiles.v1",
-  "generator_version": 1,
+  "generator_version": 2,
   "editions": {
     "standalone": {
       "deployment_mode": "standalone",
@@ -9,6 +9,14 @@
       "admin_bundle": "standalone",
       "platform_bundle": false,
       "module_profile": "official-default",
+      "tenant_bootstrap": {
+        "kind": "real-default-tenant",
+        "code": "default",
+        "tenant_identity": "required",
+        "rbac": "required",
+        "execution_context": "PeanutAdmin\\Kernel\\Context\\TenantSystemContext",
+        "module_lifecycle": "required"
+      },
       "schema": {
         "projection": "single-organization-v1",
         "retains_core_tenant_identity": true,
@@ -68,6 +76,14 @@
       "admin_bundle": "multi-tenant",
       "platform_bundle": true,
       "module_profile": "official-default",
+      "tenant_bootstrap": {
+        "kind": "real-default-tenant",
+        "code": "default",
+        "tenant_identity": "required",
+        "rbac": "required",
+        "execution_context": "PeanutAdmin\\Kernel\\Context\\TenantSystemContext",
+        "module_lifecycle": "required"
+      },
       "schema": {
         "projection": "tenant-owned-v1",
         "retains_core_tenant_identity": true,

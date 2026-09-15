@@ -19,6 +19,14 @@ Peanut Admin Release 投影出所选 Edition 的前端构建输入、Schema、�
 发布清单采用 full 配置，示例显式传入 `--profile=full`；省略 `--profile` 时仍采用
 `standard`，需要完整应用能力时必须显式选择 `--profile=full`。
 
+两种 Edition 都在生成的 `.peanut/application-manifest.json` 中固定
+`edition.tenant_bootstrap`。该合同要求首次安装创建并激活 code 为 `default` 的真实 Tenant，
+保留 Tenant identity、`core.tenant-owner` RBAC、`TenantSystemContext` 强类型执行上下文和
+TenantModule 生命周期。Standalone 只移除无业务意义的 Platform bundle 和按 Edition profile
+登记的租户列投影，不把业务查询改成“找不到上下文就使用默认 Tenant”；安装器会核对 manifest、
+`DEPLOYMENT_MODE` 与这份合同完全一致后才允许写入空库。Multi-tenant 沿用同一真实 Tenant
+bootstrap，并另外保留 Platform 控制面。
+
 四种版本身份各自拥有事实源：
 
 | 版本轴 | 事实源 | 用途 |
