@@ -146,13 +146,19 @@ try {
     if(($manifest['template']['source_commit']??null)!==$commit||($manifest['template']['source_tree']??null)!==$tree
         ||($generationSource!==null&&(!is_array($generationSource)||($generationSource['commit']??null)!==$commit||($generationSource['tree']??null)!==$tree
             ||($generationSource['inventory_sha256']??null)!==hash_file('sha256',$source.'/scaffold/application-template-inventory.json'))))throw new RuntimeException('SCAFFOLD_RELEASE_GENERATION_IDENTITY_MISMATCH');
+    $inventoryRaw=file_get_contents($source.'/scaffold/application-template-inventory.json');
+    $inventory=json_decode((string)$inventoryRaw,true,512,JSON_THROW_ON_ERROR);
+    $inventoryTransforms=[];
+    foreach($inventory['files']??[] as $inventoryEntry){
+        if(is_array($inventoryEntry)&&is_string($inventoryEntry['path']??null)&&is_string($inventoryEntry['transform']??null))$inventoryTransforms[$inventoryEntry['path']]=$inventoryEntry['transform'];
+    }
     $files=[];
     foreach($manifest['files'] as $entry){
         if(!in_array($entry['classification'],['managed','generated-managed'],true))continue;
         $path=$entry['path'];$content=file_get_contents($application.'/'.$path);
         if(!is_string($content)||!hash_equals($entry['sha256'],hash('sha256',$content)))throw new RuntimeException('SCAFFOLD_RELEASE_GENERATED_TREE_MISMATCH: '.$path);
         $artifact=['path'=>$path,'source'=>'files/'.$path,'template_sha256'=>hash('sha256',$content),'classification'=>$entry['classification'],
-            'transform'=>'tokens','mode'=>$entry['mode']??((fileperms($application.'/'.$path)&0111)!==0?0755:0644),
+            'transform'=>($inventoryTransforms[$path]??null)==='composer-lock'?'composer-lock':'tokens','mode'=>$entry['mode']??((fileperms($application.'/'.$path)&0111)!==0?0755:0644),
             'policy'=>$entry['classification']==='generated-managed'?'generated':'managed','owner'=>releaseOwner($path)];
         $destination=rtrim($options['output'],'/').'/'.$artifact['source'];
         if($check){if(!is_file($destination)||!hash_equals($artifact['template_sha256'],(string)hash_file('sha256',$destination))||((fileperms($destination)&0777)!==$artifact['mode']))throw new RuntimeException('SCAFFOLD_RELEASE_ARTIFACT_STALE: '.$path);}
@@ -160,8 +166,6 @@ try {
         $files[]=$artifact;
     }
     usort($files,static fn(array $a,array $b):int=>strcmp($a['path'],$b['path']));
-    $inventoryRaw=file_get_contents($source.'/scaffold/application-template-inventory.json');
-    $inventory=json_decode((string)$inventoryRaw,true,512,JSON_THROW_ON_ERROR);
     $releaseIdentity=[
         'version'=>$options['version'],'source_commit'=>$commit,'source_tree'=>$tree,'inventory_sha256'=>hash('sha256',(string)$inventoryRaw),
         'inventory_template_version'=>$manifest['template']['version'],'managed_tree_sha256'=>$manifest['digests']['managed_tree_sha256'],

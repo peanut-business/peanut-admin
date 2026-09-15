@@ -14993,7 +14993,7 @@
             "target": "server/composer.lock",
             "classification": "managed",
             "owner": "scaffold",
-            "transform": "text",
+            "transform": "composer-lock",
             "mode": 420,
             "profiles": [
                 "minimal",

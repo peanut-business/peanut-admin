@@ -155,6 +155,7 @@ Rule bodies remain in their declared sources; this table is routing metadata.
 | `pa.consumer-ready-control` | `1` | `consumer-ready-preflight` | `active` | `repo://peanut-admin/docs/operations/consumer-ready-control.md#输入与权限边界` | `release-maintainers` |
 | `pa.current-control-state` | `1` | `private-control-state` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md#current-control-state` | `application-maintainers` |
 | `pa.development-migration-authorization` | `1` | `development-database-migration` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§2.1` | `application-maintainers` |
+| `pa.env-file-only` | `1` | `business-configuration-file-source` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§6.0` | `application-maintainers` |
 | `pa.failure-budget` | `1` | `failure-budget-and-verification` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§4` | `application-maintainers` |
 | `pa.fixed-candidate-qualification` | `1` | `fixed-candidate-qualification-and-release` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§7.2` | `release-qualification` |
 | `pa.git-and-resource-lease` | `1` | `git-delivery-and-resource-lease` | `active` | `repo://peanut-admin/AGENT_EXECUTION_RULES.md§5.1` | `application-maintainers` |
